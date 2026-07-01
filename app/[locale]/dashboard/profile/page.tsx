@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/routing";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { User, Calendar, Clock, MapPin, Sparkles, ArrowRight, Settings, Crown, Shield, AlertTriangle, X } from "lucide-react";
 import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile } from "@/lib/userStateManager";
@@ -38,6 +39,7 @@ export default function ProfilePage() {
   const [mounted, setMounted] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
   useEffect(() => {
     setMounted(true);
@@ -46,16 +48,12 @@ export default function ProfilePage() {
     setPremium(isPremium());
     setExpiryStatus(getExpiryStatus());
 
-    // Get email from supabase session
-    if (supabase) {
-      supabase.auth.getSession().then(({ data }: { data: any }) => {
-        const session = data?.session;
-        if (session?.user?.email) {
-          setUserEmail(session.user.email);
-        }
-      });
+    setExpiryStatus(getExpiryStatus());
+
+    if (session?.user?.email) {
+      setUserEmail(session.user.email);
     }
-  }, []);
+  }, [session]);
 
   if (!mounted) return null;
 

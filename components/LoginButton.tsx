@@ -3,9 +3,11 @@
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import Image from 'next/image';
+import { useLocale } from 'next-intl';
 
 export default function LoginButton() {
   const { data: session, status } = useSession();
+  const locale = useLocale();
 
   if (status === 'loading') {
     return <div className="h-10 w-24 bg-white/5 animate-pulse rounded-full" />;
@@ -52,7 +54,7 @@ export default function LoginButton() {
 
   return (
     <button 
-      onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+      onClick={() => signIn('google', { callbackUrl: `/${locale}/dashboard` })}
       className="flex items-center gap-3 px-6 py-2.5 bg-white text-black font-sans font-bold text-sm rounded-full shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-105 transition-transform"
     >
       <svg className="w-4 h-4" viewBox="0 0 24 24">
