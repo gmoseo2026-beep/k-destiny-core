@@ -35,8 +35,8 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Stable single model for VPS (no aggressive fallback loop) ───
-const CHAT_MODEL = "gemini-2.5-flash";
+// ─── Model Fallback Chain (Primary -> Backup) ───
+const CHAT_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -196,20 +196,21 @@ FREEMIUM RULE:
 
     let lastError: any = null;
 
-    // ─── 6. Single stable model call with simple retry ───
-    const MAX_RETRIES = 1; // 1 retry = 2 total attempts
+    // ─── 6. Model Fallback Logic ───
+    const MAX_RETRIES = 1; // 1 retry per model
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const suffix = attempt > 0 ? ` (retry ${attempt})` : "";
-        console.log(`[Chat] Trying model: ${CHAT_MODEL}${suffix}`);
+    for (const modelName of CHAT_MODELS) {
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const suffix = attempt > 0 ? ` (retry ${attempt})` : "";
+          console.log(`[Chat] Trying model: ${modelName}${suffix}`);
 
-        const model = genAI.getGenerativeModel({ 
-          model: CHAT_MODEL,
-          systemInstruction: systemPart,
-          tools: [extractBirthDataTool as any],
-          generationConfig: {}
-        });
+          const model = genAI.getGenerativeModel({ 
+            model: modelName,
+            systemInstruction: systemPart,
+            tools: [extractBirthDataTool as any],
+            generationConfig: {}
+          });
 
         const generateResult = await Promise.race([
           model.generateContent(fullPrompt),
@@ -310,7 +311,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
 `;
 
             const secondModel = genAI.getGenerativeModel({
-              model: CHAT_MODEL,
+              model: modelName,
               systemInstruction: injectedSystemInstruction,
               generationConfig: { responseMimeType: "application/json" }
             });
@@ -357,21 +358,28 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
 
         recordChatRequest(clientIp);
 
-        console.log(`[Chat] Success with model: ${CHAT_MODEL}${suffix}`);
+        console.log(`[Chat] Success with model: ${modelName}${suffix}`);
         return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion }, { status: 200 });
 
       } catch (err: any) {
         lastError = err;
         const msg = err.message?.substring(0, 150) || "Unknown error";
-        console.warn(`[Chat] ${CHAT_MODEL} attempt ${attempt} failed: ${msg}`);
+        console.warn(`[Chat] ${modelName} attempt ${attempt} failed: ${msg}`);
+        
+        // If high demand/rate limit/timeout, skip retry and immediately fallback to backup model
+        if (msg.includes("503") || msg.includes("429") || msg.includes("Timeout")) {
+          break; 
+        }
       }
     }
+    }
 
-    // All models failed — token was NOT consumed (correct behavior)
+    // All models failed — token was NOT consumed
     console.error("[Chat] All models failed in chat route. Last error:", lastError);
+    // Graceful JSON response instead of raw 503
     return NextResponse.json(
-      { error: `The mystical connection failed. (Detail: ${lastError?.message || lastError})` },
-      { status: 503 }
+      { reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.", emotion: "calm" },
+      { status: 200 }
     );
 
   } catch (error: any) {
