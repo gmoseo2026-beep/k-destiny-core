@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useTransition } from "react";
 import { Link, useRouter, usePathname } from "@/i18n/routing";
-import { useTranslations, useLocale } from "next-intl";
-import { supabase } from "@/lib/supabaseClient";
-import { LogIn, LayoutDashboard, Globe } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Globe, LayoutDashboard } from "lucide-react";
+import LoginButton from "./LoginButton";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 
 const languages = [
@@ -22,25 +23,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (!supabase) return;
-
-    supabase.auth.getSession().then(({ data }: { data: any }) => {
-      setIsLoggedIn(!!data?.session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setIsLoggedIn(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { data: session } = useSession();
 
   const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextLocale = event.target.value;
@@ -48,8 +31,6 @@ export default function Navbar() {
       router.replace(pathname, { locale: nextLocale });
     });
   };
-
-  if (!mounted) return null;
 
   // Hide on dashboard (dashboard has its own layout)
   const isDashboard = pathname.includes('/dashboard');
@@ -78,8 +59,8 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Auth Button */}
-        {isLoggedIn ? (
+        {/* Dashboard Link if logged in */}
+        {session && (
           <Link href="/dashboard">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -91,19 +72,10 @@ export default function Navbar() {
               </span>
             </motion.button>
           </Link>
-        ) : (
-          <Link href="/login">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gold/10 border border-gold/40 hover:bg-gold/20 backdrop-blur-md shadow-sm group active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
-            >
-              <LogIn className="w-3.5 h-3.5 text-gold group-hover:text-gold" />
-              <span className="font-sans text-xs font-semibold text-white tracking-wide">
-                {t("btn_login")}
-              </span>
-            </motion.button>
-          </Link>
         )}
+
+        {/* NextAuth Login Button */}
+        <LoginButton />
       </div>
     </div>
   );
