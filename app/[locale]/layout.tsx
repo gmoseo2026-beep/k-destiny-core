@@ -6,6 +6,7 @@ import "../globals.css";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 import ExpiryWarningModal from "../../components/ExpiryWarningModal";
+import CacheBuster from "../../components/CacheBuster";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -72,6 +73,7 @@ export default async function RootLayout({
         className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
       >
         <NextIntlClientProvider messages={messages}>
+          <CacheBuster />
           <Navbar />
           {children}
           <Footer />

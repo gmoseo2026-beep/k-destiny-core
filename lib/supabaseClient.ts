@@ -15,7 +15,7 @@ const mockSupabase = {
             const session = {
               access_token: "mock-access-token",
               token_type: "bearer",
-              expires_in: 3600,
+              expires_in: 86400,
               refresh_token: "mock-refresh-token",
               user
             };
@@ -50,7 +50,7 @@ const mockSupabase = {
             const session = {
               access_token: "mock-access-token",
               token_type: "bearer",
-              expires_in: 3600,
+              expires_in: 86400,
               refresh_token: "mock-refresh-token",
               user
             };
@@ -76,7 +76,7 @@ const mockSupabase = {
             const session = {
               access_token: "mock-access-token",
               token_type: "bearer",
-              expires_in: 3600,
+              expires_in: 86400,
               refresh_token: "mock-refresh-token",
               user
             };
@@ -193,5 +193,17 @@ const mockSupabase = {
 };
 
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        storageKey: 'supabase-auth-token',
+        cookieOptions: {
+          maxAge: 86400,
+          name: "sb-auth-token",
+          domain: "",
+          path: "/",
+          sameSite: "lax"
+        }
+      } as any
+    })
   : (mockSupabase as any);
