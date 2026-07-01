@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { Link, useRouter, usePathname } from "@/i18n/routing";
 import { useLocale, useTranslations } from "next-intl";
-import { Globe, LayoutDashboard } from "lucide-react";
+import { Globe, LayoutDashboard, Shield } from "lucide-react";
 import LoginButton from "./LoginButton";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
@@ -69,6 +69,21 @@ export default function Navbar() {
               <LayoutDashboard className="w-3.5 h-3.5 text-gold/80 group-hover:text-gold" />
               <span className="font-sans text-xs font-medium text-gray-200 group-hover:text-white tracking-wide">
                 {t("btn_dashboard")}
+              </span>
+            </motion.button>
+          </Link>
+        )}
+
+        {/* Admin Dashboard — strictly visible to ADMIN role only */}
+        {session && (session.user as any)?.role === 'ADMIN' && (
+          <Link href="/admin">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-red-950/60 border border-red-500/40 hover:border-red-400/70 hover:bg-red-900/40 backdrop-blur-md shadow-[0_0_12px_rgba(239,68,68,0.15)] group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
+            >
+              <Shield className="w-3.5 h-3.5 text-red-400/90 group-hover:text-red-300" />
+              <span className="font-sans text-xs font-medium text-red-300/90 group-hover:text-red-200 tracking-wide">
+                Admin
               </span>
             </motion.button>
           </Link>
