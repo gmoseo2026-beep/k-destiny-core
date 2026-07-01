@@ -46,7 +46,7 @@ export default function Home() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-20 flex flex-col items-center justify-end pb-20 sm:pb-24 md:pb-32 min-h-[100dvh] px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center pt-32">
+      <div className="absolute bottom-10 sm:bottom-12 md:bottom-16 left-0 w-full z-20 flex flex-col items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         
         {/* Subtle top accent */}
         <motion.div
@@ -68,11 +68,11 @@ export default function Home() {
           transition={{ duration: 1.2, delay: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
           className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6"
         >
-          <span className="inline-block bg-gradient-to-b from-[#FFF5C3] via-[#D4AF37] to-[#8B6508] bg-clip-text text-transparent drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+          <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-100 drop-shadow-2xl">
             {t('headline_1')}
           </span>
           <br />
-          <span className="inline-block bg-gradient-to-b from-white via-gray-200 to-gray-500 bg-clip-text text-transparent mt-2 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+          <span className="inline-block text-white drop-shadow-2xl mt-2">
             {t('headline_2')}
           </span>
         </motion.h1>

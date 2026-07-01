@@ -295,7 +295,7 @@ export default function SelectMasterPage() {
             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
             className="fixed bottom-0 left-0 w-full z-50 p-3 sm:p-6"
           >
-            <div className="max-w-3xl mx-auto bg-background/80 backdrop-blur-xl border border-gold/40 p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.8)] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+            <div className="max-w-3xl mx-auto bg-black/80 backdrop-blur-md border border-yellow-900/50 p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.8)] flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-gold shrink-0 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
                   <Image
