@@ -1,22 +1,33 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 const intlMiddleware = createMiddleware(routing);
 
-export default function middleware(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   
   // 1. RBAC Check for Admin routes
   const isAdminRoute = pathname === '/admin' || /^\/[a-zA-Z]{2}\/admin(\/.*)?$/.test(pathname);
   
   if (isAdminRoute) {
-    // NextAuth tokens (covers both local HTTP and secure HTTPS cookies)
-    const hasAuthToken = req.cookies.has('next-auth.session-token') || req.cookies.has('__Secure-next-auth.session-token');
+    // Decode the JWT token using NextAuth's official utility
+    const token = await getToken({ 
+      req, 
+      secret: process.env.NEXTAUTH_SECRET,
+    });
     
-    // If not authenticated, redirect to localized home
-    if (!hasAuthToken) {
+    // If no token at all → not logged in → redirect to home
+    if (!token) {
+      const locale = pathname.split('/')[1];
+      const targetLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
+      return NextResponse.redirect(new URL(`/${targetLocale}`, req.url));
+    }
+
+    // If logged in but not ADMIN → redirect to home
+    if (token.role !== 'ADMIN') {
       const locale = pathname.split('/')[1];
       const targetLocale = routing.locales.includes(locale as any) ? locale : routing.defaultLocale;
       return NextResponse.redirect(new URL(`/${targetLocale}`, req.url));
