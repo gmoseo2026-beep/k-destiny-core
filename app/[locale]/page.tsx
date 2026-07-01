@@ -96,8 +96,7 @@ export default function Home() {
           <Link href={mounted && onboarded ? "/dashboard" : "/select-master"} className="block w-fit mx-auto">
             <motion.button
               whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.98, y: 2 }}
-              className="group relative flex items-center gap-3 px-8 py-4 rounded-full font-sans text-gold font-medium tracking-wide overflow-hidden transition-all shadow-[0_8px_30px_-5px_rgba(212,175,55,0.3),inset_0_2px_4px_rgba(255,255,255,0.15),inset_0_-4px_8px_rgba(0,0,0,0.6)] bg-gradient-to-b from-[#1c180e] to-[#050505] border border-gold/40 border-t-gold/70"
+              className="group relative flex items-center gap-3 px-8 py-4 rounded-full font-sans text-gold font-medium tracking-wide overflow-hidden shadow-[0_8px_30px_-5px_rgba(212,175,55,0.3),inset_0_2px_4px_rgba(255,255,255,0.15),inset_0_-4px_8px_rgba(0,0,0,0.6)] bg-gradient-to-b from-[#1c180e] to-[#050505] border border-gold/40 border-t-gold/70 active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
             >
               {/* Breathing Glow Background */}
               <motion.div

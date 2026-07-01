@@ -511,7 +511,7 @@ function ResultPageContent() {
                           <p className="text-gray-400 text-sm mb-6 px-2">{t("locked_desc") || "Unlock to reveal exact timings and actionable remedies."}</p>
                           <Link
                             href="/pricing"
-                            className="block w-full px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-sm sm:text-base rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.8)] hover:scale-[1.02] transition-all duration-300 text-center"
+                            className="block w-full px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-sm sm:text-base rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.8)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu text-center"
                           >
                             {t("btn_paywall_text") || "🔒 Unlock Your Ultimate Destiny Blueprint ($9.99)"}
                           </Link>
@@ -551,14 +551,14 @@ function ResultPageContent() {
                   /* ═══ PREMIUM CTAs ═══ */
                   <>
                     <Link href="/dashboard" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 hover:to-amber-500/30 font-sans font-bold text-base whitespace-nowrap rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 group">
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 hover:to-amber-500/30 font-sans font-bold text-base whitespace-nowrap rounded-2xl active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
                         <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
                         {t("btn_go_dashboard")}
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                       </button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 group">
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
                         <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
                         {t("btn_chat")}
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
@@ -569,14 +569,14 @@ function ResultPageContent() {
                   /* ═══ FREE CTAs ═══ */
                   <>
                     <Link href="/pricing" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 group">
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
                         <Lock className="w-5 h-5 opacity-70 flex-shrink-0" />
                         {t("btn_upgrade")}
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                       </button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base whitespace-nowrap rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 group">
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base whitespace-nowrap rounded-2xl active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
                         <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
                         {t("btn_chat")}
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />

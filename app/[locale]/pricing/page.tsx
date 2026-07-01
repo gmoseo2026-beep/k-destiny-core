@@ -465,7 +465,7 @@ export default function PricingPage() {
                           onClick={() => handleSelectPlan(plan.id)}
                           disabled={!!loadingPlan}
                           className={`
-                            relative w-full py-3.5 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-500
+                            relative w-full py-3.5 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-500 transform-gpu active:scale-95 active:bg-opacity-80
                             disabled:cursor-not-allowed overflow-hidden
                             ${
                               isFeatured
@@ -567,7 +567,7 @@ export default function PricingPage() {
               <div className="w-full grid grid-cols-1 gap-3 mt-6">
                 <button
                   onClick={handleConsentAgree}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold to-[#a68625] text-black font-bold font-sans text-sm hover:scale-[1.02] transition-transform"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold to-[#a68625] text-black font-bold font-sans text-sm hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
                 >
                   {t("btn_agree")}
                 </button>

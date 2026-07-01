@@ -83,8 +83,7 @@ export default function Navbar() {
           <Link href="/dashboard">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/50 border border-gold/30 hover:border-gold/60 hover:bg-gold/10 backdrop-blur-md transition-all shadow-sm group"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/50 border border-gold/30 hover:border-gold/60 hover:bg-gold/10 backdrop-blur-md shadow-sm group active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-gold/80 group-hover:text-gold" />
               <span className="font-sans text-xs font-medium text-gray-200 group-hover:text-white tracking-wide">
@@ -96,8 +95,7 @@ export default function Navbar() {
           <Link href="/login">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gold/10 border border-gold/40 hover:bg-gold/20 backdrop-blur-md transition-all shadow-sm group"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gold/10 border border-gold/40 hover:bg-gold/20 backdrop-blur-md shadow-sm group active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
             >
               <LogIn className="w-3.5 h-3.5 text-gold group-hover:text-gold" />
               <span className="font-sans text-xs font-semibold text-white tracking-wide">

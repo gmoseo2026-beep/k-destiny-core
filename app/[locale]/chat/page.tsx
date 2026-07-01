@@ -166,7 +166,7 @@ function renderMessageContent(content: string, paywallText: string, useTypewrite
         <div className="mt-3 pt-3 border-t border-gold/20">
           <Link
             href="/pricing"
-            className="w-full px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-2 text-center"
+            className="w-full px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 text-center"
           >
             <Sparkle className="w-5 h-5 flex-shrink-0" />
             {paywallText}
@@ -235,6 +235,7 @@ function MasterEmotionImage({ masterId, emotion, defaultImage }: { masterId: str
       src={imgSrc}
       alt={emotion}
       fill
+      priority
       className="object-cover"
       sizes="(max-width: 768px) 224px, 288px"
       onError={() => {
@@ -322,7 +323,7 @@ function KarmaEnergyBar({
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   onClick={onRefill}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-gold to-amber-500 text-black text-[10px] font-sans font-bold tracking-wider uppercase shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.7)] hover:scale-105 transition-all duration-300"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-gold to-amber-500 text-black text-[10px] font-sans font-bold tracking-wider uppercase shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.7)] hover:scale-105 active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
                 >
                   <Zap className="w-3 h-3" />
                   Refill Energy
@@ -626,6 +627,8 @@ function ChatPageContent() {
                   src={currentMaster.image} 
                   alt={currentMaster.name} 
                   fill 
+                  priority
+                  sizes="40px"
                   className="object-cover"
                 />
               ) : (
@@ -679,7 +682,8 @@ function ChatPageContent() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="w-56 sm:w-64 md:w-72 aspect-[3/4] rounded-2xl border-2 border-gold/20 overflow-hidden relative bg-black/40 shadow-[0_4px_20px_rgba(212,175,55,0.2)] mb-2"
+                    style={{ willChange: "transform, opacity" }}
+                    className="w-56 sm:w-64 md:w-72 aspect-[3/4] rounded-2xl border-2 border-gold/20 overflow-hidden relative bg-black/40 shadow-[0_4px_20px_rgba(212,175,55,0.2)] mb-2 transform-gpu"
                   >
                     <MasterEmotionImage 
                       masterId={masterId} 
@@ -745,7 +749,7 @@ function ChatPageContent() {
               </p>
               <button
                 onClick={handleRefillKarma}
-                className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-gold to-amber-500 text-black text-[10px] font-bold tracking-wider uppercase shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_rgba(212,175,55,0.6)] hover:scale-105 transition-all"
+                className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-gold to-amber-500 text-black text-[10px] font-bold tracking-wider uppercase shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:shadow-[0_0_25px_rgba(212,175,55,0.6)] hover:scale-105 active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
               >
                 <Zap className="w-3 h-3" />
                 Refill
@@ -774,7 +778,7 @@ function ChatPageContent() {
           <button
             type="submit"
             disabled={!inputValue.trim() || isTyping || isKarmaEmpty}
-            className="absolute right-2 p-3 bg-gradient-to-r from-gold to-[#a68625] text-black rounded-xl hover:scale-[1.05] transition-transform disabled:opacity-20 disabled:scale-100 disabled:hover:scale-100 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+            className="absolute right-2 p-3 bg-gradient-to-r from-gold to-[#a68625] text-black rounded-xl transform-gpu hover:scale-[1.05] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out disabled:opacity-20 disabled:scale-100 disabled:hover:scale-100 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.3)]"
           >
             <Send className="w-4 h-4" />
           </button>
