@@ -50,6 +50,20 @@ function isValidResult(data: any): data is DestinyResult {
   );
 }
 
+function formatDestinyText(text: string) {
+  if (!text) return null;
+  return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="text-gold font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
 const LOADING_PHRASES: Record<string, string[]> = {
   ko: [
     "우주적 주파수를 맞추는 중...",
@@ -453,8 +467,8 @@ function ResultPageContent() {
                     </div>
                     <h2 className="font-serif text-2xl text-white">{t("card_core_essence") || "Core Essence"}</h2>
                   </div>
-                  <div className="font-sans text-gray-300 leading-relaxed space-y-4 text-sm sm:text-base whitespace-pre-wrap">
-                    {aiData.core_essence}
+                  <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">
+                    {formatDestinyText(aiData.core_essence)}
                   </div>
                 </motion.div>
 
@@ -495,14 +509,14 @@ function ResultPageContent() {
 
                   {premium ? (
                     /* ═══ UNLOCKED — Full content visible ═══ */
-                    <div className="font-sans text-gray-300 leading-relaxed space-y-4 text-sm sm:text-base whitespace-pre-wrap">
-                      {aiData.locked_secrets}
+                    <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">
+                      {formatDestinyText(aiData.locked_secrets)}
                     </div>
                   ) : (
                     /* ═══ LOCKED — Blurred with paywall overlay ═══ */
                     <>
-                      <div className="font-sans text-gray-300 leading-relaxed space-y-4 text-sm sm:text-base whitespace-pre-wrap blur-[8px] select-none opacity-30">
-                        {aiData.locked_secrets}
+                      <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap blur-[8px] select-none opacity-30">
+                        {formatDestinyText(aiData.locked_secrets)}
                       </div>
                       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[2px]">
                         <div className="bg-black/80 border border-gold/30 px-6 py-6 rounded-3xl text-center shadow-[0_0_30px_rgba(212,175,55,0.2)] max-w-[90%] sm:max-w-md">

@@ -126,7 +126,17 @@ export function calculateFourPillars(
     }
   }
 
-  // 6. 최종 결과 포맷팅
+  // 6. Convert raw counts to percentages out of 100
+  const totalCharacters = isTimeUnknown ? 6 : 8;
+  const percentageScore = {
+    wood: Math.round((elementsScore.wood / totalCharacters) * 100),
+    fire: Math.round((elementsScore.fire / totalCharacters) * 100),
+    earth: Math.round((elementsScore.earth / totalCharacters) * 100),
+    metal: Math.round((elementsScore.metal / totalCharacters) * 100),
+    water: Math.round((elementsScore.water / totalCharacters) * 100),
+  };
+
+  // 7. 최종 결과 포맷팅
   return {
     fourPillars: {
       year: yearPillar,
@@ -137,6 +147,6 @@ export function calculateFourPillars(
     dayMaster: dayGan,
     dayMasterSignKey: DAY_MASTER_SIGN_MAP[dayGan] || dayGan,
     elementLacks,
-    elementsScore,
+    elementsScore: percentageScore,
   };
 }
