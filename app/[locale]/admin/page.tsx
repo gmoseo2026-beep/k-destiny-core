@@ -8,6 +8,7 @@ export default async function AdminPage() {
 
   const totalUsers = users.length;
   const premiumUsers = users.filter((u) => u.tier === 'PREMIUM').length;
+  const activeSubscriptions = users.filter((u) => u.subscriptionStatus === 'ACTIVE').length;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -24,7 +25,8 @@ export default async function AdminPage() {
     totalUsers,
     premiumUsers,
     sajuReadingsToday,
+    activeSubscriptions,
   };
 
-  return <AdminDashboard users={users} stats={stats} />;
+  return <AdminDashboard users={JSON.parse(JSON.stringify(users))} stats={stats} />;
 }

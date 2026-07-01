@@ -53,6 +53,13 @@ model User {
   tier        SubscriptionTier @default(FREE)
   usageTokens Int              @default(3)
 
+  // SaaS Subscription Management
+  planType           String? // '1_MONTH', '3_MONTHS', '6_MONTHS', '1_YEAR'
+  paidAmount         Int? // Amount paid in cents (e.g., 9900 = $99.00)
+  premiumStartDate   DateTime?
+  premiumEndDate     DateTime?
+  subscriptionStatus String?   @default("NONE") // 'NONE', 'ACTIVE', 'EXPIRED', 'CANCELLED'
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
