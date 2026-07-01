@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. K-Destiny 독자적 사주 해석 콘텐츠 딕셔너리 (우리의 지적 재산 IP)
+// Gemini는 함부로 운세를 지어내지 못하고 오직 이 테이블의 데이터만 참조함
+model SajuContentDictionary {
+  id               String   @id @default(uuid())
+  
+  // 분류 키 (예: "DAY_MASTER"(일간), "ZODIAC"(띠), "ELEMENT_LACK"(결핍 원소))
+  category         String   
+  
+  // 식별 키 (예: "WATER_YIN"(계수), "WOOD_0"(나무 기운 없음))
+  signKey          String   
+  
+  // 우리만의 독자적인 프리미엄 영문 해석 데이터 (Gemini에게 주입될 Context)
+  englishContent   String   @db.Text 
+  
+  // 웰니스 처방전 데이터 (행동 지침, 행운의 색상 등)
+  remedyAction     String?  @db.Text 
+  
+  updatedAt        DateTime @updatedAt
+
+  @@unique([category, signKey]) // 빠른 매핑을 위한 복합 유니크 키 인덱스
+}
+
+// 2. 유저 명식 데이터베이스 (재계산 방지 및 PII 보호 구역)
+model UserSajuProfile {
+  id               String   @id @default(uuid())
+  
+  // Supabase Auth 연동을 위해 문자열 타입의 userId 매핑
+  userId           String   @unique
+  
+  // (참고: Prisma에 User 모델이 정의되지 않은 상태이므로 relation은 잠시 주석 처리)
+  // user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 개인정보보호 원칙에 따라 생년월일시 원본은 파기하거나 AES-256 해싱/암호화하여 저장
+  birthHash        String?  
+  gender           String
+  
+  // 자체 만세력 엔진이 계산 완료한 8글자 및 메타데이터 캐싱
+  fourPillars      Json     // 예: { year: "乙亥", month: "辛巳", day: "癸酉", time: "庚申" }
+  dayMaster        String   // 일간 (예: "癸") - UI 렌더링용 핵심 코어 성향
+  elementsScore    Json     // 5원소 밸런스 예: { wood: 10, fire: 30, earth: 0, metal: 40, water: 20 }
+  
+  createdAt        DateTime @default(now())
+}
