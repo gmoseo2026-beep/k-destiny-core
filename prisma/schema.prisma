@@ -4,32 +4,31 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // 1. K-Destiny 독자적 사주 해석 콘텐츠 딕셔너리 (우리의 지적 재산 IP)
 model SajuContentDictionary {
-  id               String   @id @default(uuid())
-  category         String   
-  signKey          String   
-  englishContent   String   @db.Text 
-  remedyAction     String?  @db.Text 
-  updatedAt        DateTime @updatedAt
+  id             String   @id @default(uuid())
+  category       String
+  signKey        String
+  englishContent String   @db.Text
+  remedyAction   String?  @db.Text
+  updatedAt      DateTime @updatedAt
 
   @@unique([category, signKey])
 }
 
 // 2. 유저 명식 데이터베이스 (재계산 방지 및 PII 보호 구역)
 model UserSajuProfile {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  birthHash        String?  
-  gender           String
-  fourPillars      Json
-  dayMaster        String
-  elementsScore    Json
-  createdAt        DateTime @default(now())
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  birthHash     String?
+  gender        String
+  fourPillars   Json
+  dayMaster     String
+  elementsScore Json
+  createdAt     DateTime @default(now())
 }
 
 // 3. 사용자 및 권한 관리
@@ -44,37 +43,37 @@ enum SubscriptionTier {
 }
 
 model User {
-  id            String            @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String?
-  email         String?           @unique
+  email         String?   @unique
   emailVerified DateTime?
   image         String?
-  
-  role          Role              @default(USER)
-  tier          SubscriptionTier  @default(FREE)
-  usageTokens   Int               @default(3)
-  
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  
-  profiles      UserSajuProfile[]
-  accounts      Account[]
-  sessions      Session[]
+
+  role        Role             @default(USER)
+  tier        SubscriptionTier @default(FREE)
+  usageTokens Int              @default(3)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profiles UserSajuProfile[]
+  accounts Account[]
+  sessions Session[]
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
