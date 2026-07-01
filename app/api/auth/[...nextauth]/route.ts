@@ -21,18 +21,32 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
+      // On initial sign-in, user object is present
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.tier = (user as any).tier;
+        token.role = user.role;
+        token.tier = user.tier;
       }
+
+      // On subsequent requests, if role/tier are missing, fetch from DB
+      if (token.id && !token.role) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, tier: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.tier = dbUser.tier;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).tier = token.tier;
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.tier = token.tier as string;
       }
       return session;
     },
