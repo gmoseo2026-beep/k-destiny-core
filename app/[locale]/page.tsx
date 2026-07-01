@@ -46,7 +46,7 @@ export default function Home() {
       </div>
 
       {/* Main Content Area */}
-      <div className="absolute bottom-10 sm:bottom-12 md:bottom-16 left-0 w-full z-20 flex flex-col items-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      <div className="absolute bottom-10 sm:bottom-12 md:bottom-16 left-0 right-0 w-full z-20 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         
         {/* Subtle top accent */}
         <motion.div

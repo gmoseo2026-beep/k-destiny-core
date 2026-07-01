@@ -31,16 +31,17 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://thekdestiny.com'),
   title: "K-Destiny | Unlock Your Cosmic Blueprint",
   description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
   openGraph: {
     title: "K-Destiny | Unlock Your Cosmic Blueprint",
     description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
-    url: "https://k-destiny.com",
+    url: "https://thekdestiny.com",
     siteName: "K-Destiny",
     images: [
       {
-        url: "https://k-destiny.com/og-image.jpg",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "K-Destiny Cosmic Blueprint",
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "K-Destiny | Unlock Your Cosmic Blueprint",
     description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
-    images: ["https://k-destiny.com/og-image.jpg"],
+    images: ["/og-image.jpg"],
   },
 };
 
