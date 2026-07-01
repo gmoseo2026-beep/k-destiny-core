@@ -22,7 +22,7 @@ export async function updateSubscriptionTier(userId: string, tier: SubscriptionT
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { subscriptionTier: tier },
+      data: { tier },
     });
     revalidatePath('/[locale]/admin', 'page');
     return { success: true };

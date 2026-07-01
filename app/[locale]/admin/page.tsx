@@ -7,7 +7,7 @@ export default async function AdminPage() {
   });
 
   const totalUsers = users.length;
-  const premiumUsers = users.filter((u) => u.subscriptionTier === 'PREMIUM').length;
+  const premiumUsers = users.filter((u) => u.tier === 'PREMIUM').length;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

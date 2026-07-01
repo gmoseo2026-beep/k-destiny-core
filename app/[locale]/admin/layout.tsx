@@ -63,7 +63,7 @@ export default async function AdminLayout({
           id: userId,
           email: 'admin@kdestiny.local',
           role: 'ADMIN',
-          subscriptionTier: 'PREMIUM'
+          tier: 'PREMIUM'
         }
       });
     } else {

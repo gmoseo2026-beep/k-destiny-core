@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
-        token.tier = (user as any).subscriptionTier;
+        token.tier = (user as any).tier;
       }
       return token;
     },
