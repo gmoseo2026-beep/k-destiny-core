@@ -11,7 +11,7 @@ export default async function AdminLayout({
   params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
   const cookieStore = await cookies();
