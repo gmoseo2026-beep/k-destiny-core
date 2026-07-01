@@ -1,10 +1,6 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import prisma from '@/lib/prisma';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export default async function AdminLayout({
   children,
@@ -14,62 +10,17 @@ export default async function AdminLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const cookieStore = await cookies();
-  const tokenCookie = cookieStore.get('sb-auth-token') || cookieStore.get('supabase-auth-token');
-  
-  // For local development with Mock Supabase, we might not have a cookie.
-  // We'll allow a bypass if in dev mode to test the UI.
-  const isDev = process.env.NODE_ENV === 'development';
-  let userId = '';
-  
-  if (tokenCookie) {
-    let accessToken = tokenCookie.value;
-    try {
-      const parsed = JSON.parse(tokenCookie.value);
-      if (parsed.access_token) accessToken = parsed.access_token;
-      else if (Array.isArray(parsed) && parsed[0]) accessToken = parsed[0];
-    } catch (e) {
-      // Not JSON
-    }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false }
-    });
+  // Fetch the NextAuth session on the server
+  const session = await getServerSession(authOptions);
 
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
-    if (user) {
-      userId = user.id;
-    }
-  } else if (isDev) {
-    userId = 'mock-user-12345';
-  } else {
+  // If not logged in → redirect to home
+  if (!session?.user) {
     redirect(`/${locale}`);
   }
 
-  if (!userId) {
-    redirect(`/${locale}`);
-  }
-
-  // Check Prisma for ADMIN role
-  let dbUser = await prisma.user.findUnique({
-    where: { id: userId }
-  });
-
-  if (!dbUser) {
-    if (isDev) {
-      // Auto-create mock admin for local testing
-      dbUser = await prisma.user.create({
-        data: {
-          id: userId,
-          email: 'admin@kdestiny.local',
-          role: 'ADMIN',
-          tier: 'PREMIUM'
-        }
-      });
-    } else {
-      redirect(`/${locale}`);
-    }
-  } else if (dbUser.role !== 'ADMIN') {
+  // If logged in but NOT ADMIN → redirect to home
+  if (session.user.role !== 'ADMIN') {
     redirect(`/${locale}`);
   }
 
