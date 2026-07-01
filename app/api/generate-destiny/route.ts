@@ -12,7 +12,7 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const MODEL = "gemini-1.5-pro";
+const MODEL = "gemini-2.0-flash";
 
 const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 문어체 존댓말을 사용하세요. 어두운 다크 판타지 톤과 시적 표현을 곁들이세요." },

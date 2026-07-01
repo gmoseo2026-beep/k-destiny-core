@@ -36,7 +36,7 @@ const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // ─── Stable single model for VPS (no aggressive fallback loop) ───
-const CHAT_MODEL = "gemini-1.5-flash";
+const CHAT_MODEL = "gemini-2.0-flash";
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",

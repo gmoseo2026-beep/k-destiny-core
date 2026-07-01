@@ -45,13 +45,14 @@ export default function ProfilePage() {
     setMounted(true);
     setProfile(getProfile());
     setMasterId(getMaster());
-    setPremium(isPremium());
     setExpiryStatus(getExpiryStatus());
 
-    setExpiryStatus(getExpiryStatus());
-
-    if (session?.user?.email) {
-      setUserEmail(session.user.email);
+    // Derive premium status from NextAuth session (DB-synced), not localStorage
+    if (session?.user) {
+      setPremium((session.user as any).tier === 'PREMIUM');
+      if (session.user.email) {
+        setUserEmail(session.user.email);
+      }
     }
   }, [session]);
 
