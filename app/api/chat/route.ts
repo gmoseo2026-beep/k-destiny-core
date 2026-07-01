@@ -86,34 +86,24 @@ export async function POST(req: Request) {
       );
     }
 
-    // ─── 3. Karma Token Check (Supabase) ───
-    // Only enforce token logic if Supabase is configured and userId is provided
+    // ─── 3. Karma Token Check (Prisma) ───
     const effectiveUserId = userId || null;
     let shouldDecrementToken = false;
 
-    if (supabase && effectiveUserId) {
-      // Fetch current balance to check if user has tokens
-      const { data: userRecord, error: fetchError } = await supabase
-        .from("users")
-        .select("karma_tokens")
-        .eq("id", effectiveUserId)
-        .single();
+    if (effectiveUserId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: effectiveUserId },
+        select: { usageTokens: true }
+      });
 
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("[Chat] Error fetching karma_tokens:", fetchError);
-      }
+      const karmaTokens = dbUser?.usageTokens ?? 0;
 
-      const karmaTokens = userRecord?.karma_tokens ?? 0;
-
-      // If tokens are depleted, block the request
       if (karmaTokens <= 0) {
         return NextResponse.json(
           { error: "Karma Energy depleted. Master is meditating." },
           { status: 403 }
         );
       }
-
-      // Mark that we need to decrement AFTER successful AI response
       shouldDecrementToken = true;
     }
 
@@ -354,36 +344,14 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         if (!parsed.message || !parsed.emotion) throw new Error("Missing fields");
 
         // ─── 8. SUCCESS — Atomically decrement karma token ───
-        if (supabase && shouldDecrementToken && effectiveUserId) {
-          const { error: decrementError } = await supabase.rpc('decrement_karma', {
-            user_id_input: effectiveUserId,
-          });
-
-          if (decrementError) {
-            console.warn("[Chat] RPC fallback — using direct update:", decrementError.message);
-            await supabase
-              .from("users")
-              .update({ karma_tokens: supabase.raw?.('karma_tokens - 1') || 0 })
-              .eq("id", effectiveUserId)
-              .gt("karma_tokens", 0);
-          }
-        }
-
-        // ─── 8.5. Save Chat History to Supabase ───
-        if (supabase && effectiveUserId) {
-          const { error: insertError } = await supabase.from("saju_reports").insert({
-            user_id: effectiveUserId,
-            type: "Chat",
-            content: {
-              masterName: masterName,
-              userMessage: message,
-              aiResponse: parsed.message,
-              emotion: parsed.emotion
-            },
-          });
-          
-          if (insertError) {
-            console.error("[Chat] Error saving chat history:", insertError);
+        if (shouldDecrementToken && effectiveUserId) {
+          try {
+            await prisma.user.update({
+              where: { id: effectiveUserId },
+              data: { usageTokens: { decrement: 1 } },
+            });
+          } catch (decrementError) {
+            console.error("[Chat] Error decrementing usage token:", decrementError);
           }
         }
 

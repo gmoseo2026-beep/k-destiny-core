@@ -7,7 +7,8 @@ import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { saveLastResult, getLastResult, getProfile, isPremium as checkPremium, getMaster } from "@/lib/userStateManager";
+import { useSession } from "next-auth/react";
+import { saveLastResult, getLastResult, getProfile, getMaster } from "@/lib/userStateManager";
 
 // Simple hash function matching the server-side cache key generation
 function generateLocalCacheKey(params: {
@@ -114,7 +115,8 @@ function ResultPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
-  const [premium, setPremium] = useState(false);
+  const { data: session } = useSession();
+  const premium = session?.user?.tier === 'PREMIUM' || session?.user?.role === 'ADMIN';
   const t = useTranslations("Result");
   const router = useRouter();
   const locale = useLocale();
@@ -128,9 +130,7 @@ function ResultPageContent() {
   const [isPaying, setIsPaying] = useState(false);
 
   // Check premium status on mount
-  useEffect(() => {
-    setPremium(checkPremium());
-  }, []);
+  // Derived from session above
 
   const handlePayment = async () => {
     if (isPaying) return;

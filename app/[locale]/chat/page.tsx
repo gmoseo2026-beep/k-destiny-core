@@ -8,6 +8,7 @@ import { Sparkles, ArrowLeft, Send, Sparkle, Bot, Flame, Zap } from "lucide-reac
 import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { MASTERS } from "@/lib/masters";
+import { useSession } from "next-auth/react";
 import { getMaster, getKarma, saveKarma, getProfile } from "@/lib/userStateManager";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -427,7 +428,8 @@ function ChatPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [karmaTokens, setKarmaTokens] = useState(5);
   const [maxKarma, setMaxKarma] = useState(5);
-  const [isPremium, setIsPremium] = useState(false);
+  const { data: session } = useSession();
+  const isPremium = session?.user?.tier === 'PREMIUM' || session?.user?.role === 'ADMIN';
   const [userId, setUserId] = useState<string | null>(null);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -435,10 +437,7 @@ function ChatPageContent() {
 
   // Sync karma from localStorage on mount
   useEffect(() => {
-    const storedPremium = typeof window !== "undefined" ? localStorage.getItem("kdestiny_premium") === "true" : false;
-    const urlPremium = searchParams.get("premium") === "true";
-    const isPrem = storedPremium || urlPremium;
-    setIsPremium(isPrem);
+    const isPrem = isPremium || searchParams.get("premium") === "true";
 
     const karma = getKarma();
     let current = karma.current;
@@ -456,14 +455,12 @@ function ChatPageContent() {
     setMaxKarma(max);
   }, [searchParams]);
 
-  // Fetch current Supabase user ID
+  // Fetch current user ID from session
   useEffect(() => {
-    supabase.auth.getUser().then((response: any) => {
-      if (response.data?.user) {
-        setUserId(response.data.user.id);
-      }
-    });
-  }, []);
+    if (session?.user?.id) {
+      setUserId(session.user.id as string);
+    }
+  }, [session]);
 
   // Load initial welcome message
   useEffect(() => {
