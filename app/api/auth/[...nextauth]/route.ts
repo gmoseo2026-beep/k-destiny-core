@@ -20,26 +20,19 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
-      // On initial sign-in, user object is present
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.tier = user.tier;
-      }
-
-      // On subsequent requests, if role/tier are missing, fetch from DB
-      if (token.id && !token.role) {
+    async jwt({ token }) {
+      // Always fetch the freshest data from DB if email exists
+      if (token.email) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, tier: true },
+          where: { email: token.email },
+          select: { id: true, role: true, tier: true },
         });
         if (dbUser) {
+          token.id = dbUser.id;
           token.role = dbUser.role;
           token.tier = dbUser.tier;
         }
       }
-
       return token;
     },
     async session({ session, token }) {
