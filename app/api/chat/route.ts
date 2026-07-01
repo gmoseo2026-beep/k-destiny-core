@@ -35,15 +35,8 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Two-Track AI Engine: Chat uses the lightning-fast/cheaper models ───
-// Primary: gemini-2.5-flash (confirmed stable, fast)
-// Fallbacks: gemini-flash-latest (reliable, fast)
-const CHAT_MODEL_CHAIN = [
-  "gemini-2.5-flash",
-  "gemini-1.5-flash",
-  "gemini-flash-latest",
-  "gemini-2.5-pro",
-];
+// ─── Stable single model for VPS (no aggressive fallback loop) ───
+const CHAT_MODEL = "gemini-1.5-flash";
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -54,8 +47,8 @@ const LOCALE_LANGUAGES: Record<string, string> = {
   ja: "Japanese (日本語)",
 };
 
-// Per-model timeout — 25s is generous enough for slow connections or complex prompts
-const MODEL_TIMEOUT_MS = 25000;
+// VPS-safe timeout — 55s to avoid premature kills on Contabo
+const MODEL_TIMEOUT_MS = 55000;
 
 export async function POST(req: Request) {
   try {
@@ -213,107 +206,98 @@ FREEMIUM RULE:
 
     let lastError: any = null;
 
-    // ─── 6. Try models in chain with retry & timeout ───
-    const MAX_RETRIES_PER_MODEL = 1; // 1 retry = 2 total attempts
+    // ─── 6. Single stable model call with simple retry ───
+    const MAX_RETRIES = 1; // 1 retry = 2 total attempts
 
-    for (const modelName of CHAT_MODEL_CHAIN) {
-      for (let attempt = 0; attempt <= MAX_RETRIES_PER_MODEL; attempt++) {
-        try {
-          const suffix = attempt > 0 ? ` (retry ${attempt})` : "";
-          console.log(`[Chat] Trying model: ${modelName}${suffix}`);
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const suffix = attempt > 0 ? ` (retry ${attempt})` : "";
+        console.log(`[Chat] Trying model: ${CHAT_MODEL}${suffix}`);
 
-          const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            systemInstruction: systemPart,
-            tools: [extractBirthDataTool as any], // 🔥 Function Calling 도구 주입 (SDK 타입 호환)
-            generationConfig: {
-              // 1차 호출에서는 Function Call이 일어날 수 있으므로 JSON 포맷을 강제하지 않습니다.
+        const model = genAI.getGenerativeModel({ 
+          model: CHAT_MODEL,
+          systemInstruction: systemPart,
+          tools: [extractBirthDataTool as any],
+          generationConfig: {}
+        });
+
+        const generateResult = await Promise.race([
+          model.generateContent(fullPrompt),
+          new Promise<any>((_, reject) =>
+            setTimeout(
+              () => reject(new Error(`Timed out after ${MODEL_TIMEOUT_MS}ms`)),
+              MODEL_TIMEOUT_MS
+            )
+          ),
+        ]);
+
+        const response = generateResult.response;
+        const functionCalls = response.functionCalls();
+        
+        let parsed;
+        
+        // ───────── [STEP 2 & 3: 정보 추출 및 백엔드 사주 계산 후 2차 호출] ─────────
+        if (functionCalls && functionCalls.length > 0) {
+          const call = functionCalls.find((c: any) => c.name === "extract_birth_data");
+          if (call) {
+            const args = call.args;
+            console.log("[Chat] 🎯 사주 정보 추출 성공:", args);
+            
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!args.birth_date || !dateRegex.test(args.birth_date)) {
+              throw new Error("Invalid birth_date format extracted by AI");
             }
-          });
+            if (!args.gender || !["M", "F"].includes(args.gender)) {
+              throw new Error("Invalid gender extracted by AI");
+            }
 
-          // 전체 결과를 받아오도록 Promise.race 수정 (텍스트만 뽑지 않음)
-          const generateResult = await Promise.race([
-            model.generateContent(fullPrompt),
-            new Promise<any>((_, reject) =>
-              setTimeout(
-                () => reject(new Error(`Timed out after ${MODEL_TIMEOUT_MS}ms`)),
-                MODEL_TIMEOUT_MS
-              )
-            ),
-          ]);
+            const sajuResult = calculateFourPillars(
+              args.birth_date,
+              args.birth_time || null,
+              args.gender,
+              args.birth_location || "Unknown"
+            );
 
-          const response = generateResult.response;
-          const functionCalls = response.functionCalls();
-          
-          let parsed;
-          
-          // ───────── [STEP 2 & 3: 정보 추출 및 백엔드 사주 계산 후 2차 호출] ─────────
-          if (functionCalls && functionCalls.length > 0) {
-            const call = functionCalls.find((c: any) => c.name === "extract_birth_data");
-            if (call) {
-              const args = call.args;
-              console.log("[Chat] 🎯 사주 정보 추출 성공:", args);
-              
-              // [STEP 2: 자체 사주 계산 로직 — 입력값 검증 후 실행]
-              const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-              if (!args.birth_date || !dateRegex.test(args.birth_date)) {
-                throw new Error("Invalid birth_date format extracted by AI");
-              }
-              if (!args.gender || !["M", "F"].includes(args.gender)) {
-                throw new Error("Invalid gender extracted by AI");
+            let dictionaryContext = "";
+            try {
+              const queryConditions: any[] = [
+                { category: "DAY_MASTER", signKey: sajuResult.dayMasterSignKey },
+              ];
+              for (const lackKey of sajuResult.elementLacks) {
+                queryConditions.push({ category: "ELEMENT_LACK", signKey: lackKey });
               }
 
-              const sajuResult = calculateFourPillars(
-                args.birth_date,
-                args.birth_time || null,
-                args.gender,
-                args.birth_location || "Unknown"
-              );
+              const sajuDocs = await prisma.sajuContentDictionary.findMany({
+                where: { OR: queryConditions },
+              });
 
-              // [STEP 3: DB 캐싱 및 지식 사전(Dictionary) 조회]
-              let dictionaryContext = "";
-              try {
-                // 우리만의 해석 데이터베이스에서 일간(Day Master) + 결핍 원소 해석 꺼내오기
-                const queryConditions: any[] = [
-                  { category: "DAY_MASTER", signKey: sajuResult.dayMasterSignKey },
-                ];
-                for (const lackKey of sajuResult.elementLacks) {
-                  queryConditions.push({ category: "ELEMENT_LACK", signKey: lackKey });
-                }
+              if (sajuDocs.length > 0) {
+                dictionaryContext = sajuDocs.map(doc => `[${doc.category}] ${doc.signKey}: ${doc.englishContent}`).join("\n");
+              }
 
-                const sajuDocs = await prisma.sajuContentDictionary.findMany({
-                  where: { OR: queryConditions },
+              if (effectiveUserId) {
+                await prisma.userSajuProfile.upsert({
+                  where: { userId: effectiveUserId },
+                  update: {
+                    gender: args.gender,
+                    fourPillars: sajuResult.fourPillars,
+                    dayMaster: sajuResult.dayMaster,
+                    elementsScore: sajuResult.elementsScore,
+                  },
+                  create: {
+                    userId: effectiveUserId,
+                    gender: args.gender,
+                    fourPillars: sajuResult.fourPillars,
+                    dayMaster: sajuResult.dayMaster,
+                    elementsScore: sajuResult.elementsScore,
+                  }
                 });
-
-                if (sajuDocs.length > 0) {
-                  dictionaryContext = sajuDocs.map(doc => `[${doc.category}] ${doc.signKey}: ${doc.englishContent}`).join("\n");
-                }
-
-                // 나중에 마이페이지(대시보드)에서 보기 위해 DB에 사주 저장
-                if (effectiveUserId) {
-                  await prisma.userSajuProfile.upsert({
-                    where: { userId: effectiveUserId },
-                    update: {
-                      gender: args.gender,
-                      fourPillars: sajuResult.fourPillars,
-                      dayMaster: sajuResult.dayMaster,
-                      elementsScore: sajuResult.elementsScore,
-                    },
-                    create: {
-                      userId: effectiveUserId,
-                      gender: args.gender,
-                      fourPillars: sajuResult.fourPillars,
-                      dayMaster: sajuResult.dayMaster,
-                      elementsScore: sajuResult.elementsScore,
-                    }
-                  });
-                }
-              } catch (dbError) {
-                console.error("[Chat] DB Error (non-fatal):", dbError);
               }
+            } catch (dbError) {
+              console.error("[Chat] DB Error (non-fatal):", dbError);
+            }
 
-              // [STEP 4: 프롬프트 주입을 위한 새로운 System Instruction 생성]
-              const injectedSystemInstruction = `
+            const injectedSystemInstruction = `
 ${systemPart}
 
 [SYSTEM INJECTION: 사주 직접 계산 절대 금지!]
@@ -335,98 +319,83 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
 </K-Destiny 독점 해석 가이드>
 `;
 
-              // 주입된 프롬프트와 강제 JSON 포맷을 바탕으로 2차 모델 호출
-              const secondModel = genAI.getGenerativeModel({
-                model: modelName,
-                systemInstruction: injectedSystemInstruction,
-                generationConfig: { responseMimeType: "application/json" }
-              });
+            const secondModel = genAI.getGenerativeModel({
+              model: CHAT_MODEL,
+              systemInstruction: injectedSystemInstruction,
+              generationConfig: { responseMimeType: "application/json" }
+            });
 
-              console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");
-              const finalResult = await secondModel.generateContent(fullPrompt);
-              const finalResponseText = finalResult.response.text();
-              
-              try {
-                const cleaned = finalResponseText.replace(/^```json\n?/, '').replace(/```$/, '').trim();
-                parsed = JSON.parse(cleaned);
-              } catch (e) {
-                console.error("JSON parse error (2nd call):", finalResponseText);
-                throw new Error("Failed to parse response");
-              }
-            } else {
-              throw new Error("Unknown function call");
-            }
-          } else {
-            // ───────── [일반 대화: Function Call이 발생하지 않은 경우] ─────────
-            const responseText = response.text();
+            console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");
+            const finalResult = await secondModel.generateContent(fullPrompt);
+            const finalResponseText = finalResult.response.text();
+            
             try {
-              const cleaned = responseText.replace(/^```json\n?/, '').replace(/```$/, '').trim();
+              const cleaned = finalResponseText.replace(/^```json\n?/, '').replace(/```$/, '').trim();
               parsed = JSON.parse(cleaned);
             } catch (e) {
-              console.error("JSON parse error (1st call):", responseText);
+              console.error("JSON parse error (2nd call):", finalResponseText);
               throw new Error("Failed to parse response");
             }
+          } else {
+            throw new Error("Unknown function call");
           }
-
-          // ─── 7. Validation ───
-          if (!parsed.message || !parsed.emotion) throw new Error("Missing fields");
-
-          // ─── 8. SUCCESS — Atomically decrement karma token ───
-          // Token is consumed ONLY after a successful AI response (not before).
-          if (supabase && shouldDecrementToken && effectiveUserId) {
-            // Single atomic operation: decrement only if tokens > 0
-            // Uses .gt() to prevent going below zero even under concurrent requests
-            const { error: decrementError } = await supabase.rpc('decrement_karma', {
-              user_id_input: effectiveUserId,
-            });
-
-            if (decrementError) {
-              // Fallback to direct update if RPC doesn't exist yet
-              console.warn("[Chat] RPC fallback — using direct update:", decrementError.message);
-              await supabase
-                .from("users")
-                .update({ karma_tokens: supabase.raw?.('karma_tokens - 1') || 0 })
-                .eq("id", effectiveUserId)
-                .gt("karma_tokens", 0);
-            }
-          }
-
-          // ─── 8.5. Save Chat History to Supabase ───
-          if (supabase && effectiveUserId) {
-            const { error: insertError } = await supabase.from("saju_reports").insert({
-              user_id: effectiveUserId,
-              type: "Chat",
-              content: {
-                masterName: masterName,
-                userMessage: message,
-                aiResponse: parsed.message,
-                emotion: parsed.emotion
-              },
-            });
-            
-            if (insertError) {
-              console.error("[Chat] Error saving chat history:", insertError);
-            }
-          }
-
-          // Record request for rate limiting
-          recordChatRequest(clientIp);
-
-          console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-          return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion }, { status: 200 });
-
-        } catch (err: any) {
-          lastError = err;
-          const msg = err.message?.substring(0, 150) || "Unknown error";
-          console.warn(
-            `[Chat] Model ${modelName} attempt ${attempt} failed: ${msg}`
-          );
-
-          // If it's a timeout or rate limit, break retries and immediately try next model
-          if (msg.includes("Timeout") || msg.includes("503") || msg.includes("429") || msg.includes("overloaded")) {
-            break;
+        } else {
+          const responseText = response.text();
+          try {
+            const cleaned = responseText.replace(/^```json\n?/, '').replace(/```$/, '').trim();
+            parsed = JSON.parse(cleaned);
+          } catch (e) {
+            console.error("JSON parse error (1st call):", responseText);
+            throw new Error("Failed to parse response");
           }
         }
+
+        // ─── 7. Validation ───
+        if (!parsed.message || !parsed.emotion) throw new Error("Missing fields");
+
+        // ─── 8. SUCCESS — Atomically decrement karma token ───
+        if (supabase && shouldDecrementToken && effectiveUserId) {
+          const { error: decrementError } = await supabase.rpc('decrement_karma', {
+            user_id_input: effectiveUserId,
+          });
+
+          if (decrementError) {
+            console.warn("[Chat] RPC fallback — using direct update:", decrementError.message);
+            await supabase
+              .from("users")
+              .update({ karma_tokens: supabase.raw?.('karma_tokens - 1') || 0 })
+              .eq("id", effectiveUserId)
+              .gt("karma_tokens", 0);
+          }
+        }
+
+        // ─── 8.5. Save Chat History to Supabase ───
+        if (supabase && effectiveUserId) {
+          const { error: insertError } = await supabase.from("saju_reports").insert({
+            user_id: effectiveUserId,
+            type: "Chat",
+            content: {
+              masterName: masterName,
+              userMessage: message,
+              aiResponse: parsed.message,
+              emotion: parsed.emotion
+            },
+          });
+          
+          if (insertError) {
+            console.error("[Chat] Error saving chat history:", insertError);
+          }
+        }
+
+        recordChatRequest(clientIp);
+
+        console.log(`[Chat] Success with model: ${CHAT_MODEL}${suffix}`);
+        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion }, { status: 200 });
+
+      } catch (err: any) {
+        lastError = err;
+        const msg = err.message?.substring(0, 150) || "Unknown error";
+        console.warn(`[Chat] ${CHAT_MODEL} attempt ${attempt} failed: ${msg}`);
       }
     }
 

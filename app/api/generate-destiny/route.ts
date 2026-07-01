@@ -12,7 +12,7 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const MODEL_CHAIN = ["gemini-2.5-pro", "gemini-2.5-flash"];
+const MODEL = "gemini-1.5-pro";
 
 const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 문어체 존댓말을 사용하세요. 어두운 다크 판타지 톤과 시적 표현을 곁들이세요." },
@@ -23,8 +23,8 @@ const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ja: { name: "Japanese (日本語)", toneGuide: "自然な日本語の丁寧語で書いてください。東洋占術の深みのある解釈と詩的な表現を使い、ダークファンタジーの雰囲気を出してください。" },
 };
 
-const MODEL_TIMEOUT_MS = 45000;
-const MAX_RETRIES = 2;
+const MODEL_TIMEOUT_MS = 55000;
+const MAX_RETRIES = 1;
 
 // ─── Helper: Validate Final AI Output ───
 function isValidResult(data: any): boolean {
@@ -163,42 +163,38 @@ Return ONLY VALID JSON:
     let lastError = null;
     const startTime = Date.now();
 
-    for (const modelName of MODEL_CHAIN) {
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          console.log(`[AI Gen] Try ${modelName} (attempt ${attempt})`);
-          const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1, // Highly deterministic output
-              maxOutputTokens: 8192,
-            },
-          });
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`[AI Gen] Try ${MODEL} (attempt ${attempt})`);
+        const model = genAI.getGenerativeModel({
+          model: MODEL,
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.1,
+            maxOutputTokens: 8192,
+          },
+        });
 
-          const result = await Promise.race([
-            model.generateContent(injectedPrompt),
-            new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Timeout")), MODEL_TIMEOUT_MS))
-          ]);
+        const result = await Promise.race([
+          model.generateContent(injectedPrompt),
+          new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Timeout")), MODEL_TIMEOUT_MS))
+        ]);
 
-          const reportData = JSON.parse(result.response.text());
+        const reportData = JSON.parse(result.response.text());
 
-          if (!isValidResult(reportData)) {
-            throw new Error("Invalid or incomplete JSON schema returned by AI");
-          }
-
-          // Cache and return success
-          setCachedResult(cacheKey, reportData);
-          recordRequest(clientIp);
-          
-          console.log(`[AI Gen] Success in ${Date.now() - startTime}ms`);
-          return NextResponse.json(reportData, { status: 200 });
-
-        } catch (err: any) {
-          lastError = err;
-          console.warn(`[AI Gen] Failed on ${modelName}, attempt ${attempt}:`, err.message);
-          if (err.message.includes("Timeout") || err.message.includes("429")) break; // skip retrying this model
+        if (!isValidResult(reportData)) {
+          throw new Error("Invalid or incomplete JSON schema returned by AI");
         }
+
+        setCachedResult(cacheKey, reportData);
+        recordRequest(clientIp);
+        
+        console.log(`[AI Gen] Success in ${Date.now() - startTime}ms`);
+        return NextResponse.json(reportData, { status: 200 });
+
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[AI Gen] Failed on ${MODEL}, attempt ${attempt}:`, err.message);
       }
     }
 
