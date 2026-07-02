@@ -23,7 +23,7 @@ export default function LoginButton() {
           </span>
         )}
         
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-full pl-2 pr-4 py-1.5 hover:bg-white/10 transition-colors">
+        <div className="flex items-center gap-1.5 sm:gap-3 bg-white/5 border border-white/10 rounded-full pl-1.5 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5 hover:bg-white/10 transition-colors">
           {session.user.image ? (
             <Image 
               src={session.user.image} 
@@ -37,7 +37,7 @@ export default function LoginButton() {
               <UserIcon className="w-4 h-4 text-gold" />
             </div>
           )}
-          <span className="text-sm font-sans text-gray-200">
+          <span className="text-xs sm:text-sm font-sans text-gray-200 hidden sm:block">
             {session.user.name?.split(' ')[0] || 'Traveler'}
           </span>
           <button 

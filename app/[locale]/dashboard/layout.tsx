@@ -20,6 +20,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import LanguageSelector from "@/components/LanguageSelector";
 import { getMaster } from "@/lib/userStateManager";
+import LoginButton from "@/components/LoginButton";
 
 export default function DashboardLayout({
   children,
@@ -63,17 +64,34 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Header / Menu Button */}
-      <div className="lg:hidden fixed top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-4 bg-background/80 backdrop-blur-md border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-gold" />
-          <span className="font-serif text-lg font-bold text-white tracking-wide">K-Destiny</span>
+      <div className="lg:hidden fixed top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-3 sm:px-4 bg-background/80 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Sparkles className="w-5 h-5 text-gold shrink-0" />
+          <span className="font-serif text-base sm:text-lg font-bold text-white tracking-wide hidden xs:block">K-Destiny</span>
         </div>
-        <button 
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="text-gray-300 hover:text-gold transition-colors"
-        >
-          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/dashboard">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/50 border border-gold/30 hover:bg-gold/10 transition-colors"
+            >
+              <Compass className="w-4 h-4 text-gold/80" />
+              <span className="font-sans text-xs font-medium text-gray-200 hidden sm:block">
+                {t("nav_destiny")}
+              </span>
+            </motion.button>
+          </Link>
+          <div className="scale-90 sm:scale-100 origin-right">
+            <LoginButton />
+          </div>
+          <button 
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            className="text-gray-300 hover:text-gold transition-colors ml-1"
+          >
+            {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Navigation */}

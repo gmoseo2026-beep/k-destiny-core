@@ -214,12 +214,16 @@ export default function DashboardPage() {
             const renderElement = (el: any, rank: number) => {
               const isCenter = rank === 0;
               
-              // Calculate size proportionally based on the largest element
-              // Minimum size is 45px to maintain readability, maximum is 160px for the largest
-              const minSize = 45;
-              const maxSize = 160;
-              const ratio = el.value / maxVal;
-              const size = minSize + ratio * (maxSize - minSize);
+              // Map rank to responsive Tailwind size classes
+              // Center is largest, 2&3 are medium, 4&5 are smallest
+              let sizeClasses = "";
+              if (isCenter) {
+                sizeClasses = "w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40";
+              } else if (rank === 1 || rank === 2) {
+                sizeClasses = "w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28";
+              } else {
+                sizeClasses = "w-14 h-14 sm:w-16 sm:h-16 md:w-24 md:h-24";
+              }
 
               return (
                 <motion.div 
@@ -230,8 +234,7 @@ export default function DashboardPage() {
                   transition={{ type: "spring", stiffness: 100, damping: 15, delay: 0.2 + rank * 0.1 }}
                 >
                   <div
-                    className={`relative rounded-full overflow-hidden border-2 ${isCenter ? 'border-gold shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'border-gold/30 shadow-[0_0_15px_rgba(212,175,55,0.15)]'} mb-2 transition-transform duration-300 group-hover:scale-110`}
-                    style={{ width: `${size}px`, height: `${size}px` }}
+                    className={`relative rounded-full overflow-hidden border-2 ${isCenter ? 'border-gold shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'border-gold/30 shadow-[0_0_15px_rgba(212,175,55,0.15)]'} mb-2 transition-transform duration-300 group-hover:scale-110 ${sizeClasses}`}
                   >
                     <Image 
                       src={`/images/element_${el.id}.webp.jpg`} 
@@ -243,14 +246,14 @@ export default function DashboardPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
                     
                     <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${isCenter ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 bg-black/50 backdrop-blur-[2px]'}`}>
-                      <span className={`text-white font-mono font-bold shadow-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${isCenter ? 'text-2xl' : 'text-sm'}`}>
+                      <span className={`text-white font-mono font-bold shadow-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${isCenter ? 'text-lg sm:text-xl md:text-2xl' : 'text-xs sm:text-sm'}`}>
                         {el.value}%
                       </span>
                     </div>
                   </div>
                   
                   <div className="text-center">
-                    <span className={`block text-gray-200 font-sans font-semibold tracking-wide ${isCenter ? 'text-lg text-gold' : 'text-xs'}`}>
+                    <span className={`block text-gray-200 font-sans font-semibold tracking-wide ${isCenter ? 'text-base sm:text-lg text-gold' : 'text-[10px] sm:text-xs'}`}>
                       {el.name}
                     </span>
                     {!isCenter && (
@@ -262,9 +265,9 @@ export default function DashboardPage() {
             };
 
             return (
-              <div className="relative flex flex-col items-center justify-center min-h-[300px] py-6">
+              <div className="relative flex flex-col items-center justify-center min-h-[300px] py-6 overflow-hidden">
                 {/* Top Row: Rank 2 and 3 */}
-                <div className="flex justify-center gap-[90px] sm:gap-[120px] mb-[-40px]">
+                <div className="flex justify-center gap-8 sm:gap-16 md:gap-24 mb-[-20px] sm:mb-[-40px]">
                   {renderElement(sortedElements[1], 1)}
                   {renderElement(sortedElements[2], 2)}
                 </div>
@@ -275,7 +278,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Bottom Row: Rank 4 and 5 */}
-                <div className="flex justify-center gap-[80px] sm:gap-[100px] mt-[-40px]">
+                <div className="flex justify-center gap-6 sm:gap-12 md:gap-20 mt-[-20px] sm:mt-[-40px]">
                   {renderElement(sortedElements[3], 3)}
                   {renderElement(sortedElements[4], 4)}
                 </div>

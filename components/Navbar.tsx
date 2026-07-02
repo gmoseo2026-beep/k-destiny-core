@@ -34,6 +34,7 @@ export default function Navbar() {
 
   // Hide on dashboard (dashboard has its own layout)
   const isDashboard = pathname.includes('/dashboard');
+  if (isDashboard) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none">
@@ -67,7 +68,7 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/50 border border-gold/30 hover:border-gold/60 hover:bg-gold/10 backdrop-blur-md shadow-sm group active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-gold/80 group-hover:text-gold" />
-              <span className="font-sans text-xs font-medium text-gray-200 group-hover:text-white tracking-wide">
+              <span className="font-sans text-xs font-medium text-gray-200 group-hover:text-white tracking-wide hidden sm:block">
                 {t("btn_dashboard")}
               </span>
             </motion.button>
