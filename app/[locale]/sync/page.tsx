@@ -1,17 +1,91 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Activity, Share2, Check, User, Heart } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/routing";
+import { useRouter, Link } from "@/i18n/routing";
 import { getProfile, type UserProfile } from "@/lib/userStateManager";
 
 const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
 const SELECT_COMPACT = "w-full bg-black/40 border border-white/10 rounded-xl px-2 sm:px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner appearance-none";
 const LABEL_BASE = "text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2";
 
-export default function EnergySyncPage() {
+function SharedResultView({ u, g, score }: { u: string, g: string, score: string }) {
+  return (
+    <main className="relative min-h-[100dvh] w-full bg-[#06050e] overflow-hidden flex flex-col items-center justify-center py-20 px-4 sm:px-6">
+      {/* Background Gradients */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Activity className="w-6 h-6 text-gold animate-pulse" />
+          </div>
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 text-white">
+            <span className="text-blue-400">{u}</span>
+            <span className="text-gray-400 text-2xl mx-3">&times;</span>
+            <span className="text-purple-400">{g}</span>
+          </h1>
+          <p className="font-sans text-gray-400 text-base max-w-xl mx-auto">
+            Cosmic Energy Synchronization
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-full bg-white/[0.03] backdrop-blur-2xl border border-gold/30 rounded-3xl p-8 sm:p-12 shadow-[0_0_60px_rgba(212,175,55,0.15)] text-center relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+          
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", damping: 15, delay: 0.2 }}
+            className="w-32 h-32 mx-auto mb-8 rounded-full border-4 border-gold flex items-center justify-center bg-black/50 shadow-[0_0_40px_rgba(212,175,55,0.4)]"
+          >
+            <span className="font-serif text-5xl font-bold text-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]">
+              {score}
+            </span>
+          </motion.div>
+
+          <h2 className="font-serif text-xl sm:text-2xl text-white font-bold mb-10">
+            A powerful cosmic resonance detected!
+          </h2>
+
+          <Link href="/" className="relative group w-full flex items-center justify-center py-5 rounded-2xl font-sans text-background bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] font-bold text-lg tracking-wide overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-all">
+            <div className="relative z-10 flex items-center justify-center gap-3">
+               <span>나도 나의 우주적 운명 확인하기</span>
+            </div>
+            {/* Shimmer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: "200%" }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 0.5 }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent z-0 w-1/2"
+            />
+          </Link>
+        </motion.div>
+      </div>
+    </main>
+  );
+}
+
+function EnergySyncContent() {
+  const searchParams = useSearchParams();
+  const sharedU = searchParams.get('u');
+  const sharedG = searchParams.get('g');
+  const sharedScore = searchParams.get('score');
+
   const locale = useLocale();
   const t = useTranslations("Sync");
   const tInput = useTranslations("InputDestiny");
@@ -31,13 +105,18 @@ export default function EnergySyncPage() {
   const days = useMemo(() => Array.from({ length: 31 }, (_, i) => i + 1), []);
 
   useEffect(() => {
+    if (sharedU && sharedG && sharedScore) return;
     const profile = getProfile();
     if (!profile) {
       router.push("/input-destiny");
     } else {
       setUserProfile(profile);
     }
-  }, [router]);
+  }, [router, sharedU, sharedG, sharedScore]);
+
+  if (sharedU && sharedG && sharedScore) {
+    return <SharedResultView u={sharedU} g={sharedG} score={sharedScore} />;
+  }
 
   const handleSync = async () => {
     if (!userProfile || !guestData.name || !guestData.year || !guestData.month || !guestData.day || !guestData.gender || (!guestData.time && !guestUnknownTime)) {
@@ -85,7 +164,7 @@ export default function EnergySyncPage() {
 
   const handleShare = () => {
     if (!userProfile) return;
-    navigator.clipboard.writeText(`https://k-destiny.com/sync?u=${encodeURIComponent(userProfile.name)}&g=${encodeURIComponent(guestData.name)}&score=${result?.score}`);
+    navigator.clipboard.writeText(`https://thekdestiny.com/${locale}/sync?u=${encodeURIComponent(userProfile.name)}&g=${encodeURIComponent(guestData.name)}&score=${result?.score}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
@@ -343,5 +422,13 @@ export default function EnergySyncPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function EnergySyncPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[100dvh] bg-[#06050e]" />}>
+      <EnergySyncContent />
+    </Suspense>
   );
 }
