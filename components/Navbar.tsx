@@ -37,8 +37,8 @@ export default function Navbar() {
   if (isDashboard) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] pointer-events-none">
-      <div className="flex items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 pointer-events-auto max-w-7xl mx-auto">
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-black/95 backdrop-blur-md border-b border-white/5">
+      <div className="flex items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 max-w-7xl mx-auto">
         
         {/* Language Selector — always visible, compact */}
         {!isDashboard && (

@@ -78,7 +78,9 @@ export default async function RootLayout({
           <Providers>
             <CacheBuster />
             <Navbar />
-            {children}
+            <main className="flex-grow pt-24 md:pt-28">
+              {children}
+            </main>
             <Footer />
             <ExpiryWarningModal />
           </Providers>
