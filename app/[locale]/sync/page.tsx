@@ -12,7 +12,29 @@ const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py
 const SELECT_COMPACT = "w-full bg-black/40 border border-white/10 rounded-xl px-2 sm:px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner appearance-none";
 const LABEL_BASE = "text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2";
 
+function getInterpretationTier(score: number) {
+  if (score >= 90) return "soulmate";
+  if (score >= 70) return "harmony";
+  return "growth";
+}
+
+function getTierGradient(tier: string) {
+  if (tier === "soulmate") return "from-gold/20 via-amber-500/10 to-gold/20";
+  if (tier === "harmony") return "from-blue-500/15 via-purple-500/10 to-blue-500/15";
+  return "from-emerald-500/15 via-teal-500/10 to-emerald-500/15";
+}
+
+function getTierBorderColor(tier: string) {
+  if (tier === "soulmate") return "border-gold/40";
+  if (tier === "harmony") return "border-blue-400/30";
+  return "border-emerald-400/30";
+}
+
 function SharedResultView({ u, g, score }: { u: string, g: string, score: string }) {
+  const t = useTranslations("Sync");
+  const numScore = parseInt(score) || 0;
+  const tier = getInterpretationTier(numScore);
+
   return (
     <main className="relative min-h-[100dvh] w-full bg-[#06050e] overflow-hidden flex flex-col items-center justify-center py-20 px-4 sm:px-6">
       {/* Background Gradients */}
@@ -36,7 +58,7 @@ function SharedResultView({ u, g, score }: { u: string, g: string, score: string
             <span className="text-purple-400">{g}</span>
           </h1>
           <p className="font-sans text-gray-400 text-base max-w-xl mx-auto">
-            Cosmic Energy Synchronization
+            {t("share_cosmic_sync")}
           </p>
         </motion.div>
 
@@ -58,13 +80,28 @@ function SharedResultView({ u, g, score }: { u: string, g: string, score: string
             </span>
           </motion.div>
 
-          <h2 className="font-serif text-xl sm:text-2xl text-white font-bold mb-10">
-            A powerful cosmic resonance detected!
+          <h2 className="font-serif text-xl sm:text-2xl text-white font-bold mb-4">
+            {t("share_resonance")}
           </h2>
+
+          {/* Compatibility Interpretation */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`mt-6 mb-10 p-5 sm:p-6 rounded-2xl bg-gradient-to-br ${getTierGradient(tier)} border ${getTierBorderColor(tier)} text-left`}
+          >
+            <h3 className="font-serif text-lg sm:text-xl font-bold text-white mb-3">
+              {t(`tier_${tier}_title`)}
+            </h3>
+            <p className="font-sans text-sm sm:text-base text-gray-300 leading-relaxed">
+              {t(`tier_${tier}_desc`)}
+            </p>
+          </motion.div>
 
           <Link href="/" className="relative group w-full flex items-center justify-center py-5 rounded-2xl font-sans text-background bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] font-bold text-lg tracking-wide overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-all">
             <div className="relative z-10 flex items-center justify-center gap-3">
-               <span>나도 나의 우주적 운명 확인하기</span>
+               <span>{t("share_cta")}</span>
             </div>
             {/* Shimmer */}
             <motion.div
@@ -168,6 +205,8 @@ function EnergySyncContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
+
+  const tier = result ? getInterpretationTier(result.score) : null;
 
   return (
     <main className="relative min-h-[100dvh] w-full bg-[#06050e] overflow-hidden flex flex-col items-center justify-center py-20 px-4 sm:px-6">
@@ -348,7 +387,7 @@ function EnergySyncContent() {
 
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-                className="font-sans text-base sm:text-lg mb-10 max-w-xl mx-auto text-left"
+                className="font-sans text-base sm:text-lg mb-6 max-w-xl mx-auto text-left"
               >
                 {result.analysis
                   .replace(/([.!?]+)\s+/g, "$1\n\n")
@@ -362,6 +401,26 @@ function EnergySyncContent() {
                   ))
                 }
               </motion.div>
+
+              {/* Compatibility Interpretation Tier */}
+              {tier && (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className={`mb-10 p-5 sm:p-6 rounded-2xl bg-gradient-to-br ${getTierGradient(tier)} border ${getTierBorderColor(tier)} text-left`}
+                >
+                  <h3 className="font-sans text-xs uppercase tracking-widest text-gold/80 mb-2">
+                    {t("interpretation_title")}
+                  </h3>
+                  <h4 className="font-serif text-lg sm:text-xl font-bold text-white mb-3">
+                    {t(`tier_${tier}_title`)}
+                  </h4>
+                  <p className="font-sans text-sm sm:text-base text-gray-300 leading-relaxed">
+                    {t(`tier_${tier}_desc`)}
+                  </p>
+                </motion.div>
+              )}
 
               {/* Viral Hook Button */}
               <motion.button
