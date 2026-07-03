@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "@/i18n/routing";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   Sparkles,
   Crown,
@@ -12,13 +12,11 @@ import {
   Zap,
   Shield,
   Star,
-  Flame,
   Eye,
   Moon,
   Sun,
 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
-import AuthModal from "@/components/AuthModal";
+
 
 /* ─── Animated Star Particles ─── */
 function CosmicParticles() {
@@ -70,12 +68,7 @@ const PLAN_IDS = ["1month", "3months", "6months", "1year"] as const;
 
 export default function PricingPage() {
   const t = useTranslations("Pricing");
-  const locale = useLocale();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
-  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
   const plans = [
     {
@@ -120,99 +113,7 @@ export default function PricingPage() {
     "1year": ["feature_karma_20", "feature_blueprint", "feature_basic_sync", "feature_monthly_report", "feature_priority", "feature_forecast"],
   };
 
-  const processCheckout = async (planId: string) => {
-    try {
-      // Map planId to real Lemon Squeezy variantId
-      const variants: Record<string, number> = {
-        "1month": 1850041,
-        "3months": 1850043,
-        "6months": 1850045,
-        "1year": 1850047,
-      };
-      const variantId = variants[planId] || 1850041;
 
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId, planId, locale }),
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to create checkout session");
-      }
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err: any) {
-      console.error("Checkout error:", err);
-      alert(err.message || "Something went wrong. Please try again.");
-      setLoadingPlan(null);
-      setPendingPlanId(null);
-    }
-  };
-
-  const handleSelectPlan = async (planId: string) => {
-    if (loadingPlan) return;
-    setLoadingPlan(planId);
-    
-    // Check if user is logged in
-    if (supabase) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // User not logged in: Intercept checkout and show Auth Modal
-        setPendingPlanId(planId);
-        setIsAuthModalOpen(true);
-        // We do not reset loadingPlan here so the button shows a loading state
-        // until the modal is closed or login is complete.
-        return;
-      }
-    }
-    
-    // User is logged in: proceed to consent modal
-    setPendingPlanId(planId);
-    setIsConsentModalOpen(true);
-  };
-
-  const handleAuthSuccess = () => {
-    if (pendingPlanId) {
-      setIsAuthModalOpen(false);
-      setIsConsentModalOpen(true);
-    }
-  };
-
-  const handleAuthClose = () => {
-    setIsAuthModalOpen(false);
-    setLoadingPlan(null);
-    setPendingPlanId(null);
-  };
-
-  const handleConsentAgree = async () => {
-    if (!pendingPlanId) return;
-    try {
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await supabase.from("payment_consents").insert({
-            user_id: session.user.id,
-            plan_id: pendingPlanId,
-            user_agent: window.navigator.userAgent,
-          });
-        }
-      }
-    } catch (e) {
-      console.error("Consent log failed", e);
-    }
-    // Proceed to checkout regardless of log success so we don't block payment
-    setIsConsentModalOpen(false);
-    await processCheckout(pendingPlanId);
-  };
-
-  const handleConsentDecline = () => {
-    setIsConsentModalOpen(false);
-    setLoadingPlan(null);
-    setPendingPlanId(null);
-  };
 
   return (
     <main className="relative min-h-[100dvh] w-full bg-[#06050e] overflow-hidden flex flex-col items-center py-12 px-4 sm:px-6">
@@ -461,16 +362,17 @@ export default function PricingPage() {
 
                       {/* ── CTA ── */}
                       <div className="px-6 pb-7 pt-4">
-                        <button
-                          onClick={() => handleSelectPlan(plan.id)}
-                          disabled={!!loadingPlan}
+                        <a
+                          href="https://moseo.gumroad.com/l/ykcjwk"
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className={`
                             relative w-full py-3.5 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-500 transform-gpu active:scale-95 active:bg-opacity-80
-                            disabled:cursor-not-allowed overflow-hidden
+                            overflow-hidden flex items-center justify-center
                             ${
                               isFeatured
-                                ? "bg-gradient-to-r from-gold via-amber-400 to-gold text-black shadow-[0_4px_25px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_40px_rgba(212,175,55,0.6)] hover:scale-[1.02] disabled:opacity-60"
-                                : "bg-white/[0.04] text-white/80 border border-white/[0.06] hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-white disabled:opacity-40"
+                                ? "bg-gradient-to-r from-gold via-amber-400 to-gold text-black shadow-[0_4px_25px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_40px_rgba(212,175,55,0.6)] hover:scale-[1.02]"
+                                : "bg-white/[0.04] text-white/80 border border-white/[0.06] hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-white"
                             }
                           `}
                         >
@@ -488,16 +390,9 @@ export default function PricingPage() {
                             />
                           )}
                           <span className="relative z-10">
-                            {isLoading ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                {t("redirecting")}
-                              </span>
-                            ) : (
-                              t("select_plan")
-                            )}
+                            {t("select_plan")}
                           </span>
-                        </button>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -539,49 +434,7 @@ export default function PricingPage() {
           {t("guarantee_text")}
         </motion.p>
       </div>
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={handleAuthClose} 
-        onSuccess={handleAuthSuccess} 
-      />
 
-      {/* ═══ Consent Modal ═══ */}
-      {isConsentModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={handleConsentDecline} />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="relative w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl p-6 sm:p-8"
-          >
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center border border-gold/20 mb-2">
-                <Shield className="w-6 h-6 text-gold" />
-              </div>
-              <h2 className="text-xl font-serif text-white font-bold">{t("consent_title")}</h2>
-              <p className="text-sm font-sans text-gray-400 leading-relaxed">
-                {t("consent_desc")}
-              </p>
-              
-              <div className="w-full grid grid-cols-1 gap-3 mt-6">
-                <button
-                  onClick={handleConsentAgree}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold to-[#a68625] text-black font-bold font-sans text-sm hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
-                >
-                  {t("btn_agree")}
-                </button>
-                <button
-                  onClick={handleConsentDecline}
-                  className="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-medium font-sans text-sm hover:bg-white/10 transition-colors"
-                >
-                  {t("btn_decline")}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </main>
   );
 }

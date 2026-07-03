@@ -34,3 +34,7 @@
 ## 3. Serverless API Guidelines
 - AI 요약/채팅 등 수행 시간이 긴 API Route(`app/api/generate-destiny`, `app/api/chat` 등)의 경우 Vercel 타임아웃(기본 15초)을 방지하기 위해 파일 상단에 `export const maxDuration = 60;` 을 명시합니다.
 - 캐싱 로직 적용 시 유저의 입력 정보와 함께 `locale` 값을 Key에 포함시켜, 언어 변경 시 정확히 해당 언어로 재조회/재생성 되도록 캐시를 분리합니다.
+
+## 4. AI Agent Response Language (응답 언어 규칙)
+- 모든 결과물과 응답은 **반드시 한글(Korean)**로 제공해야 합니다.
+- All responses and results MUST be provided in **Korean (한글)**.
