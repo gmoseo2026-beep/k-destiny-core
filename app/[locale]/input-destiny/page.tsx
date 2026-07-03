@@ -111,15 +111,15 @@ function InputDestinyContent() {
         setCities(regions);
       }
     } else {
-      // No profile → detect location via IP
+      // No profile → detect location via IP (HTTPS for production safety)
       const controller = new AbortController();
-      fetch("http://ip-api.com/json/?fields=status,countryCode,region,regionName", { signal: controller.signal })
+      fetch("https://ipapi.co/json/", { signal: controller.signal })
         .then((res) => res.json())
         .then((data) => {
-          if (data?.status === "success" && data?.countryCode) {
-            const detectedCountry = data.countryCode;
-            const detectedRegionName = data.regionName || "";
-            const detectedRegionCode = data.region || "";
+          if (data?.country_code) {
+            const detectedCountry = data.country_code;
+            const detectedRegionName = data.region || "";
+            const detectedRegionCode = data.region_code || "";
             const newRegions = getRegions(detectedCountry);
             setCities(newRegions);
             const matched = newRegions.find(
