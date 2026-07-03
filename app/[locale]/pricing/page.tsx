@@ -185,7 +185,6 @@ export default function PricingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-5 items-end">
           {plans.map((plan, idx) => {
             const isFeatured = plan.id === "1year";
-            const isLoading = loadingPlan === plan.id;
             const isHovered = hoveredPlan === plan.id;
             const features = tierFeatures[plan.id];
 
