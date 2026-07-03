@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
 import { Sparkles, Calendar, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus, Star, Lock, Crown } from "lucide-react";
+import SajuDataGatekeeper from "@/components/SajuDataGatekeeper";
 
 function PremiumPaywall() {
   return (
@@ -63,6 +64,7 @@ export default function MonthlyKarmaPage() {
   };
 
   return (
+    <SajuDataGatekeeper>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-12">
       {/* Header */}
       <div>
@@ -155,5 +157,6 @@ export default function MonthlyKarmaPage() {
         </button>
       </motion.div>
     </motion.div>
+    </SajuDataGatekeeper>
   );
 }

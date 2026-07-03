@@ -9,6 +9,7 @@ import {
   Sparkles, Loader2, Flame, Droplets,
   TreePine, Mountain, Lock, Crown
 } from "lucide-react";
+import SajuDataGatekeeper from "@/components/SajuDataGatekeeper";
 
 const quarters = [
   { key: "q1", icon: <Droplets className="w-5 h-5" />, color: "text-blue-400", bg: "from-blue-500/15 to-cyan-600/5", border: "border-blue-500/20", dot: "bg-blue-400", glow: "shadow-[0_0_12px_rgba(59,130,246,0.5)]" },
@@ -73,6 +74,7 @@ export default function Fortune2027Page() {
   };
 
   return (
+    <SajuDataGatekeeper>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-12">
       {/* Header */}
       <div>
@@ -137,5 +139,6 @@ export default function Fortune2027Page() {
         </button>
       </motion.div>
     </motion.div>
+    </SajuDataGatekeeper>
   );
 }

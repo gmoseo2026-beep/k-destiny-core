@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
 import { Sparkles, Loader2, Flame, Droplets, TreePine, Mountain, Lock, Crown } from "lucide-react";
+import SajuDataGatekeeper from "@/components/SajuDataGatekeeper";
 
 function PremiumPaywall() {
   return (
@@ -56,6 +57,7 @@ export default function Fortune2027Page() {
   };
 
   return (
+    <SajuDataGatekeeper>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-12">
       {/* Header */}
       <div>
@@ -119,5 +121,6 @@ export default function Fortune2027Page() {
         </button>
       </motion.div>
     </motion.div>
+    </SajuDataGatekeeper>
   );
 }

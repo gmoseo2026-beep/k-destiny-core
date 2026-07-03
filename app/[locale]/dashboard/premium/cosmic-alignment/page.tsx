@@ -9,6 +9,7 @@ import {
   Sparkles, Compass, Loader2, ShieldAlert,
   CheckCircle2, Sun, Lock, Crown
 } from "lucide-react";
+import SajuDataGatekeeper from "@/components/SajuDataGatekeeper";
 
 const priorities = [
   { key: "p1", icon: "🎯", gradient: "from-gold/15 to-amber-600/5", border: "border-gold/20" },
@@ -72,6 +73,7 @@ export default function CosmicAlignmentPage() {
   };
 
   return (
+    <SajuDataGatekeeper>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-12">
       {/* Header */}
       <div>
@@ -167,5 +169,6 @@ export default function CosmicAlignmentPage() {
         </button>
       </motion.div>
     </motion.div>
+    </SajuDataGatekeeper>
   );
 }
