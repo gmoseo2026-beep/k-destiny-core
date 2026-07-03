@@ -5,30 +5,10 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
-import { Sparkles, Calendar, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus, Star, Lock, Crown } from "lucide-react";
-
-function PremiumPaywall() {
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-      className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-      <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-amber-600/10 border-2 border-gold/40 flex items-center justify-center shadow-[0_0_40px_rgba(212,175,55,0.3)]">
-          <Lock className="w-10 h-10 text-gold" />
-        </div>
-      </div>
-      <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">Premium Content Locked</h2>
-      <p className="font-sans text-gray-400 text-sm sm:text-base max-w-md mb-8 leading-relaxed">
-        Unlock the Monthly Karma Report to discover your elemental energy flow, lucky days, and cosmic warnings.
-      </p>
-      <Link href="/pricing">
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-3 px-8 py-4 rounded-2xl font-sans font-bold text-lg bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.4)]">
-          <Crown className="w-5 h-5" />Upgrade to Premium
-        </motion.button>
-      </Link>
-    </motion.div>
-  );
-}
+import {
+  Sparkles, Calendar, AlertTriangle, Loader2,
+  TrendingUp, TrendingDown, Minus, Star, Lock, Crown
+} from "lucide-react";
 
 const elements = [
   { key: "wood", icon: "🌿", color: "from-green-500/20 to-emerald-600/10", border: "border-green-500/30", barColor: "bg-gradient-to-r from-green-500 to-emerald-400", pct: 78, trend: "up" },
@@ -38,7 +18,44 @@ const elements = [
   { key: "water", icon: "🌊", color: "from-blue-500/20 to-cyan-600/10", border: "border-blue-500/30", barColor: "bg-gradient-to-r from-blue-500 to-cyan-400", pct: 62, trend: "up" },
 ];
 
-export default function MonthlyKarmaPage() {
+function PremiumPaywall() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6"
+    >
+      <div className="relative mb-8">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold/20 to-amber-600/10 border-2 border-gold/40 flex items-center justify-center shadow-[0_0_40px_rgba(212,175,55,0.3)]">
+          <Lock className="w-10 h-10 text-gold" />
+        </div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 rounded-full border border-gold/10 border-dashed"
+        />
+      </div>
+      <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">
+        Premium Content Locked
+      </h2>
+      <p className="font-sans text-gray-400 text-sm sm:text-base max-w-md mb-8 leading-relaxed">
+        Unlock the Monthly Karma Report to discover your elemental energy flow, lucky days, and cosmic warnings. Upgrade to Premium for full access.
+      </p>
+      <Link href="/pricing">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="flex items-center gap-3 px-8 py-4 rounded-2xl font-sans font-bold text-lg tracking-wide bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-shadow"
+        >
+          <Crown className="w-5 h-5" />
+          Upgrade to Premium
+        </motion.button>
+      </Link>
+    </motion.div>
+  );
+}
+
+export default function KarmaReportPage() {
   const t = useTranslations("Premium");
   const { data: session } = useSession();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -73,7 +90,7 @@ export default function MonthlyKarmaPage() {
         <p className="font-sans text-gray-400 text-sm sm:text-base max-w-2xl">{t("karma_subtitle")}</p>
       </div>
 
-      {/* Month Label */}
+      {/* Month Label Card */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4">
         <div className="p-3 rounded-xl bg-gold/10"><Calendar className="w-6 h-6 text-gold" /></div>
@@ -83,7 +100,7 @@ export default function MonthlyKarmaPage() {
         </div>
       </motion.div>
 
-      {/* Element Flow Cards */}
+      {/* Elemental Energy Flow Bars */}
       <div className="space-y-3">
         {elements.map((el, i) => (
           <motion.div key={el.key} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 + i * 0.08 }}
@@ -124,7 +141,7 @@ export default function MonthlyKarmaPage() {
         <p className="text-sm text-gray-400 font-sans">{t("karma_lucky_desc")}</p>
       </motion.div>
 
-      {/* Warnings */}
+      {/* Energy Warnings */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
         className="bg-red-950/20 backdrop-blur-xl border border-red-500/20 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
@@ -140,7 +157,7 @@ export default function MonthlyKarmaPage() {
         </div>
       </motion.div>
 
-      {/* Generate Button */}
+      {/* Generate AI Report Button */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
         <button onClick={handleGenerate} disabled={isGenerating}
           className="w-full py-4 rounded-2xl font-sans font-bold text-lg tracking-wide transition-all relative overflow-hidden bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:shadow-[0_0_50px_rgba(212,175,55,0.5)] disabled:opacity-60 disabled:cursor-not-allowed">

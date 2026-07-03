@@ -5,36 +5,53 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
-import { Sparkles, Compass, Loader2, ShieldAlert, CheckCircle2, Sun, Lock, Crown } from "lucide-react";
-
-function PremiumPaywall() {
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-      className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-      <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/10 border-2 border-indigo-400/40 flex items-center justify-center shadow-[0_0_40px_rgba(99,102,241,0.3)]">
-          <Lock className="w-10 h-10 text-indigo-300" />
-        </div>
-      </div>
-      <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">Premium Content Locked</h2>
-      <p className="font-sans text-gray-400 text-sm sm:text-base max-w-md mb-8 leading-relaxed">
-        Unlock the Cosmic Alignment guide to access your daily prioritization matrix and manifestation compass.
-      </p>
-      <Link href="/pricing">
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-3 px-8 py-4 rounded-2xl font-sans font-bold text-lg bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.4)]">
-          <Crown className="w-5 h-5" />Upgrade to Premium
-        </motion.button>
-      </Link>
-    </motion.div>
-  );
-}
+import {
+  Sparkles, Compass, Loader2, ShieldAlert,
+  CheckCircle2, Sun, Lock, Crown
+} from "lucide-react";
 
 const priorities = [
   { key: "p1", icon: "🎯", gradient: "from-gold/15 to-amber-600/5", border: "border-gold/20" },
   { key: "p2", icon: "💡", gradient: "from-green-500/15 to-emerald-600/5", border: "border-green-500/20" },
   { key: "p3", icon: "❤️", gradient: "from-pink-500/15 to-rose-600/5", border: "border-pink-500/20" },
 ];
+
+function PremiumPaywall() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6"
+    >
+      <div className="relative mb-8">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/10 border-2 border-indigo-400/40 flex items-center justify-center shadow-[0_0_40px_rgba(99,102,241,0.3)]">
+          <Lock className="w-10 h-10 text-indigo-300" />
+        </div>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 rounded-full border border-indigo-400/10 border-dashed"
+        />
+      </div>
+      <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4">
+        Premium Content Locked
+      </h2>
+      <p className="font-sans text-gray-400 text-sm sm:text-base max-w-md mb-8 leading-relaxed">
+        Unlock the Cosmic Alignment guide to access your daily prioritization matrix, manifestation compass, and energy forecasts. Upgrade to Premium for full access.
+      </p>
+      <Link href="/pricing">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="flex items-center gap-3 px-8 py-4 rounded-2xl font-sans font-bold text-lg tracking-wide bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] transition-shadow"
+        >
+          <Crown className="w-5 h-5" />
+          Upgrade to Premium
+        </motion.button>
+      </Link>
+    </motion.div>
+  );
+}
 
 export default function CosmicAlignmentPage() {
   const t = useTranslations("Premium");
@@ -125,7 +142,7 @@ export default function CosmicAlignmentPage() {
         </div>
       </motion.div>
 
-      {/* Avoid Section */}
+      {/* Energies to Avoid */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
         className="bg-red-950/15 backdrop-blur-xl border border-red-500/15 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-3">
@@ -135,7 +152,7 @@ export default function CosmicAlignmentPage() {
         <p className="font-sans text-sm text-gray-300 leading-relaxed">{t("alignment_avoid_desc")}</p>
       </motion.div>
 
-      {/* Generate Button */}
+      {/* Generate AI Report Button */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
         <button onClick={handleGenerate} disabled={isGenerating}
           className="w-full py-4 rounded-2xl font-sans font-bold text-lg tracking-wide transition-all relative overflow-hidden bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:shadow-[0_0_50px_rgba(212,175,55,0.5)] disabled:opacity-60 disabled:cursor-not-allowed">
