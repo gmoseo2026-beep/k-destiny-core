@@ -111,7 +111,11 @@
     "load_more": "もっと見る ({count})",
     "collapse": "折りたたむ",
     "chat_report_title": "{masterName} マスターとの会話",
-    "read_whisper": "記録を見る"
+    "read_whisper": "記録を見る",
+    "premium_section": "プレミアム限定",
+    "nav_karma_report": "月間カルマレポート",
+    "nav_cosmic_alignment": "コスミックアライメント",
+    "nav_fortune_2027": "2027年運勢予測"
   },
   "Login": {
     "title": "運命の扉を開く",

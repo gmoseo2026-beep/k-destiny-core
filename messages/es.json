@@ -111,7 +111,11 @@
     "load_more": "Cargar más ({count})",
     "collapse": "Colapsar",
     "chat_report_title": "Conversación con {masterName}",
-    "read_whisper": "Leer registro"
+    "read_whisper": "Leer registro",
+    "premium_section": "Exclusivos Premium",
+    "nav_karma_report": "Informe Karma Mensual",
+    "nav_cosmic_alignment": "Alineación Cósmica",
+    "nav_fortune_2027": "Predicción Fortuna 2027"
   },
   "Login": {
     "title": "Abre la Puerta del Destino",

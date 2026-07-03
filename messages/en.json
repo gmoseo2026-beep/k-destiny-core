@@ -111,7 +111,11 @@
     "load_more": "Load More ({count})",
     "collapse": "Collapse",
     "chat_report_title": "Whisper with {masterName}",
-    "read_whisper": "Read Whisper"
+    "read_whisper": "Read Whisper",
+    "premium_section": "Premium Exclusives",
+    "nav_karma_report": "Monthly Karma Report",
+    "nav_cosmic_alignment": "Cosmic Alignment",
+    "nav_fortune_2027": "2027 Fortune Prediction"
   },
   "Login": {
     "title": "Enter the Sanctuary",

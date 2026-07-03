@@ -111,7 +111,11 @@
     "load_more": "Mehr laden ({count})",
     "collapse": "Einklappen",
     "chat_report_title": "Gespräch mit {masterName}",
-    "read_whisper": "Bericht lesen"
+    "read_whisper": "Bericht lesen",
+    "premium_section": "Premium Exklusiv",
+    "nav_karma_report": "Monatlicher Karma-Bericht",
+    "nav_cosmic_alignment": "Kosmische Ausrichtung",
+    "nav_fortune_2027": "2027 Schicksalsvorhersage"
   },
   "Login": {
     "title": "Öffne das Tor des Schicksals",

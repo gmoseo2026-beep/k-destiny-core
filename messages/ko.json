@@ -111,7 +111,11 @@
     "load_more": "더보기 ({count})",
     "collapse": "접기",
     "chat_report_title": "{masterName} 마스터와의 대화",
-    "read_whisper": "기록 보기"
+    "read_whisper": "기록 보기",
+    "premium_section": "프리미엄 서비스",
+    "nav_karma_report": "월간 카르마 리포트",
+    "nav_cosmic_alignment": "우주 정렬 가이드",
+    "nav_fortune_2027": "2027 운세 예측"
   },
   "Login": {
     "title": "운명의 문을 열다",

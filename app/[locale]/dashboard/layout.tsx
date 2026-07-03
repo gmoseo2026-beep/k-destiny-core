@@ -15,7 +15,10 @@ import {
   Settings,
   MessageSquare,
   User,
-  BookOpen
+  BookOpen,
+  Crown,
+  Flame,
+  Star
 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -139,6 +142,49 @@ export default function DashboardLayout({
                 );
               })}
             </nav>
+
+              {/* ─── Premium Exclusives Section ─── */}
+              <div className="mt-6 mb-4">
+                <div className="flex items-center gap-2 px-4 mb-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+                  <Crown className="w-3.5 h-3.5 text-gold/60" />
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+                </div>
+                <p className="px-4 mb-3 text-[10px] font-sans uppercase tracking-[0.2em] font-bold text-gold/50">
+                  {t("premium_section")}
+                </p>
+                <div className="space-y-1.5">
+                  {[
+                    { id: "karma-report", label: t("nav_karma_report"), icon: Star, href: "/dashboard/premium/karma-report" },
+                    { id: "cosmic-alignment", label: t("nav_cosmic_alignment"), icon: Compass, href: "/dashboard/premium/cosmic-alignment" },
+                    { id: "fortune-2027", label: t("nav_fortune_2027"), icon: Flame, href: "/dashboard/premium/fortune-2027" },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeTab === item.id;
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => {
+                          setActiveTab(item.id);
+                          if (window.innerWidth < 1024) setIsMobileOpen(false);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${
+                          isActive
+                            ? "bg-gold/10 border border-gold/30 shadow-[inset_0_0_20px_rgba(212,175,55,0.1)]"
+                            : "border border-transparent hover:bg-gold/5 hover:border-gold/15"
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? "text-gold" : "text-gold/40 group-hover:text-gold/70"}`} />
+                        <span className={`font-sans text-xs tracking-wide ${isActive ? "text-gold font-medium" : "text-gray-400 group-hover:text-gold/80"}`}>
+                          {item.label}
+                        </span>
+                        <Crown className="w-3 h-3 text-gold/30 ml-auto" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
 
             {/* Language Selector */}
             <div className="mt-auto mb-4">
