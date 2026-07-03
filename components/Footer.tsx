@@ -53,6 +53,19 @@ export default function Footer() {
           </p>
         </div>
       </div>
+
+      {/* Mandatory Legal Disclaimer — PG / Merchant of Record Compliance */}
+      <div className="w-full border-t border-white/10 bg-black/40 px-4 sm:px-6 py-4">
+        <p className="max-w-5xl mx-auto font-sans text-[11px] leading-relaxed text-gray-400 text-center">
+          <span className="font-semibold text-gray-300 uppercase tracking-wider">Disclaimer:</span>{" "}
+          K-Destiny is a digital SaaS platform providing algorithmic Eastern Astrology (Saju) insights.
+          All content and services are intended strictly{" "}
+          <span className="font-semibold text-gray-300 uppercase">for entertainment and self-reflection purposes only</span>{" "}
+          and should not replace professional medical, legal, or financial advice.
+          Due to the digital nature of our AI-generated reports,{" "}
+          <span className="font-semibold text-gray-300 uppercase">all sales are final</span> and non-refundable.
+        </p>
+      </div>
     </footer>
   );
 }
