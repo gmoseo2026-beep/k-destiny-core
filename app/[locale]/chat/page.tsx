@@ -10,7 +10,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { MASTERS } from "@/lib/masters";
 import { useSession } from "next-auth/react";
 import { getMaster, getKarma, saveKarma, getProfile } from "@/lib/userStateManager";
-import { supabase } from "@/lib/supabaseClient";
 
 interface ChatMessage {
   id: string;

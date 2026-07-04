@@ -24,7 +24,6 @@ const extractBirthDataTool = {
 import dns from "dns";
 dns.setDefaultResultOrder("ipv4first");
 import { getClientIp, checkChatRateLimit, recordChatRequest } from "@/lib/rateLimiter";
-import { supabase } from "@/lib/supabaseClient";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
 

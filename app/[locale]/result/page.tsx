@@ -6,7 +6,6 @@ import { Sparkles, Moon, Lock, ArrowRight, RefreshCw } from "lucide-react";
 import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import { useSession } from "next-auth/react";
 import { saveLastResult, getLastResult, getProfile, getMaster } from "@/lib/userStateManager";
 
@@ -256,13 +255,10 @@ function ResultPageContent() {
       const attempt = fetchAttemptRef.current;
       console.log(`[Fetch] Attempt ${attempt} for ${formData.name}`);
       
-      // Append userId to formData if logged in
+      // Append userId from NextAuth session if logged in
       const payload = { ...formData };
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          payload.userId = session.user.id;
-        }
+      if (session?.user?.id) {
+        payload.userId = session.user.id;
       }
 
       const response = await fetch("/api/generate-destiny", {

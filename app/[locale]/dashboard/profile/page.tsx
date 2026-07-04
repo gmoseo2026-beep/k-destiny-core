@@ -9,7 +9,6 @@ import Image from "next/image";
 import { User, Calendar, Clock, MapPin, Sparkles, ArrowRight, Settings, Crown, Shield, AlertTriangle, X } from "lucide-react";
 import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
-import { supabase } from "@/lib/supabaseClient";
 import type { UserProfile } from "@/lib/userStateManager";
 
 const containerVariants = {

@@ -20,7 +20,7 @@ import {
   Flame,
   Star
 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { signOut } from "next-auth/react";
 import LanguageSelector from "@/components/LanguageSelector";
 import { getMaster } from "@/lib/userStateManager";
 import LoginButton from "@/components/LoginButton";
@@ -41,12 +41,9 @@ export default function DashboardLayout({
   }, []);
 
   const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
     // Clear premium status from localStorage
     localStorage.removeItem("kdestiny_premium");
-    router.push("/login");
+    await signOut({ callbackUrl: "/" });
   };
 
   const navItems = [

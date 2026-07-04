@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Mail, Lock, Loader2, X } from "lucide-react";
+import { Sparkles, Loader2, X } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { supabase } from "@/lib/supabaseClient";
+import { signIn } from "next-auth/react";
 
 const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
 const LABEL_BASE = "text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2";
@@ -18,80 +18,16 @@ interface AuthModalProps {
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const t = useTranslations("Login");
   const locale = useLocale();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
 
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setEmail("");
-      setPassword("");
-      setMessage(null);
-      setIsLoading(false);
-    }
-  }, [isOpen]);
-
-  const handleOAuthLogin = async () => {
-    if (!supabase) return;
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
     setMessage(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/${locale}/dashboard`
-        }
-      });
-      if (error) throw error;
-      // Note: OAuth will redirect the page, so onSuccess won't immediately fire in the same session state.
+      await signIn("google", { callbackUrl: `/${locale}/dashboard` });
     } catch (error: any) {
       setMessage({ type: "error", text: error.message || t("error_general") });
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!supabase) return;
-    
-    setIsLoading(true);
-    setMessage(null);
-
-    try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/${locale}/dashboard`,
-          },
-        });
-        if (error) throw error;
-        
-        // If email confirmation is off, the user is logged in immediately
-        if (data.session) {
-          onSuccess();
-          onClose();
-        } else {
-          setMessage({ type: "success", text: t("success_signup") });
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        
-        // Successful login
-        onSuccess();
-        onClose();
-      }
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -178,12 +114,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
               )}
             </AnimatePresence>
 
-            {/* Google OAuth */}
+            {/* Google OAuth — NextAuth */}
             <motion.button
-              onClick={handleOAuthLogin}
+              onClick={handleGoogleLogin}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors mb-6 shadow-inner"
+              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors shadow-inner"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
                 <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -194,71 +130,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
               <span className="font-sans font-medium text-white tracking-wide">{t("btn_google")}</span>
             </motion.button>
 
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px bg-white/10"></div>
-              <span className="font-sans text-xs text-gray-500 uppercase tracking-widest">{t("or")}</span>
-              <div className="flex-1 h-px bg-white/10"></div>
-            </div>
-
-            <form onSubmit={handleEmailAuth} className="space-y-5">
-              <div>
-                <label className={LABEL_BASE}>
-                  <Mail className="w-4 h-4 text-gold/70" />
-                  {t("label_email")}
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("placeholder_email")}
-                  className={`${INPUT_BASE} placeholder-gray-600`}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_BASE}>
-                  <Lock className="w-4 h-4 text-gold/70" />
-                  {t("label_password")}
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t("placeholder_password")}
-                  className={`${INPUT_BASE} placeholder-gray-600`}
-                />
-              </div>
-
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full relative group flex items-center justify-center gap-2 mt-6 px-8 py-4 rounded-xl font-sans text-background bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] font-bold text-base tracking-wide overflow-hidden transition-all shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)]"
-              >
-                <span className="relative z-10">{isSignUp ? t("btn_signup") : t("btn_signin")}</span>
-                
-                {/* Shimmer effect */}
-                <motion.div
-                  initial={{ x: "-100%" }}
-                  animate={{ x: "200%" }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 0.5 }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent z-0 w-1/2"
-                />
-              </motion.button>
-            </form>
-
-            {/* Toggle Sign In / Sign Up */}
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="font-sans text-sm text-gray-400 hover:text-gold transition-colors"
-              >
-                {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
-              </button>
-            </div>
           </div>
         </motion.div>
       </div>

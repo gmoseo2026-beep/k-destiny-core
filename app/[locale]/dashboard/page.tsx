@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { Sparkles, Calendar, ArrowRight, FileText, Home, MessageCircle, Compass, Activity, Loader2, User, BookOpen, X } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "next-auth/react";
 import { getLastResult, getMaster, getProfile, hasCompletedOnboarding, updateKarmaForPlan, saveExpiryDate } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
 import type { SavedResult } from "@/lib/userStateManager";
@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [savedMasterId, setSavedMasterId] = useState<number | null>(null);
   const [selectedChatReport, setSelectedChatReport] = useState<any | null>(null);
   const [visibleCount, setVisibleCount] = useState(3);
+  const { data: session } = useSession();
   const router = useRouter();
 
   // Save premium status to localStorage when checkout succeeds
@@ -70,22 +71,10 @@ export default function DashboardPage() {
     async function fetchReports() {
       let dbReports: any[] = [];
 
-      if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          if (!profile) {
-            setUserName(session.user.email?.split("@")[0] || "Traveler");
-          }
-          
-          const { data, error } = await supabase
-            .from("saju_reports")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .order("created_at", { ascending: false });
-            
-          if (!error && data) {
-            dbReports = data;
-          }
+      // Use NextAuth session for user identity
+      if (session?.user) {
+        if (!profile) {
+          setUserName(session.user.name?.split(' ')[0] || session.user.email?.split("@")[0] || "Traveler");
         }
       }
 
@@ -123,7 +112,7 @@ export default function DashboardPage() {
     }
     
     fetchReports();
-  }, []);
+  }, [session]);
 
   // Element energy data — use saved result's element_analysis or latest report's
   const elements = useMemo(() => {
