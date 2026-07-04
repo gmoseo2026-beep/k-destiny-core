@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# hermes agent (marketing automation — DO NOT COMMIT)
+/hermes/
+/scripts/hermes-agent.ts
+sns_marketing_data.csv
+
+# temp utility scripts
+test-gemini.ts
+update-i18n.js
+update-i18n-2.js
+
+# screenshots / misc
+screenshot.png
