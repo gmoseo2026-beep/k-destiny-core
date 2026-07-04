@@ -42,9 +42,8 @@ next-env.d.ts
 
 /lib/generated/prisma
 
-# hermes agent (marketing automation — DO NOT COMMIT)
-/hermes/
-/scripts/hermes-agent.ts
+# hermes agent — generated output only
+/hermes/output/
 sns_marketing_data.csv
 
 # temp utility scripts
