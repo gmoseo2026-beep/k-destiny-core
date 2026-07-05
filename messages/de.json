@@ -75,6 +75,7 @@
   "Dashboard": {
     "nav_destiny": "Mein Schicksal",
     "nav_energy": "Energie-Sync",
+    "nav_energy_sync": "Energie-Sync (Kompatibilität)",
     "nav_reports": "Gespeicherte Berichte",
     "nav_chat": "Meister konsultieren",
     "nav_settings": "Einstellungen",
@@ -101,6 +102,8 @@
     "btn_dashboard": "Dashboard",
     "nav_profile": "My Profile",
     "nav_guide": "User Guide",
+    "nav_remedy": "Tägliches Heilmittel-Coaching",
+    "nav_new_reading": "Neue Saju-Lesung",
     "sub_profile": "Manage Info",
     "sub_guide": "How to Use",
     "btn_view_result": "View My Blueprint",
@@ -114,7 +117,7 @@
     "read_whisper": "Bericht lesen",
     "premium_section": "Premium Exklusiv",
     "nav_karma_report": "Monatlicher Karma-Bericht",
-    "nav_cosmic_alignment": "Kosmische Ausrichtung",
+    "nav_cosmic_alignment": "Tägliches Heilmittel-Coaching",
     "nav_fortune_2027": "2027 Schicksalsvorhersage"
   },
   "Login": {

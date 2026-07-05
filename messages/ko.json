@@ -75,11 +75,14 @@
   "Dashboard": {
     "nav_destiny": "나의 운명",
     "nav_energy": "에너지 싱크",
+    "nav_energy_sync": "에너지 싱크 (궁합 분석)",
     "nav_reports": "저장된 리포트",
     "nav_chat": "마스터 상담",
     "nav_settings": "설정",
     "nav_profile": "내 정보관리",
     "nav_guide": "이용 가이드",
+    "nav_remedy": "데일리 개운 코칭",
+    "nav_new_reading": "새 사주 분석",
     "nav_signout": "로그아웃",
     "welcome": "환영합니다",
     "energy_balance": "5원소 밸런스",
@@ -114,7 +117,7 @@
     "read_whisper": "기록 보기",
     "premium_section": "프리미엄 서비스",
     "nav_karma_report": "월간 카르마 리포트",
-    "nav_cosmic_alignment": "우주 정렬 가이드",
+    "nav_cosmic_alignment": "데일리 개운 코칭",
     "nav_fortune_2027": "2027 운세 예측"
   },
   "Login": {

@@ -75,6 +75,7 @@
   "Dashboard": {
     "nav_destiny": "Mon Destin",
     "nav_energy": "Synchronisation",
+    "nav_energy_sync": "Synchronisation (Compatibilité)",
     "nav_reports": "Rapports",
     "nav_chat": "Consulter un maître",
     "nav_settings": "Paramètres",
@@ -101,6 +102,8 @@
     "btn_dashboard": "Tableau de Bord",
     "nav_profile": "My Profile",
     "nav_guide": "User Guide",
+    "nav_remedy": "Coaching Remède Quotidien",
+    "nav_new_reading": "Nouvelle Lecture Saju",
     "sub_profile": "Manage Info",
     "sub_guide": "How to Use",
     "btn_view_result": "View My Blueprint",
@@ -114,7 +117,7 @@
     "read_whisper": "Lire le journal",
     "premium_section": "Exclusivités Premium",
     "nav_karma_report": "Rapport Karma Mensuel",
-    "nav_cosmic_alignment": "Alignement Cosmique",
+    "nav_cosmic_alignment": "Coaching Remède Quotidien",
     "nav_fortune_2027": "Prédiction Fortune 2027"
   },
   "Login": {

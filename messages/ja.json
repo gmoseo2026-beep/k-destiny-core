@@ -75,6 +75,7 @@
   "Dashboard": {
     "nav_destiny": "私の運命",
     "nav_energy": "エネルギー同期",
+    "nav_energy_sync": "エネルギーシンク (相性診断)",
     "nav_reports": "保存されたレポート",
     "nav_chat": "マスターに相談",
     "nav_settings": "設定",
@@ -101,6 +102,8 @@
     "btn_dashboard": "ダッシュボード",
     "nav_profile": "My Profile",
     "nav_guide": "User Guide",
+    "nav_remedy": "デイリー開運コーチング",
+    "nav_new_reading": "新しい四柱推命分析",
     "sub_profile": "Manage Info",
     "sub_guide": "How to Use",
     "btn_view_result": "View My Blueprint",
@@ -114,7 +117,7 @@
     "read_whisper": "記録を見る",
     "premium_section": "プレミアム限定",
     "nav_karma_report": "月間カルマレポート",
-    "nav_cosmic_alignment": "コスミックアライメント",
+    "nav_cosmic_alignment": "デイリー開運コーチング",
     "nav_fortune_2027": "2027年運勢予測"
   },
   "Login": {

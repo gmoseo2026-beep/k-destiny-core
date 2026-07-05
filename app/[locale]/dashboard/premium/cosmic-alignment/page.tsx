@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
+import { useLocale } from "next-intl";
 import {
   Sparkles, Compass, Loader2, ShieldAlert,
   CheckCircle2, Sun, Lock, Crown
@@ -56,8 +57,11 @@ function PremiumPaywall() {
 
 export default function CosmicAlignmentPage() {
   const t = useTranslations("Premium");
+  const locale = useLocale();
   const { data: session } = useSession();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiReport, setAiReport] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const userTier = (session?.user as any)?.tier;
   const userRole = (session?.user as any)?.role;
@@ -67,9 +71,23 @@ export default function CosmicAlignmentPage() {
     return <PremiumPaywall />;
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 3000);
+    setError(null);
+    try {
+      const res = await fetch("/api/generate-premium", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportType: "remedy", locale }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate report");
+      setAiReport(data.report);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -154,7 +172,30 @@ export default function CosmicAlignmentPage() {
         <p className="font-sans text-sm text-gray-300 leading-relaxed">{t("alignment_avoid_desc")}</p>
       </motion.div>
 
-      {/* Generate AI Report Button */}
+      {/* AI Generated Report */}
+      {aiReport && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-indigo-500/5 via-purple-900/10 to-gold/5 backdrop-blur-xl border border-indigo-400/20 rounded-3xl p-6 sm:p-8 shadow-[0_0_40px_rgba(99,102,241,0.1)]">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-indigo-500/10 rounded-full"><Sparkles className="w-5 h-5 text-indigo-300" /></div>
+            <h3 className="font-serif text-xl font-bold bg-gradient-to-r from-indigo-300 via-purple-300 to-gold bg-clip-text text-transparent">AI 데일리 개운 코칭</h3>
+          </div>
+          <div className="space-y-5">
+            {aiReport.split("\n\n").map((paragraph, i) => (
+              <p key={i} className="font-sans text-sm sm:text-base text-gray-200 leading-relaxed tracking-wide">{paragraph}</p>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {error && (
+        <div className="bg-red-950/30 border border-red-500/30 rounded-2xl p-4 text-center">
+          <p className="text-red-300 text-sm font-sans">{error}</p>
+        </div>
+      )}
+
+      {/* Generate AI Report Button - hide after generation */}
+      {!aiReport && (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
         <button onClick={handleGenerate} disabled={isGenerating}
           className="w-full py-4 rounded-2xl font-sans font-bold text-lg tracking-wide transition-all relative overflow-hidden bg-gradient-to-r from-[#D4AF37] via-[#FFF5C3] to-[#D4AF37] text-background shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:shadow-[0_0_50px_rgba(212,175,55,0.5)] disabled:opacity-60 disabled:cursor-not-allowed">
@@ -168,6 +209,7 @@ export default function CosmicAlignmentPage() {
           )}
         </button>
       </motion.div>
+      )}
     </motion.div>
     </SajuDataGatekeeper>
   );

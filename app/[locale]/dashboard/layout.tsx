@@ -50,13 +50,13 @@ export default function DashboardLayout({
     { id: "destiny", label: t("nav_destiny"), icon: Compass, href: "/dashboard" },
     { id: "profile", label: t("nav_profile"), icon: User, href: "/dashboard/profile" },
     { id: "chat", label: t("nav_chat"), icon: MessageSquare, href: savedMasterId ? `/chat?masterId=${savedMasterId}` : "/select-master?mode=chat" },
-    { id: "energy", label: t("nav_energy"), icon: Zap, href: "/sync" },
-    { id: "guide", label: t("nav_guide"), icon: BookOpen, href: "/guide" },
-    { id: "reports", label: t("nav_reports"), icon: FileText, href: "/dashboard" },
+    { id: "energy", label: t("nav_energy_sync"), icon: Zap, href: "/sync" },
+    { id: "remedy", label: t("nav_remedy"), icon: BookOpen, href: "/guide" },
+    { id: "new-reading", label: t("nav_new_reading"), icon: Sparkles, href: "/select-master" },
   ];
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-background overflow-hidden flex">
+    <div className="relative min-h-[100dvh] w-full bg-background flex">
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-stardust opacity-10 mix-blend-screen" />
@@ -201,7 +201,7 @@ export default function DashboardLayout({
           </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative z-10 w-full h-[100dvh] overflow-y-auto pt-16 lg:pt-0">
+      <main className="flex-1 relative z-10 w-full min-h-0 pt-16 lg:pt-0">
         <div className="max-w-6xl mx-auto p-4 sm:p-8 lg:p-12">
           {children}
         </div>

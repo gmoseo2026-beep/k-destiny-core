@@ -75,11 +75,14 @@
   "Dashboard": {
     "nav_destiny": "My Destiny",
     "nav_energy": "Energy Sync",
+    "nav_energy_sync": "Energy Sync (Compatibility)",
     "nav_reports": "Saved Reports",
     "nav_chat": "Consult Master",
     "nav_settings": "Settings",
     "nav_profile": "My Profile",
     "nav_guide": "User Guide",
+    "nav_remedy": "Daily Remedy Coaching",
+    "nav_new_reading": "New Saju Reading",
     "nav_signout": "Sign Out",
     "welcome": "Welcome back",
     "energy_balance": "5 Elements Balance",
@@ -114,7 +117,7 @@
     "read_whisper": "Read Whisper",
     "premium_section": "Premium Exclusives",
     "nav_karma_report": "Monthly Karma Report",
-    "nav_cosmic_alignment": "Cosmic Alignment",
+    "nav_cosmic_alignment": "Daily Remedy Coaching",
     "nav_fortune_2027": "2027 Fortune Prediction"
   },
   "Login": {
