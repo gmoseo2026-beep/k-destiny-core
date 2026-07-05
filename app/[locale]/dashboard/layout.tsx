@@ -41,18 +41,35 @@ export default function DashboardLayout({
   }, []);
 
   const handleSignOut = async () => {
-    // Clear premium status from localStorage
-    localStorage.removeItem("kdestiny_premium");
-    await signOut({ callbackUrl: "/" });
+    // ── Nuclear cleanup: wipe ALL user-specific client state ──
+    try {
+      // 1. Remove all kdestiny_* keys from localStorage
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith("kdestiny_") || key === "mock_supabase_user" || key === "app_version")) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+      // 2. Clear sessionStorage entirely
+      sessionStorage.clear();
+    } catch (e) {
+      // Ignore storage errors in SSR or restricted environments
+    }
+
+    // 3. Destroy NextAuth server session + cookies, then hard-redirect to home
+    await signOut({ callbackUrl: "/", redirect: true });
   };
 
   const navItems = [
     { id: "destiny", label: t("nav_destiny"), icon: Compass, href: "/dashboard" },
-    { id: "profile", label: t("nav_profile"), icon: User, href: "/dashboard/profile" },
+    { id: "new-reading", label: t("nav_new_reading"), icon: Sparkles, href: "/select-master" },
     { id: "chat", label: t("nav_chat"), icon: MessageSquare, href: savedMasterId ? `/chat?masterId=${savedMasterId}` : "/select-master?mode=chat" },
     { id: "energy", label: t("nav_energy_sync"), icon: Zap, href: "/sync" },
-    { id: "remedy", label: t("nav_remedy"), icon: BookOpen, href: "/guide" },
-    { id: "new-reading", label: t("nav_new_reading"), icon: Sparkles, href: "/select-master" },
+    { id: "profile", label: t("nav_profile"), icon: User, href: "/dashboard/profile" },
+    { id: "guide", label: t("nav_guide"), icon: BookOpen, href: "/guide" },
   ];
 
   return (

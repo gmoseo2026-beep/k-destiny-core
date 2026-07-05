@@ -418,12 +418,13 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions — 1:1 match with sidebar order */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <Link href="/" className="block">
+        {/* ① 나의 운명 (홈) */}
+        <Link href="/dashboard" className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-gold/5 text-gold group-hover:bg-gold/10 transition-colors">
-              <Home className="w-5 h-5" />
+              <Compass className="w-5 h-5" />
             </div>
             <div>
               <p className="font-sans text-sm font-bold text-white">{t("nav_destiny")}</p>
@@ -431,6 +432,19 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
+        {/* ② 사주 분석 (새 리딩) */}
+        <Link href="/select-master" className="block">
+          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-purple-500/5 text-purple-400 group-hover:bg-purple-500/10 transition-colors">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-sans text-sm font-bold text-white">{t("nav_new_reading")}</p>
+              <p className="font-sans text-xs text-gray-500 mt-0.5">{t("sub_new_reading")}</p>
+            </div>
+          </div>
+        </Link>
+        {/* ③ 마스터 상담 (채팅) */}
         <Link href={savedMasterId ? `/chat?masterId=${savedMasterId}` : "/select-master?mode=chat"} className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-emerald-500/5 text-emerald-400 group-hover:bg-emerald-500/10 transition-colors">
@@ -442,6 +456,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
+        {/* ④ 에너지 싱크 (궁합 분석) */}
         <Link href="/sync" className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-blue-500/5 text-blue-400 group-hover:bg-blue-500/10 transition-colors">
@@ -453,6 +468,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
+        {/* ⑤ 내 정보관리 */}
         <Link href="/dashboard/profile" className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-violet-500/5 text-violet-400 group-hover:bg-violet-500/10 transition-colors">
@@ -464,6 +480,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
+        {/* ⑥ 이용 가이드 */}
         <Link href="/guide" className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-amber-500/5 text-amber-400 group-hover:bg-amber-500/10 transition-colors">
@@ -472,17 +489,6 @@ export default function DashboardPage() {
             <div>
               <p className="font-sans text-sm font-bold text-white">{t("nav_guide")}</p>
               <p className="font-sans text-xs text-gray-500 mt-0.5">{t("sub_guide")}</p>
-            </div>
-          </div>
-        </Link>
-        <Link href="/select-master" className="block">
-          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-purple-500/5 text-purple-400 group-hover:bg-purple-500/10 transition-colors">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-sans text-sm font-bold text-white">{t("nav_energy")}</p>
-              <p className="font-sans text-xs text-gray-500 mt-0.5">{t("sub_reading")}</p>
             </div>
           </div>
         </Link>
