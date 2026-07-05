@@ -121,7 +121,7 @@ Return ONLY the 3-paragraph report text as a plain string. No JSON, no markdown 
       throw new Error("AI returned insufficient content");
     }
 
-    console.log(`[Premium AI] Generated ${reportType} report for ${user.email} (${reportText.length} chars)`);
+    console.log(`[Premium AI] Generated ${reportType} report for user:${user.id} (${reportText.length} chars)`);
 
     return NextResponse.json({ report: reportText }, { status: 200 });
   } catch (error: any) {

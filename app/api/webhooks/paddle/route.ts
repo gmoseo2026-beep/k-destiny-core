@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
-    console.log("[Paddle Webhook] Received payload:", body.substring(0, 200));
+    console.log("[Paddle Webhook] Received event");
 
     // TODO: Implement Paddle webhook verification and processing
     // 1. Verify Paddle webhook signature

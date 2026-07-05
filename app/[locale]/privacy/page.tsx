@@ -142,7 +142,7 @@ export default function PrivacyPage() {
           <div className={sectionClass}>
             <h2 className="font-serif text-xl text-gold mb-4">{t("privacy_s10_title")}</h2>
             <p className="font-sans text-gray-300 leading-relaxed text-sm">
-              {t("privacy_s10_body")} <a href="mailto:support@k-destiny.com" className="text-gold hover:text-gold/80 underline underline-offset-2">support@k-destiny.com</a>
+              {t("privacy_s10_body")} <a href="mailto:support@thekdestiny.com" className="text-gold hover:text-gold/80 underline underline-offset-2">support@thekdestiny.com</a>
             </p>
           </div>
 

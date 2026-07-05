@@ -2,7 +2,7 @@
 
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Mail } from "lucide-react";
 
 export default function Footer() {
   const t = useTranslations("Footer");
@@ -51,6 +51,17 @@ export default function Footer() {
           <p className="font-sans text-[10px] text-gray-600 text-center sm:text-right max-w-[200px]">
             {t("disclaimer")}
           </p>
+        </div>
+
+        {/* Support Contact */}
+        <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-center gap-2">
+          <Mail className="w-3.5 h-3.5 text-gold/40" />
+          <a
+            href="mailto:support@thekdestiny.com"
+            className="font-sans text-xs text-gray-500 hover:text-gold transition-colors tracking-wide"
+          >
+            support@thekdestiny.com
+          </a>
         </div>
       </div>
 

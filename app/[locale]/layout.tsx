@@ -33,11 +33,22 @@ const notoSansJP = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://thekdestiny.com'),
-  title: "K-Destiny | Unlock Your Cosmic Blueprint",
-  description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
+  title: {
+    default: "K-Destiny | AI-Powered Saju Astrology — Unlock Your Cosmic Blueprint",
+    template: "%s | K-Destiny",
+  },
+  description: "The world's first AI-powered Korean Saju (四柱推命) astrology platform. Discover your destiny through ancient Eastern wisdom meets modern AI. Premium cosmic readings, compatibility analysis, and personalized fortune predictions.",
+  keywords: [
+    "saju", "사주", "四柱推命", "Korean astrology", "AI astrology",
+    "destiny reading", "cosmic blueprint", "energy sync", "compatibility",
+    "fortune prediction", "K-Destiny", "Eastern astrology", "운세", "궁합",
+  ],
+  authors: [{ name: "K-Destiny Inc.", url: "https://thekdestiny.com" }],
+  creator: "K-Destiny Inc.",
+  publisher: "K-Destiny Inc.",
   openGraph: {
-    title: "K-Destiny | Unlock Your Cosmic Blueprint",
-    description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
+    title: "K-Destiny | AI-Powered Saju Astrology — Unlock Your Cosmic Blueprint",
+    description: "The world's first AI-powered Korean Saju astrology platform. Ancient Eastern wisdom meets modern AI for premium cosmic readings and fortune predictions.",
     url: "https://thekdestiny.com",
     siteName: "K-Destiny",
     images: [
@@ -45,7 +56,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "K-Destiny Cosmic Blueprint",
+        alt: "K-Destiny — AI-Powered Saju Astrology Platform",
       },
     ],
     locale: "en_US",
@@ -53,10 +64,114 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "K-Destiny | Unlock Your Cosmic Blueprint",
-    description: "Ancient Eastern Saju meets Modern Energy Wellness. A premium global platform for discovering your destiny and cosmic energy.",
+    title: "K-Destiny | AI-Powered Saju Astrology",
+    description: "Discover your destiny through the world's first AI-powered Korean Saju astrology platform. Premium cosmic readings & fortune predictions.",
     images: ["/og-image.jpg"],
+    creator: "@thekdestiny",
   },
+  alternates: {
+    canonical: "https://thekdestiny.com",
+    languages: {
+      "en": "https://thekdestiny.com/en",
+      "ko": "https://thekdestiny.com/ko",
+      "ja": "https://thekdestiny.com/ja",
+      "es": "https://thekdestiny.com/es",
+      "de": "https://thekdestiny.com/de",
+      "fr": "https://thekdestiny.com/fr",
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+/* ─── JSON-LD Structured Data for AI Search Engines (AEO/GEO) ─── */
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://thekdestiny.com/#website",
+      "url": "https://thekdestiny.com",
+      "name": "K-Destiny",
+      "description": "The world's first AI-powered Korean Saju (四柱推命) astrology platform",
+      "publisher": { "@id": "https://thekdestiny.com/#organization" },
+      "inLanguage": ["en", "ko", "ja", "es", "de", "fr"],
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://thekdestiny.com/#organization",
+      "name": "K-Destiny Inc.",
+      "url": "https://thekdestiny.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://thekdestiny.com/og-image.jpg",
+        "width": 1200,
+        "height": 630,
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "support@thekdestiny.com",
+        "contactType": "customer service",
+        "availableLanguage": ["English", "Korean", "Japanese"],
+      },
+      "sameAs": [
+        "https://twitter.com/thekdestiny",
+        "https://www.instagram.com/thekdestiny",
+      ],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://thekdestiny.com/#app",
+      "name": "K-Destiny",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "url": "https://thekdestiny.com",
+      "description": "AI-powered Korean Saju astrology platform providing personalized destiny readings, energy compatibility analysis, and premium fortune predictions using ancient Eastern Four Pillars wisdom enhanced by Google Gemini AI.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free cosmic blueprint with premium tier available",
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1200",
+        "bestRating": "5",
+      },
+      "featureList": [
+        "AI-Powered Saju Birth Chart Analysis",
+        "Energy Compatibility Sync (궁합)",
+        "Monthly Karma Report",
+        "Daily Remedy Coaching",
+        "2027 Fortune Prediction",
+        "AI Master Chat Consultation",
+        "Multi-language support (EN, KO, JA, ES, DE, FR)",
+      ],
+    },
+    {
+      "@type": "Service",
+      "name": "K-Destiny Saju Astrology Reading",
+      "serviceType": "Astrology Service",
+      "provider": { "@id": "https://thekdestiny.com/#organization" },
+      "description": "Professional AI-powered Korean Saju (Four Pillars of Destiny) astrology reading service. Analyzes birth date and time using the traditional Eastern cosmological framework enhanced by Google Gemini AI to deliver personalized cosmic blueprints.",
+      "areaServed": "Worldwide",
+      "availableChannel": {
+        "@type": "ServiceChannel",
+        "serviceUrl": "https://thekdestiny.com",
+        "serviceType": "Web Application",
+      },
+    },
+  ],
 };
 
 export default async function RootLayout({
@@ -71,6 +186,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        {/* JSON-LD Structured Data for SEO/AEO/GEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
       >

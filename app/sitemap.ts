@@ -1,31 +1,43 @@
 import { MetadataRoute } from 'next';
 
-const languages = ['en', 'ko', 'ja', 'es', 'de', 'fr'];
-const routes = ['', '/input-destiny', '/pricing', '/sync'];
+const BASE_URL = 'https://thekdestiny.com';
+const LOCALES = ['en', 'ko', 'ja', 'es', 'de', 'fr'];
+
+/* Public routes that should be indexed by search engines */
+const PUBLIC_ROUTES: { path: string; changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'; priority: number }[] = [
+  { path: '',              changeFrequency: 'weekly',  priority: 1.0 },
+  { path: '/input-destiny', changeFrequency: 'monthly', priority: 0.9 },
+  { path: '/pricing',       changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/sync',          changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/guide',         changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/select-master', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/terms',         changeFrequency: 'yearly',  priority: 0.3 },
+  { path: '/privacy',       changeFrequency: 'yearly',  priority: 0.3 },
+  { path: '/login',         changeFrequency: 'yearly',  priority: 0.4 },
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://k-destiny.com';
-  
   const entries: MetadataRoute.Sitemap = [];
 
-  languages.forEach((lang) => {
-    routes.forEach((route) => {
-      entries.push({
-        url: `${baseUrl}/${lang}${route}`,
-        lastModified: new Date(),
-        changeFrequency: route === '' ? 'weekly' : 'monthly',
-        priority: route === '' ? 1 : 0.8,
-      });
-    });
-  });
-
-  // Add root
+  // Root URL
   entries.push({
-    url: `${baseUrl}`,
+    url: BASE_URL,
     lastModified: new Date(),
     changeFrequency: 'weekly',
-    priority: 1,
+    priority: 1.0,
   });
+
+  // Localized routes
+  for (const locale of LOCALES) {
+    for (const route of PUBLIC_ROUTES) {
+      entries.push({
+        url: `${BASE_URL}/${locale}${route.path}`,
+        lastModified: new Date(),
+        changeFrequency: route.changeFrequency,
+        priority: route.priority,
+      });
+    }
+  }
 
   return entries;
 }

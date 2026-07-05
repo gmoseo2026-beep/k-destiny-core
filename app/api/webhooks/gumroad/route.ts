@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const price = payload.price || payload.formatted_price?.replace(/[^0-9.]/g, "") || "0";
 
     if (!email) {
-      console.warn("[Gumroad Webhook] No email found in payload");
+      console.warn("[Gumroad Webhook] No email found in payload — skipping");
       // Return 200 so Gumroad doesn't retry
       return NextResponse.json({ ok: true, message: "No email — skipped" }, { status: 200 });
     }
@@ -77,9 +77,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      console.warn(`[Gumroad Webhook] User not found for email: ${email}`);
+      console.warn(`[Gumroad Webhook] User not found for provided email`);
       return NextResponse.json(
-        { ok: true, message: `User not found for ${email}` },
+        { ok: true, message: "User not found" },
         { status: 200 }
       );
     }
