@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, X } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
+import { isInAppBrowser } from "@/lib/inAppBrowser";
+import InAppBrowserModal from "./InAppBrowserModal";
 
 const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
 const LABEL_BASE = "text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2";
@@ -20,8 +22,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
+  const [showInAppModal, setShowInAppModal] = useState(false);
 
   const handleGoogleLogin = async () => {
+    if (isInAppBrowser()) {
+      setShowInAppModal(true);
+      return;
+    }
     setIsLoading(true);
     setMessage(null);
     try {
@@ -32,9 +39,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) return (
+    <InAppBrowserModal
+      isOpen={showInAppModal}
+      onClose={() => setShowInAppModal(false)}
+    />
+  );
 
   return (
+    <>
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         {/* Backdrop */}
@@ -134,5 +147,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         </motion.div>
       </div>
     </AnimatePresence>
+    <InAppBrowserModal
+      isOpen={showInAppModal}
+      onClose={() => setShowInAppModal(false)}
+    />
+    </>
   );
 }
