@@ -106,19 +106,19 @@ model VerificationToken {
 
 // 4. Hermes AI Agent — Telegram 연동 데이터
 model TelegramAccount {
-  id              String            @id
+  id              String            @id @default(cuid())
   telegramId      String            @unique
   username        String?
   firstName       String?
   lastName        String?
   userId          String?
   createdAt       DateTime          @default(now())
-  updatedAt       DateTime
+  updatedAt       DateTime          @updatedAt
   TelegramMessage TelegramMessage[]
 }
 
 model TelegramMessage {
-  id                String          @id
+  id                String          @id @default(cuid())
   telegramAccountId String
   direction         String
   telegramMessageId String?
