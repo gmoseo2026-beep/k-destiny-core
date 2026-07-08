@@ -103,3 +103,27 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// 4. Hermes AI Agent — Telegram 연동 데이터
+model TelegramAccount {
+  id              String            @id
+  telegramId      String            @unique
+  username        String?
+  firstName       String?
+  lastName        String?
+  userId          String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime
+  TelegramMessage TelegramMessage[]
+}
+
+model TelegramMessage {
+  id                String          @id
+  telegramAccountId String
+  direction         String
+  telegramMessageId String?
+  text              String?
+  payload           Json?
+  createdAt         DateTime        @default(now())
+  TelegramAccount   TelegramAccount @relation(fields: [telegramAccountId], references: [id], onDelete: Cascade)
+}
