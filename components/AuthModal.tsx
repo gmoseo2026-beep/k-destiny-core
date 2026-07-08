@@ -2,14 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, X } from "lucide-react";
+import { Sparkles, Loader2, X, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
 import { isInAppBrowser } from "@/lib/inAppBrowser";
-import InAppBrowserModal from "./InAppBrowserModal";
-
-const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
-const LABEL_BASE = "text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -22,11 +18,18 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const locale = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
-  const [showInAppModal, setShowInAppModal] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
 
   const handleGoogleLogin = async () => {
     if (isInAppBrowser()) {
-      setShowInAppModal(true);
+      setMessage({ type: "error", text: locale === 'ko'
+        ? "인앱 브라우저에서는 구글 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
+        : "Google login is not available in this in-app browser. Please use email login below."
+      });
       return;
     }
     setIsLoading(true);
@@ -39,15 +42,62 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     }
   };
 
-  if (!isOpen) return (
-    <InAppBrowserModal
-      isOpen={showInAppModal}
-      onClose={() => setShowInAppModal(false)}
-    />
-  );
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    if (!email || !password) {
+      setMessage({ type: "error", text: locale === 'ko' ? "이메일과 비밀번호를 입력해 주세요." : "Please enter email and password." });
+      return;
+    }
+
+    if (isSignUp && password.length < 6) {
+      setMessage({ type: "error", text: locale === 'ko' ? "비밀번호는 6자 이상이어야 합니다." : "Password must be at least 6 characters." });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, name: name || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setMessage({ type: "error", text: data.error || t("error_general") });
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setMessage({ type: "error", text: locale === 'ko'
+          ? "이메일 또는 비밀번호가 올바르지 않습니다."
+          : "Invalid email or password."
+        });
+        setIsLoading(false);
+      } else {
+        onSuccess();
+        window.location.href = `/${locale}/dashboard`;
+      }
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || t("error_general") });
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <>
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         {/* Backdrop */}
@@ -65,7 +115,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative w-full max-w-md bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-10 shadow-[0_0_40px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] overflow-hidden"
+          className="relative w-full max-w-md max-h-[85vh] overflow-y-auto bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-10 shadow-[0_0_40px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)]"
         >
           {/* Decorative gradients */}
           <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-dark/20 via-transparent to-transparent blur-[80px] pointer-events-none" />
@@ -130,9 +180,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             {/* Google OAuth — NextAuth */}
             <motion.button
               onClick={handleGoogleLogin}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: inApp ? 1 : 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors shadow-inner"
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+                inApp
+                  ? 'bg-white/[0.02] border-white/[0.06] opacity-50 cursor-not-allowed'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+              }`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
                 <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -143,14 +197,96 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
               <span className="font-sans font-medium text-white tracking-wide">{t("btn_google")}</span>
             </motion.button>
 
+            {/* In-app browser hint */}
+            {inApp && (
+              <p className="mt-2 text-center text-xs text-yellow-400/70 font-sans">
+                {locale === 'ko'
+                  ? '⚠️ 인앱 브라우저 감지 — 아래 이메일 로그인을 이용해 주세요'
+                  : '⚠️ In-app browser detected — use email login below'}
+              </p>
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-6">
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-xs text-gray-500 font-sans uppercase tracking-widest">{t("or")}</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+
+            {/* Email / Password Form */}
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              {isSignUp && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                >
+                  <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
+                    <User className="w-3.5 h-3.5" />
+                    {locale === 'ko' ? '이름 (선택)' : 'Name (optional)'}
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={locale === 'ko' ? '예: 홍길동' : 'e.g. John'}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-sm shadow-inner placeholder:text-gray-600"
+                  />
+                </motion.div>
+              )}
+
+              <div>
+                <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
+                  <Mail className="w-3.5 h-3.5" />
+                  {t("label_email")}
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t("placeholder_email")}
+                  required
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-sm shadow-inner placeholder:text-gray-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
+                  <Lock className="w-3.5 h-3.5" />
+                  {t("label_password")}
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t("placeholder_password")}
+                  required
+                  minLength={6}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-sm shadow-inner placeholder:text-gray-600"
+                />
+              </div>
+
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold/80 to-gold/60 hover:from-gold hover:to-gold/80 text-black font-sans font-bold text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+              >
+                {isSignUp ? t("btn_signup") : t("btn_signin")}
+              </motion.button>
+            </form>
+
+            {/* Toggle Sign In / Sign Up */}
+            <button
+              onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
+              className="w-full mt-4 text-center text-sm text-gray-400 hover:text-gold transition-colors font-sans"
+            >
+              {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
+            </button>
+
           </div>
         </motion.div>
       </div>
     </AnimatePresence>
-    <InAppBrowserModal
-      isOpen={showInAppModal}
-      onClose={() => setShowInAppModal(false)}
-    />
-    </>
   );
 }

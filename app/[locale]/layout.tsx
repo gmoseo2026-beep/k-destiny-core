@@ -8,6 +8,7 @@ import Navbar from "../../components/Navbar";
 import ExpiryWarningModal from "../../components/ExpiryWarningModal";
 import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
+import KakaoEscape from "../../components/KakaoEscape";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -199,6 +200,7 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <CacheBuster />
+            <KakaoEscape />
             <Navbar />
             <main className="flex-grow pt-24 md:pt-28">
               {children}
