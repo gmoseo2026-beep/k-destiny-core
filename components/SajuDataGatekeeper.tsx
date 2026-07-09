@@ -20,7 +20,7 @@ export default function SajuDataGatekeeper({
   const [status, setStatus] = useState<"loading" | "has-data" | "missing">("loading");
 
   useEffect(() => {
-    fetch("/api/user/saju-check")
+    fetch("/api/user/saju-check", { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         setStatus(data.hasSajuData ? "has-data" : "missing");

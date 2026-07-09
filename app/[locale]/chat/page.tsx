@@ -520,8 +520,34 @@ function ChatPageContent() {
       // Detect locale from next-intl hook
       const currentLocale = locale;
       
-      // Fetch user profile from localStorage to give context to the AI
-      const profile = getProfile();
+      // Fetch user profile — DB first (no-cache), localStorage fallback
+      let profile = null;
+      if (session?.user?.id) {
+        try {
+          const profileRes = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (profileRes.ok) {
+            const { profile: dbProfile } = await profileRes.json();
+            if (dbProfile && dbProfile.birthYear) {
+              profile = {
+                name: dbProfile.name,
+                year: dbProfile.birthYear,
+                month: dbProfile.birthMonth,
+                day: dbProfile.birthDay,
+                time: dbProfile.birthTime,
+                unknownTime: dbProfile.unknownTime,
+                country: dbProfile.country,
+                city: dbProfile.city,
+                gender: dbProfile.gender,
+              };
+            }
+          }
+        } catch {
+          // Fallback to localStorage
+        }
+      }
+      if (!profile) {
+        profile = getProfile();
+      }
 
       // 2. Fetch AI response
       const response = await fetch("/api/chat", {

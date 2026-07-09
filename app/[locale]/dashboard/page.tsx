@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { Sparkles, Calendar, ArrowRight, FileText, Home, MessageCircle, Compass, Activity, Loader2, User, BookOpen, X } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { getLastResult, getMaster, getProfile, hasCompletedOnboarding, updateKarmaForPlan, saveExpiryDate } from "@/lib/userStateManager";
+import { getLastResult, getMaster, getProfile, hasCompletedOnboarding, updateKarmaForPlan, saveExpiryDate, saveProfile } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
 import type { SavedResult } from "@/lib/userStateManager";
 
@@ -60,20 +60,48 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Load locally saved data
+    // Load locally saved data as initial state
     setSavedResult(getLastResult());
     setSavedMasterId(getMaster());
-    const profile = getProfile();
-    if (profile) {
-      setUserName(profile.name || "Traveler");
-    }
 
     async function fetchReports() {
       let dbReports: any[] = [];
+      let profileLoaded = false;
 
-      // Use NextAuth session for user identity
-      if (session?.user) {
-        if (!profile) {
+      // 1. Try loading profile from DB (logged-in users) with no-cache
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile && dbProfile.name) {
+              setUserName(dbProfile.name);
+              // Sync to localStorage
+              saveProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
+              profileLoaded = true;
+            }
+          }
+        } catch (err) {
+          console.log('[dashboard] DB profile fetch failed', err);
+        }
+      }
+
+      // 2. Fallback: localStorage profile
+      if (!profileLoaded) {
+        const profile = getProfile();
+        if (profile) {
+          setUserName(profile.name || "Traveler");
+        } else if (session?.user) {
           setUserName(session.user.name?.split(' ')[0] || session.user.email?.split("@")[0] || "Traveler");
         }
       }

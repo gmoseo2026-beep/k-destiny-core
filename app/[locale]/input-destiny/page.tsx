@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { Country, City, State } from "country-state-city";
 import { getLocalizedRegionName } from "@/lib/regionTranslations";
 import { getProfile, saveProfile, clearLastResult, getMaster } from "@/lib/userStateManager";
+import { useSession } from "next-auth/react";
 
 // Shared input classes to avoid repetition
 const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
@@ -23,6 +24,7 @@ function InputDestinyContent() {
   const searchParams = useSearchParams();
   const masterId = searchParams.get("masterId") || getMaster()?.toString() || "5";
   const isEditMode = searchParams.get("edit") === "true";
+  const { data: session } = useSession();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unknownTime, setUnknownTime] = useState(false);
@@ -83,43 +85,95 @@ function InputDestinyContent() {
     })).sort((a, b) => a.displayName.localeCompare(b.displayName, locale));
   };
 
-  // Load saved profile on mount
+  // Load saved profile on mount — DB first, localStorage fallback
   useEffect(() => {
-    const savedProfile = getProfile();
-    if (savedProfile) {
-      if (!isEditMode) {
-        // Profile already exists & not editing → skip to result
-        setReady(true);
-        router.push(`/result?masterId=${masterId}`);
-        return;
+    async function loadProfile() {
+      let profileLoaded = false;
+
+      // 1. Try loading from DB (logged-in users)
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile && dbProfile.birthYear) {
+              if (!isEditMode) {
+                setReady(true);
+                router.push(`/result?masterId=${masterId}`);
+                return;
+              }
+              setFormData({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
+              setUnknownTime(dbProfile.unknownTime ?? false);
+              if (dbProfile.country) {
+                const regions = getRegions(dbProfile.country);
+                setCities(regions);
+              }
+              // Sync DB data to localStorage for offline access
+              saveProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
+              profileLoaded = true;
+            }
+          }
+        } catch (err) {
+          console.log('[input-destiny] DB fetch failed, falling back to localStorage', err);
+        }
       }
-      // Pre-fill form with saved data
-      setFormData({
-        name: savedProfile.name,
-        year: savedProfile.year,
-        month: savedProfile.month,
-        day: savedProfile.day,
-        time: savedProfile.time,
-        country: savedProfile.country,
-        city: savedProfile.city,
-        gender: savedProfile.gender,
-      });
-      setUnknownTime(savedProfile.unknownTime);
-      // Load regions for saved country
-      if (savedProfile.country) {
-        const regions = getRegions(savedProfile.country);
-        setCities(regions);
+
+      // 2. Fallback: localStorage
+      if (!profileLoaded) {
+        const savedProfile = getProfile();
+        if (savedProfile) {
+          if (!isEditMode) {
+            setReady(true);
+            router.push(`/result?masterId=${masterId}`);
+            return;
+          }
+          setFormData({
+            name: savedProfile.name,
+            year: savedProfile.year,
+            month: savedProfile.month,
+            day: savedProfile.day,
+            time: savedProfile.time,
+            country: savedProfile.country,
+            city: savedProfile.city,
+            gender: savedProfile.gender,
+          });
+          setUnknownTime(savedProfile.unknownTime);
+          if (savedProfile.country) {
+            const regions = getRegions(savedProfile.country);
+            setCities(regions);
+          }
+          profileLoaded = true;
+        }
       }
-    } else {
-      // No profile → detect location via IP (HTTPS for production safety)
-      const controller = new AbortController();
-      fetch("https://ipapi.co/json/", { signal: controller.signal })
-        .then((res) => res.json())
-        .then((data) => {
+
+      // 3. No profile at all → detect location via IP
+      if (!profileLoaded) {
+        try {
+          const res = await fetch('https://ipapi.co/json/');
+          const data = await res.json();
           if (data?.country_code) {
             const detectedCountry = data.country_code;
-            const detectedRegionName = data.region || "";
-            const detectedRegionCode = data.region_code || "";
+            const detectedRegionName = data.region || '';
+            const detectedRegionCode = data.region_code || '';
             const newRegions = getRegions(detectedCountry);
             setCities(newRegions);
             const matched = newRegions.find(
@@ -128,19 +182,19 @@ function InputDestinyContent() {
             setFormData((prev) => ({
               ...prev,
               country: detectedCountry,
-              city: matched ? matched.name : ""
+              city: matched ? matched.name : ''
             }));
           }
-        })
-        .catch((err) => {
-          if (err.name !== 'AbortError') {
-            console.log("Failed to detect IP location", err);
-          }
-        });
-      return () => controller.abort();
+        } catch (err) {
+          console.log('Failed to detect IP location', err);
+        }
+      }
+
+      setReady(true);
     }
-    setReady(true);
-  }, []);
+
+    loadProfile();
+  }, [session]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -169,6 +223,25 @@ function InputDestinyContent() {
       city: formData.city,
       gender: formData.gender,
     });
+
+    // Sync profile to DB (fire-and-forget for logged-in users)
+    if (session?.user?.id) {
+      fetch('/api/user/saju-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          gender: formData.gender,
+          birthYear: formData.year,
+          birthMonth: formData.month,
+          birthDay: formData.day,
+          birthTime: formData.time,
+          unknownTime,
+          country: formData.country,
+          city: formData.city,
+        }),
+      }).catch((err) => console.warn('[input-destiny] DB sync failed:', err));
+    }
 
     // If editing, clear old result cache
     if (isEditMode) {

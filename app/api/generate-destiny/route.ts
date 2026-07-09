@@ -115,6 +115,14 @@ export async function POST(req: Request) {
             fourPillars: sajuResult.fourPillars,
             dayMaster: sajuResult.dayMaster,
             elementsScore: sajuResult.elementsScore,
+            // 원본 입력 데이터도 DB에 동기화 (기기 간 공유)
+            name: name || undefined,
+            birthYear: dob?.split('-')[0] || undefined,
+            birthMonth: dob?.split('-')[1] || undefined,
+            birthDay: dob?.split('-')[2] || undefined,
+            birthTime: time || undefined,
+            country: country || undefined,
+            city: city || undefined,
           },
           create: {
             userId,
@@ -122,6 +130,13 @@ export async function POST(req: Request) {
             fourPillars: sajuResult.fourPillars,
             dayMaster: sajuResult.dayMaster,
             elementsScore: sajuResult.elementsScore,
+            name: name || null,
+            birthYear: dob?.split('-')[0] || null,
+            birthMonth: dob?.split('-')[1] || null,
+            birthDay: dob?.split('-')[2] || null,
+            birthTime: time || null,
+            country: country || null,
+            city: city || null,
           }
         });
       }

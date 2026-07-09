@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Sparkles, ArrowLeft, Star } from "lucide-react";
@@ -33,26 +33,55 @@ const itemVariants = {
   },
 };
 
+import { useSession } from "next-auth/react";
+
 function BlueprintContent() {
   const router = useRouter();
   const t = useTranslations('Blueprint');
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   
   const rawMasterId = searchParams.get("masterId") || "karma";
   const masterKey = MASTER_MAP[rawMasterId.toLowerCase()] || "karma";
 
-  // Load real element analysis from saved result (localStorage)
-  const savedAnalysis = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem("kdestiny_last_result");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return parsed?.element_analysis || null;
+  // Load element analysis — DB first (no-cache), localStorage fallback
+  const [savedAnalysis, setSavedAnalysis] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    async function loadAnalysis() {
+      // 1. Try DB (logged-in users)
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile?.elementsScore && typeof dbProfile.elementsScore === 'object' && Object.keys(dbProfile.elementsScore).length > 0) {
+              setSavedAnalysis(dbProfile.elementsScore as Record<string, number>);
+              return;
+            }
+          }
+        } catch {
+          // Fallback to localStorage
+        }
       }
-    } catch { /* ignore */ }
-    return null;
-  }, []);
+
+      // 2. Fallback: localStorage
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("kdestiny_last_result");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed?.element_analysis) {
+              setSavedAnalysis(parsed.element_analysis);
+              return;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    loadAnalysis();
+  }, [session]);
 
   const elements = useMemo(() => {
     const base = [

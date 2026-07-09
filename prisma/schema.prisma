@@ -29,6 +29,17 @@ model UserSajuProfile {
   dayMaster     String
   elementsScore Json
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 원본 입력 데이터 (화면 표시용, 기기 간 동기화)
+  name        String?
+  birthYear   String?
+  birthMonth  String?
+  birthDay    String?
+  birthTime   String?
+  unknownTime Boolean @default(false)
+  country     String?
+  city        String?
 }
 
 // 3. 사용자 및 권한 관리

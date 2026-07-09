@@ -179,28 +179,61 @@ function ResultPageContent() {
 
       let storedData = sessionStorage.getItem("destinyFormData");
       if (!storedData) {
-        // Fallback: try loading from localStorage profile
-        const savedProfile = getProfile();
-        if (savedProfile) {
-          const fallbackData = {
-            name: savedProfile.name,
-            year: savedProfile.year,
-            month: savedProfile.month,
-            day: savedProfile.day,
-            time: savedProfile.time,
-            unknownTime: savedProfile.unknownTime,
-            country: savedProfile.country,
-            city: savedProfile.city,
-            gender: savedProfile.gender,
-            dob: `${savedProfile.year}-${savedProfile.month.padStart(2, '0')}-${savedProfile.day.padStart(2, '0')}`,
-            locale: currentLocale,
-          };
-          sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
-          storedData = sessionStorage.getItem("destinyFormData");
-        } else {
-          setError("No birth data found. Please go back and enter your information.");
-          setIsLoading(false);
-          return;
+        // Fallback 1: try loading from DB API (no-cache) for cross-device support
+        let profileFound = false;
+        if (session?.user?.id) {
+          try {
+            const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+            if (res.ok) {
+              const { profile: dbProfile } = await res.json();
+              if (dbProfile && dbProfile.birthYear) {
+                const fallbackData = {
+                  name: dbProfile.name || '',
+                  year: dbProfile.birthYear,
+                  month: dbProfile.birthMonth,
+                  day: dbProfile.birthDay,
+                  time: dbProfile.birthTime || '',
+                  unknownTime: dbProfile.unknownTime ?? false,
+                  country: dbProfile.country || '',
+                  city: dbProfile.city || '',
+                  gender: dbProfile.gender,
+                  dob: `${dbProfile.birthYear}-${(dbProfile.birthMonth || '1').padStart(2, '0')}-${(dbProfile.birthDay || '1').padStart(2, '0')}`,
+                  locale: currentLocale,
+                };
+                sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
+                storedData = sessionStorage.getItem("destinyFormData");
+                profileFound = true;
+              }
+            }
+          } catch {
+            // Continue to localStorage fallback
+          }
+        }
+
+        // Fallback 2: localStorage profile
+        if (!profileFound) {
+          const savedProfile = getProfile();
+          if (savedProfile) {
+            const fallbackData = {
+              name: savedProfile.name,
+              year: savedProfile.year,
+              month: savedProfile.month,
+              day: savedProfile.day,
+              time: savedProfile.time,
+              unknownTime: savedProfile.unknownTime,
+              country: savedProfile.country,
+              city: savedProfile.city,
+              gender: savedProfile.gender,
+              dob: `${savedProfile.year}-${savedProfile.month.padStart(2, '0')}-${savedProfile.day.padStart(2, '0')}`,
+              locale: currentLocale,
+            };
+            sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
+            storedData = sessionStorage.getItem("destinyFormData");
+          } else {
+            setError("No birth data found. Please go back and enter your information.");
+            setIsLoading(false);
+            return;
+          }
         }
       }
 

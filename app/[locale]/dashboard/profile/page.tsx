@@ -7,7 +7,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { User, Calendar, Clock, MapPin, Sparkles, ArrowRight, Settings, Crown, Shield, AlertTriangle, X } from "lucide-react";
-import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile } from "@/lib/userStateManager";
+import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile, saveProfile } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
 import type { UserProfile } from "@/lib/userStateManager";
 
@@ -42,9 +42,59 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setMounted(true);
-    setProfile(getProfile());
-    setMasterId(getMaster());
-    setExpiryStatus(getExpiryStatus());
+
+    async function loadProfileData() {
+      let profileLoaded = false;
+
+      // 1. Try loading from DB (logged-in users) with no-cache
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile && dbProfile.birthYear) {
+              setProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+                savedAt: dbProfile.updatedAt || dbProfile.createdAt || '',
+              });
+              // Sync to localStorage for offline access
+              saveProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
+              profileLoaded = true;
+            }
+          }
+        } catch (err) {
+          console.log('[profile] DB fetch failed, falling back to localStorage', err);
+        }
+      }
+
+      // 2. Fallback: localStorage
+      if (!profileLoaded) {
+        setProfile(getProfile());
+      }
+
+      setMasterId(getMaster());
+      setExpiryStatus(getExpiryStatus());
+    }
+
+    loadProfileData();
 
     // Derive premium status from NextAuth session (DB-synced), not localStorage
     if (session?.user) {
@@ -59,8 +109,13 @@ export default function ProfilePage() {
 
   const selectedMaster = masterId ? MASTERS.find((m) => m.id === masterId) : null;
 
-  const handleResetConfirm = () => {
+  const handleResetConfirm = async () => {
+    // Clear localStorage
     clearProfile();
+    // Clear DB profile too (fire-and-forget)
+    if (session?.user?.id) {
+      fetch('/api/user/saju-profile', { method: 'DELETE' }).catch(() => {});
+    }
     setIsResetModalOpen(false);
     router.push("/input-destiny");
   };

@@ -7,7 +7,10 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ hasSajuData: false }, { status: 401 });
+    return NextResponse.json({ hasSajuData: false }, {
+      status: 401,
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+    });
   }
 
   const profile = await prisma.userSajuProfile.findFirst({
@@ -15,5 +18,8 @@ export async function GET() {
     select: { id: true },
   });
 
-  return NextResponse.json({ hasSajuData: !!profile });
+  return NextResponse.json({ hasSajuData: !!profile }, {
+    status: 200,
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+  });
 }
