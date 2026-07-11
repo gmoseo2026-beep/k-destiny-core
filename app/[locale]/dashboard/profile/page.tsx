@@ -44,16 +44,19 @@ export default function ProfilePage() {
     setMounted(true);
 
     async function loadProfileData() {
-      let profileLoaded = false;
+      // ── Phase 1: localStorage 스켈레톤 (즉시 렌더링용) ──
+      setProfile(getProfile());
+      setMasterId(getMaster());
+      setExpiryStatus(getExpiryStatus());
 
-      // 1. Try loading from DB (logged-in users) with no-cache
+      // ── Phase 2: DB가 Source of Truth (로그인 사용자) ──
       if (session?.user?.id) {
         try {
           const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
           if (res.ok) {
             const { profile: dbProfile } = await res.json();
-            if (dbProfile && dbProfile.birthYear) {
-              setProfile({
+            if (dbProfile && (dbProfile.birthYear || dbProfile.name)) {
+              const dbData: UserProfile = {
                 name: dbProfile.name || '',
                 year: dbProfile.birthYear || '',
                 month: dbProfile.birthMonth || '',
@@ -64,34 +67,28 @@ export default function ProfilePage() {
                 city: dbProfile.city || '',
                 gender: dbProfile.gender || '',
                 savedAt: dbProfile.updatedAt || dbProfile.createdAt || '',
-              });
-              // Sync to localStorage for offline access
+              };
+              // ✅ 화면 상태를 DB 데이터로 즉시 교체
+              setProfile(dbData);
+              // ✅ localStorage 강제 동기화 (DB → localStorage 단방향)
               saveProfile({
-                name: dbProfile.name || '',
-                year: dbProfile.birthYear || '',
-                month: dbProfile.birthMonth || '',
-                day: dbProfile.birthDay || '',
-                time: dbProfile.birthTime || '',
-                unknownTime: dbProfile.unknownTime ?? false,
-                country: dbProfile.country || '',
-                city: dbProfile.city || '',
-                gender: dbProfile.gender || '',
+                name: dbData.name,
+                year: dbData.year,
+                month: dbData.month,
+                day: dbData.day,
+                time: dbData.time,
+                unknownTime: dbData.unknownTime,
+                country: dbData.country,
+                city: dbData.city,
+                gender: dbData.gender,
               });
-              profileLoaded = true;
             }
           }
         } catch (err) {
-          console.log('[profile] DB fetch failed, falling back to localStorage', err);
+          console.log('[profile] DB fetch failed, using localStorage fallback', err);
         }
       }
-
-      // 2. Fallback: localStorage
-      if (!profileLoaded) {
-        setProfile(getProfile());
-      }
-
-      setMasterId(getMaster());
-      setExpiryStatus(getExpiryStatus());
+      // Phase 3: 비로그인 → localStorage 그대로 유지 (이미 Phase 1에서 로드됨)
     }
 
     loadProfileData();

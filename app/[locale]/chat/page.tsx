@@ -9,7 +9,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { MASTERS } from "@/lib/masters";
 import { useSession } from "next-auth/react";
-import { getMaster, getKarma, saveKarma, getProfile } from "@/lib/userStateManager";
+import { getMaster, getKarma, saveKarma, getProfile, saveProfile } from "@/lib/userStateManager";
 
 interface ChatMessage {
   id: string;
@@ -520,14 +520,14 @@ function ChatPageContent() {
       // Detect locale from next-intl hook
       const currentLocale = locale;
       
-      // Fetch user profile — DB first (no-cache), localStorage fallback
+      // Fetch user profile — DB first (source of truth), localStorage fallback
       let profile = null;
       if (session?.user?.id) {
         try {
           const profileRes = await fetch('/api/user/saju-profile', { cache: 'no-store' });
           if (profileRes.ok) {
             const { profile: dbProfile } = await profileRes.json();
-            if (dbProfile && dbProfile.birthYear) {
+            if (dbProfile && (dbProfile.birthYear || dbProfile.name)) {
               profile = {
                 name: dbProfile.name,
                 year: dbProfile.birthYear,
@@ -539,6 +539,18 @@ function ChatPageContent() {
                 city: dbProfile.city,
                 gender: dbProfile.gender,
               };
+              // ✅ localStorage 강제 동기화 (DB → localStorage 단방향)
+              saveProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
             }
           }
         } catch {

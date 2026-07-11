@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Activity, Share2, Check, User, Heart } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/routing";
-import { getProfile, type UserProfile } from "@/lib/userStateManager";
+import { getProfile, saveProfile, type UserProfile } from "@/lib/userStateManager";
+import { useSession } from "next-auth/react";
 
 const INPUT_BASE = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner";
 const SELECT_COMPACT = "w-full bg-black/40 border border-white/10 rounded-xl px-2 sm:px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner appearance-none";
@@ -141,15 +142,59 @@ function EnergySyncContent() {
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
   const days = useMemo(() => Array.from({ length: 31 }, (_, i) => i + 1), []);
 
+  const { data: session } = useSession();
+
   useEffect(() => {
     if (sharedU && sharedG && sharedScore) return;
-    const profile = getProfile();
-    if (!profile) {
-      router.push("/input-destiny");
-    } else {
-      setUserProfile(profile);
+
+    async function loadUserProfile() {
+      // ── Phase 1: localStorage 스켈레톤 ──
+      const localProfile = getProfile();
+      if (localProfile) setUserProfile(localProfile);
+
+      // ── Phase 2: DB가 Source of Truth (로그인 사용자) ──
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile && (dbProfile.birthYear || dbProfile.name)) {
+              const dbData: UserProfile = {
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+                savedAt: dbProfile.updatedAt || dbProfile.createdAt || '',
+              };
+              // ✅ 화면 상태를 DB 데이터로 즉시 교체
+              setUserProfile(dbData);
+              // ✅ localStorage 강제 동기화
+              saveProfile({
+                name: dbData.name, year: dbData.year, month: dbData.month,
+                day: dbData.day, time: dbData.time, unknownTime: dbData.unknownTime,
+                country: dbData.country, city: dbData.city, gender: dbData.gender,
+              });
+              return; // DB 데이터 로드 성공
+            }
+          }
+        } catch {
+          // DB 실패 → localStorage 폴백 (이미 Phase 1에서 로드됨)
+        }
+      }
+
+      // ── Phase 3: 프로필이 전혀 없으면 input-destiny로 이동 ──
+      if (!localProfile) {
+        router.push("/input-destiny");
+      }
     }
-  }, [router, sharedU, sharedG, sharedScore]);
+
+    loadUserProfile();
+  }, [router, session, sharedU, sharedG, sharedScore]);
 
   if (sharedU && sharedG && sharedScore) {
     return <SharedResultView u={sharedU} g={sharedG} score={sharedScore} />;

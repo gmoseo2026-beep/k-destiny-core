@@ -7,7 +7,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { saveLastResult, getLastResult, getProfile, getMaster } from "@/lib/userStateManager";
+import { saveLastResult, getLastResult, getProfile, getMaster, saveProfile } from "@/lib/userStateManager";
 
 // Simple hash function matching the server-side cache key generation
 function generateLocalCacheKey(params: {
@@ -178,62 +178,72 @@ function ResultPageContent() {
       }
 
       let storedData = sessionStorage.getItem("destinyFormData");
-      if (!storedData) {
-        // Fallback 1: try loading from DB API (no-cache) for cross-device support
-        let profileFound = false;
-        if (session?.user?.id) {
-          try {
-            const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
-            if (res.ok) {
-              const { profile: dbProfile } = await res.json();
-              if (dbProfile && dbProfile.birthYear) {
-                const fallbackData = {
-                  name: dbProfile.name || '',
-                  year: dbProfile.birthYear,
-                  month: dbProfile.birthMonth,
-                  day: dbProfile.birthDay,
-                  time: dbProfile.birthTime || '',
-                  unknownTime: dbProfile.unknownTime ?? false,
-                  country: dbProfile.country || '',
-                  city: dbProfile.city || '',
-                  gender: dbProfile.gender,
-                  dob: `${dbProfile.birthYear}-${(dbProfile.birthMonth || '1').padStart(2, '0')}-${(dbProfile.birthDay || '1').padStart(2, '0')}`,
-                  locale: currentLocale,
-                };
-                sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
-                storedData = sessionStorage.getItem("destinyFormData");
-                profileFound = true;
-              }
-            }
-          } catch {
-            // Continue to localStorage fallback
-          }
-        }
 
-        // Fallback 2: localStorage profile
-        if (!profileFound) {
-          const savedProfile = getProfile();
-          if (savedProfile) {
-            const fallbackData = {
-              name: savedProfile.name,
-              year: savedProfile.year,
-              month: savedProfile.month,
-              day: savedProfile.day,
-              time: savedProfile.time,
-              unknownTime: savedProfile.unknownTime,
-              country: savedProfile.country,
-              city: savedProfile.city,
-              gender: savedProfile.gender,
-              dob: `${savedProfile.year}-${savedProfile.month.padStart(2, '0')}-${savedProfile.day.padStart(2, '0')}`,
-              locale: currentLocale,
-            };
-            sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
-            storedData = sessionStorage.getItem("destinyFormData");
-          } else {
-            setError("No birth data found. Please go back and enter your information.");
-            setIsLoading(false);
-            return;
+      // ── DB가 Source of Truth (로그인 사용자) ──
+      // sessionStorage에 데이터가 없으면 DB에서 가져와 sessionStorage + localStorage 모두 동기화
+      if (!storedData && session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile && (dbProfile.birthYear || dbProfile.name)) {
+              const fallbackData = {
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear,
+                month: dbProfile.birthMonth,
+                day: dbProfile.birthDay,
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender,
+                dob: `${dbProfile.birthYear}-${(dbProfile.birthMonth || '1').padStart(2, '0')}-${(dbProfile.birthDay || '1').padStart(2, '0')}`,
+                locale: currentLocale,
+              };
+              sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
+              storedData = sessionStorage.getItem("destinyFormData");
+              // ✅ localStorage 강제 동기화 (DB → localStorage 단방향)
+              saveProfile({
+                name: dbProfile.name || '',
+                year: dbProfile.birthYear || '',
+                month: dbProfile.birthMonth || '',
+                day: dbProfile.birthDay || '',
+                time: dbProfile.birthTime || '',
+                unknownTime: dbProfile.unknownTime ?? false,
+                country: dbProfile.country || '',
+                city: dbProfile.city || '',
+                gender: dbProfile.gender || '',
+              });
+            }
           }
+        } catch {
+          // Continue to localStorage fallback
+        }
+      }
+
+      // ── 비로그인(게스트) 폴백: localStorage ──
+      if (!storedData) {
+        const savedProfile = getProfile();
+        if (savedProfile) {
+          const fallbackData = {
+            name: savedProfile.name,
+            year: savedProfile.year,
+            month: savedProfile.month,
+            day: savedProfile.day,
+            time: savedProfile.time,
+            unknownTime: savedProfile.unknownTime,
+            country: savedProfile.country,
+            city: savedProfile.city,
+            gender: savedProfile.gender,
+            dob: `${savedProfile.year}-${savedProfile.month.padStart(2, '0')}-${savedProfile.day.padStart(2, '0')}`,
+            locale: currentLocale,
+          };
+          sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
+          storedData = sessionStorage.getItem("destinyFormData");
+        } else {
+          setError("No birth data found. Please go back and enter your information.");
+          setIsLoading(false);
+          return;
         }
       }
 

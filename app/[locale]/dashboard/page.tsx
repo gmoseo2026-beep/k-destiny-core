@@ -60,23 +60,26 @@ export default function DashboardPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Load locally saved data as initial state
+    // ── Phase 1: localStorage 스켈레톤 (즉시 렌더링용) ──
     setSavedResult(getLastResult());
     setSavedMasterId(getMaster());
+    const localProfile = getProfile();
+    if (localProfile) setUserName(localProfile.name || "Traveler");
 
     async function fetchReports() {
       let dbReports: any[] = [];
-      let profileLoaded = false;
 
-      // 1. Try loading profile from DB (logged-in users) with no-cache
+      // ── Phase 2: DB가 Source of Truth (로그인 사용자) ──
+      // DB 데이터가 존재하면 화면 상태 + localStorage 모두 DB로 강제 덮어씌움
       if (session?.user?.id) {
         try {
           const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
           if (res.ok) {
             const { profile: dbProfile } = await res.json();
-            if (dbProfile && dbProfile.name) {
-              setUserName(dbProfile.name);
-              // Sync to localStorage
+            if (dbProfile && (dbProfile.name || dbProfile.birthYear)) {
+              // ✅ 화면 상태를 DB 데이터로 즉시 교체
+              setUserName(dbProfile.name || session.user.name?.split(' ')[0] || "Traveler");
+              // ✅ localStorage 강제 동기화 (DB → localStorage 단방향)
               saveProfile({
                 name: dbProfile.name || '',
                 year: dbProfile.birthYear || '',
@@ -88,20 +91,16 @@ export default function DashboardPage() {
                 city: dbProfile.city || '',
                 gender: dbProfile.gender || '',
               });
-              profileLoaded = true;
             }
           }
         } catch (err) {
-          console.log('[dashboard] DB profile fetch failed', err);
+          console.log('[dashboard] DB profile fetch failed, using localStorage fallback', err);
         }
-      }
-
-      // 2. Fallback: localStorage profile
-      if (!profileLoaded) {
-        const profile = getProfile();
-        if (profile) {
-          setUserName(profile.name || "Traveler");
-        } else if (session?.user) {
+        // DB fetch 후에도 userName이 기본값이면 세션 정보 사용
+        // (DB에 프로필이 아직 없는 신규 유저)
+      } else {
+        // ── Phase 3: 비로그인(게스트) → localStorage만 사용 ──
+        if (!localProfile && session?.user) {
           setUserName(session.user.name?.split(' ')[0] || session.user.email?.split("@")[0] || "Traveler");
         }
       }

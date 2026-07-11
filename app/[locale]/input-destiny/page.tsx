@@ -85,23 +85,46 @@ function InputDestinyContent() {
     })).sort((a, b) => a.displayName.localeCompare(b.displayName, locale));
   };
 
-  // Load saved profile on mount — DB first, localStorage fallback
+  // Load saved profile on mount — DB first (source of truth), localStorage fallback
   useEffect(() => {
     async function loadProfile() {
       let profileLoaded = false;
 
-      // 1. Try loading from DB (logged-in users)
+      // ── Phase 1: localStorage 스켈레톤 (비로그인/오프라인 즉시 렌더링용) ──
+      const savedProfile = getProfile();
+      if (savedProfile) {
+        setFormData({
+          name: savedProfile.name,
+          year: savedProfile.year,
+          month: savedProfile.month,
+          day: savedProfile.day,
+          time: savedProfile.time,
+          country: savedProfile.country,
+          city: savedProfile.city,
+          gender: savedProfile.gender,
+        });
+        setUnknownTime(savedProfile.unknownTime);
+        if (savedProfile.country) {
+          const regions = getRegions(savedProfile.country);
+          setCities(regions);
+        }
+        profileLoaded = true;
+      }
+
+      // ── Phase 2: DB가 Source of Truth (로그인 사용자) ──
+      // DB 데이터가 존재하면 Phase 1에서 세팅한 값을 즉시 교체 + localStorage 강제 동기화
       if (session?.user?.id) {
         try {
           const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
           if (res.ok) {
             const { profile: dbProfile } = await res.json();
-            if (dbProfile && dbProfile.birthYear) {
+            if (dbProfile && (dbProfile.birthYear || dbProfile.name)) {
               if (!isEditMode) {
                 setReady(true);
                 router.push(`/result?masterId=${masterId}`);
                 return;
               }
+              // ✅ 화면 상태를 DB 데이터로 즉시 교체
               setFormData({
                 name: dbProfile.name || '',
                 year: dbProfile.birthYear || '',
@@ -117,7 +140,7 @@ function InputDestinyContent() {
                 const regions = getRegions(dbProfile.country);
                 setCities(regions);
               }
-              // Sync DB data to localStorage for offline access
+              // ✅ localStorage 강제 동기화 (DB → localStorage 단방향)
               saveProfile({
                 name: dbProfile.name || '',
                 year: dbProfile.birthYear || '',
@@ -133,39 +156,16 @@ function InputDestinyContent() {
             }
           }
         } catch (err) {
-          console.log('[input-destiny] DB fetch failed, falling back to localStorage', err);
+          console.log('[input-destiny] DB fetch failed, using localStorage fallback', err);
         }
+      } else if (savedProfile && !isEditMode) {
+        // 비로그인이지만 localStorage에 프로필이 있고 편집 모드가 아니면 → 바로 result로 이동
+        setReady(true);
+        router.push(`/result?masterId=${masterId}`);
+        return;
       }
 
-      // 2. Fallback: localStorage
-      if (!profileLoaded) {
-        const savedProfile = getProfile();
-        if (savedProfile) {
-          if (!isEditMode) {
-            setReady(true);
-            router.push(`/result?masterId=${masterId}`);
-            return;
-          }
-          setFormData({
-            name: savedProfile.name,
-            year: savedProfile.year,
-            month: savedProfile.month,
-            day: savedProfile.day,
-            time: savedProfile.time,
-            country: savedProfile.country,
-            city: savedProfile.city,
-            gender: savedProfile.gender,
-          });
-          setUnknownTime(savedProfile.unknownTime);
-          if (savedProfile.country) {
-            const regions = getRegions(savedProfile.country);
-            setCities(regions);
-          }
-          profileLoaded = true;
-        }
-      }
-
-      // 3. No profile at all → detect location via IP
+      // ── Phase 3: 프로필이 전혀 없으면 → IP 기반 위치 감지 ──
       if (!profileLoaded) {
         try {
           const res = await fetch('https://ipapi.co/json/');
