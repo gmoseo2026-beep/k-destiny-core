@@ -4,6 +4,7 @@ import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/destin
 import { getClientIp, checkRateLimit, recordRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 // Vercel Serverless: allow up to 60s for AI generation
 export const maxDuration = 60;
@@ -139,6 +140,9 @@ export async function POST(req: Request) {
             city: city || null,
           }
         });
+        // ── 라우터 캐시 강제 무효화 (PC/모바일 실시간 동기화) ──
+        revalidatePath('/', 'layout');
+        revalidatePath('/[locale]/dashboard', 'page');
       }
     } catch (dbError) {
       console.error("[Prisma] DB Error (non-fatal):", dbError);

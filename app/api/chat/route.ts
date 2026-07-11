@@ -26,6 +26,7 @@ dns.setDefaultResultOrder("ipv4first");
 import { getClientIp, checkChatRateLimit, recordChatRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 // Vercel Serverless: allow up to 60s for chat (Function Calling can trigger 2 AI calls)
 export const maxDuration = 60;
@@ -282,6 +283,9 @@ FREEMIUM RULE:
                     elementsScore: sajuResult.elementsScore,
                   }
                 });
+                // ── 라우터 캐시 강제 무효화 (PC/모바일 실시간 동기화) ──
+                revalidatePath('/', 'layout');
+                revalidatePath('/[locale]/dashboard', 'page');
               }
             } catch (dbError) {
               console.error("[Chat] DB Error (non-fatal):", dbError);

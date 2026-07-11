@@ -2,6 +2,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
+
+// ── 캐싱 완전 무효화: PC/모바일 동기화 보장 ──
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * GET /api/user/saju-profile
@@ -90,6 +95,11 @@ export async function POST(req: Request) {
       },
     });
 
+    // ── 라우터 캐시 강제 무효화 ──
+    revalidatePath('/', 'layout');
+    revalidatePath('/[locale]/dashboard', 'page');
+    revalidatePath('/[locale]/dashboard/profile', 'page');
+
     return NextResponse.json({ profile }, { status: 200 });
   } catch (error) {
     console.error('[saju-profile POST] DB Error:', error);
@@ -112,6 +122,11 @@ export async function DELETE() {
     await prisma.userSajuProfile.deleteMany({
       where: { userId: session.user.id },
     });
+
+    // ── 라우터 캐시 강제 무효화 ──
+    revalidatePath('/', 'layout');
+    revalidatePath('/[locale]/dashboard', 'page');
+    revalidatePath('/[locale]/dashboard/profile', 'page');
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
