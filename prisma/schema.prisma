@@ -40,6 +40,9 @@ model UserSajuProfile {
   unknownTime Boolean @default(false)
   country     String?
   city        String?
+
+  // 담당 마스터 선택 (기기 간 동기화)
+  selectedMasterId Int?
 }
 
 // 3. 사용자 및 권한 관리

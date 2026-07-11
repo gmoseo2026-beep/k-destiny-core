@@ -7,7 +7,7 @@ import { Link, useRouter } from "@/i18n/routing";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { User, Calendar, Clock, MapPin, Sparkles, ArrowRight, Settings, Crown, Shield, AlertTriangle, X } from "lucide-react";
-import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile, saveProfile } from "@/lib/userStateManager";
+import { getProfile, getMaster, isPremium, getExpiryStatus, clearProfile, saveProfile, saveMaster } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
 import type { UserProfile } from "@/lib/userStateManager";
 
@@ -82,6 +82,11 @@ export default function ProfilePage() {
                 city: dbData.city,
                 gender: dbData.gender,
               });
+              // ✅ 마스터 ID도 DB에서 동기화
+              if (dbProfile.selectedMasterId) {
+                setMasterId(dbProfile.selectedMasterId);
+                saveMaster(dbProfile.selectedMasterId);
+              }
             }
           }
         } catch (err) {

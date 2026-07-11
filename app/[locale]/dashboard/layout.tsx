@@ -20,9 +20,9 @@ import {
   Flame,
   Star
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import LanguageSelector from "@/components/LanguageSelector";
-import { getMaster } from "@/lib/userStateManager";
+import { getMaster, saveMaster } from "@/lib/userStateManager";
 import LoginButton from "@/components/LoginButton";
 
 export default function DashboardLayout({
@@ -35,10 +35,25 @@ export default function DashboardLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("destiny");
   const [savedMasterId, setSavedMasterId] = useState<number | null>(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
+    // Phase 1: localStorage 스켈레톤
     setSavedMasterId(getMaster());
-  }, []);
+
+    // Phase 2: DB가 Source of Truth (로그인 사용자)
+    if (session?.user?.id) {
+      fetch('/api/user/saju-profile', { cache: 'no-store' })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.profile?.selectedMasterId) {
+            setSavedMasterId(data.profile.selectedMasterId);
+            saveMaster(data.profile.selectedMasterId);
+          }
+        })
+        .catch(() => { /* localStorage 폴백 유지 */ });
+    }
+  }, [session]);
 
   const handleSignOut = async () => {
     // ── Nuclear cleanup: wipe ALL user-specific client state ──

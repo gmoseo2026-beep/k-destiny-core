@@ -9,6 +9,7 @@ import { useRouter } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { MASTERS } from "@/lib/masters";
 import { getMaster, saveMaster, getProfile } from "@/lib/userStateManager";
+import { useSession } from "next-auth/react";
 
 const TOTAL = MASTERS.length;
 
@@ -30,35 +31,57 @@ export default function SelectMasterPage() {
   const searchParams = useSearchParams();
   const mode = searchParams.get("mode");
   const isChangeMode = searchParams.get("change") === "true";
+  const { data: session } = useSession();
 
-  // On mount: if master is already saved and not in change mode, auto-redirect
+  // On mount: load masterId from DB first, localStorage fallback
   useEffect(() => {
-    const savedMaster = getMaster();
-    if (savedMaster && !isChangeMode) {
-      // Master already selected → skip carousel
-      if (mode === "chat") {
-        router.push(`/chat?masterId=${savedMaster}`);
-      } else {
-        // If profile exists, go directly to result; otherwise to input
-        const profile = getProfile();
-        if (profile) {
-          router.push(`/result?masterId=${savedMaster}`);
-        } else {
-          router.push(`/input-destiny?masterId=${savedMaster}`);
+    async function loadMaster() {
+      let savedMaster: number | null = getMaster(); // localStorage skeleton
+
+      // DB가 Source of Truth (로그인 사용자)
+      if (session?.user?.id) {
+        try {
+          const res = await fetch('/api/user/saju-profile', { cache: 'no-store' });
+          if (res.ok) {
+            const { profile: dbProfile } = await res.json();
+            if (dbProfile?.selectedMasterId) {
+              savedMaster = dbProfile.selectedMasterId;
+              // ✅ localStorage 강제 동기화
+              saveMaster(savedMaster!);
+            }
+          }
+        } catch {
+          // DB 실패 → localStorage 폴백
         }
       }
-      return;
-    }
-    // Pre-select the saved master in the carousel if in change mode
-    if (savedMaster && isChangeMode) {
-      const idx = MASTERS.findIndex((m) => m.id === savedMaster);
-      if (idx !== -1) {
-        setActiveIndex(idx);
-        setSelectedMasterId(savedMaster);
+
+      if (savedMaster && !isChangeMode) {
+        if (mode === "chat") {
+          router.push(`/chat?masterId=${savedMaster}`);
+        } else {
+          const profile = getProfile();
+          if (profile) {
+            router.push(`/result?masterId=${savedMaster}`);
+          } else {
+            router.push(`/input-destiny?masterId=${savedMaster}`);
+          }
+        }
+        return;
       }
+
+      // Pre-select the saved master in the carousel if in change mode
+      if (savedMaster && isChangeMode) {
+        const idx = MASTERS.findIndex((m) => m.id === savedMaster);
+        if (idx !== -1) {
+          setActiveIndex(idx);
+          setSelectedMasterId(savedMaster);
+        }
+      }
+      setReady(true);
     }
-    setReady(true);
-  }, [isChangeMode, mode, router]);
+
+    loadMaster();
+  }, [isChangeMode, mode, router, session]);
 
   const handleNext = () => {
     setActiveIndex((prev) => prev + 1);
@@ -83,10 +106,17 @@ export default function SelectMasterPage() {
 
   const handleConsult = () => {
     if (!selectedMasterId) return;
-    // Save master selection to localStorage
+    // ✅ localStorage 저장
     saveMaster(selectedMasterId);
+    // ✅ DB 동기화 (fire-and-forget, 로그인 사용자만)
+    if (session?.user?.id) {
+      fetch('/api/user/master', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ masterId: selectedMasterId }),
+      }).catch((err) => console.warn('[select-master] DB sync failed:', err));
+    }
     if (isChangeMode) {
-      // Return to profile page after changing master
       router.push("/dashboard/profile");
       return;
     }

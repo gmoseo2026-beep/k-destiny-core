@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       name, gender, birthYear, birthMonth, birthDay, birthTime,
-      unknownTime, country, city,
+      unknownTime, country, city, selectedMasterId,
     } = body;
 
     if (!gender) {
@@ -76,6 +76,7 @@ export async function POST(req: Request) {
         unknownTime: unknownTime ?? false,
         country: country || null,
         city: city || null,
+        ...(selectedMasterId !== undefined && { selectedMasterId: selectedMasterId ?? null }),
       },
       create: {
         userId: session.user.id,
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
         unknownTime: unknownTime ?? false,
         country: country || null,
         city: city || null,
+        selectedMasterId: selectedMasterId ?? null,
         // fourPillars, dayMaster, elementsScore는 generate-destiny에서 채워짐
         fourPillars: {},
         dayMaster: '',
