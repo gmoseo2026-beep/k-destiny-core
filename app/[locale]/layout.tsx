@@ -143,12 +143,6 @@ const jsonLd = {
         "priceCurrency": "USD",
         "description": "Free cosmic blueprint with premium tier available",
       },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "1200",
-        "bestRating": "5",
-      },
       "featureList": [
         "AI-Powered Saju Birth Chart Analysis",
         "Energy Compatibility Sync (궁합)",
@@ -185,6 +179,9 @@ export default async function RootLayout({
   const { locale } = await params;
   const messages = await getMessages();
 
+  const LOCALES = ['en', 'ko', 'ja', 'es', 'de', 'fr'];
+  const BASE_URL = 'https://thekdestiny.com';
+
   return (
     <html lang={locale}>
       <head>
@@ -193,6 +190,16 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {/* hreflang tags for multi-language SEO */}
+        {LOCALES.map((loc) => (
+          <link
+            key={loc}
+            rel="alternate"
+            hrefLang={loc}
+            href={`${BASE_URL}/${loc}`}
+          />
+        ))}
+        <link rel="alternate" hrefLang="x-default" href={`${BASE_URL}/en`} />
       </head>
       <body
         className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
