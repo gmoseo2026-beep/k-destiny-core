@@ -4,7 +4,8 @@
     "headline_1": "Unlock Your",
     "headline_2": "Cosmic Blueprint",
     "sub_headline": "Ancient Eastern Saju meets Modern Energy Wellness.",
-    "cta_button": "Find Your Destiny Master"
+    "cta_button": "Discover My Destiny",
+    "login_link": "Already have an account? Log in"
   },
   "SelectMaster": {
     "badge": "Choose the Guide Master of Your Destiny",
@@ -448,6 +449,36 @@
     "btn_back": "Back to Home",
     "tip_title": "Pro Tip",
     "tip_desc": "Upgrade to Premium to unlock full blueprint details, more daily Karma Energy, and exclusive forecasts."
+  },
+  "Onboarding": {
+    "step1_title": "Tell us about yourself",
+    "step1_desc": "Your cosmic energy flows differently based on your essence.",
+    "label_name": "Your Name",
+    "placeholder_name": "e.g. John",
+    "gender_male": "Male",
+    "gender_female": "Female",
+    "step2_title": "When were you born?",
+    "step2_desc": "The exact moment of your birth holds the key to your destiny.",
+    "label_year": "Year",
+    "label_month": "Month",
+    "label_day": "Day",
+    "label_time": "Birth Time",
+    "time_placeholder": "Select time",
+    "unknown_time": "I don't know my birth time",
+    "label_country": "Country",
+    "placeholder_country": "e.g. United States",
+    "label_city": "City",
+    "placeholder_city": "e.g. New York",
+    "step3_title": "What draws you here?",
+    "step3_desc": "The cosmos will focus its energy on your deepest concern.",
+    "concern_love_title": "Love & Relationships",
+    "concern_love_desc": "Romantic destiny, soul connections, and heartbreak timing",
+    "concern_career_title": "Career & Purpose",
+    "concern_career_desc": "Professional turning points, hidden talents, and opportunities",
+    "concern_wealth_title": "Wealth & Fortune",
+    "concern_wealth_desc": "Financial cycles, investment timing, and abundance flow",
+    "btn_next": "Continue",
+    "btn_reveal": "Reveal My Destiny"
   },
   "Modal": {
     "expiry_title": "Subscription Expiring Soon",

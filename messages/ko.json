@@ -4,7 +4,8 @@
     "headline_1": "당신의 우주적",
     "headline_2": "운명 설계도",
     "sub_headline": "고대 동양 사주와 현대 에너지 웰니스의 만남.",
-    "cta_button": "운명의 마스터 찾기"
+    "cta_button": "🔮 나의 운명 알아보기",
+    "login_link": "이미 계정이 있으신가요? 로그인"
   },
   "SelectMaster": {
     "badge": "당신의 운명의 가이드 마스터를 선택하세요",
@@ -448,6 +449,36 @@
     "btn_back": "홈으로 돌아가기",
     "tip_title": "꿀팁",
     "tip_desc": "프리미엄으로 업그레이드하면 전체 설계도 해제, 더 많은 일일 카르마 에너지, 독점 예측을 이용할 수 있습니다."
+  },
+  "Onboarding": {
+    "step1_title": "당신에 대해 알려주세요",
+    "step1_desc": "당신의 본질에 따라 우주적 에너지의 흐름이 달라집니다.",
+    "label_name": "이름",
+    "placeholder_name": "예: 홍길동",
+    "gender_male": "남성",
+    "gender_female": "여성",
+    "step2_title": "언제 태어나셨나요?",
+    "step2_desc": "태어난 정확한 순간에 당신의 운명의 열쇠가 있습니다.",
+    "label_year": "년",
+    "label_month": "월",
+    "label_day": "일",
+    "label_time": "태어난 시간",
+    "time_placeholder": "시간 선택",
+    "unknown_time": "태어난 시간을 모릅니다",
+    "label_country": "국가",
+    "placeholder_country": "예: 대한민국",
+    "label_city": "도시",
+    "placeholder_city": "예: 서울",
+    "step3_title": "가장 궁금한 것은?",
+    "step3_desc": "우주가 당신의 가장 깊은 고민에 에너지를 집중합니다.",
+    "concern_love_title": "💕 연애 · 관계",
+    "concern_love_desc": "낭만적 운명, 소울메이트 연결, 이별 시기",
+    "concern_career_title": "💼 직업 · 사명",
+    "concern_career_desc": "커리어 전환점, 숨겨진 재능, 기회",
+    "concern_wealth_title": "💰 재물 · 운세",
+    "concern_wealth_desc": "재정 순환, 투자 시기, 풍요의 흐름",
+    "btn_next": "다음",
+    "btn_reveal": "나의 운명 확인하기"
   },
   "Modal": {
     "expiry_title": "이용권 만료 안내",

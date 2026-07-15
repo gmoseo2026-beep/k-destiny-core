@@ -9,6 +9,7 @@ import ExpiryWarningModal from "../../components/ExpiryWarningModal";
 import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
 import KakaoEscape from "../../components/KakaoEscape";
+import MaintenanceOverlay from "../../components/MaintenanceOverlay";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -204,6 +205,7 @@ export default async function RootLayout({
       >
         <NextIntlClientProvider messages={messages}>
           <Providers>
+            <MaintenanceOverlay />
             <CacheBuster />
             <KakaoEscape />
             <Navbar />

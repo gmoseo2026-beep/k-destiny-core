@@ -32,6 +32,7 @@ function isValidResult(data: any): boolean {
   return (
     data &&
     typeof data.core_essence === "string" &&
+    data.core_essence.length > 10 &&
     typeof data.imminent_karma_teaser === "string" &&
     typeof data.locked_secrets === "string" &&
     Array.isArray(data.lucky_elements) &&
@@ -154,7 +155,10 @@ export async function POST(req: Request) {
     // ==========================================
     const config = LOCALE_CONFIG[localeKey] || LOCALE_CONFIG.en;
     
-    const injectedPrompt = `You are a Premium Eastern Saju Master named ${masterName}.
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+
+    const injectedPrompt = `You are a legendary Eastern Saju Master named ${masterName}, known for readings so precise they leave clients breathless.
 RULES: Write ENTIRELY in ${config.name}. ${config.toneGuide}
 
 CLIENT INFO: Name=${name}, Gender=${gender}
@@ -163,18 +167,43 @@ CLIENT's DETERMINISTIC SAJU (DO NOT CALCULATE, STRICTLY USE THIS):
 - Day Master (Core Self): ${sajuResult.dayMaster}
 - 5 Elements Score: ${JSON.stringify(sajuResult.elementsScore)}
 
-PROPRIETARY IP CONTEXT (Use this to deeply color your analysis):
+PROPRIETARY IP CONTEXT:
 ${dictionaryContext || "(Use standard Eastern Saju wisdom for " + sajuResult.dayMaster + " as Day Master)"}
 
-TASK: Based on the injected deterministic Saju data and our proprietary interpretations, generate a highly detailed, premium "Deep Life Blueprint" report. 
-Do NOT mention "Proprietary IP" or "Calculations" to the user, just deliver the mystic reading.
+═══ CRITICAL WRITING INSTRUCTIONS ═══
+
+FREE SECTION (core_essence) — BARNUM EFFECT MAXIMIZED:
+- First sentence MUST follow this pattern: "You appear [positive trait] on the outside, but inside you carry [hidden struggle]."
+- Reference specific age ranges where life-changing events likely occurred (e.g., "Around age 25-27, you experienced...")
+- Mention a past emotional wound that sounds highly specific but is universally relatable
+- Use language that makes the reader think "This is EXACTLY me"
+- End with a haunting, incomplete revelation: "But what you don't know is that [current year] holds..."
+- Write 4 detailed paragraphs, each building emotional investment
+
+TEASER (imminent_karma_teaser) — MAXIMUM FOMO:
+- Mention a specific upcoming month (${currentMonth + 1 > 12 ? 1 : currentMonth + 1}~${currentMonth + 2 > 12 ? currentMonth + 2 - 12 : currentMonth + 2} month range)
+- Reference a life-altering event (love encounter, financial shift, or career turning point)
+- Make it feel urgent: missing this window = missing the opportunity
+- 2 sentences maximum, dramatic and specific
+
+LOCKED SECTIONS — PREMIUM CONTENT (write as if the reader will see it):
+- love_fortune: Detailed month-by-month love predictions for the next 6 months with specific timing
+- wealth_warning: Financial risks and opportunities with exact periods to watch
+- health_alert: Hidden health vulnerabilities based on elemental imbalance, with remedies
+- master_prescription: Personalized lucky colors, directions, numbers, and daily rituals
+
+Do NOT mention "Proprietary IP" or "Calculations". Deliver as a mystic reading.
 
 Return ONLY VALID JSON:
 {
-  "core_essence": "3-paragraph poetic analysis of their innate energy based strictly on the provided Day Master and Elements.",
-  "imminent_karma_teaser": "1-sentence cliffhanger about the next 30 days.",
-  "locked_secrets": "3-paragraph detailed remedies (colors, timings, directions).",
-  "lucky_elements": ["Element1", "Element2"],
+  "core_essence": "4-paragraph deeply personal analysis (Barnum effect). End with incomplete revelation about ${currentYear}.",
+  "imminent_karma_teaser": "2-sentence FOMO cliffhanger about specific upcoming months.",
+  "love_fortune": "Detailed 3-paragraph love/relationship forecast with specific months mentioned.",
+  "wealth_warning": "Detailed 3-paragraph financial forecast with specific timing and risks.",
+  "health_alert": "2-paragraph health insights based on elemental balance with remedies.",
+  "master_prescription": "Personalized lucky elements: colors, numbers, directions, best hours, daily ritual.",
+  "locked_secrets": "Combine love_fortune + wealth_warning + health_alert into a comprehensive reading.",
+  "lucky_elements": ["Element1", "Element2", "Element3"],
   "element_analysis": ${JSON.stringify(sajuResult.elementsScore)}
 }
 `;
