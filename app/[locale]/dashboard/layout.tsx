@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import LanguageSelector from "@/components/LanguageSelector";
-import { getMaster, saveMaster } from "@/lib/userStateManager";
+import { getMaster, saveMaster, clearAllUserData } from "@/lib/userStateManager";
 import LoginButton from "@/components/LoginButton";
 
 export default function DashboardLayout({
@@ -56,25 +56,9 @@ export default function DashboardLayout({
   }, [session]);
 
   const handleSignOut = async () => {
-    // ── Nuclear cleanup: wipe ALL user-specific client state ──
-    try {
-      // 1. Remove all kdestiny_* keys from localStorage
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith("kdestiny_") || key === "mock_supabase_user" || key === "app_version")) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((key) => localStorage.removeItem(key));
-
-      // 2. Clear sessionStorage entirely
-      sessionStorage.clear();
-    } catch (e) {
-      // Ignore storage errors in SSR or restricted environments
-    }
-
-    // 3. Destroy NextAuth server session + cookies, then hard-redirect to home
+    // Nuclear cleanup: wipe ALL user-specific client state
+    clearAllUserData();
+    // Destroy NextAuth server session + cookies, then hard-redirect to home
     await signOut({ callbackUrl: "/", redirect: true });
   };
 

@@ -196,6 +196,34 @@ export function getExpiryStatus(): { isExpired: boolean; expiryDate: string | nu
   };
 }
 
+// ─── Nuclear Logout: Clear ALL User Data ───
+/**
+ * Wipes ALL user-specific client state from localStorage and sessionStorage.
+ * Must be called from every logout point (LoginButton, Dashboard sidebar, etc.)
+ */
+export function clearAllUserData(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("kdestiny_") ||
+          key.startsWith("destiny_result_") ||
+          key === "mock_supabase_user" ||
+          key === "app_version")
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    sessionStorage.clear();
+  } catch {
+    // Ignore storage errors in SSR or restricted environments
+  }
+}
+
 // ─── Onboarding Check ───
 export function hasCompletedOnboarding(): boolean {
   return getProfile() !== null && getMaster() !== null;

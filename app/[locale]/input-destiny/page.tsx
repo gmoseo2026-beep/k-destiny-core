@@ -92,6 +92,7 @@ function InputDestinyContent() {
 
       // ── Phase 1: localStorage 스켈레톤 (비로그인/오프라인 즉시 렌더링용) ──
       const savedProfile = getProfile();
+      let hasCountry = false;
       if (savedProfile) {
         setFormData({
           name: savedProfile.name,
@@ -105,10 +106,14 @@ function InputDestinyContent() {
         });
         setUnknownTime(savedProfile.unknownTime);
         if (savedProfile.country) {
+          hasCountry = true;
           const regions = getRegions(savedProfile.country);
           setCities(regions);
         }
-        profileLoaded = true;
+        // Only mark as truly loaded if essential fields exist
+        if (savedProfile.name && savedProfile.year) {
+          profileLoaded = true;
+        }
       }
 
       // ── Phase 2: DB가 Source of Truth (로그인 사용자) ──
@@ -158,15 +163,15 @@ function InputDestinyContent() {
         } catch (err) {
           console.log('[input-destiny] DB fetch failed, using localStorage fallback', err);
         }
-      } else if (savedProfile && !isEditMode) {
-        // 비로그인이지만 localStorage에 프로필이 있고 편집 모드가 아니면 → 바로 result로 이동
+      } else if (savedProfile && savedProfile.name && savedProfile.year && !isEditMode) {
+        // 비로그인이지만 localStorage에 완전한 프로필이 있고 편집 모드가 아니면 → 바로 result로 이동
         setReady(true);
         router.push(`/result?masterId=${masterId}`);
         return;
       }
 
-      // ── Phase 3: 프로필이 전혀 없으면 → IP 기반 위치 감지 ──
-      if (!profileLoaded) {
+      // ── Phase 3: 프로필이 없거나 국가 정보가 없으면 → IP 기반 위치 감지 ──
+      if (!profileLoaded || !hasCountry) {
         try {
           const res = await fetch('https://ipapi.co/json/');
           const data = await res.json();
@@ -181,8 +186,8 @@ function InputDestinyContent() {
             );
             setFormData((prev) => ({
               ...prev,
-              country: detectedCountry,
-              city: matched ? matched.name : ''
+              country: prev.country || detectedCountry,
+              city: prev.city || (matched ? matched.name : '')
             }));
           }
         } catch (err) {

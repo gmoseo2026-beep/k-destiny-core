@@ -5,6 +5,7 @@ import { LogOut, User as UserIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { isInAppBrowser } from '@/lib/inAppBrowser';
+import { clearAllUserData } from '@/lib/userStateManager';
 
 export default function LoginButton() {
   const { data: session, status } = useSession();
@@ -17,6 +18,12 @@ export default function LoginButton() {
       return;
     }
     signIn('google', { callbackUrl: `/${locale}/dashboard` });
+  };
+
+  const handleSignOut = async () => {
+    // Nuclear cleanup: wipe ALL user-specific client state before destroying session
+    clearAllUserData();
+    await signOut({ callbackUrl: '/' });
   };
 
   if (status === 'loading') {
@@ -51,7 +58,7 @@ export default function LoginButton() {
             {session.user.name?.split(' ')[0] || 'Traveler'}
           </span>
           <button 
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={handleSignOut}
             className="ml-2 text-gray-500 hover:text-red-400 transition-colors"
             title="Sign Out"
           >
