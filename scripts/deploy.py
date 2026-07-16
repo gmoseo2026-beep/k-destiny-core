@@ -5,6 +5,7 @@ HOST = "161.97.134.176"
 USER = "root"
 PASS = "***REMOVED***"
 COMMANDS = [
+    "cd /root/k-destiny-core && git pull origin main 2>&1",
     "cd /root/k-destiny-core && npm run build 2>&1 | tail -5",
     "cd /root/k-destiny-core && pm2 restart k-destiny 2>&1",
 ]
