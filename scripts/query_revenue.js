@@ -9,7 +9,9 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.loc
 const { PrismaClient } = require('@prisma/client');
 
 async function main() {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL,
+  });
   
   try {
     const now = new Date();
