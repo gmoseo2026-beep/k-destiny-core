@@ -150,10 +150,16 @@ def get_visitor_stats() -> str:
 # ── 4. Revenue Stats ────────────────────────────────────────────────
 def get_revenue_stats() -> str:
     try:
-        # Use Node.js + Prisma to query DB (psql not available, DB_URL in .env)
+        # Use Node.js + pg to query DB (Prisma config uses .env)
         raw = run("cd /root/k-destiny-core && node scripts/query_revenue.js 2>/dev/null", timeout=15)
-        if not raw or raw.startswith("{\"error"):
-            err_data = json.loads(raw) if raw else {}
+        # The output may contain dotenvx injection logs before JSON, extract only JSON
+        json_start = raw.find('{')
+        if json_start == -1:
+            return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: no JSON in output"
+        raw = raw[json_start:]
+        
+        if raw.startswith('{"error'):
+            err_data = json.loads(raw)
             return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: {err_data.get('error', 'unknown')}"
         
         data = json.loads(raw)
