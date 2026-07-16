@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { saveLastResult, getLastResult, getProfile, getMaster, saveProfile } from "@/lib/userStateManager";
+import { MASTERS } from "@/lib/masters";
 import dynamic from "next/dynamic";
 import ShareCard from "@/components/ShareCard";
 
@@ -313,6 +314,28 @@ function ResultPageContent() {
       if (session?.user?.id) {
         payload.userId = session.user.id;
       }
+
+      // ── Ensure masterName is always present (critical fix) ──
+      if (!payload.masterName) {
+        const masterIdNum = parseInt(masterId, 10);
+        const master = MASTERS.find(m => m.id === masterIdNum);
+        payload.masterName = master?.name || "Master Karma";
+      }
+
+      // ── Ensure dob is properly formatted ──
+      if (!payload.dob && payload.year) {
+        payload.dob = `${payload.year}-${String(payload.month || '1').padStart(2, '0')}-${String(payload.day || '1').padStart(2, '0')}`;
+      }
+
+      // ── Ensure gender is capitalized (API expects Male/Female) ──
+      if (payload.gender && payload.gender === payload.gender.toLowerCase()) {
+        payload.gender = payload.gender.charAt(0).toUpperCase() + payload.gender.slice(1);
+      }
+
+      // ── Fallback name ──
+      if (!payload.name) payload.name = 'Seeker';
+
+      console.log(`[Fetch] Payload keys:`, Object.keys(payload), `masterName=${payload.masterName}, dob=${payload.dob}`);
 
       const response = await fetch("/api/generate-destiny", {
         method: "POST",
