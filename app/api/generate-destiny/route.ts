@@ -25,7 +25,7 @@ const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
 };
 
 const MODEL_TIMEOUT_MS = 45000;
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 1;
 
 // ─── Helper: Validate Final AI Output ───
 function isValidResult(data: any): boolean {
@@ -134,59 +134,58 @@ export async function POST(req: Request) {
     let dictionaryContext = "";
     
     try {
-      // 3.1 Fetch our proprietary interpretations based on Day Master + Element Lacks
+      // ─── Parallelize DB operations for speed (dictionary fetch + profile save) ───
       const queryConditions: any[] = [
         { category: "DAY_MASTER", signKey: sajuResult.dayMasterSignKey },
       ];
-      // Also fetch interpretations for any elements the user completely lacks
       for (const lackKey of sajuResult.elementLacks) {
         queryConditions.push({ category: "ELEMENT_LACK", signKey: lackKey });
       }
 
-      const sajuDocs = await prisma.sajuContentDictionary.findMany({
-        where: { OR: queryConditions },
-      });
+      // Run dictionary fetch and profile upsert in parallel (saves ~300ms)
+      const [sajuDocs] = await Promise.all([
+        prisma.sajuContentDictionary.findMany({
+          where: { OR: queryConditions },
+        }),
+        userId
+          ? prisma.userSajuProfile.upsert({
+              where: { userId },
+              update: {
+                gender,
+                fourPillars: sajuResult.fourPillars,
+                dayMaster: sajuResult.dayMaster,
+                elementsScore: sajuResult.elementsScore,
+                name: name || undefined,
+                birthYear: dob?.split('-')[0] || undefined,
+                birthMonth: dob?.split('-')[1] || undefined,
+                birthDay: dob?.split('-')[2] || undefined,
+                birthTime: time || undefined,
+                country: country || undefined,
+                city: city || undefined,
+              },
+              create: {
+                userId,
+                gender,
+                fourPillars: sajuResult.fourPillars,
+                dayMaster: sajuResult.dayMaster,
+                elementsScore: sajuResult.elementsScore,
+                name: name || null,
+                birthYear: dob?.split('-')[0] || null,
+                birthMonth: dob?.split('-')[1] || null,
+                birthDay: dob?.split('-')[2] || null,
+                birthTime: time || null,
+                country: country || null,
+                city: city || null,
+              }
+            }).then(() => {
+              revalidatePath('/', 'layout');
+              revalidatePath('/[locale]/dashboard', 'page');
+            })
+          : Promise.resolve(),
+      ]);
 
       if (sajuDocs.length > 0) {
         dictionaryContext = sajuDocs.map(doc => `[${doc.category}] ${doc.signKey}: ${doc.englishContent} (Remedy: ${doc.remedyAction || 'None'})`).join("\n");
-      }
-
-      // 3.2 Save/Cache the user's Saju profile for future fast access & UI rendering
-      if (userId) {
-        await prisma.userSajuProfile.upsert({
-          where: { userId },
-          update: {
-            gender,
-            fourPillars: sajuResult.fourPillars,
-            dayMaster: sajuResult.dayMaster,
-            elementsScore: sajuResult.elementsScore,
-            // 원본 입력 데이터도 DB에 동기화 (기기 간 공유)
-            name: name || undefined,
-            birthYear: dob?.split('-')[0] || undefined,
-            birthMonth: dob?.split('-')[1] || undefined,
-            birthDay: dob?.split('-')[2] || undefined,
-            birthTime: time || undefined,
-            country: country || undefined,
-            city: city || undefined,
-          },
-          create: {
-            userId,
-            gender,
-            fourPillars: sajuResult.fourPillars,
-            dayMaster: sajuResult.dayMaster,
-            elementsScore: sajuResult.elementsScore,
-            name: name || null,
-            birthYear: dob?.split('-')[0] || null,
-            birthMonth: dob?.split('-')[1] || null,
-            birthDay: dob?.split('-')[2] || null,
-            birthTime: time || null,
-            country: country || null,
-            city: city || null,
-          }
-        });
-        // ── 라우터 캐시 강제 무효화 (PC/모바일 실시간 동기화) ──
-        revalidatePath('/', 'layout');
-        revalidatePath('/[locale]/dashboard', 'page');
       }
     } catch (dbError) {
       console.error("[Prisma] DB Error (non-fatal):", dbError);
@@ -263,7 +262,7 @@ Return ONLY VALID JSON:
             generationConfig: {
               responseMimeType: "application/json",
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 4096,
             },
           });
 

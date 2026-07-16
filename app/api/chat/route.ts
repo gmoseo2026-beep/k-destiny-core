@@ -21,8 +21,6 @@ const extractBirthDataTool = {
     }
   ]
 };
-import dns from "dns";
-dns.setDefaultResultOrder("ipv4first");
 import { getClientIp, checkChatRateLimit, recordChatRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
@@ -35,8 +33,8 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain (Primary -> Backup) ───
-const CHAT_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+// ─── Model Fallback Chain (Primary → Backup → Lite) ───
+const CHAT_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -47,8 +45,8 @@ const LOCALE_LANGUAGES: Record<string, string> = {
   ja: "Japanese (日本語)",
 };
 
-// VPS-safe timeout — 55s to avoid premature kills on Contabo
-const MODEL_TIMEOUT_MS = 55000;
+// VPS-safe timeout — 45s per model attempt
+const MODEL_TIMEOUT_MS = 45000;
 
 export async function POST(req: Request) {
   try {
@@ -209,7 +207,7 @@ FREEMIUM RULE:
             model: modelName,
             systemInstruction: systemPart,
             tools: [extractBirthDataTool as any],
-            generationConfig: {}
+            generationConfig: { maxOutputTokens: 2048 }
           });
 
         const generateResult = await Promise.race([
@@ -258,34 +256,36 @@ FREEMIUM RULE:
                 queryConditions.push({ category: "ELEMENT_LACK", signKey: lackKey });
               }
 
-              const sajuDocs = await prisma.sajuContentDictionary.findMany({
-                where: { OR: queryConditions },
-              });
+              // Run dictionary fetch + profile upsert in parallel (saves ~300ms)
+              const [sajuDocs] = await Promise.all([
+                prisma.sajuContentDictionary.findMany({
+                  where: { OR: queryConditions },
+                }),
+                effectiveUserId
+                  ? prisma.userSajuProfile.upsert({
+                      where: { userId: effectiveUserId },
+                      update: {
+                        gender: args.gender,
+                        fourPillars: sajuResult.fourPillars,
+                        dayMaster: sajuResult.dayMaster,
+                        elementsScore: sajuResult.elementsScore,
+                      },
+                      create: {
+                        userId: effectiveUserId,
+                        gender: args.gender,
+                        fourPillars: sajuResult.fourPillars,
+                        dayMaster: sajuResult.dayMaster,
+                        elementsScore: sajuResult.elementsScore,
+                      }
+                    }).then(() => {
+                      revalidatePath('/', 'layout');
+                      revalidatePath('/[locale]/dashboard', 'page');
+                    })
+                  : Promise.resolve(),
+              ]);
 
               if (sajuDocs.length > 0) {
                 dictionaryContext = sajuDocs.map(doc => `[${doc.category}] ${doc.signKey}: ${doc.englishContent}`).join("\n");
-              }
-
-              if (effectiveUserId) {
-                await prisma.userSajuProfile.upsert({
-                  where: { userId: effectiveUserId },
-                  update: {
-                    gender: args.gender,
-                    fourPillars: sajuResult.fourPillars,
-                    dayMaster: sajuResult.dayMaster,
-                    elementsScore: sajuResult.elementsScore,
-                  },
-                  create: {
-                    userId: effectiveUserId,
-                    gender: args.gender,
-                    fourPillars: sajuResult.fourPillars,
-                    dayMaster: sajuResult.dayMaster,
-                    elementsScore: sajuResult.elementsScore,
-                  }
-                });
-                // ── 라우터 캐시 강제 무효화 (PC/모바일 실시간 동기화) ──
-                revalidatePath('/', 'layout');
-                revalidatePath('/[locale]/dashboard', 'page');
               }
             } catch (dbError) {
               console.error("[Chat] DB Error (non-fatal):", dbError);
@@ -316,7 +316,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
             const secondModel = genAI.getGenerativeModel({
               model: modelName,
               systemInstruction: injectedSystemInstruction,
-              generationConfig: { responseMimeType: "application/json" }
+              generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2048 }
             });
 
             console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");

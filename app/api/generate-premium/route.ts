@@ -143,7 +143,7 @@ Return ONLY the 3-paragraph report text as a plain string. No JSON, no markdown 
             model: modelName,
             generationConfig: {
               temperature: 0.85,
-              maxOutputTokens: 4096,
+              maxOutputTokens: 2048,
             },
           });
 

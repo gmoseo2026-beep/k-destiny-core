@@ -1,5 +1,10 @@
 import paramiko
 import sys
+import io
+
+# Fix Windows console encoding for Unicode output from VPS
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 HOST = "161.97.134.176"
 USER = "root"
