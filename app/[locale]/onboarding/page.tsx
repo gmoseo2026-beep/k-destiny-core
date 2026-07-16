@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import { saveProfile } from "@/lib/userStateManager";
+import { COUNTRIES, getCountryEnglishName, getCityEnglishName } from "@/lib/locationData";
 import {
-  Sparkles, Heart, Briefcase, Coins, ArrowRight, MapPin, User2
+  Sparkles, Heart, Briefcase, Coins, ArrowRight, MapPin, User2, ChevronDown, Search
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -89,6 +90,33 @@ function CosmicLoading({ concern }: { concern: Concern }) {
   );
 }
 
+/* ─── Styled Select Dropdown ─── */
+function StyledSelect({ value, onChange, options, placeholder, icon }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      {icon && <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 text-gray-500">{icon}</div>}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-8 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-sm font-sans focus:border-gold/40 focus:outline-none transition-colors appearance-none ${value ? 'text-white' : 'text-gray-500'}`}
+        style={{ backgroundImage: 'none' }}
+      >
+        <option value="" className="bg-[#0a0918] text-gray-500">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value} className="bg-[#0a0918] text-white">{o.label}</option>
+        ))}
+      </select>
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+    </div>
+  );
+}
+
 /* ─── Onboarding Page ─── */
 export default function OnboardingPage() {
   const t = useTranslations("Onboarding");
@@ -102,32 +130,87 @@ export default function OnboardingPage() {
   const [birthDay, setBirthDay] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [unknownTime, setUnknownTime] = useState(false);
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [cityCode, setCityCode] = useState("");
   const [concern, setConcern] = useState<Concern | "">("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [genderPulse, setGenderPulse] = useState<Gender>("");
 
-  // Auto-detect location via IP
+  // Auto-detect location via IP → match to closest country
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
         if (res.ok) {
           const data = await res.json();
-          if (data.country_name) setCountry(data.country_name);
-          if (data.city) setCity(data.city);
+          const cc = data.country_code;
+          const match = COUNTRIES.find(c => c.code === cc);
+          if (match) {
+            setCountryCode(match.code);
+            // Try matching city
+            const cityMatch = match.cities.find(c => c.name.en.toLowerCase() === (data.city || "").toLowerCase());
+            if (cityMatch) setCityCode(cityMatch.code);
+          }
         }
       } catch { /* silent */ }
     })();
   }, []);
 
+  // Generate year options (1920–2025)
+  const yearOptions = useMemo(() =>
+    Array.from({ length: 106 }, (_, i) => {
+      const y = String(2025 - i);
+      return { value: y, label: y };
+    }), []);
+
+  // Month options (1–12)
+  const monthOptions = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => ({
+      value: String(i + 1).padStart(2, "0"),
+      label: String(i + 1),
+    })), []);
+
+  // Day options (1–31, adjusted for month)
+  const dayOptions = useMemo(() => {
+    let maxDay = 31;
+    const m = parseInt(birthMonth);
+    if ([4, 6, 9, 11].includes(m)) maxDay = 30;
+    else if (m === 2) {
+      const y = parseInt(birthYear);
+      maxDay = (y && ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0)) ? 29 : 28;
+    }
+    return Array.from({ length: maxDay }, (_, i) => ({
+      value: String(i + 1).padStart(2, "0"),
+      label: String(i + 1),
+    }));
+  }, [birthMonth, birthYear]);
+
+  // Country/city options with locale
+  const countryOptions = useMemo(() =>
+    COUNTRIES.map(c => ({ value: c.code, label: c.name[locale] || c.name.en })), [locale]);
+
+  const cityOptions = useMemo(() => {
+    const country = COUNTRIES.find(c => c.code === countryCode);
+    return (country?.cities || []).map(c => ({ value: c.code, label: c.name[locale] || c.name.en }));
+  }, [countryCode, locale]);
+
+  // Reset city when country changes
+  useEffect(() => { setCityCode(""); }, [countryCode]);
+
   const totalSteps = 3;
+
+  const handleGenderSelect = (g: Gender) => {
+    setGender(g);
+    setGenderPulse(g);
+    setTimeout(() => setGenderPulse(""), 600);
+  };
 
   const handleComplete = () => {
     setIsLoading(true);
+    const countryName = getCountryEnglishName(countryCode);
+    const cityName = getCityEnglishName(countryCode, cityCode);
 
-    // Save profile to localStorage
     saveProfile({
       name: name || "Seeker",
       year: birthYear,
@@ -135,17 +218,13 @@ export default function OnboardingPage() {
       day: birthDay,
       time: unknownTime ? "" : birthTime,
       unknownTime,
-      country,
-      city,
+      country: countryName,
+      city: cityName,
       gender,
     });
 
-    // Store concern for AI prompt context
-    if (concern) {
-      localStorage.setItem("kdestiny_concern", concern);
-    }
+    if (concern) localStorage.setItem("kdestiny_concern", concern);
 
-    // After fake loading, go to select-master → input-destiny → result
     setTimeout(() => {
       router.push("/select-master");
     }, 4000);
@@ -220,31 +299,58 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              {/* Gender Selection */}
+              {/* Gender Selection — Enhanced with ripple + scale animation */}
               <div className="grid grid-cols-2 gap-4">
                 {(["male", "female"] as const).map((g) => (
-                  <button
+                  <motion.button
                     key={g}
-                    onClick={() => setGender(g)}
-                    className={`relative p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-3 ${
+                    onClick={() => handleGenderSelect(g)}
+                    whileTap={{ scale: 0.93 }}
+                    animate={genderPulse === g ? {
+                      scale: [1, 1.06, 1],
+                      boxShadow: [
+                        "0 0 0px rgba(212,175,55,0)",
+                        "0 0 35px rgba(212,175,55,0.4)",
+                        "0 0 15px rgba(212,175,55,0.15)"
+                      ]
+                    } : {}}
+                    transition={{ duration: 0.5 }}
+                    className={`relative p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-3 overflow-hidden ${
                       gender === g
                         ? "border-gold/50 bg-gold/[0.06] shadow-[0_0_25px_rgba(212,175,55,0.15)]"
                         : "border-white/8 bg-white/[0.02] hover:border-white/15"
                     }`}
                   >
-                    <User2 className={`w-8 h-8 ${gender === g ? "text-gold" : "text-gray-600"}`} />
+                    {/* Ripple effect on select */}
+                    {genderPulse === g && (
+                      <motion.div
+                        initial={{ scale: 0, opacity: 0.5 }}
+                        animate={{ scale: 4, opacity: 0 }}
+                        transition={{ duration: 0.7 }}
+                        className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-gold/20"
+                      />
+                    )}
+
+                    <motion.div
+                      animate={gender === g ? { rotateY: [0, 360] } : {}}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <User2 className={`w-8 h-8 ${gender === g ? "text-gold" : "text-gray-600"}`} />
+                    </motion.div>
                     <span className={`font-sans text-sm font-medium ${gender === g ? "text-gold" : "text-gray-400"}`}>
                       {t(g === "male" ? "gender_male" : "gender_female")}
                     </span>
                     {gender === g && (
                       <motion.div
                         layoutId="gender-check"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
                         className="absolute top-3 right-3 w-5 h-5 rounded-full bg-gold flex items-center justify-center"
                       >
                         <span className="text-black text-xs">✓</span>
                       </motion.div>
                     )}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
@@ -261,7 +367,7 @@ export default function OnboardingPage() {
               </button>
             </motion.div>
           ) : step === 2 ? (
-            /* ═══ Step 2: Birth Data ═══ */
+            /* ═══ Step 2: Birth Data — Dropdowns ═══ */
             <motion.div
               key="step2"
               initial={{ opacity: 0, x: 50 }}
@@ -279,45 +385,42 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              {/* DOB */}
+              {/* DOB — Select Dropdowns */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 block">{t("label_year")}</label>
-                  <input type="number" value={birthYear} onChange={(e) => setBirthYear(e.target.value)}
-                    placeholder="1990" min="1920" max="2025"
-                    className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm text-center focus:border-gold/40 focus:outline-none transition-colors placeholder:text-gray-600" />
+                  <StyledSelect value={birthYear} onChange={setBirthYear} options={yearOptions} placeholder="----" />
                 </div>
                 <div>
                   <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 block">{t("label_month")}</label>
-                  <input type="number" value={birthMonth} onChange={(e) => setBirthMonth(e.target.value)}
-                    placeholder="7" min="1" max="12"
-                    className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm text-center focus:border-gold/40 focus:outline-none transition-colors placeholder:text-gray-600" />
+                  <StyledSelect value={birthMonth} onChange={setBirthMonth} options={monthOptions} placeholder="--" />
                 </div>
                 <div>
                   <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 block">{t("label_day")}</label>
-                  <input type="number" value={birthDay} onChange={(e) => setBirthDay(e.target.value)}
-                    placeholder="15" min="1" max="31"
-                    className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm text-center focus:border-gold/40 focus:outline-none transition-colors placeholder:text-gray-600" />
+                  <StyledSelect value={birthDay} onChange={setBirthDay} options={dayOptions} placeholder="--" />
                 </div>
               </div>
 
               {/* Time */}
               <div>
                 <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 block">{t("label_time")}</label>
-                <select
-                  value={birthTime}
-                  onChange={(e) => { setBirthTime(e.target.value); setUnknownTime(false); }}
-                  disabled={unknownTime}
-                  className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm focus:border-gold/40 focus:outline-none transition-colors disabled:opacity-40"
-                >
-                  <option value="" className="bg-[#0a0918]">{t("time_placeholder")}</option>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const startH = (i * 2 + 23) % 24;
-                    const endH = (startH + 2) % 24;
-                    const label = `${String(startH).padStart(2, "0")}:00 ~ ${String(endH).padStart(2, "0")}:00`;
-                    return <option key={i} value={`${String(startH).padStart(2, "0")}:00`} className="bg-[#0a0918]">{label}</option>;
-                  })}
-                </select>
+                <div className="relative">
+                  <select
+                    value={birthTime}
+                    onChange={(e) => { setBirthTime(e.target.value); setUnknownTime(false); }}
+                    disabled={unknownTime}
+                    className="w-full px-3 pr-8 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm focus:border-gold/40 focus:outline-none transition-colors disabled:opacity-40 appearance-none"
+                  >
+                    <option value="" className="bg-[#0a0918]">{t("time_placeholder")}</option>
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const startH = (i * 2 + 23) % 24;
+                      const endH = (startH + 2) % 24;
+                      const label = `${String(startH).padStart(2, "0")}:00 ~ ${String(endH).padStart(2, "0")}:00`;
+                      return <option key={i} value={`${String(startH).padStart(2, "0")}:00`} className="bg-[#0a0918]">{label}</option>;
+                    })}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
                 <label className="flex items-center gap-2 mt-2 cursor-pointer">
                   <input type="checkbox" checked={unknownTime}
                     onChange={(e) => { setUnknownTime(e.target.checked); if (e.target.checked) setBirthTime(""); }}
@@ -326,21 +429,27 @@ export default function OnboardingPage() {
                 </label>
               </div>
 
-              {/* Location */}
+              {/* Location — Dropdown-based */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 flex items-center gap-1 block">
+                  <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 flex items-center gap-1">
                     <MapPin className="w-3 h-3" /> {t("label_country")}
                   </label>
-                  <input type="text" value={country} onChange={(e) => setCountry(e.target.value)}
+                  <StyledSelect
+                    value={countryCode}
+                    onChange={setCountryCode}
+                    options={countryOptions}
                     placeholder={t("placeholder_country")}
-                    className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm focus:border-gold/40 focus:outline-none transition-colors placeholder:text-gray-600" />
+                  />
                 </div>
                 <div>
                   <label className="text-[10px] font-sans tracking-[0.2em] text-gray-500 uppercase mb-1.5 block">{t("label_city")}</label>
-                  <input type="text" value={city} onChange={(e) => setCity(e.target.value)}
+                  <StyledSelect
+                    value={cityCode}
+                    onChange={setCityCode}
+                    options={cityOptions}
                     placeholder={t("placeholder_city")}
-                    className="w-full px-3 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white font-sans text-sm focus:border-gold/40 focus:outline-none transition-colors placeholder:text-gray-600" />
+                  />
                 </div>
               </div>
 
@@ -387,20 +496,25 @@ export default function OnboardingPage() {
                   { id: "career" as Concern, icon: Briefcase, color: "from-blue-500/20 to-indigo-600/5", borderColor: "border-blue-500/40", textColor: "text-blue-400" },
                   { id: "wealth" as Concern, icon: Coins, color: "from-amber-500/20 to-yellow-600/5", borderColor: "border-amber-500/40", textColor: "text-amber-400" },
                 ]).map((item) => (
-                  <button
+                  <motion.button
                     key={item.id}
                     onClick={() => setConcern(item.id)}
+                    whileTap={{ scale: 0.97 }}
                     className={`w-full relative p-5 rounded-2xl border transition-all duration-300 flex items-center gap-4 text-left ${
                       concern === item.id
                         ? `${item.borderColor} bg-gradient-to-r ${item.color} shadow-[0_0_20px_rgba(255,255,255,0.05)]`
                         : "border-white/8 bg-white/[0.02] hover:border-white/15"
                     }`}
                   >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      concern === item.id ? `bg-white/10 ${item.textColor}` : "bg-white/5 text-gray-600"
-                    }`}>
+                    <motion.div
+                      animate={concern === item.id ? { scale: [1, 1.2, 1] } : {}}
+                      transition={{ duration: 0.4 }}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        concern === item.id ? `bg-white/10 ${item.textColor}` : "bg-white/5 text-gray-600"
+                      }`}
+                    >
                       <item.icon className="w-6 h-6" />
-                    </div>
+                    </motion.div>
                     <div>
                       <h3 className={`font-sans font-bold text-sm ${concern === item.id ? "text-white" : "text-gray-300"}`}>
                         {t(`concern_${item.id}_title`)}
@@ -417,7 +531,7 @@ export default function OnboardingPage() {
                         <span className="text-black text-xs font-bold">✓</span>
                       </motion.div>
                     )}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
