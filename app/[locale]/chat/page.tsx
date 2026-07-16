@@ -443,11 +443,17 @@ function ChatPageContent() {
     let max = karma.max;
 
     // Fallback for existing premium users who got stuck with the default 5 karma
-    // Or if they just upgraded to premium and max is still 5
     if (isPrem && max === 5) {
       max = 20;
       current = 20;
       saveKarma(current, max);
+    }
+
+    // First-visit bonus: non-logged-in users get 1 free message
+    const hasUsedFreeChat = localStorage.getItem("kdestiny_free_chat_used");
+    if (!session?.user?.id && !hasUsedFreeChat && current === 0) {
+      current = 1;
+      max = Math.max(max, 1);
     }
 
     setKarmaTokens(current);
@@ -498,6 +504,11 @@ function ChatPageContent() {
       saveKarma(next, maxKarma);
       return next;
     });
+
+    // Mark first free chat as used (for non-logged-in users)
+    if (!session?.user?.id) {
+      localStorage.setItem("kdestiny_free_chat_used", "true");
+    }
 
     // 1. Add user message
     const userMessage: ChatMessage = {

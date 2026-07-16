@@ -4,32 +4,30 @@ import prisma from "@/lib/prisma";
 export const runtime = "nodejs";
 
 /* ─────────────────────────────────────────────
- * Gumroad Webhook — POST handler
- * Gumroad sends `application/x-www-form-urlencoded`
- * Docs: https://help.gumroad.com/article/164-gumroad-ping
+ * Gumroad Webhook — POST handler (v2: 3-product support)
+ * Products:
+ *   - Single Report ($2.99): moseo.gumroad.com/l/zmqhr
+ *   - Monthly ($7.99): moseo.gumroad.com/l/ykcjwk  
+ *   - Annual ($49.99): moseo.gumroad.com/l/gywfqd
  * ───────────────────────────────────────────── */
 
-/** Map Gumroad price (USD string) → plan metadata */
-function resolvePlan(priceStr: string): {
-  planType: string;
-  months: number;
-  paidAmount: number;
+function resolvePlan(priceStr: string, recurrence?: string): {
+  planType: string; months: number; paidAmount: number;
 } | null {
   const price = parseFloat(priceStr);
   if (isNaN(price)) return null;
 
-  // Allow ±$1.00 tolerance for currency rounding / tax adjustments
-  if (price >= 8.99 && price <= 10.99) {
-    return { planType: "1_MONTH", months: 1, paidAmount: Math.round(price * 100) };
+  // Single Report: $2.99 (±$0.50 tolerance)
+  if (price >= 2.49 && price <= 3.49) {
+    return { planType: "SINGLE_REPORT", months: 0, paidAmount: Math.round(price * 100) };
   }
-  if (price >= 22.97 && price <= 24.97) {
-    return { planType: "3_MONTHS", months: 3, paidAmount: Math.round(price * 100) };
+  // Monthly: $7.99 (±$1.00 tolerance)
+  if (price >= 6.99 && price <= 8.99) {
+    return { planType: "MONTHLY", months: 1, paidAmount: Math.round(price * 100) };
   }
-  if (price >= 34.94 && price <= 36.94) {
-    return { planType: "6_MONTHS", months: 6, paidAmount: Math.round(price * 100) };
-  }
-  if (price >= 58.88 && price <= 60.88) {
-    return { planType: "1_YEAR", months: 12, paidAmount: Math.round(price * 100) };
+  // Annual: $49.99 (±$5.00 tolerance)
+  if (price >= 44.99 && price <= 54.99) {
+    return { planType: "ANNUAL", months: 12, paidAmount: Math.round(price * 100) };
   }
 
   return null;
@@ -37,54 +35,58 @@ function resolvePlan(priceStr: string): {
 
 export async function POST(req: NextRequest) {
   try {
-    /* ── 1. Parse form-urlencoded body ── */
     const formData = await req.formData();
     const payload: Record<string, string> = {};
-    formData.forEach((value, key) => {
-      payload[key] = String(value);
-    });
+    formData.forEach((value, key) => { payload[key] = String(value); });
 
-    console.log("[Gumroad Webhook] Received payload keys:", Object.keys(payload));
+    console.log("[Gumroad Webhook] Received:", Object.keys(payload));
 
-    /* ── 2. Extract key fields ── */
     const email = payload.email || payload.purchaser_email || "";
     const price = payload.price || payload.formatted_price?.replace(/[^0-9.]/g, "") || "0";
+    const saleId = payload.sale_id || "";
+    const recurrence = payload.recurrence || payload.subscription_duration || "";
 
     if (!email) {
-      console.warn("[Gumroad Webhook] No email found in payload — skipping");
-      // Return 200 so Gumroad doesn't retry
-      return NextResponse.json({ ok: true, message: "No email — skipped" }, { status: 200 });
+      console.warn("[Gumroad] No email — skipping");
+      return NextResponse.json({ ok: true, message: "No email" }, { status: 200 });
     }
 
-    /* ── 3. Determine plan from price ── */
-    const plan = resolvePlan(price);
+    const plan = resolvePlan(price, recurrence);
     if (!plan) {
-      console.warn(`[Gumroad Webhook] Unknown price: ${price} — cannot map to plan`);
-      return NextResponse.json(
-        { ok: true, message: `Unknown price ${price} — skipped` },
-        { status: 200 }
-      );
+      console.warn(`[Gumroad] Unknown price: ${price}`);
+      return NextResponse.json({ ok: true, message: `Unknown price ${price}` }, { status: 200 });
     }
 
-    /* ── 4. Calculate subscription dates ── */
-    const now = new Date();
-    const endDate = new Date(now);
-    endDate.setMonth(endDate.getMonth() + plan.months);
-
-    /* ── 5. Find user and upgrade ── */
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
 
     if (!user) {
-      console.warn(`[Gumroad Webhook] User not found for provided email`);
-      return NextResponse.json(
-        { ok: true, message: "User not found" },
-        { status: 200 }
-      );
+      console.warn(`[Gumroad] User not found for email`);
+      return NextResponse.json({ ok: true, message: "User not found" }, { status: 200 });
     }
 
-    /* ── 6. Update user to PREMIUM ── */
+    // ── Handle based on plan type ──
+    if (plan.planType === "SINGLE_REPORT") {
+      // 단건 구매: PurchasedReport 레코드 생성
+      // reportId는 유저의 현재 saju profile을 사용
+      const profile = await prisma.userSajuProfile.findUnique({ where: { userId: user.id } });
+      await prisma.purchasedReport.create({
+        data: {
+          userId: user.id,
+          reportId: profile?.id || "unknown",
+          gumroadId: saleId,
+        },
+      });
+      console.log(`[Gumroad] ✅ Single report purchased for ${email}`);
+      return NextResponse.json({ ok: true, message: "Single report unlocked", plan: "SINGLE_REPORT" });
+    }
+
+    // Monthly / Annual: 구독 처리
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate.setMonth(endDate.getMonth() + plan.months);
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -94,13 +96,11 @@ export async function POST(req: NextRequest) {
         premiumStartDate: now,
         premiumEndDate: endDate,
         subscriptionStatus: "ACTIVE",
-        usageTokens: 20, // Refresh tokens on purchase
+        usageTokens: 20,
       },
     });
 
-    console.log(
-      `[Gumroad Webhook] ✅ Upgraded ${email} → PREMIUM (${plan.planType}) until ${endDate.toISOString()}`
-    );
+    console.log(`[Gumroad] ✅ ${email} → PREMIUM (${plan.planType}) until ${endDate.toISOString()}`);
 
     return NextResponse.json({
       ok: true,
@@ -110,10 +110,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("[Gumroad Webhook] Error:", error);
-    // Still return 200 to prevent Gumroad from infinite retries
-    return NextResponse.json(
-      { ok: true, message: "Internal error — logged" },
-      { status: 200 }
-    );
+    return NextResponse.json({ ok: true, message: "Internal error — logged" }, { status: 200 });
   }
 }

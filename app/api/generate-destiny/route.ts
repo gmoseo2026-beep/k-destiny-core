@@ -239,7 +239,13 @@ Return ONLY VALID JSON:
           recordRequest(clientIp);
           
           console.log(`[AI Gen] Success in ${Date.now() - startTime}ms`);
-          return NextResponse.json(reportData, { status: 200 });
+          // Inject deterministic saju data from server so client can render SajuChart
+          return NextResponse.json({
+            ...reportData,
+            fourPillars: sajuResult.fourPillars,
+            dayMaster: sajuResult.dayMaster,
+            dayMasterSignKey: sajuResult.dayMasterSignKey,
+          }, { status: 200 });
 
         } catch (err: any) {
           lastError = err;

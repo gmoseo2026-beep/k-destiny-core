@@ -81,6 +81,7 @@ model User {
   profiles UserSajuProfile[]
   accounts Account[]
   sessions Session[]
+  purchasedReports PurchasedReport[]
 }
 
 model Account {
@@ -140,4 +141,30 @@ model TelegramMessage {
   payload           Json?
   createdAt         DateTime        @default(now())
   TelegramAccount   TelegramAccount @relation(fields: [telegramAccountId], references: [id], onDelete: Cascade)
+}
+
+// 5. 개별 리포트 단건 구매 추적
+model PurchasedReport {
+  id        String   @id @default(cuid())
+  userId    String
+  reportId  String   // 어떤 리포트(사주 프로필)를 구매했는지
+  gumroadId String?  // Gumroad sale_id
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// 6. 오늘의 운세 캐시 (Day Master 그룹별, API 비용 절약)
+model DailyFortune {
+  id           String   @id @default(cuid())
+  dayMasterKey String   // e.g., "WOOD_YANG"
+  locale       String   // e.g., "ko", "en"
+  date         String   // "YYYY-MM-DD"
+  summary      String   @db.Text // 무료: 1줄 요약
+  fullContent  String   @db.Text // 프리미엄: 전체 내용
+  luckyColor   String?
+  luckyNumber  String?
+  luckyDir     String?
+  createdAt    DateTime @default(now())
+
+  @@unique([dayMasterKey, locale, date])
 }

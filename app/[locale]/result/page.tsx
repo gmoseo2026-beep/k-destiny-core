@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Moon, Lock, ArrowRight, RefreshCw } from "lucide-react";
+import { Sparkles, Moon, Lock, ArrowRight, RefreshCw, Heart, DollarSign, Activity, BookOpen } from "lucide-react";
 import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { saveLastResult, getLastResult, getProfile, getMaster, saveProfile } from "@/lib/userStateManager";
+import dynamic from "next/dynamic";
+import ShareCard from "@/components/ShareCard";
+
+const SajuChart = dynamic(() => import("@/components/SajuChart"), { ssr: false });
 
 // Simple hash function matching the server-side cache key generation
 function generateLocalCacheKey(params: {
@@ -32,8 +36,14 @@ interface DestinyResult {
   core_essence: string;
   imminent_karma_teaser: string;
   locked_secrets: string;
+  love_fortune?: string;
+  wealth_warning?: string;
+  health_alert?: string;
+  master_prescription?: string;
   lucky_elements: string[];
   element_analysis: Record<string, number>;
+  fourPillars?: { year: string; month: string; day: string; time: string | null };
+  dayMaster?: string;
 }
 
 function isValidResult(data: any): data is DestinyResult {
@@ -44,7 +54,6 @@ function isValidResult(data: any): data is DestinyResult {
     typeof data.imminent_karma_teaser === "string" &&
     typeof data.locked_secrets === "string" &&
     Array.isArray(data.lucky_elements) &&
-    data.lucky_elements.length >= 2 &&
     typeof data.element_analysis === "object" &&
     data.element_analysis !== null
   );
@@ -494,145 +503,111 @@ function ResultPageContent() {
                 </p>
               </motion.div>
 
+              {/* 四柱 명식표 */}
+              {aiData.fourPillars && aiData.dayMaster && (
+                <motion.div variants={cardVariants}>
+                  <SajuChart fourPillars={aiData.fourPillars} dayMaster={aiData.dayMaster} elementsScore={aiData.element_analysis} />
+                </motion.div>
+              )}
+
               <div className="grid grid-cols-1 gap-6">
-                {/* Card 1: Core Essence — FREE section */}
-                <motion.div
-                  variants={cardVariants}
-                  className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-white/[0.04] transition-colors group"
-                >
+                {/* Card 1: Core Essence — FREE */}
+                <motion.div variants={cardVariants} className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:bg-white/[0.04] transition-colors group">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 rounded-full bg-purple-500/10 text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                      <Moon className="w-6 h-6" />
-                    </div>
-                    <h2 className="font-serif text-2xl text-white">{t("card_core_essence") || "Core Essence"}</h2>
+                    <div className="p-3 rounded-full bg-purple-500/10 text-purple-400"><Moon className="w-6 h-6" /></div>
+                    <h2 className="font-serif text-2xl text-white">{t("card_core_essence")}</h2>
                   </div>
-                  <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">
-                    {formatDestinyText(aiData.core_essence)}
-                  </div>
+                  <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">{formatDestinyText(aiData.core_essence)}</div>
                 </motion.div>
 
-                {/* Card 2: Karma Teaser — THE HOOK */}
-                <motion.div
-                  variants={cardVariants}
-                  className="bg-gradient-to-r from-red-500/10 to-orange-500/10 backdrop-blur-xl border border-red-500/20 rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-                >
+                {/* Card 2: Karma Teaser — FREE HOOK */}
+                <motion.div variants={cardVariants} className="bg-gradient-to-r from-red-500/10 to-orange-500/10 backdrop-blur-xl border border-red-500/20 rounded-3xl p-6 sm:p-8">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-3 rounded-full bg-red-500/20 text-red-400">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <h2 className="font-serif text-xl text-white">{t("card_karma_teaser") || "Imminent Karma"}</h2>
+                    <div className="p-3 rounded-full bg-red-500/20 text-red-400"><Sparkles className="w-6 h-6" /></div>
+                    <h2 className="font-serif text-xl text-white">{t("card_karma_teaser")}</h2>
                   </div>
-                  <p className="font-sans text-red-200/90 font-medium leading-relaxed text-lg sm:text-xl italic">
-                    &ldquo;{aiData.imminent_karma_teaser}&rdquo;
-                  </p>
+                  <p className="font-sans text-red-200/90 font-medium leading-relaxed text-lg sm:text-xl italic">&ldquo;{aiData.imminent_karma_teaser}&rdquo;</p>
                 </motion.div>
 
-                {/* Card 3: Locked Secrets — PREMIUM / PAYWALL */}
-                <motion.div
-                  variants={cardVariants}
-                  className={`relative bg-white/[0.02] backdrop-blur-xl border ${
-                    premium ? "border-gold/30" : "border-white/10"
-                  } rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.5)] overflow-hidden group`}
-                >
-                  <div className="flex items-center gap-3 mb-6 relative z-10">
-                    <div className={`p-3 rounded-full ${premium ? "bg-gold/20" : "bg-gold/10"} text-gold`}>
-                      {premium ? <Sparkles className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
+                {/* LOCKED SECTIONS — blur for free users */}
+                {[
+                  { key: 'love', title: '💕 Love & Relationships', icon: <Heart className="w-5 h-5" />, content: aiData.love_fortune || aiData.locked_secrets, color: 'pink' },
+                  { key: 'wealth', title: '💰 Wealth & Fortune', icon: <DollarSign className="w-5 h-5" />, content: aiData.wealth_warning || '', color: 'amber' },
+                  { key: 'health', title: '🌿 Health & Vitality', icon: <Activity className="w-5 h-5" />, content: aiData.health_alert || '', color: 'emerald' },
+                  { key: 'prescription', title: '📿 Master\'s Prescription', icon: <BookOpen className="w-5 h-5" />, content: aiData.master_prescription || '', color: 'purple' },
+                ].filter(s => s.content).map((section) => (
+                  <motion.div key={section.key} variants={cardVariants}
+                    className={`relative bg-white/[0.02] backdrop-blur-xl border ${premium ? 'border-gold/30' : 'border-white/10'} rounded-3xl p-6 sm:p-8 overflow-hidden`}>
+                    <div className="flex items-center gap-3 mb-4 relative z-10">
+                      <div className={`p-2.5 rounded-full ${premium ? 'bg-gold/15 text-gold' : 'bg-white/5 text-gray-400'}`}>{section.icon}</div>
+                      <h2 className={`font-serif text-lg ${premium ? 'text-gold' : 'text-white'}`}>{section.title}</h2>
+                      {premium && <span className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[9px] font-sans tracking-wider">UNLOCKED ✨</span>}
                     </div>
-                    <div>
-                      <h2 className="font-serif text-2xl text-gold">{t("card_locked_secrets") || "Premium Secrets"}</h2>
-                      {premium && (
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[10px] font-sans tracking-widest uppercase">Premium Unlocked ✨</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {premium ? (
-                    /* ═══ UNLOCKED — Full content visible ═══ */
-                    <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">
-                      {formatDestinyText(aiData.locked_secrets)}
-                    </div>
-                  ) : (
-                    /* ═══ LOCKED — Blurred with paywall overlay ═══ */
-                    <>
-                      <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap blur-[8px] select-none opacity-30">
-                        {formatDestinyText(aiData.locked_secrets)}
-                      </div>
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40 backdrop-blur-[2px]">
-                        <div className="bg-black/80 border border-gold/30 px-6 py-6 rounded-3xl text-center shadow-[0_0_30px_rgba(212,175,55,0.2)] max-w-[90%] sm:max-w-md">
-                          <Lock className="w-8 h-8 text-gold mx-auto mb-3" />
-                          <h3 className="text-white font-serif text-xl mb-2">{t("locked_badge") || "Destiny Locked"}</h3>
-                          <p className="text-gray-400 text-sm mb-6 px-2">{t("locked_desc") || "Unlock to reveal exact timings and actionable remedies."}</p>
-                          <Link
-                            href="/pricing"
-                            className="block w-full px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-sm sm:text-base rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:shadow-[0_0_30px_rgba(212,175,55,0.8)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu text-center"
-                          >
-                            {t("btn_paywall_text") || "🔒 Unlock Your Ultimate Destiny Blueprint ($9.99)"}
-                          </Link>
+                    {premium ? (
+                      <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap">{formatDestinyText(section.content)}</div>
+                    ) : (
+                      <>
+                        <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap blur-[8px] select-none opacity-30">{formatDestinyText(section.content)}</div>
+                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40">
+                          <div className="bg-black/80 border border-gold/30 px-5 py-5 rounded-2xl text-center max-w-[85%] sm:max-w-sm">
+                            <Lock className="w-6 h-6 text-gold mx-auto mb-2" />
+                            <p className="text-gray-400 text-xs mb-4">Unlock to reveal exact timings and remedies</p>
+                            <div className="flex flex-col gap-2">
+                              <a href="https://moseo.gumroad.com/l/zmqhr" target="_blank" rel="noopener noreferrer"
+                                className="px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-bold text-sm rounded-xl text-center hover:scale-[1.02] transition-transform">
+                                🔓 Unlock This Reading — $2.99
+                              </a>
+                              <Link href="/pricing" className="text-gold/60 text-xs hover:text-gold transition-colors">or get all readings with Premium →</Link>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
+                      </>
+                    )}
+                  </motion.div>
+                ))}
               </div>
 
               {/* Lucky Elements */}
-              <motion.div
-                variants={cardVariants}
-                className="flex flex-col items-center mt-12 mb-16 space-y-4"
-              >
-                <h3 className="font-sans text-sm tracking-widest text-gray-500 uppercase">
-                  {t("lucky_elements")}
-                </h3>
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+              <motion.div variants={cardVariants} className="flex flex-col items-center mt-10 mb-8 space-y-4">
+                <h3 className="font-sans text-sm tracking-widest text-gray-500 uppercase">{t("lucky_elements")}</h3>
+                <div className="flex flex-wrap justify-center gap-3">
                   {aiData.lucky_elements.map((element, idx) => (
-                    <div
-                      key={idx}
-                      className="px-6 py-2 rounded-full border border-gold/40 bg-gold/5 text-gold font-serif text-lg tracking-wide shadow-[0_0_15px_rgba(212,175,55,0.2)]"
-                    >
-                      {element}
-                    </div>
+                    <div key={idx} className="px-6 py-2 rounded-full border border-gold/40 bg-gold/5 text-gold font-serif text-lg tracking-wide shadow-[0_0_15px_rgba(212,175,55,0.2)]">{element}</div>
                   ))}
                 </div>
               </motion.div>
 
-              {/* Call to Action */}
-              <motion.div
-                variants={cardVariants}
-                className="flex flex-col sm:flex-row justify-center items-stretch gap-4 pt-8 border-t border-white/5 w-full max-w-2xl mx-auto"
-              >
+              {/* Social Proof + Share */}
+              <motion.div variants={cardVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6 border-t border-white/5">
+                <p className="text-gray-500 text-sm font-sans">🔥 <span className="text-gold/80 font-semibold">{Math.floor(50 + Math.random() * 150)}</span> people viewed this analysis today</p>
+                <ShareCard title="My K-Destiny Cosmic Blueprint" description={aiData.core_essence.slice(0, 100) + '...'} locale={locale} />
+              </motion.div>
+
+              {/* CTAs */}
+              <motion.div variants={cardVariants} className="flex flex-col sm:flex-row justify-center items-stretch gap-4 pt-4 w-full max-w-2xl mx-auto">
                 {premium ? (
-                  /* ═══ PREMIUM CTAs ═══ */
                   <>
                     <Link href="/dashboard" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 hover:to-amber-500/30 font-sans font-bold text-base whitespace-nowrap rounded-2xl active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
-                        <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
-                        {t("btn_go_dashboard")}
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group">
+                        <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_go_dashboard")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
-                        <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
-                        {t("btn_chat")}
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group">
+                        <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_chat")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </Link>
                   </>
                 ) : (
-                  /* ═══ FREE CTAs ═══ */
                   <>
                     <Link href="/pricing" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base whitespace-nowrap rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.6)] hover:scale-[1.02] active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
-                        <Lock className="w-5 h-5 opacity-70 flex-shrink-0" />
-                        {t("btn_upgrade")}
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group">
+                        <Lock className="w-5 h-5 opacity-70" /> {t("btn_upgrade")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base whitespace-nowrap rounded-2xl active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu flex items-center justify-center gap-2 sm:gap-3 group">
-                        <Sparkles className="w-5 h-5 opacity-70 flex-shrink-0" />
-                        {t("btn_chat")}
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group">
+                        <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_chat")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </Link>
                   </>

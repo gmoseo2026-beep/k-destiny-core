@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
-import { Sparkles, Calendar, ArrowRight, FileText, Home, MessageCircle, Compass, Activity, Loader2, User, BookOpen, X } from "lucide-react";
+import { Sparkles, Calendar, ArrowRight, FileText, Home, MessageCircle, Compass, Activity, Loader2, User, BookOpen, X, Sun } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { getLastResult, getMaster, getProfile, hasCompletedOnboarding, updateKarmaForPlan, saveExpiryDate, saveProfile, saveMaster } from "@/lib/userStateManager";
 import { MASTERS } from "@/lib/masters";
@@ -488,7 +488,19 @@ export default function DashboardPage() {
             </div>
           </div>
         </Link>
-        {/* ④ 에너지 싱크 (궁합 분석) */}
+        {/* ④ 오늘의 운세 */}
+        <Link href="/daily" className="block">
+          <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-amber-500/5 text-amber-400 group-hover:bg-amber-500/10 transition-colors">
+              <Sun className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-sans text-sm font-bold text-white">Daily Fortune</p>
+              <p className="font-sans text-xs text-gray-500 mt-0.5">Today&apos;s Reading</p>
+            </div>
+          </div>
+        </Link>
+        {/* ⑤ 에너지 싱크 (궁합 분석) */}
         <Link href="/sync" className="block">
           <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-5 hover:bg-white/[0.06] hover:border-gold/20 transition-all group cursor-pointer flex items-center gap-4">
             <div className="p-3 rounded-xl bg-blue-500/5 text-blue-400 group-hover:bg-blue-500/10 transition-colors">
