@@ -2,6 +2,10 @@
 // Node.js helper to query revenue stats via Prisma Client
 // Called by daily_report.py
 
+// Load .env and .env.local (same as prisma.config.ts)
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
+
 const { PrismaClient } = require('@prisma/client');
 
 async function main() {
