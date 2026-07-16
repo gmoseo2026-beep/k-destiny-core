@@ -1,93 +1,92 @@
 // scripts/query_revenue.js
-// Node.js helper to query revenue stats via Prisma Client
+// Node.js helper to query revenue stats using raw pg
 // Called by daily_report.py
 
-// Load .env and .env.local (same as prisma.config.ts)
+// Load .env and .env.local
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
 
-const { PrismaClient } = require('@prisma/client');
+const { Pool } = require('pg');
 
 async function main() {
-  const prisma = new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-  });
-  
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.log(JSON.stringify({ error: 'DATABASE_URL not set' }));
+    process.exit(1);
+  }
+
+  const pool = new Pool({ connectionString: dbUrl });
+
   try {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(todayStart);
+    const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
     // Total users
-    const totalUsers = await prisma.user.count();
-    
-    // Total premium users
-    const totalPremium = await prisma.user.count({
-      where: { tier: 'PREMIUM' }
-    });
-    
-    // Today's new premium
-    const dailyPremium = await prisma.user.count({
-      where: {
-        tier: 'PREMIUM',
-        premiumStartDate: { gte: todayStart }
-      }
-    });
-    
-    // Daily revenue (sum paidAmount in cents)
-    const dailyRevResult = await prisma.user.aggregate({
-      _sum: { paidAmount: true },
-      where: {
-        tier: 'PREMIUM',
-        premiumStartDate: { gte: todayStart }
-      }
-    });
-    
-    // Weekly revenue
-    const weeklyRevResult = await prisma.user.aggregate({
-      _sum: { paidAmount: true },
-      where: {
-        tier: 'PREMIUM',
-        premiumStartDate: { gte: weekAgo }
-      }
-    });
-    
-    // Monthly revenue
-    const monthlyRevResult = await prisma.user.aggregate({
-      _sum: { paidAmount: true },
-      where: {
-        tier: 'PREMIUM',
-        premiumStartDate: { gte: monthStart }
-      }
-    });
-    
-    // Today's purchased reports
-    const dailyReports = await prisma.purchasedReport.count({
-      where: { createdAt: { gte: todayStart } }
-    });
-    
-    // Total purchased reports
-    const totalReports = await prisma.purchasedReport.count();
+    const totalUsersRes = await pool.query('SELECT COUNT(*) as cnt FROM "User"');
+    const totalUsers = parseInt(totalUsersRes.rows[0].cnt);
 
-    const result = {
+    // Total premium users
+    const totalPremiumRes = await pool.query("SELECT COUNT(*) as cnt FROM \"User\" WHERE tier='PREMIUM'");
+    const totalPremium = parseInt(totalPremiumRes.rows[0].cnt);
+
+    // Today's new premium
+    const dailyPremiumRes = await pool.query(
+      "SELECT COUNT(*) as cnt FROM \"User\" WHERE tier='PREMIUM' AND \"premiumStartDate\"::date = $1",
+      [todayStr]
+    );
+    const dailyPremium = parseInt(dailyPremiumRes.rows[0].cnt);
+
+    // Daily revenue (paidAmount in cents)
+    const dailyRevRes = await pool.query(
+      "SELECT COALESCE(SUM(\"paidAmount\"),0) as total FROM \"User\" WHERE tier='PREMIUM' AND \"premiumStartDate\"::date = $1",
+      [todayStr]
+    );
+    const dailyRevenue = parseInt(dailyRevRes.rows[0].total);
+
+    // Weekly revenue
+    const weeklyRevRes = await pool.query(
+      "SELECT COALESCE(SUM(\"paidAmount\"),0) as total FROM \"User\" WHERE tier='PREMIUM' AND \"premiumStartDate\"::date >= $1",
+      [weekAgoStr]
+    );
+    const weeklyRevenue = parseInt(weeklyRevRes.rows[0].total);
+
+    // Monthly revenue
+    const monthlyRevRes = await pool.query(
+      "SELECT COALESCE(SUM(\"paidAmount\"),0) as total FROM \"User\" WHERE tier='PREMIUM' AND \"premiumStartDate\"::date >= $1",
+      [monthStart]
+    );
+    const monthlyRevenue = parseInt(monthlyRevRes.rows[0].total);
+
+    // Today's purchased reports
+    const dailyReportsRes = await pool.query(
+      "SELECT COUNT(*) as cnt FROM \"PurchasedReport\" WHERE \"createdAt\"::date = $1",
+      [todayStr]
+    );
+    const dailyReports = parseInt(dailyReportsRes.rows[0].cnt);
+
+    // Total purchased reports
+    const totalReportsRes = await pool.query('SELECT COUNT(*) as cnt FROM "PurchasedReport"');
+    const totalReports = parseInt(totalReportsRes.rows[0].cnt);
+
+    console.log(JSON.stringify({
       totalUsers,
       totalPremium,
       dailyPremium,
-      dailyRevenue: dailyRevResult._sum.paidAmount || 0,
-      weeklyRevenue: weeklyRevResult._sum.paidAmount || 0,
-      monthlyRevenue: monthlyRevResult._sum.paidAmount || 0,
+      dailyRevenue,
+      weeklyRevenue,
+      monthlyRevenue,
       dailyReports,
       totalReports
-    };
-    
-    console.log(JSON.stringify(result));
+    }));
   } catch (err) {
-    console.error(JSON.stringify({ error: err.message }));
+    console.log(JSON.stringify({ error: err.message }));
     process.exit(1);
   } finally {
-    await prisma.$disconnect();
+    await pool.end();
   }
 }
 
