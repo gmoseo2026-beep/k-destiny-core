@@ -8,7 +8,7 @@ import { useLocale } from "next-intl";
  * Set MAINTENANCE_MODE = true to activate.
  * Set MAINTENANCE_MODE = false to deactivate after update.
  */
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 
 const MESSAGES: Record<string, { title: string; subtitle: string; alert: string }> = {
   ko: {
