@@ -250,8 +250,9 @@ function ResultPageContent() {
           sessionStorage.setItem("destinyFormData", JSON.stringify(fallbackData));
           storedData = sessionStorage.getItem("destinyFormData");
         } else {
-          setError("No birth data found. Please go back and enter your information.");
-          setIsLoading(false);
+          // 프로필 데이터 없음 → 입력 페이지로 자동 리다이렉트
+          console.log("[Result] No profile data found. Redirecting to input page...");
+          router.replace("/input-destiny");
           return;
         }
       }
