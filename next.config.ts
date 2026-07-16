@@ -17,8 +17,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // HTML 페이지: 항상 서버에 재검증 요청 (모바일 캐시 방지)
+        source: "/((?!_next/static|_next/image|favicon).*)",
         headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
           {
             key: "X-Frame-Options",
             value: "DENY",
