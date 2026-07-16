@@ -44,7 +44,6 @@ load_env()
 
 BOT_TOKEN   = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID     = os.environ.get("CEO_TELEGRAM_ID", "")
-DB_URL      = os.environ.get("DATABASE_URL", "")
 
 if not BOT_TOKEN or not CHAT_ID:
     print("❌ TELEGRAM_BOT_TOKEN or CEO_TELEGRAM_ID not set")
@@ -150,76 +149,30 @@ def get_visitor_stats() -> str:
 
 # ── 4. Revenue Stats ────────────────────────────────────────────────
 def get_revenue_stats() -> str:
-    if not DB_URL:
-        return "💰 <b>매출 현황</b>\n  ⚠️ DATABASE_URL 미설정"
-    
     try:
-        # Use psql directly for simplicity
-        def query(sql: str) -> str:
-            return run(f'psql "{DB_URL}" -t -c "{sql}"', timeout=10).strip()
+        # Use Node.js + Prisma to query DB (psql not available, DB_URL in .env)
+        raw = run("cd /root/k-destiny-core && node scripts/query_revenue.js 2>/dev/null", timeout=15)
+        if not raw or raw.startswith("{\"error"):
+            err_data = json.loads(raw) if raw else {}
+            return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: {err_data.get('error', 'unknown')}"
         
-        now = datetime.now()
-        today_str = now.strftime("%Y-%m-%d")
-        week_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
-        month_start = now.strftime("%Y-%m-01")
+        data = json.loads(raw)
         
-        # Total premium users
-        total_premium = query(
-            "SELECT COUNT(*) FROM \\\"User\\\" WHERE tier='PREMIUM'"
-        )
+        def fmt_usd(cents: int) -> str:
+            return f"${cents / 100:.2f}" if cents else "$0.00"
         
-        # Today's new premium signups
-        daily_premium = query(
-            f"SELECT COUNT(*) FROM \\\"User\\\" WHERE tier='PREMIUM' "
-            f"AND \\\"premiumStartDate\\\"::date = '{today_str}'"
-        )
-        
-        # Daily revenue (from paidAmount, in cents)
-        daily_rev = query(
-            f"SELECT COALESCE(SUM(\\\"paidAmount\\\"),0) FROM \\\"User\\\" "
-            f"WHERE tier='PREMIUM' AND \\\"premiumStartDate\\\"::date = '{today_str}'"
-        )
-        
-        # Weekly revenue
-        weekly_rev = query(
-            f"SELECT COALESCE(SUM(\\\"paidAmount\\\"),0) FROM \\\"User\\\" "
-            f"WHERE tier='PREMIUM' AND \\\"premiumStartDate\\\"::date >= '{week_ago}'"
-        )
-        
-        # Monthly revenue
-        monthly_rev = query(
-            f"SELECT COALESCE(SUM(\\\"paidAmount\\\"),0) FROM \\\"User\\\" "
-            f"WHERE tier='PREMIUM' AND \\\"premiumStartDate\\\"::date >= '{month_start}'"
-        )
-        
-        # Individual report purchases (today)
-        daily_reports = query(
-            f"SELECT COUNT(*) FROM \\\"PurchasedReport\\\" "
-            f"WHERE \\\"createdAt\\\"::date = '{today_str}'"
-        )
-        
-        # Total registered users
-        total_users = query("SELECT COUNT(*) FROM \\\"User\\\"")
-
-        def fmt_usd(cents_str: str) -> str:
-            try:
-                cents = int(cents_str.strip())
-                return f"${cents / 100:.2f}"
-            except:
-                return "$0.00"
-
         return (
             f"💰 <b>매출 현황</b>\n"
-            f"  📅 오늘: {fmt_usd(daily_rev)} ({daily_premium.strip()}건 프리미엄)\n"
-            f"  📅 주간(7일): {fmt_usd(weekly_rev)}\n"
-            f"  📅 월간: {fmt_usd(monthly_rev)}\n"
-            f"  📦 오늘 개별 리포트: {daily_reports.strip()}건\n"
+            f"  📅 오늘: {fmt_usd(data['dailyRevenue'])} ({data['dailyPremium']}건 프리미엄)\n"
+            f"  📅 주간(7일): {fmt_usd(data['weeklyRevenue'])}\n"
+            f"  📅 월간: {fmt_usd(data['monthlyRevenue'])}\n"
+            f"  📦 오늘 개별 리포트: {data['dailyReports']}건 (총 {data['totalReports']}건)\n"
             f"  ─────────────────\n"
-            f"  👤 총 회원: {total_users.strip()}명\n"
-            f"  ⭐ 프리미엄 회원: {total_premium.strip()}명"
+            f"  👤 총 회원: {data['totalUsers']}명\n"
+            f"  ⭐ 프리미엄 회원: {data['totalPremium']}명"
         )
     except Exception as e:
-        return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: {e}"
+        return f"💰 <b>매출 현황</b>\n  ❌ 조회 실패: {e}"
 
 # ── 5. Error Log Summary ────────────────────────────────────────────
 def get_error_summary() -> str:
