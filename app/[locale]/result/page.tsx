@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Moon, Lock, ArrowRight, RefreshCw, Heart, DollarSign, Activity, BookOpen } from "lucide-react";
+import { Sparkles, Moon, Lock, ArrowRight, RefreshCw, Heart, DollarSign, Activity, BookOpen, Clock, Eye, Star } from "lucide-react";
+import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -119,6 +120,25 @@ const LOADING_PHRASES: Record<string, string[]> = {
   ]
 };
 
+// ── Element normalization map for locale-consistent display ──
+const ELEMENT_MAP: Record<string, { name: Record<string, string>; color: string; image: string }> = {
+  wood: { name: { ko: '나무 (木)', en: 'Wood (木)', ja: '木' }, color: '#4ade80', image: '/images/element_wood.webp.jpg' },
+  fire: { name: { ko: '불 (火)', en: 'Fire (火)', ja: '火' }, color: '#f87171', image: '/images/element_fire.webp.jpg' },
+  earth: { name: { ko: '흙 (土)', en: 'Earth (土)', ja: '土' }, color: '#fbbf24', image: '/images/element_earth.webp.jpg' },
+  metal: { name: { ko: '쇠 (金)', en: 'Metal (金)', ja: '金' }, color: '#e2e8f0', image: '/images/element_metal.webp.jpg' },
+  water: { name: { ko: '물 (水)', en: 'Water (水)', ja: '水' }, color: '#60a5fa', image: '/images/element_water.webp.jpg' },
+};
+
+function normalizeElement(raw: string): string {
+  const lower = raw.toLowerCase().trim();
+  if (lower.includes('wood') || lower.includes('나무') || lower.includes('목')) return 'wood';
+  if (lower.includes('fire') || lower.includes('불') || lower.includes('화')) return 'fire';
+  if (lower.includes('earth') || lower.includes('흙') || lower.includes('토')) return 'earth';
+  if (lower.includes('metal') || lower.includes('쇠') || lower.includes('금')) return 'metal';
+  if (lower.includes('water') || lower.includes('물') || lower.includes('수')) return 'water';
+  return lower;
+}
+
 function ResultPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +157,31 @@ function ResultPageContent() {
 
   const [aiData, setAiData] = useState<DestinyResult | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+
+  // ── Countdown timer (24h from first load) ──
+  const [timerDisplay, setTimerDisplay] = useState("23:59:59");
+  useEffect(() => {
+    const endKey = "kdestiny_offer_end";
+    let end = parseInt(localStorage.getItem(endKey) || "0", 10);
+    if (!end || end < Date.now()) {
+      end = Date.now() + 24 * 60 * 60 * 1000;
+      localStorage.setItem(endKey, String(end));
+    }
+    const tick = () => {
+      const diff = Math.max(0, end - Date.now());
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimerDisplay(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Scarcity: fake viewing count ──
+  const viewingCount = useMemo(() => Math.floor(2 + Math.random() * 5), []);
+  const socialCount = useMemo(() => Math.floor(80 + Math.random() * 120), []);
 
   // Check premium status on mount
   // Derived from session above
@@ -553,35 +598,73 @@ function ResultPageContent() {
                   <p className="font-sans text-red-200/90 font-medium leading-relaxed text-lg sm:text-xl italic">&ldquo;{aiData.imminent_karma_teaser}&rdquo;</p>
                 </motion.div>
 
-                {/* LOCKED SECTIONS — blur for free users */}
+                {/* LOCKED SECTIONS — psychological paywall for free users */}
                 {[
-                  { key: 'love', title: '💕 Love & Relationships', icon: <Heart className="w-5 h-5" />, content: aiData.love_fortune || aiData.locked_secrets, color: 'pink' },
-                  { key: 'wealth', title: '💰 Wealth & Fortune', icon: <DollarSign className="w-5 h-5" />, content: aiData.wealth_warning || '', color: 'amber' },
-                  { key: 'health', title: '🌿 Health & Vitality', icon: <Activity className="w-5 h-5" />, content: aiData.health_alert || '', color: 'emerald' },
-                  { key: 'prescription', title: '📿 Master\'s Prescription', icon: <BookOpen className="w-5 h-5" />, content: aiData.master_prescription || '', color: 'purple' },
+                  { key: 'love', titleKey: 'section_love', icon: <Heart className="w-5 h-5" />, content: aiData.love_fortune || aiData.locked_secrets, color: 'pink' },
+                  { key: 'wealth', titleKey: 'section_wealth', icon: <DollarSign className="w-5 h-5" />, content: aiData.wealth_warning || '', color: 'amber' },
+                  { key: 'health', titleKey: 'section_health', icon: <Activity className="w-5 h-5" />, content: aiData.health_alert || '', color: 'emerald' },
+                  { key: 'prescription', titleKey: 'section_prescription', icon: <BookOpen className="w-5 h-5" />, content: aiData.master_prescription || '', color: 'purple' },
                 ].filter(s => s.content).map((section) => (
                   <motion.div key={section.key} variants={cardVariants}
                     className={`relative bg-white/[0.02] backdrop-blur-xl border ${premium ? 'border-gold/30' : 'border-white/10'} rounded-3xl p-6 sm:p-8 overflow-hidden`}>
                     <div className="flex items-center gap-3 mb-4 relative z-10">
                       <div className={`p-2.5 rounded-full ${premium ? 'bg-gold/15 text-gold' : 'bg-white/5 text-gray-400'}`}>{section.icon}</div>
-                      <h2 className={`font-serif text-lg ${premium ? 'text-gold' : 'text-white'}`}>{section.title}</h2>
-                      {premium && <span className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[9px] font-sans tracking-wider">UNLOCKED ✨</span>}
+                      <h2 className={`font-serif text-lg ${premium ? 'text-gold' : 'text-white'}`}>{t(section.titleKey)}</h2>
+                      {premium && <span className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[9px] font-sans tracking-wider">{t("unlocked_label")}</span>}
                     </div>
                     {premium ? (
                       <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap">{formatDestinyText(section.content)}</div>
                     ) : (
                       <>
-                        <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap blur-[8px] select-none opacity-30">{formatDestinyText(section.content)}</div>
-                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/40">
-                          <div className="bg-black/80 border border-gold/30 px-5 py-5 rounded-2xl text-center max-w-[85%] sm:max-w-sm">
+                        {/* Show first 2 lines clearly, then gradient fade */}
+                        <div className="relative">
+                          <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap" style={{ maxHeight: '4.5em', overflow: 'hidden' }}>
+                            {formatDestinyText(section.content)}
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#06050e] to-transparent" />
+                        </div>
+                        <div className="mt-4 z-20 flex flex-col items-center">
+                          <div className="bg-black/80 border border-gold/30 px-5 py-5 rounded-2xl text-center w-full max-w-sm mx-auto">
+                            {/* Warning */}
+                            <p className="text-red-400/90 text-xs font-sans font-medium mb-3 animate-pulse">
+                              {t("unlock_warning")}
+                            </p>
                             <Lock className="w-6 h-6 text-gold mx-auto mb-2" />
-                            <p className="text-gray-400 text-xs mb-4">Unlock to reveal exact timings and remedies</p>
+                            <p className="text-gray-400 text-xs mb-1">{t("unlock_desc")}</p>
+                            {/* Viewing count */}
+                            <div className="flex items-center justify-center gap-1.5 mb-3">
+                              <Eye className="w-3 h-3 text-green-400" />
+                              <span className="text-green-400/80 text-[10px] font-sans">
+                                {t("viewing_now", { count: viewingCount })}
+                              </span>
+                            </div>
                             <div className="flex flex-col gap-2">
-                              <a href="https://moseo.gumroad.com/l/zmqhr" target="_blank" rel="noopener noreferrer"
-                                className="px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-bold text-sm rounded-xl text-center hover:scale-[1.02] transition-transform">
-                                🔓 Unlock This Reading — $2.99
+                              {/* Anchor pricing */}
+                              <a href="https://moseo.gumroad.com/l/zmqhr" target="_blank" rel="noopener noreferrer">
+                                <motion.div
+                                  whileTap={{ scale: 0.93 }}
+                                  className="relative px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-bold text-sm rounded-xl text-center overflow-hidden active:brightness-75 transition-all cursor-pointer"
+                                >
+                                  <span className="relative z-10 flex items-center justify-center gap-2">
+                                    {t("unlock_cta")}
+                                    <span className="line-through text-black/40 text-xs">{t("unlock_original_price")}</span>
+                                    <span className="text-base font-black">{t("unlock_sale_price")}</span>
+                                    <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] rounded-md font-bold">{t("unlock_discount_label")}</span>
+                                  </span>
+                                  {/* Shimmer */}
+                                  <motion.div
+                                    animate={{ x: ["-100%", "200%"] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent z-0 w-1/3"
+                                  />
+                                </motion.div>
                               </a>
-                              <Link href="/pricing" className="text-gold/60 text-xs hover:text-gold transition-colors">or get all readings with Premium →</Link>
+                              {/* Timer */}
+                              <div className="flex items-center justify-center gap-1.5 text-amber-400/70 text-[10px] font-sans">
+                                <Clock className="w-3 h-3" />
+                                <span>{t("timer_label")}: {timerDisplay}</span>
+                              </div>
+                              <Link href="/pricing" className="text-gold/60 text-xs hover:text-gold transition-colors">{t("unlock_or_premium")}</Link>
                             </div>
                           </div>
                         </div>
@@ -591,19 +674,46 @@ function ResultPageContent() {
                 ))}
               </div>
 
-              {/* Lucky Elements */}
-              <motion.div variants={cardVariants} className="flex flex-col items-center mt-10 mb-8 space-y-4">
-                <h3 className="font-sans text-sm tracking-widest text-gray-500 uppercase">{t("lucky_elements")}</h3>
-                <div className="flex flex-wrap justify-center gap-3">
-                  {aiData.lucky_elements.map((element, idx) => (
-                    <div key={idx} className="px-6 py-2 rounded-full border border-gold/40 bg-gold/5 text-gold font-serif text-lg tracking-wide shadow-[0_0_15px_rgba(212,175,55,0.2)]">{element}</div>
-                  ))}
+              {/* Lucky Elements — with images and localized names */}
+              <motion.div variants={cardVariants} className="mt-10 mb-8">
+                <h3 className="font-sans text-sm tracking-widest text-gray-500 uppercase text-center mb-6">{t("lucky_elements")}</h3>
+                <div className="flex flex-wrap justify-center gap-4">
+                  {aiData.lucky_elements.map((element, idx) => {
+                    const normalized = normalizeElement(element);
+                    const elData = ELEMENT_MAP[normalized];
+                    const displayName = elData ? (elData.name[currentLocale] || elData.name.en) : element;
+                    return (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.15, duration: 0.4 }}
+                        className="flex flex-col items-center gap-2"
+                      >
+                        {elData ? (
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+                            style={{ borderColor: `${elData.color}60` }}>
+                            <Image src={elData.image} alt={displayName} fill sizes="80px" className="object-cover" />
+                          </div>
+                        ) : null}
+                        <span className="text-gold font-serif text-sm sm:text-base tracking-wide">{displayName}</span>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </motion.div>
 
               {/* Social Proof + Share */}
               <motion.div variants={cardVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6 border-t border-white/5">
-                <p className="text-gray-500 text-sm font-sans">🔥 <span className="text-gold/80 font-semibold">{Math.floor(50 + Math.random() * 150)}</span> people viewed this analysis today</p>
+                <div className="flex items-center gap-4">
+                  <p className="text-gray-400 text-sm font-sans">
+                    {t("social_proof", { count: socialCount })}
+                  </p>
+                  <span className="text-gray-600 text-xs">|</span>
+                  <p className="text-amber-400/80 text-xs font-sans">
+                    {t("rating_text", { count: "2,847" })}
+                  </p>
+                </div>
                 <ShareCard title="My K-Destiny Cosmic Blueprint" description={aiData.core_essence.slice(0, 100) + '...'} locale={locale} />
               </motion.div>
 
@@ -612,27 +722,27 @@ function ResultPageContent() {
                 {premium ? (
                   <>
                     <Link href="/dashboard" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group">
+                      <motion.button whileTap={{ scale: 0.93 }} className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold/20 to-amber-500/20 border border-gold/30 text-gold hover:from-gold/30 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group active:brightness-75">
                         <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_go_dashboard")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
+                      </motion.button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group">
+                      <motion.button whileTap={{ scale: 0.93 }} className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_40px_rgba(212,175,55,0.6)] transition-all flex items-center justify-center gap-2 group active:brightness-75">
                         <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_chat")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
+                      </motion.button>
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link href="/pricing" className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group">
+                      <motion.button whileTap={{ scale: 0.93 }} className="relative w-full h-full px-4 sm:px-6 py-4 bg-gradient-to-r from-gold to-[#a68625] text-black font-sans font-bold text-base rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_40px_rgba(212,175,55,0.6)] transition-all flex items-center justify-center gap-2 group active:brightness-75">
                         <Lock className="w-5 h-5 opacity-70" /> {t("btn_upgrade")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
+                      </motion.button>
                     </Link>
                     <Link href={`/chat?masterId=${masterId}`} className="w-full sm:flex-1 block">
-                      <button className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group">
+                      <motion.button whileTap={{ scale: 0.93 }} className="relative w-full h-full px-4 sm:px-6 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-sans font-bold text-base rounded-2xl transition-all flex items-center justify-center gap-2 group active:brightness-75">
                         <Sparkles className="w-5 h-5 opacity-70" /> {t("btn_chat")} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </button>
+                      </motion.button>
                     </Link>
                   </>
                 )}

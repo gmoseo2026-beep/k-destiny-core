@@ -230,7 +230,7 @@ export default function OnboardingPage() {
     }, 4000);
   };
 
-  const canProceedStep2 = birthYear && birthMonth && birthDay && (birthTime || unknownTime);
+  const canProceedStep2 = birthYear && birthMonth && birthDay && (birthTime || unknownTime) && countryCode;
   const canProceedStep3 = concern !== "";
 
   return (
@@ -354,17 +354,18 @@ export default function OnboardingPage() {
                 ))}
               </div>
 
-              <button
+              <motion.button
                 onClick={() => gender && setStep(2)}
                 disabled={!gender}
+                whileTap={gender ? { scale: 0.93 } : {}}
                 className={`w-full py-4 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                   gender
-                    ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:scale-95"
+                    ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:brightness-75"
                     : "bg-white/[0.04] text-gray-600 cursor-not-allowed"
                 }`}
               >
                 {t("btn_next")} <ArrowRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </motion.div>
           ) : step === 2 ? (
             /* ═══ Step 2: Birth Data — Dropdowns ═══ */
@@ -454,21 +455,23 @@ export default function OnboardingPage() {
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setStep(1)}
-                  className="px-6 py-4 rounded-xl border border-white/10 text-gray-400 font-sans text-sm hover:border-white/20 transition-colors">
+                <motion.button onClick={() => setStep(1)}
+                  whileTap={{ scale: 0.9 }}
+                  className="px-6 py-4 rounded-xl border border-white/10 text-gray-400 font-sans text-sm hover:border-white/20 transition-colors active:bg-white/5">
                   ←
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={() => canProceedStep2 && setStep(3)}
                   disabled={!canProceedStep2}
+                  whileTap={canProceedStep2 ? { scale: 0.93 } : {}}
                   className={`flex-1 py-4 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                     canProceedStep2
-                      ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:scale-95"
+                      ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:brightness-75"
                       : "bg-white/[0.04] text-gray-600 cursor-not-allowed"
                   }`}
                 >
                   {t("btn_next")} <ArrowRight className="w-4 h-4" />
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           ) : (
@@ -536,21 +539,23 @@ export default function OnboardingPage() {
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => setStep(2)}
-                  className="px-6 py-4 rounded-xl border border-white/10 text-gray-400 font-sans text-sm hover:border-white/20 transition-colors">
+                <motion.button onClick={() => setStep(2)}
+                  whileTap={{ scale: 0.9 }}
+                  className="px-6 py-4 rounded-xl border border-white/10 text-gray-400 font-sans text-sm hover:border-white/20 transition-colors active:bg-white/5">
                   ←
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={() => canProceedStep3 && handleComplete()}
                   disabled={!canProceedStep3}
+                  whileTap={canProceedStep3 ? { scale: 0.93 } : {}}
                   className={`flex-1 py-4 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-300 flex items-center justify-center gap-2 ${
                     canProceedStep3
-                      ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:scale-95"
+                      ? "bg-gradient-to-r from-gold to-amber-400 text-black shadow-[0_4px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_4px_30px_rgba(212,175,55,0.5)] active:brightness-75"
                       : "bg-white/[0.04] text-gray-600 cursor-not-allowed"
                   }`}
                 >
                   <Sparkles className="w-4 h-4" /> {t("btn_reveal")}
-                </button>
+                </motion.button>
               </div>
             </motion.div>
           )}

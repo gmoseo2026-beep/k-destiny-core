@@ -1,59 +1,39 @@
 import paramiko
 import sys
 
-HOST = "31.220.108.136"
+HOST = "161.97.134.176"
 USER = "root"
-# Try multiple password variations
-PASSWORDS = [
-    "***REMOVED***",
-    "***REMOVED***!",
-    "***REMOVED***",
-]
+PASS = "***REMOVED***"
 COMMANDS = [
-    "cd /root/k-destiny && git pull origin main",
-    "cd /root/k-destiny && npm run build",
-    "cd /root/k-destiny && pm2 restart k-destiny",
+    "cd /root/k-destiny-core && npm run build 2>&1 | tail -5",
+    "cd /root/k-destiny-core && pm2 restart k-destiny 2>&1",
 ]
 
 def main():
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    
-    connected = False
-    for pw in PASSWORDS:
-        try:
-            print(f"Trying password: {'*' * len(pw)} (len={len(pw)})")
-            client.connect(HOST, username=USER, password=pw, timeout=15, look_for_keys=False, allow_agent=False)
-            print(f"Connected with password variant!")
-            connected = True
-            break
-        except paramiko.ssh_exception.AuthenticationException:
-            print(f"  -> Auth failed")
-            continue
-        except Exception as e:
-            print(f"  -> Error: {e}")
-            continue
-    
-    if not connected:
-        print("All password attempts failed!")
-        sys.exit(1)
+    print(f"Connecting to {HOST}...")
+    client.connect(HOST, username=USER, password=PASS, timeout=15, look_for_keys=False, allow_agent=False)
+    print("Connected!")
 
     for cmd in COMMANDS:
         print(f"\n>>> {cmd}")
         stdin, stdout, stderr = client.exec_command(cmd, timeout=300)
-        out = stdout.read().decode()
-        err = stderr.read().decode()
+        raw_out = stdout.read()
+        raw_err = stderr.read()
         exit_code = stdout.channel.recv_exit_status()
-        if out: print(out[-2000:] if len(out) > 2000 else out)
-        if err: print(f"[STDERR] {err[-1000:]}")
-        if exit_code != 0:
-            print(f"[ERROR] exit code {exit_code}")
-            client.close()
-            sys.exit(1)
-        print(f"[OK] exit={exit_code}")
+        try:
+            out = raw_out.decode('utf-8', errors='replace')[-2000:]
+            err = raw_err.decode('utf-8', errors='replace')[-1000:]
+        except:
+            out = str(raw_out)[-2000:]
+            err = str(raw_err)[-1000:]
+        if out: print(out)
+        if err: print(f"[STDERR] {err}")
+        print(f"[EXIT] {exit_code}")
 
     client.close()
-    print("\n✅ Deployment complete!")
+    print("\nDone!")
 
 if __name__ == "__main__":
     main()
