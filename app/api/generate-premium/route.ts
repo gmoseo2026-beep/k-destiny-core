@@ -9,6 +9,11 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// ─── Model Fallback Chain ───
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+const MODEL_TIMEOUT_MS = 50000;
+const MAX_RETRIES = 1;
+
 const REPORT_PROMPTS: Record<string, { systemContext: string; task: string }> = {
   karma: {
     systemContext: "You are a premium Eastern Saju master specializing in monthly karmic energy analysis.",
@@ -32,6 +37,32 @@ const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   fr: { name: "French (Français)", toneGuide: "Écrivez en français élégant et mystique." },
   ja: { name: "Japanese (日本語)", toneGuide: "自然な日本語の丁寧語で書いてください。ダークファンタジーの雰囲気を出してください。" },
 };
+
+// ─── Deterministic mock fallback for each report type ───
+function generateMockReport(reportType: string, locale: string, name: string): string {
+  const isKo = locale === "ko";
+  const isJa = locale === "ja";
+
+  const mocks: Record<string, Record<string, string>> = {
+    karma: {
+      ko: `${name}님, 이번 달의 카르마 에너지는 대전환의 흐름 위에 놓여 있습니다. 특히 오행 중 목(木)의 기운이 강하게 작용하여, 새로운 시작과 성장의 기회가 열리고 있습니다. 하지만 토(土)의 부족으로 인해 감정적 안정이 흔들릴 수 있으니, 의식적으로 내면의 평화를 유지하는 것이 중요합니다.\n\n행운의 날: 7일, 15일, 23일이 특히 강한 양의 에너지와 맞닿아 있습니다. 이 날짜에 중요한 결정을 내리거나, 새로운 프로젝트를 시작하면 우주의 순풍을 받을 수 있습니다. 반면 12일과 20일은 충(衝)의 기운이 감지되므로, 큰 재정적 결정은 미루시는 것이 좋습니다.\n\n개운 처방: 검정색과 남색 계열의 옷을 자주 착용하시고, 아침에 3분간 호흡 명상을 하면 수(水) 에너지를 보충할 수 있습니다. 북쪽 방향으로의 산책이 이번 달의 막힌 기운을 풀어줄 것입니다.`,
+      en: `${name}, this month's karmic energy sits upon a wave of profound transformation. The Wood element surges strongly, opening doors to new beginnings and growth. However, a deficiency in Earth energy may cause emotional instability, so consciously maintaining inner peace is essential.\n\nLucky days: The 7th, 15th, and 23rd align powerfully with positive yang energy. Make important decisions or launch new projects on these dates to catch the cosmic tailwind. Conversely, the 12th and 20th carry conflicting energies — postpone major financial decisions.\n\nRemedy: Wear black and navy tones frequently, and practice 3-minute breathing meditation each morning to replenish Water energy. Walking northward will help unblock this month's stagnant chi.`,
+      ja: `${name}様、今月のカルマエネルギーは大きな転換の波の上にあります。五行の中でも木の気が強く作用し、新たな始まりと成長の機会が開かれています。しかし土の不足により感情的な安定が揺らぐ可能性がありますので、意識的に内面の平和を保つことが重要です。\n\n幸運の日: 7日、15日、23日が特に強い陽のエネルギーと結びついています。この日に重要な決定を下すか、新しいプロジェクトを始めると宇宙の追い風を受けることができます。\n\n開運処方: 黒と紺系の服を頻繁に着用し、朝の3分間呼吸瞑想で水のエネルギーを補充してください。`,
+    },
+    remedy: {
+      ko: `${name}님, 오늘의 우주적 날씨는 '내면의 고요 속 폭풍'입니다. 겉으로는 평온해 보이지만, 내면에서는 강력한 에너지 전환이 일어나고 있습니다. 이 에너지를 올바르게 활용하면 큰 돌파구를 만들 수 있습니다.\n\n오늘의 우선순위: 커리어 면에서는 오전 9시~11시가 황금 시간대입니다. 창의적 아이디어가 필요한 작업은 이 시간에 집중하세요. 인간관계에서는 오후 3시 이후에 중요한 대화를 나누는 것이 좋습니다. 감정의 파도가 가라앉는 시간이기 때문입니다.\n\n오늘 피해야 할 에너지: 충동적인 지출과 감정적 대응은 오늘의 금(金) 기운과 충돌합니다. 특히 저녁 7시~9시 사이에는 큰 결정을 내리지 마세요.`,
+      en: `${name}, today's cosmic weather reads as 'Storm Within Stillness.' The surface appears calm, but a powerful energy shift is occurring within. Channel this correctly and you'll create a significant breakthrough.\n\nToday's priorities: Career-wise, 9-11 AM is your golden window. Focus creative work here. For relationships, save important conversations for after 3 PM when emotional tides settle.\n\nEnergies to avoid: Impulsive spending and emotional reactions clash with today's Metal energy. Especially avoid major decisions between 7-9 PM.`,
+      ja: `${name}様、今日の宇宙的天気は「静寂の中の嵐」です。表面上は穏やかに見えますが、内面では強力なエネルギー転換が起きています。このエネルギーを正しく活用すれば、大きな突破口を作ることができます。\n\n今日の優先順位: キャリア面では午前9時〜11時がゴールデンタイムです。創造的なアイディアが必要な作業はこの時間に集中してください。\n\n避けるべきエネルギー: 衝動的な出費と感情的な対応は今日の金の気と衝突します。`,
+    },
+    "fortune-2027": {
+      ko: `${name}님의 2027년은 '대운의 문이 열리는 해'입니다. 10년 주기의 대운 전환점에 서 있으며, 특히 하반기에 인생을 바꿀 기회가 찾아옵니다.\n\nQ1 (1~3월): 겨울의 끝자락에서 내면의 정비 시간입니다. 무리한 시작보다는 계획을 세우고 에너지를 비축하세요. Q2 (4~6월): 목(木)의 기운이 폭발하는 시기. 새로운 도전과 인간관계의 확장이 예상됩니다. 5월이 특히 중요합니다.\n\nQ3 (7~9월): 재물운이 급상승합니다. 8월에 예상치 못한 기회가 찾아올 수 있으니 준비하세요. Q4 (10~12월): 한 해의 성과를 수확하는 시기. 11월에 중요한 인연이 운명처럼 다가올 것입니다.`,
+      en: `${name}, 2027 is your 'Year of the Opening Grand Gate.' You stand at a once-in-a-decade Grand Fortune transition point, with life-changing opportunities arriving especially in the second half.\n\nQ1 (Jan-Mar): A period of inner recalibration at winter's end. Plan and conserve energy rather than forcing new beginnings. Q2 (Apr-Jun): Wood energy explodes — expect new challenges and expanding networks. May is particularly significant.\n\nQ3 (Jul-Sep): Wealth fortune surges dramatically. An unexpected opportunity may arrive in August — be prepared. Q4 (Oct-Dec): Harvest season for the year's efforts. A fateful encounter awaits in November.`,
+      ja: `${name}様の2027年は「大運の門が開く年」です。10年周期の大運転換点に立っており、特に下半期に人生を変える機会が訪れます。\n\nQ1 (1〜3月): 冬の終わりに内面の整備の時間です。無理な開始よりも計画を立てエネルギーを蓄えてください。Q2 (4〜6月): 木の気が爆発する時期。新たな挑戦と人間関係の拡張が予想されます。\n\nQ3 (7〜9月): 財運が急上昇します。8月に予想外の機会が訪れる可能性があります。Q4 (10〜12月): 一年の成果を収穫する時期。11月に運命的な出会いが待っています。`,
+    },
+  };
+
+  return mocks[reportType]?.[locale] || mocks[reportType]?.en || mocks.karma.en;
+}
 
 export async function POST(req: Request) {
   try {
@@ -100,32 +131,56 @@ TASK: ${prompt.task}
 
 Return ONLY the 3-paragraph report text as a plain string. No JSON, no markdown headers, no bullet points — just 3 beautiful paragraphs separated by double newlines.`;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        temperature: 0.85,
-        maxOutputTokens: 4096,
-      },
-    });
+    let lastError: any = null;
+    const startTime = Date.now();
 
-    const result = await Promise.race([
-      model.generateContent(fullPrompt),
-      new Promise<never>((_, rej) =>
-        setTimeout(() => rej(new Error("AI generation timed out (55s)")), 55000)
-      ),
-    ]);
+    // ─── Model Fallback Chain with Retry ───
+    for (const modelName of MODELS) {
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          console.log(`[Premium AI] Try ${modelName} (attempt ${attempt}) for ${reportType}`);
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: {
+              temperature: 0.85,
+              maxOutputTokens: 4096,
+            },
+          });
 
-    const reportText = result.response.text().trim();
+          const result = await Promise.race([
+            model.generateContent(fullPrompt),
+            new Promise<never>((_, rej) =>
+              setTimeout(() => rej(new Error("Timeout")), MODEL_TIMEOUT_MS)
+            ),
+          ]);
 
-    if (!reportText || reportText.length < 100) {
-      throw new Error("AI returned insufficient content");
+          const reportText = result.response.text().trim();
+
+          if (!reportText || reportText.length < 100) {
+            throw new Error("AI returned insufficient content");
+          }
+
+          console.log(`[Premium AI] ✅ Success with ${modelName} in ${Date.now() - startTime}ms (${reportText.length} chars)`);
+          return NextResponse.json({ report: reportText }, { status: 200 });
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[Premium AI] ${modelName} attempt ${attempt} failed: ${err.message?.substring(0, 100)}`);
+
+          // If overloaded/rate-limited/timeout, skip retry and immediately try next model
+          const msg = err.message || "";
+          if (msg.includes("503") || msg.includes("429") || msg.includes("Timeout") || msg.includes("RESOURCE_EXHAUSTED")) {
+            break;
+          }
+        }
+      }
     }
 
-    console.log(`[Premium AI] Generated ${reportType} report for user:${user.id} (${reportText.length} chars)`);
-
-    return NextResponse.json({ report: reportText }, { status: 200 });
+    // ─── GRACEFUL FALLBACK: Return deterministic mock instead of error ───
+    console.error(`[Premium AI] All models failed for ${reportType}. Using mock fallback. Last error:`, lastError?.message);
+    const mockReport = generateMockReport(reportType, localeKey, user.name || "Seeker");
+    return NextResponse.json({ report: mockReport, fallback: true }, { status: 200 });
   } catch (error: any) {
-    console.error("[Premium AI] Error:", error);
+    console.error("[Premium AI] Fatal Error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to generate premium report" },
       { status: 500 }
