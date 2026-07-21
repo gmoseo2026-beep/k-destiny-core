@@ -3,7 +3,18 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "@/i18n/routing";
+import { useLocale } from "next-intl";
 import { ScrollText, Sparkles, ArrowRight } from "lucide-react";
+
+// Self-contained localization (was hardcoded Korean for every locale)
+const GATE_TEXT: Record<string, { title: string; desc1: string; desc2: string; cta: string; note: string }> = {
+  ko: { title: "우주적 설계도가 비어있습니다", desc1: "정확한 프리미엄 리포트를 생성하려면", desc2: "사주 정보를 먼저 등록해야 합니다.", cta: "사주 정보 입력하기", note: "생년월일 · 출생시간 · 성별 정보가 필요합니다" },
+  en: { title: "Your Cosmic Blueprint Is Empty", desc1: "To generate accurate premium reports,", desc2: "please register your birth data first.", cta: "Enter Birth Data", note: "Birth date · birth time · gender required" },
+  ja: { title: "宇宙の設計図が空です", desc1: "正確なプレミアムレポートを生成するには", desc2: "まず四柱情報を登録してください。", cta: "四柱情報を入力する", note: "生年月日・出生時間・性別が必要です" },
+  es: { title: "Tu plano cósmico está vacío", desc1: "Para generar informes premium precisos,", desc2: "registra primero tus datos de nacimiento.", cta: "Ingresar datos de nacimiento", note: "Se requiere fecha · hora de nacimiento · género" },
+  de: { title: "Ihr kosmischer Bauplan ist leer", desc1: "Für präzise Premium-Reports müssen Sie", desc2: "zuerst Ihre Geburtsdaten registrieren.", cta: "Geburtsdaten eingeben", note: "Geburtsdatum · Geburtszeit · Geschlecht erforderlich" },
+  fr: { title: "Votre plan cosmique est vide", desc1: "Pour générer des rapports premium précis,", desc2: "enregistrez d'abord vos données de naissance.", cta: "Saisir mes données de naissance", note: "Date · heure de naissance · genre requis" },
+};
 
 /**
  * SajuDataGatekeeper
@@ -18,6 +29,8 @@ export default function SajuDataGatekeeper({
   children: React.ReactNode;
 }) {
   const [status, setStatus] = useState<"loading" | "has-data" | "missing">("loading");
+  const locale = useLocale();
+  const text = GATE_TEXT[locale] || GATE_TEXT.en;
 
   useEffect(() => {
     fetch("/api/user/saju-check", { cache: 'no-store' })
@@ -96,14 +109,14 @@ export default function SajuDataGatekeeper({
 
       {/* Title */}
       <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
-        우주적 설계도가 비어있습니다
+        {text.title}
       </h2>
 
       {/* Subtitle */}
       <p className="font-sans text-gray-400 text-sm sm:text-base max-w-md mb-10 leading-relaxed">
-        정확한 프리미엄 리포트를 생성하려면
+        {text.desc1}
         <br />
-        사주 정보를 먼저 등록해야 합니다.
+        {text.desc2}
       </p>
 
       {/* CTA Button */}
@@ -121,14 +134,14 @@ export default function SajuDataGatekeeper({
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent z-0 w-1/3"
           />
           <ScrollText className="w-5 h-5 relative z-10" />
-          <span className="relative z-10">사주 정보 입력하기</span>
+          <span className="relative z-10">{text.cta}</span>
           <ArrowRight className="w-5 h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
         </motion.button>
       </Link>
 
       {/* Decorative bottom text */}
       <p className="mt-8 text-xs text-gray-600 font-sans">
-        생년월일 · 출생시간 · 성별 정보가 필요합니다
+        {text.note}
       </p>
     </motion.div>
   );

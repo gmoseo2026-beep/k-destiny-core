@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Moon, Lock, ArrowRight, RefreshCw, Heart, DollarSign, Activity, BookOpen, Clock, Eye, Star } from "lucide-react";
+import { Sparkles, Moon, Lock, ArrowRight, RefreshCw, Heart, DollarSign, Activity, BookOpen, ShieldCheck, Globe, Zap } from "lucide-react";
 import Image from "next/image";
 import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
@@ -12,6 +12,9 @@ import { saveLastResult, getLastResult, getProfile, getMaster, saveProfile } fro
 import { MASTERS } from "@/lib/masters";
 import dynamic from "next/dynamic";
 import ShareCard from "@/components/ShareCard";
+import AuthModal from "@/components/AuthModal";
+import { gumroadUrl, type GumroadProduct } from "@/lib/gumroad";
+import { trackEvent } from "@/lib/gtag";
 
 const SajuChart = dynamic(() => import("@/components/SajuChart"), { ssr: false });
 
@@ -120,6 +123,39 @@ const LOADING_PHRASES: Record<string, string[]> = {
   ]
 };
 
+// ── Honest trust signals (true for every user; replace fabricated scarcity) ──
+// All three claims are verifiably true: the chart is computed deterministically
+// (lunar-javascript, not AI guessing), the app ships 6 locales, results are instant.
+const TRUST_BADGES: Record<string, string[]> = {
+  ko: ["정통 만세력 기반 정확한 계산", "6개 언어 지원", "즉시 확인 가능"],
+  en: ["Built on authentic Saju calculation", "Available in 6 languages", "Instant results"],
+  ja: ["正統な万年暦に基づく計算", "6言語対応", "即時に確認可能"],
+  es: ["Cálculo Saju auténtico", "Disponible en 6 idiomas", "Resultados al instante"],
+  de: ["Auf echter Saju-Berechnung basierend", "In 6 Sprachen verfügbar", "Sofortige Ergebnisse"],
+  fr: ["Basé sur un calcul Saju authentique", "Disponible en 6 langues", "Résultats instantanés"],
+};
+
+// ── Post-checkout "confirming unlock" text (self-contained, no new i18n keys) ──
+const CHECKING_UNLOCK_TEXT: Record<string, { msg: string; btn: string; done: string }> = {
+  ko: { msg: "결제를 확인하는 중입니다...", btn: "지금 확인", done: "결제 확인 완료! 모든 리딩이 해금되었습니다 ✨" },
+  en: { msg: "Confirming your purchase...", btn: "Check now", done: "Purchase confirmed! Your full reading is unlocked ✨" },
+  ja: { msg: "お支払いを確認しています...", btn: "今すぐ確認", done: "決済確認完了！すべてのリーディングが解放されました ✨" },
+  es: { msg: "Confirmando tu compra...", btn: "Verificar ahora", done: "¡Compra confirmada! Tu lectura completa está desbloqueada ✨" },
+  de: { msg: "Kauf wird bestätigt...", btn: "Jetzt prüfen", done: "Kauf bestätigt! Ihre vollständige Deutung ist freigeschaltet ✨" },
+  fr: { msg: "Confirmation de votre achat...", btn: "Vérifier maintenant", done: "Achat confirmé ! Votre lecture complète est débloquée ✨" },
+};
+
+// ── Compact-lock caption for secondary locked sections (design: only the
+//    first locked card carries the full CTA; the rest stay quiet) ──
+const INCLUDED_TEXT: Record<string, string> = {
+  ko: "위 결제 한 번으로 함께 해금됩니다",
+  en: "Unlocked together with the purchase above",
+  ja: "上記の決済ひとつでまとめて解放されます",
+  es: "Se desbloquea junto con la compra anterior",
+  de: "Wird zusammen mit dem obigen Kauf freigeschaltet",
+  fr: "Débloqué avec l'achat ci-dessus",
+};
+
 // ── Element normalization map for locale-consistent display ──
 const ELEMENT_MAP: Record<string, { name: Record<string, string>; color: string; image: string }> = {
   wood: { name: { ko: '나무 (木)', en: 'Wood (木)', ja: '木' }, color: '#4ade80', image: '/images/element_wood.webp.jpg' },
@@ -146,6 +182,15 @@ function ResultPageContent() {
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
   const { data: session } = useSession();
   const premium = session?.user?.tier === 'PREMIUM' || session?.user?.role === 'ADMIN';
+  // Single-report buyers ($2.99) are entitled without being subscription-PREMIUM.
+  // `unlocked` is what actually gates the paid content.
+  const [entitled, setEntitled] = useState(false);
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [checkingUnlock, setCheckingUnlock] = useState(false);
+  const [unlockConfirmed, setUnlockConfirmed] = useState(false);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const unlocked = premium || entitled;
   const t = useTranslations("Result");
   const router = useRouter();
   const locale = useLocale();
@@ -156,60 +201,118 @@ function ResultPageContent() {
   const phrases = LOADING_PHRASES[currentLocale] || LOADING_PHRASES.en;
 
   const [aiData, setAiData] = useState<DestinyResult | null>(null);
-  const [isPaying, setIsPaying] = useState(false);
 
-  // ── Countdown timer (24h from first load) ──
-  const [timerDisplay, setTimerDisplay] = useState("23:59:59");
-  useEffect(() => {
-    const endKey = "kdestiny_offer_end";
-    let end = parseInt(localStorage.getItem(endKey) || "0", 10);
-    if (!end || end < Date.now()) {
-      end = Date.now() + 24 * 60 * 60 * 1000;
-      localStorage.setItem(endKey, String(end));
+  // Trust signals here are honest, verifiable claims about the product
+  // (see TrustBadges below) — no fabricated viewer counts, ratings, or
+  // per-device countdowns, which invite chargebacks and ad-policy strikes.
+
+  // ── Entitlement: the source of truth for unlocking paid content ──
+  const fetchEntitlement = async (): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/user/entitlement", { cache: "no-store" });
+      if (!res.ok) return false;
+      const data = await res.json();
+      setEntitled(!!data.unlocked);
+      if (data.email) setAccountEmail(data.email);
+      return !!data.unlocked;
+    } catch {
+      return false;
     }
-    const tick = () => {
-      const diff = Math.max(0, end - Date.now());
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setTimerDisplay(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+  };
+
+  // Check on mount, and re-check whenever the user returns to this tab
+  // (e.g. coming back after paying in the Gumroad checkout tab).
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    fetchEntitlement();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchEntitlement();
     };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [session?.user?.id]);
+
+  // ── Guest→account profile sync ──
+  // A guest who onboarded, then signed up at the paywall, has their saju data
+  // only in localStorage. If the cached result short-circuits the generate API
+  // (which normally persists the profile), the DB profile would stay empty and
+  // the premium dashboard pages would ask them to re-enter everything. Push the
+  // local profile to the DB once, right after login, if the DB has none.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    (async () => {
+      try {
+        const check = await fetch("/api/user/saju-check", { cache: "no-store" });
+        if (!check.ok) return;
+        const { hasSajuData } = await check.json();
+        if (hasSajuData) return;
+        const local = getProfile();
+        if (!local?.gender || !local?.year) return;
+        await fetch("/api/user/saju-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: local.name,
+            gender: local.gender.charAt(0).toUpperCase() + local.gender.slice(1),
+            birthYear: local.year,
+            birthMonth: local.month,
+            birthDay: local.day,
+            birthTime: local.time,
+            unknownTime: local.unknownTime,
+            country: local.country,
+            city: local.city,
+            selectedMasterId: getMaster() ?? undefined,
+          }),
+        });
+        console.log("[Result] Guest profile synced to DB after login");
+      } catch { /* non-fatal — next generate call will persist it */ }
+    })();
+  }, [session?.user?.id]);
+
+  // After opening checkout, poll so the unlock appears automatically once the
+  // Gumroad webhook lands (usually within seconds). Stops on success or ~60s.
+  const pollEntitlement = () => {
+    // Never stack two polling loops (e.g. user clicks unlock twice)
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    setCheckingUnlock(true);
+    let tries = 0;
+    const id = setInterval(async () => {
+      tries += 1;
+      const ok = await fetchEntitlement();
+      if (ok || tries >= 12) {
+        clearInterval(id);
+        pollTimerRef.current = null;
+        setCheckingUnlock(false);
+        if (ok) {
+          trackEvent("purchase_confirmed", { source: "result" });
+          // Celebrate the unlock for a few seconds, then fade out
+          setUnlockConfirmed(true);
+          setTimeout(() => setUnlockConfirmed(false), 5000);
+        }
+      }
+    }, 5000);
+    pollTimerRef.current = id;
+  };
+
+  // Clean up any in-flight polling when leaving the page
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
   }, []);
 
-  // ── Scarcity: fake viewing count ──
-  const viewingCount = useMemo(() => Math.floor(2 + Math.random() * 5), []);
-  const socialCount = useMemo(() => Math.floor(80 + Math.random() * 120), []);
-
-  // Check premium status on mount
-  // Derived from session above
-
-  const handlePayment = async () => {
-    if (isPaying) return;
-    setIsPaying(true);
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: currentLocale }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to initiate payment session.");
-      }
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No checkout URL returned from the server.");
-      }
-    } catch (err: any) {
-      console.error("Payment initiation error:", err);
-      alert(err.message || "Something went wrong. Please try again.");
-      setIsPaying(false);
+  // Login-gated unlock. Guests MUST have an account first, otherwise the
+  // Gumroad purchase email can't be matched to a user and the payment is lost.
+  const handleUnlock = (product: GumroadProduct) => {
+    trackEvent("unlock_click", { source: "result", product });
+    if (!session?.user?.id) {
+      setAuthModalOpen(true);
+      return;
     }
+    const url = gumroadUrl(product, accountEmail || session.user.email);
+    window.open(url, "_blank", "noopener,noreferrer");
+    trackEvent("begin_checkout", { source: "result", product });
+    pollEntitlement();
   };
 
   // Cycle through loading messages to keep user engaged
@@ -423,19 +526,24 @@ function ResultPageContent() {
         throw new Error("The cosmic reading was incomplete. Please try again.");
       }
 
-      // 4. Success! Store in state and cache
+      // 4. Success! Store in state — and cache ONLY real AI readings.
+      // A `fallback: true` response is a generic mock produced during an AI
+      // outage; caching it would pin a fake reading for 24h (even for paying
+      // users). Skipping the cache means the next visit retries the real AI.
       setAiData(resultData);
       setRetryCount(0);
 
-      try {
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({ data: resultData, timestamp: Date.now() })
-        );
-      } catch { /* localStorage full — continue */ }
+      if (!('fallback' in resultData) || !resultData.fallback) {
+        try {
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({ data: resultData, timestamp: Date.now() })
+          );
+        } catch { /* localStorage full — continue */ }
 
-      // Also persist to userStateManager for dashboard access
-      saveLastResult(resultData);
+        // Also persist to userStateManager for dashboard access
+        saveLastResult(resultData);
+      }
 
     } catch (err: any) {
       console.error("API Error:", err);
@@ -604,18 +712,23 @@ function ResultPageContent() {
                   { key: 'wealth', titleKey: 'section_wealth', icon: <DollarSign className="w-5 h-5" />, content: aiData.wealth_warning || '', color: 'amber' },
                   { key: 'health', titleKey: 'section_health', icon: <Activity className="w-5 h-5" />, content: aiData.health_alert || '', color: 'emerald' },
                   { key: 'prescription', titleKey: 'section_prescription', icon: <BookOpen className="w-5 h-5" />, content: aiData.master_prescription || '', color: 'purple' },
-                ].filter(s => s.content).map((section) => (
+                ].filter(s => s.content).map((section, sIdx) => (
                   <motion.div key={section.key} variants={cardVariants}
-                    className={`relative bg-white/[0.02] backdrop-blur-xl border ${premium ? 'border-gold/30' : 'border-white/10'} rounded-3xl p-6 sm:p-8 overflow-hidden`}>
+                    className={`relative bg-white/[0.02] backdrop-blur-xl border ${unlocked ? 'border-gold/30' : 'border-white/10'} rounded-3xl ${!unlocked && sIdx > 0 ? 'p-5 sm:p-6' : 'p-6 sm:p-8'} overflow-hidden`}>
                     <div className="flex items-center gap-3 mb-4 relative z-10">
-                      <div className={`p-2.5 rounded-full ${premium ? 'bg-gold/15 text-gold' : 'bg-white/5 text-gray-400'}`}>{section.icon}</div>
-                      <h2 className={`font-serif text-lg ${premium ? 'text-gold' : 'text-white'}`}>{t(section.titleKey)}</h2>
-                      {premium && <span className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[9px] font-sans tracking-wider">{t("unlocked_label")}</span>}
+                      <div className={`p-2.5 rounded-full ${unlocked ? 'bg-gold/15 text-gold' : 'bg-white/5 text-gray-400'}`}>{section.icon}</div>
+                      <h2 className={`font-serif text-lg ${unlocked ? 'text-gold' : 'text-white'}`}>{t(section.titleKey)}</h2>
+                      {unlocked && <span className="px-2 py-0.5 rounded-full bg-gold/10 text-gold text-[9px] font-sans tracking-wider">{t("unlocked_label")}</span>}
+                      {!unlocked && sIdx > 0 && <Lock className="w-3.5 h-3.5 text-gold/50 ml-auto" />}
                     </div>
-                    {premium ? (
+                    {unlocked ? (
                       <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap">{formatDestinyText(section.content)}</div>
-                    ) : (
+                    ) : sIdx === 0 ? (
                       <>
+                        {/* PRIMARY locked card — the ONLY full CTA on the page.
+                            (Design: 4 identical CTA blocks read as pushy and add
+                            scroll fatigue; one strong CTA + quiet locked rows
+                            converts better and feels premium.) */}
                         {/* Show first 2 lines clearly, then gradient fade */}
                         <div className="relative">
                           <div className="font-sans text-gray-300 leading-loose text-sm whitespace-pre-wrap" style={{ maxHeight: '4.5em', overflow: 'hidden' }}>
@@ -630,17 +743,10 @@ function ResultPageContent() {
                               {t("unlock_warning")}
                             </p>
                             <Lock className="w-6 h-6 text-gold mx-auto mb-2" />
-                            <p className="text-gray-400 text-xs mb-1">{t("unlock_desc")}</p>
-                            {/* Viewing count */}
-                            <div className="flex items-center justify-center gap-1.5 mb-3">
-                              <Eye className="w-3 h-3 text-green-400" />
-                              <span className="text-green-400/80 text-[10px] font-sans">
-                                {t("viewing_now", { count: viewingCount })}
-                              </span>
-                            </div>
+                            <p className="text-gray-400 text-xs mb-3">{t("unlock_desc")}</p>
                             <div className="flex flex-col gap-2">
-                              {/* Anchor pricing */}
-                              <a href="https://moseo.gumroad.com/l/zmqhr" target="_blank" rel="noopener noreferrer">
+                              {/* Anchor pricing — login-gated so the purchase email matches an account */}
+                              <button type="button" onClick={() => handleUnlock('single')} className="w-full">
                                 <motion.div
                                   whileTap={{ scale: 0.93 }}
                                   className="relative px-4 py-3 bg-gradient-to-r from-gold to-[#a68625] text-black font-bold text-sm rounded-xl text-center overflow-hidden active:brightness-75 transition-all cursor-pointer"
@@ -658,16 +764,28 @@ function ResultPageContent() {
                                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent z-0 w-1/3"
                                   />
                                 </motion.div>
-                              </a>
-                              {/* Timer */}
-                              <div className="flex items-center justify-center gap-1.5 text-amber-400/70 text-[10px] font-sans">
-                                <Clock className="w-3 h-3" />
-                                <span>{t("timer_label")}: {timerDisplay}</span>
-                              </div>
+                              </button>
                               <Link href="/pricing" className="text-gold/60 text-xs hover:text-gold transition-colors">{t("unlock_or_premium")}</Link>
                             </div>
                           </div>
                         </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* SECONDARY locked cards — quiet: short preview + one-line
+                            note; clicking anywhere still opens checkout. */}
+                        <button type="button" onClick={() => handleUnlock('single')} className="w-full text-left cursor-pointer group/locked">
+                          <div className="relative">
+                            <div className="font-sans text-gray-400 leading-relaxed text-sm whitespace-pre-wrap" style={{ maxHeight: '3em', overflow: 'hidden' }}>
+                              {formatDestinyText(section.content)}
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#06050e] to-transparent" />
+                          </div>
+                          <div className="mt-3 flex items-center gap-2 text-gold/70 group-hover/locked:text-gold transition-colors">
+                            <Lock className="w-3.5 h-3.5" />
+                            <span className="text-xs font-sans">{INCLUDED_TEXT[currentLocale] || INCLUDED_TEXT.en}</span>
+                          </div>
+                        </button>
                       </>
                     )}
                   </motion.div>
@@ -703,16 +821,18 @@ function ResultPageContent() {
                 </div>
               </motion.div>
 
-              {/* Social Proof + Share */}
+              {/* Honest trust signals (verifiable claims) + Share */}
               <motion.div variants={cardVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6 border-t border-white/5">
-                <div className="flex items-center gap-4">
-                  <p className="text-gray-400 text-sm font-sans">
-                    {t("social_proof", { count: socialCount })}
-                  </p>
-                  <span className="text-gray-600 text-xs">|</span>
-                  <p className="text-amber-400/80 text-xs font-sans">
-                    {t("rating_text", { count: "2,847" })}
-                  </p>
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                  {(TRUST_BADGES[currentLocale] || TRUST_BADGES.en).map((label, i) => {
+                    const Icon = [ShieldCheck, Globe, Zap][i] || ShieldCheck;
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 text-gray-400 text-xs font-sans">
+                        <Icon className="w-3.5 h-3.5 text-gold/70" />
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
                 </div>
                 <ShareCard title="My K-Destiny Cosmic Blueprint" description={aiData.core_essence.slice(0, 100) + '...'} locale={locale} />
               </motion.div>
@@ -752,6 +872,55 @@ function ResultPageContent() {
           ) : null}
         </AnimatePresence>
       </div>
+
+      {/* Login gate for the paywall — revives the previously-unused AuthModal.
+          Guests must have an account so the Gumroad purchase email can be matched. */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => setAuthModalOpen(false)}
+        redirectTo="/result"
+      />
+
+      {/* Success pill — shown briefly once the purchase is confirmed */}
+      <AnimatePresence>
+        {unlockConfirmed && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3 rounded-full bg-black/85 border border-gold/60 backdrop-blur-md shadow-[0_0_30px_rgba(212,175,55,0.35)]"
+          >
+            <Sparkles className="w-4 h-4 text-gold" />
+            <span className="text-gold text-sm font-sans font-medium">
+              {(CHECKING_UNLOCK_TEXT[currentLocale] || CHECKING_UNLOCK_TEXT.en).done}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* "Confirming your purchase" pill while polling entitlement after checkout */}
+      <AnimatePresence>
+        {checkingUnlock && !unlocked && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3 rounded-full bg-black/85 border border-gold/30 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.6)]"
+          >
+            <RefreshCw className="w-4 h-4 text-gold animate-spin" />
+            <span className="text-gold/90 text-sm font-sans">
+              {(CHECKING_UNLOCK_TEXT[currentLocale] || CHECKING_UNLOCK_TEXT.en).msg}
+            </span>
+            <button
+              onClick={() => fetchEntitlement()}
+              className="text-xs font-sans text-black bg-gold px-3 py-1 rounded-full font-bold hover:brightness-110 transition"
+            >
+              {(CHECKING_UNLOCK_TEXT[currentLocale] || CHECKING_UNLOCK_TEXT.en).btn}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

@@ -323,7 +323,22 @@
     "consent_title": "결제 전 확인 및 동의",
     "consent_desc": "서비스 특성상 결제 시 즉시 서비스가 제공되므로 결제 후 환불이 불가합니다. 본 내용에 동의하십니까?",
     "btn_agree": "동의하고 결제하기",
-    "btn_decline": "취소"
+    "btn_decline": "취소",
+    "plan_annual_name": "무제한",
+    "plan_monthly_total": "$7.99/월",
+    "plan_annual_total": "$49.99/년 — 48% 할인",
+    "feature_daily": "매일 업데이트되는 오늘의 운세",
+    "feature_chat": "AI 마스터 채팅",
+    "feature_adv_sync": "고급 에너지 싱크 (궁합)",
+    "single_title": "리포트 1회만 필요하신가요?",
+    "single_desc": "구독 없이 프리미엄 리포트 1회 해금 — $2.99",
+    "single_cta": "리포트 해금 — $2.99",
+    "checking_purchase": "결제를 확인하는 중입니다...",
+    "check_now": "지금 확인",
+    "purchase_success": "결제 확인 완료! 이용 권한이 활성화되었습니다 ✨",
+    "continue_checkout_msg": "로그인 완료! 결제를 계속 진행해 구매를 완료하세요.",
+    "continue_checkout_btn": "결제 계속하기",
+    "annual_framing": "커피 한 잔 값도 안 되는 한 달"
   },
   "Sync": {
     "title": "에너지 싱크",

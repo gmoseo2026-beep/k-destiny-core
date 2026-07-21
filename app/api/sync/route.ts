@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     }
 
     const clientIp = getClientIp(req);
-    const rateCheck = checkChatRateLimit(clientIp);
+    const rateCheck = await checkChatRateLimit(clientIp);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: "Cosmic interference detected. Please try again later." },

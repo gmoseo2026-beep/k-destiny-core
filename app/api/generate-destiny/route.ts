@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/destinyCache";
 import { getClientIp, checkRateLimit, recordRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
@@ -89,7 +91,13 @@ export async function POST(req: Request) {
     // STEP 1: Parse Request Data (Extraction)
     // ==========================================
     const body = await req.json();
-    const { name, dob, time, country, city, gender, masterName, locale, userId } = body;
+    const { name, dob, time, country, city, gender, masterName, locale } = body;
+
+    // SECURITY: derive the user id from the server-side session, never from
+    // the request body. A client-supplied userId would let anyone overwrite
+    // any other user's saju profile by guessing/leaking an id.
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || null;
 
     if (!name || !dob || !gender || !masterName) {
       return NextResponse.json(
@@ -104,7 +112,7 @@ export async function POST(req: Request) {
 
     // Rate Limiting
     const clientIp = getClientIp(req);
-    const rateCheck = checkRateLimit(clientIp);
+    const rateCheck = await checkRateLimit(clientIp);
     if (!rateCheck.allowed) {
       const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 60000) / 1000);
       return NextResponse.json(
@@ -312,9 +320,11 @@ Return ONLY VALID JSON:
     }
 
     // ─── GRACEFUL FALLBACK: Return mock result instead of error ───
+    // NOTE: mock results are deliberately NOT cached (server or client).
+    // Caching them meant a user who hit a transient AI outage kept seeing a
+    // generic fake reading for up to 24h — including paying customers.
     console.error("[AI Gen] All models failed. Using mock fallback. Last error:", lastError);
     const mockResult = generateMockResult(name, gender, localeKey, sajuResult.elementsScore);
-    setCachedResult(cacheKey, mockResult);
     recordRequest(clientIp);
     return NextResponse.json({
       ...mockResult,

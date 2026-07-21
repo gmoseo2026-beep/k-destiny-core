@@ -300,7 +300,22 @@
     "consent_title": "Zahlung bestätigen und zustimmen",
     "consent_desc": "Aufgrund der Natur unserer Dienste werden Inhalte unmittelbar nach der Zahlung bereitgestellt. Daher ist nach dem Kauf keine Rückerstattung mehr möglich. Stimmen Sie diesen Bedingungen zu?",
     "btn_agree": "Ich stimme zu & Bezahle",
-    "btn_decline": "Abbrechen"
+    "btn_decline": "Abbrechen",
+    "plan_annual_name": "Unlimited",
+    "plan_monthly_total": "$7.99/Monat",
+    "plan_annual_total": "$49.99/Jahr — 48% sparen",
+    "feature_daily": "Tägliche Glücks-Updates",
+    "feature_chat": "KI-Meister-Chat",
+    "feature_adv_sync": "Erweiterte Energie-Synchronisation",
+    "single_title": "Nur eine einzelne Deutung?",
+    "single_desc": "Premium-Report einmalig freischalten — ohne Abo, $2.99",
+    "single_cta": "Report freischalten — $2.99",
+    "checking_purchase": "Kauf wird bestätigt...",
+    "check_now": "Jetzt prüfen",
+    "purchase_success": "Kauf bestätigt! Ihr Zugang ist jetzt aktiv ✨",
+    "continue_checkout_msg": "Angemeldet — fahren Sie mit dem sicheren Checkout fort, um den Kauf abzuschließen.",
+    "continue_checkout_btn": "Weiter zum Checkout",
+    "annual_framing": "Weniger als ein Kaffee im Monat"
   },
   "Sync": {
     "title": "Energie-Synchronisation",

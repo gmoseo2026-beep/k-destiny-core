@@ -59,12 +59,19 @@ export const authOptions: NextAuthOptions = {
       if (token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
-          select: { id: true, role: true, tier: true },
+          select: { id: true, role: true, tier: true, premiumEndDate: true },
         });
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
-          token.tier = dbUser.tier;
+          // Effective tier: an expired subscription must not keep granting
+          // PREMIUM through the session token. premiumEndDate === null means
+          // non-expiring access (e.g. manual/admin grant) and stays PREMIUM.
+          const expired =
+            dbUser.tier === 'PREMIUM' &&
+            dbUser.premiumEndDate !== null &&
+            dbUser.premiumEndDate <= new Date();
+          token.tier = expired ? 'FREE' : dbUser.tier;
         }
       }
       return token;

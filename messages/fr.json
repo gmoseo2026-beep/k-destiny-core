@@ -300,7 +300,22 @@
     "consent_title": "Confirmer et Accepter le Paiement",
     "consent_desc": "En raison de la nature de notre service, le contenu est livré immédiatement après le paiement. Par conséquent, aucun remboursement n'est possible après l'achat. Acceptez-vous ces conditions ?",
     "btn_agree": "J'accepte et je paie",
-    "btn_decline": "Annuler"
+    "btn_decline": "Annuler",
+    "plan_annual_name": "Illimité",
+    "plan_monthly_total": "$7.99/mois",
+    "plan_annual_total": "$49.99/an — Économisez 48%",
+    "feature_daily": "Fortune quotidienne mise à jour",
+    "feature_chat": "Chat avec Maître IA",
+    "feature_adv_sync": "Synchronisation d'énergie avancée",
+    "single_title": "Une seule lecture vous suffit ?",
+    "single_desc": "Débloquez un rapport premium sans abonnement — $2.99",
+    "single_cta": "Débloquer le rapport — $2.99",
+    "checking_purchase": "Confirmation de votre achat...",
+    "check_now": "Vérifier maintenant",
+    "purchase_success": "Achat confirmé ! Votre accès est maintenant actif ✨",
+    "continue_checkout_msg": "Connecté — poursuivez le paiement sécurisé pour finaliser votre achat.",
+    "continue_checkout_btn": "Continuer le paiement",
+    "annual_framing": "Moins qu'un café par mois"
   },
   "Sync": {
     "title": "Synchronisation Énergétique",

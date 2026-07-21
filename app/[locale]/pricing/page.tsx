@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Link } from "@/i18n/routing";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { Sparkles, Crown, ArrowLeft, Check, Zap, Shield, Eye, Moon, Sun, FileText } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Sparkles, Crown, ArrowLeft, Check, Zap, Shield, Eye, Moon, Sun, FileText, RefreshCw, ArrowRight } from "lucide-react";
+import AuthModal from "@/components/AuthModal";
+import { gumroadUrl, type GumroadProduct } from "@/lib/gumroad";
+import { trackEvent } from "@/lib/gtag";
+
+// Purchase intent survives the login redirect so the buyer never has to
+// re-find the plan they already chose (checkout resume = fewer lost sales).
+const PENDING_CHECKOUT_KEY = "kdestiny_pending_checkout";
 
 function CosmicParticles() {
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; delay: number; duration: number }[]>([]);
@@ -29,16 +37,116 @@ function CosmicParticles() {
 
 export default function PricingPage() {
   const t = useTranslations("Pricing");
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [checkingUnlock, setCheckingUnlock] = useState(false);
+  const [purchaseConfirmed, setPurchaseConfirmed] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState<GumroadProduct | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const plans = [
+  // ── Entitlement check: did the webhook land yet? ──
+  const fetchEntitlement = async (): Promise<{ premium: boolean; hasReport: boolean }> => {
+    try {
+      const res = await fetch("/api/user/entitlement", { cache: "no-store" });
+      if (!res.ok) return { premium: false, hasReport: false };
+      const data = await res.json();
+      return { premium: !!data.premium, hasReport: !!data.hasReport };
+    } catch {
+      return { premium: false, hasReport: false };
+    }
+  };
+
+  // After checkout opens in the Gumroad tab, poll until the webhook activates
+  // the purchase (usually seconds), then celebrate + route to the content.
+  const pollEntitlement = (product: GumroadProduct) => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    setCheckingUnlock(true);
+    let tries = 0;
+    const id = setInterval(async () => {
+      tries += 1;
+      const { premium, hasReport } = await fetchEntitlement();
+      const ok = product === "single" ? hasReport || premium : premium;
+      if (ok || tries >= 24) {
+        clearInterval(id);
+        pollTimerRef.current = null;
+        setCheckingUnlock(false);
+        if (ok) {
+          trackEvent("purchase_confirmed", { source: "pricing", product });
+          setPurchaseConfirmed(true);
+          setTimeout(() => {
+            router.push(product === "single" ? "/result" : "/dashboard");
+          }, 2000);
+        }
+      }
+    }, 5000);
+    pollTimerRef.current = id;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
+
+  // ── Checkout resume after login ──
+  // If the user picked a plan while logged out, we stored it, sent them
+  // through AuthModal (full page reload), and now surface a one-click
+  // "continue to checkout" banner instead of losing the sale.
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    try {
+      const stored = sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+      if (stored === "single" || stored === "monthly" || stored === "annual") {
+        setPendingProduct(stored);
+      }
+    } catch { /* sessionStorage unavailable */ }
+  }, [session?.user?.id]);
+
+  const openCheckout = (product: GumroadProduct) => {
+    window.open(gumroadUrl(product, session?.user?.email), "_blank", "noopener,noreferrer");
+    trackEvent("begin_checkout", { source: "pricing", product });
+    pollEntitlement(product);
+  };
+
+  // Login-gated checkout with email prefill so the Gumroad purchase email
+  // matches the account email (reliable webhook activation).
+  const handleCheckout = (product: GumroadProduct) => {
+    trackEvent("unlock_click", { source: "pricing", product });
+    if (!session?.user?.id) {
+      try { sessionStorage.setItem(PENDING_CHECKOUT_KEY, product); } catch { /* ignore */ }
+      setAuthOpen(true);
+      return;
+    }
+    openCheckout(product);
+  };
+
+  const resumeCheckout = () => {
+    if (!pendingProduct) return;
+    try { sessionStorage.removeItem(PENDING_CHECKOUT_KEY); } catch { /* ignore */ }
+    const product = pendingProduct;
+    setPendingProduct(null);
+    openCheckout(product);
+  };
+
+  const dismissResume = () => {
+    try { sessionStorage.removeItem(PENDING_CHECKOUT_KEY); } catch { /* ignore */ }
+    setPendingProduct(null);
+  };
+
+  const plans: {
+    id: string; name: string; price: string; period: string; total: string;
+    features: string[]; product: GumroadProduct; featured: boolean;
+    icon: React.ReactNode; gradient: string; glow: string;
+  }[] = [
     {
       id: "monthly",
-      name: "Starter",
+      name: t("plan_1month_name"),
       price: "$7.99",
-      period: "/mo",
-      total: "$7.99/month",
-      features: ["20 Karma Questions / day", "Full Cosmic Blueprint Unlock", "Daily Fortune Updates", "AI Master Chat", "Basic Energy Sync"],
-      url: "https://moseo.gumroad.com/l/ykcjwk",
+      period: t("per_month"),
+      total: t("plan_monthly_total"),
+      features: [t("feature_karma_20"), t("feature_blueprint"), t("feature_daily"), t("feature_chat"), t("feature_basic_sync")],
+      product: "monthly",
       featured: false,
       icon: <Zap className="w-5 h-5" />,
       gradient: "from-blue-500/30 to-purple-600/10",
@@ -46,12 +154,12 @@ export default function PricingPage() {
     },
     {
       id: "annual",
-      name: "Unlimited",
+      name: t("plan_annual_name"),
       price: "$4.17",
-      period: "/mo",
-      total: "$49.99/year — Save 48%",
-      features: ["20 Karma Questions / day", "Full Cosmic Blueprint Unlock", "Daily Fortune Updates", "AI Master Chat", "Advanced Energy Sync", "Priority Cosmic Alignment", "Exclusive Yearly Forecast"],
-      url: "https://moseo.gumroad.com/l/gywfqd",
+      period: t("per_month"),
+      total: t("plan_annual_total"),
+      features: [t("feature_karma_20"), t("feature_blueprint"), t("feature_daily"), t("feature_chat"), t("feature_adv_sync"), t("feature_priority"), t("feature_forecast")],
+      product: "annual",
       featured: true,
       icon: <Crown className="w-5 h-5" />,
       gradient: "from-gold/40 to-amber-600/10",
@@ -71,6 +179,33 @@ export default function PricingPage() {
         <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-gold/80 transition-colors text-xs font-sans tracking-widest uppercase mb-10">
           <ArrowLeft className="w-3.5 h-3.5" /> {t("back_home")}
         </Link>
+
+        {/* Checkout-resume banner (purchase intent recovered after login) */}
+        <AnimatePresence>
+          {pendingProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-gold/40 bg-gold/[0.06] px-5 py-4 backdrop-blur-md"
+            >
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
+                <p className="text-gold/90 text-sm font-sans">{t("continue_checkout_msg")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={resumeCheckout}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold to-amber-400 text-black font-sans font-bold text-xs whitespace-nowrap hover:brightness-110 transition">
+                  {t("continue_checkout_btn")} <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={dismissResume}
+                  className="px-3 py-2 rounded-xl text-gray-500 hover:text-gray-300 text-xs font-sans transition">
+                  ✕
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center mb-16">
           <div className="flex items-center justify-center gap-3 mb-5">
@@ -114,6 +249,10 @@ export default function PricingPage() {
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-gray-500 text-[11px] font-sans">{plan.total}</span>
                       </div>
+                      {/* Price framing — makes $4.17/mo feel trivially small */}
+                      {plan.featured && (
+                        <p className="mt-1.5 text-gold/60 text-[11px] font-sans">☕ {t("annual_framing")}</p>
+                      )}
                     </div>
                     <div className="mx-6 h-[1px] bg-gradient-to-r from-transparent via-white/6 to-transparent" />
                     <div className="px-6 pt-5 pb-2 flex-1">
@@ -129,7 +268,7 @@ export default function PricingPage() {
                       </ul>
                     </div>
                     <div className="px-6 pb-7 pt-4">
-                      <a href={plan.url} target="_blank" rel="noopener noreferrer"
+                      <button type="button" onClick={() => handleCheckout(plan.product)}
                         className={`relative w-full py-3.5 rounded-xl font-sans font-bold text-sm tracking-wider transition-all duration-500 transform-gpu active:scale-95 overflow-hidden flex items-center justify-center ${
                           plan.featured
                             ? 'bg-gradient-to-r from-gold via-amber-400 to-gold text-black shadow-[0_4px_25px_rgba(212,175,55,0.35)] hover:shadow-[0_4px_40px_rgba(212,175,55,0.6)] hover:scale-[1.02]'
@@ -143,7 +282,7 @@ export default function PricingPage() {
                           />
                         )}
                         <span className="relative z-10">{t("select_plan")}</span>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -159,14 +298,14 @@ export default function PricingPage() {
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400"><FileText className="w-5 h-5" /></div>
               <div>
-                <h3 className="font-serif text-white text-lg">Just want one reading?</h3>
-                <p className="text-gray-500 text-sm font-sans">Unlock a single premium report for $2.99</p>
+                <h3 className="font-serif text-white text-lg">{t("single_title")}</h3>
+                <p className="text-gray-500 text-sm font-sans">{t("single_desc")}</p>
               </div>
             </div>
-            <a href="https://moseo.gumroad.com/l/zmqhr" target="_blank" rel="noopener noreferrer"
+            <button type="button" onClick={() => handleCheckout('single')}
               className="px-6 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 font-sans font-bold text-sm hover:bg-purple-500/20 transition-colors whitespace-nowrap">
-              Unlock Report — $2.99
-            </a>
+              {t("single_cta")}
+            </button>
           </div>
         </motion.div>
 
@@ -187,6 +326,44 @@ export default function PricingPage() {
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
           className="text-center text-gray-700 text-xs font-sans mt-10 mb-6">{t("guarantee_text")}</motion.p>
       </div>
+
+      {/* Login gate — a purchase needs an account so the webhook can activate it */}
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onSuccess={() => setAuthOpen(false)}
+        redirectTo="/pricing"
+      />
+
+      {/* Success pill — purchase confirmed, routing to the unlocked content */}
+      <AnimatePresence>
+        {purchaseConfirmed && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3 rounded-full bg-black/85 border border-gold/60 backdrop-blur-md shadow-[0_0_30px_rgba(212,175,55,0.35)]"
+          >
+            <Sparkles className="w-4 h-4 text-gold" />
+            <span className="text-gold text-sm font-sans font-medium">{t("purchase_success")}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* "Confirming your purchase" pill while polling for the webhook */}
+      <AnimatePresence>
+        {checkingUnlock && !purchaseConfirmed && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3 rounded-full bg-black/85 border border-gold/30 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.6)]"
+          >
+            <RefreshCw className="w-4 h-4 text-gold animate-spin" />
+            <span className="text-gold/90 text-sm font-sans">{t("checking_purchase")}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

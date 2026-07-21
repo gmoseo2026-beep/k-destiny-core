@@ -10,6 +10,7 @@ import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
 import KakaoEscape from "../../components/KakaoEscape";
 import MaintenanceOverlay from "../../components/MaintenanceOverlay";
+import Analytics from "../../components/Analytics";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -203,6 +204,7 @@ export default async function RootLayout({
       <body
         className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
       >
+        <Analytics />
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <MaintenanceOverlay />

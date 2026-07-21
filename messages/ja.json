@@ -300,7 +300,22 @@
     "consent_title": "決済前の確認と同意",
     "consent_desc": "サービスの性質上、決済時に即座にサービスが提供されるため、決済後の返金は不可となります。この内容に同意しますか？",
     "btn_agree": "同意して決済する",
-    "btn_decline": "キャンセル"
+    "btn_decline": "キャンセル",
+    "plan_annual_name": "アンリミテッド",
+    "plan_monthly_total": "$7.99/月",
+    "plan_annual_total": "$49.99/年 — 48%OFF",
+    "feature_daily": "毎日更新の今日の運勢",
+    "feature_chat": "AIマスターチャット",
+    "feature_adv_sync": "高度なエネルギーシンク（相性）",
+    "single_title": "1回だけ占いたい方へ",
+    "single_desc": "サブスクなしでプレミアムレポートを1回解放 — $2.99",
+    "single_cta": "レポート解放 — $2.99",
+    "checking_purchase": "お支払いを確認しています...",
+    "check_now": "今すぐ確認",
+    "purchase_success": "決済確認完了！アクセスが有効になりました ✨",
+    "continue_checkout_msg": "ログイン完了！決済を続けて購入を完了しましょう。",
+    "continue_checkout_btn": "決済を続ける",
+    "annual_framing": "コーヒー1杯より安い月額"
   },
   "Sync": {
     "title": "エネルギーシンク",

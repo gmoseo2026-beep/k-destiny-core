@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -66,7 +67,7 @@ function generateMockReport(reportType: string, locale: string, name: string): s
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -95,8 +96,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Verify premium access
-    if (user.tier !== "PREMIUM" && user.role !== "ADMIN") {
+    // Verify premium access (expired subscriptions no longer qualify)
+    const premiumActive =
+      user.tier === "PREMIUM" &&
+      (!user.premiumEndDate || user.premiumEndDate > new Date());
+    if (!premiumActive && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Premium access required" }, { status: 403 });
     }
 

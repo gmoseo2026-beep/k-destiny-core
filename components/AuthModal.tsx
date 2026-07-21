@@ -11,11 +11,19 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /**
+   * Where to land after a successful login. Defaults to the dashboard.
+   * Pass the current page path (e.g. "/result") for in-context login so the
+   * user returns to where they were — used by the paywall unlock flow so the
+   * checkout can immediately prefill the now-known account email.
+   */
+  redirectTo?: string;
 }
 
-export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: AuthModalProps) {
   const t = useTranslations("Login");
   const locale = useLocale();
+  const destination = `/${locale}${redirectTo || "/dashboard"}`;
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error", text: string } | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -35,7 +43,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsLoading(true);
     setMessage(null);
     try {
-      await signIn("google", { callbackUrl: `/${locale}/dashboard` });
+      await signIn("google", { callbackUrl: destination });
     } catch (error: any) {
       setMessage({ type: "error", text: error.message || t("error_general") });
       setIsLoading(false);
@@ -87,7 +95,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         setIsLoading(false);
       } else {
         onSuccess();
-        window.location.href = `/${locale}/dashboard`;
+        window.location.href = destination;
       }
     } catch (error: any) {
       setMessage({ type: "error", text: error.message || t("error_general") });

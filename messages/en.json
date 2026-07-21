@@ -323,7 +323,22 @@
     "consent_title": "Confirm & Consent to Payment",
     "consent_desc": "Due to the nature of our service, content is delivered immediately upon payment, and therefore refunds are not available after purchase. Do you agree to these terms?",
     "btn_agree": "I Agree & Pay",
-    "btn_decline": "Cancel"
+    "btn_decline": "Cancel",
+    "plan_annual_name": "Unlimited",
+    "plan_monthly_total": "$7.99/month",
+    "plan_annual_total": "$49.99/year — Save 48%",
+    "feature_daily": "Daily Fortune Updates",
+    "feature_chat": "AI Master Chat",
+    "feature_adv_sync": "Advanced Energy Sync",
+    "single_title": "Just want one reading?",
+    "single_desc": "Unlock your full premium report once — no subscription",
+    "single_cta": "Unlock Report — $2.99",
+    "checking_purchase": "Confirming your purchase...",
+    "check_now": "Check now",
+    "purchase_success": "Purchase confirmed! Your access is now active ✨",
+    "continue_checkout_msg": "You're signed in — continue to secure checkout to complete your purchase.",
+    "continue_checkout_btn": "Continue to Checkout",
+    "annual_framing": "Less than one coffee a month"
   },
   "Sync": {
     "title": "Dynamic Energy Sync",

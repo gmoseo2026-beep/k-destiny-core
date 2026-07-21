@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.googleusercontent.com",
-              "connect-src 'self' https://accounts.google.com https://generativelanguage.googleapis.com https://*.google.com",
+              "connect-src 'self' https://accounts.google.com https://generativelanguage.googleapis.com https://*.google.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
               "frame-src https://accounts.google.com",
               "frame-ancestors 'none'",
             ].join("; "),

@@ -300,7 +300,22 @@
     "consent_title": "Confirmar y Aceptar el Pago",
     "consent_desc": "Debido a la naturaleza de nuestro servicio, el contenido se entrega inmediatamente después del pago, por lo tanto, no hay reembolsos disponibles después de la compra. ¿Acepta estos términos?",
     "btn_agree": "Acepto y Pago",
-    "btn_decline": "Cancelar"
+    "btn_decline": "Cancelar",
+    "plan_annual_name": "Ilimitado",
+    "plan_monthly_total": "$7.99/mes",
+    "plan_annual_total": "$49.99/año — Ahorra 48%",
+    "feature_daily": "Fortuna diaria actualizada",
+    "feature_chat": "Chat con Maestro IA",
+    "feature_adv_sync": "Sincronización de energía avanzada",
+    "single_title": "¿Solo quieres una lectura?",
+    "single_desc": "Desbloquea un informe premium sin suscripción — $2.99",
+    "single_cta": "Desbloquear informe — $2.99",
+    "checking_purchase": "Confirmando tu compra...",
+    "check_now": "Verificar ahora",
+    "purchase_success": "¡Compra confirmada! Tu acceso ya está activo ✨",
+    "continue_checkout_msg": "Sesión iniciada: continúa al pago seguro para completar tu compra.",
+    "continue_checkout_btn": "Continuar al pago",
+    "annual_framing": "Menos que un café al mes"
   },
   "Sync": {
     "title": "Sincronización Energética",

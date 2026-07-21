@@ -225,9 +225,11 @@ export default function OnboardingPage() {
 
     if (concern) localStorage.setItem("kdestiny_concern", concern);
 
+    // Perceived-value loading — kept short so the funnel to the first result
+    // stays fast (the result page has its own generation animation afterward).
     setTimeout(() => {
       router.push("/select-master");
-    }, 4000);
+    }, 2000);
   };
 
   const canProceedStep2 = birthYear && birthMonth && birthDay && (birthTime || unknownTime) && countryCode;

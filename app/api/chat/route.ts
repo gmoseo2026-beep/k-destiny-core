@@ -21,10 +21,12 @@ const extractBirthDataTool = {
     }
   ]
 };
-import { getClientIp, checkChatRateLimit, recordChatRequest } from "@/lib/rateLimiter";
+import { getClientIp, checkChatRateLimit, checkGuestChatLimit, recordChatRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // Vercel Serverless: allow up to 60s for chat (Function Calling can trigger 2 AI calls)
 export const maxDuration = 60;
@@ -51,7 +53,16 @@ const MODEL_TIMEOUT_MS = 45000;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { message, history, masterName, locale, isPremium, userId, profile } = body;
+    let { message, history, masterName, locale, profile } = body;
+
+    // SECURITY: identity and premium status come from the server-side session,
+    // never from the request body. The client used to send `userId` (spoofable →
+    // drain another user's karma tokens, or send null → bypass the token gate
+    // entirely) and `isPremium` (spoofable → free premium persona).
+    const session = await getServerSession(authOptions);
+    const sessionUserId: string | null = session?.user?.id || null;
+    const sessionIsPremium =
+      session?.user?.tier === "PREMIUM" || session?.user?.role === "ADMIN";
 
     // ─── 0. Input Sanitization (prompt injection mitigation) ───
     if (typeof message === "string") {
@@ -75,7 +86,7 @@ export async function POST(req: Request) {
 
     // ─── 2. Rate Limit Check ───
     const clientIp = getClientIp(req);
-    const rateCheck = checkChatRateLimit(clientIp);
+    const rateCheck = await checkChatRateLimit(clientIp);
     if (!rateCheck.allowed) {
       const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 10000) / 1000);
       return NextResponse.json(
@@ -84,8 +95,22 @@ export async function POST(req: Request) {
       );
     }
 
+    // ─── 2.5 Guest backstop: 3 chats/day per IP without an account ───
+    // Logged-in users are governed by karma tokens below; guests previously
+    // had NO server-side cap beyond the general 100/day IP limit, i.e. free
+    // unlimited Gemini usage for anyone who cleared localStorage.
+    if (!sessionUserId) {
+      const guestCheck = await checkGuestChatLimit(clientIp);
+      if (!guestCheck.allowed) {
+        return NextResponse.json(
+          { error: "Free consultations exhausted. Create a free account to continue your reading." },
+          { status: 403 }
+        );
+      }
+    }
+
     // ─── 3. Karma Token Check (Prisma) ───
-    const effectiveUserId = userId || null;
+    const effectiveUserId = sessionUserId;
     let shouldDecrementToken = false;
 
     if (effectiveUserId) {
@@ -109,7 +134,7 @@ export async function POST(req: Request) {
     const language = LOCALE_LANGUAGES[locale || "en"] || "English";
 
     // ─── 5. Freemium vs Premium persona logic ───
-    const isPremiumUser = !!isPremium;
+    const isPremiumUser = sessionIsPremium;
 
     // Master personality mapping based on specialty
     const MASTER_PERSONALITIES: Record<string, string> = {
