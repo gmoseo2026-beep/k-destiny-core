@@ -625,10 +625,50 @@ function ChatPageContent() {
         throw new Error(errorData.error || "Failed to communicate with master.");
       }
 
-      const data = await response.json();
+      if (!response.body) {
+        throw new Error("The cosmic link was temporarily broken.");
+      }
+
+      // Stream the NDJSON reply: emotion first, then live deltas into the bubble.
+      const botId = `bot-${Date.now()}`;
+      let botAdded = false;
+      let acc = "";
+      let emotion = "calm";
+      let doneData: any = null;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let sbuf = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sbuf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = sbuf.indexOf("\n")) >= 0) {
+          const raw = sbuf.slice(0, nl).trim();
+          sbuf = sbuf.slice(nl + 1);
+          if (!raw) continue;
+          let evt: any;
+          try { evt = JSON.parse(raw); } catch { continue; }
+          if (evt.type === "emotion") {
+            emotion = evt.emotion || "calm";
+            if (botAdded) setMessages((prev) => prev.map((m) => (m.id === botId ? { ...m, emotion } : m)));
+          } else if (evt.type === "delta") {
+            acc += evt.text || "";
+            setIsTyping(false);
+            if (!botAdded) {
+              botAdded = true;
+              setMessages((prev) => [...prev, { id: botId, role: "model", content: acc, timestamp: Date.now(), emotion }]);
+            } else {
+              setMessages((prev) => prev.map((m) => (m.id === botId ? { ...m, content: acc, emotion } : m)));
+            }
+          } else if (evt.type === "done") {
+            doneData = evt;
+          }
+        }
+      }
 
       // Karma reconciliation with the server (authoritative).
-      if (data.fallback) {
+      if (doneData?.fallback) {
         // Non-answer ("master is meditating") → refund the optimistic deduction.
         if (!unlimited) {
           setKarmaTokens((prev) => {
@@ -637,39 +677,22 @@ function ChatPageContent() {
             return next;
           });
         }
-      } else if (!unlimited && typeof data.remainingTokens === "number") {
-        setKarmaTokens(data.remainingTokens);
-        saveKarma(data.remainingTokens, maxKarma);
+      } else if (!unlimited && typeof doneData?.remainingTokens === "number") {
+        setKarmaTokens(doneData.remainingTokens);
+        saveKarma(doneData.remainingTokens, maxKarma);
       }
 
-      const botMessage: ChatMessage = {
-        id: `bot-${Date.now()}`,
-        role: "model",
-        content: data.reply,
-        timestamp: Date.now(),
-        emotion: data.emotion || "calm",
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
-
       // ─── Save chat to localStorage for Dashboard Recent Reports ───
-      // This ensures persistence in the mock/local environment where
-      // the server-side Supabase insert doesn't actually persist data.
       try {
         const existingReports = JSON.parse(localStorage.getItem("kdestiny_chat_reports") || "[]");
         const newReport = {
           id: `chat-${Date.now()}`,
           user_id: userId || "local-user",
           type: "Chat",
-          content: {
-            masterName: currentMaster.name,
-            userMessage: userText,
-            aiResponse: data.reply,
-          },
+          content: { masterName: currentMaster.name, userMessage: userText, aiResponse: acc },
           created_at: new Date().toISOString(),
         };
         existingReports.unshift(newReport); // newest first
-        // Keep only the latest 50 chat reports to avoid bloating localStorage
         localStorage.setItem("kdestiny_chat_reports", JSON.stringify(existingReports.slice(0, 50)));
       } catch (e) {
         console.warn("[Chat] Could not save chat report to localStorage:", e);
@@ -786,7 +809,7 @@ function ChatPageContent() {
                       : "bg-white/[0.03] backdrop-blur-xl border border-white/5 text-gray-300 rounded-bl-none shadow-[0_8px_32px_rgba(0,0,0,0.2)]"
                   }`}
                 >
-                  {msg.role === "user" ? msg.content : renderMessageContent(msg.content, t("premium_upsell"), msg.role === "model")}
+                  {msg.role === "user" ? msg.content : renderMessageContent(msg.content, t("premium_upsell"), msg.id === "welcome")}
                 </div>
               </div>
             </motion.div>
