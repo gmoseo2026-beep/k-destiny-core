@@ -41,17 +41,48 @@ const notoSansJP = Noto_Sans_JP({
 const BASE_URL = 'https://thekdestiny.com';
 const LOCALES = ['en', 'ko', 'ja', 'es', 'de', 'fr'];
 
+// SEO: localized <title>/<meta description> — a Korean/Japanese searcher seeing
+// an English snippet is a lost click, and Google treats the mismatch as weak
+// relevance for non-EN queries.
+const LOCALE_META: Record<string, { title: string; description: string }> = {
+  en: {
+    title: "K-Destiny | AI-Powered Saju Astrology — Unlock Your Cosmic Blueprint",
+    description: "The world's first AI-powered Korean Saju (四柱推命) astrology platform. Discover your destiny through ancient Eastern wisdom meets modern AI. Premium cosmic readings, compatibility analysis, and personalized fortune predictions.",
+  },
+  ko: {
+    title: "K-Destiny | AI 사주 운세 — 당신의 우주적 설계도를 열다",
+    description: "정통 만세력 기반 AI 사주 플랫폼. 생년월일로 나의 사주 명식과 오행 분석, 연애·재물·건강 운세와 궁합까지. 6개 언어로 전 세계에 한국 사주를 전합니다.",
+  },
+  ja: {
+    title: "K-Destiny | AIで読む韓国四柱推命 — あなたの運命の設計図",
+    description: "正統な万年暦に基づくAI四柱推命プラットフォーム。生年月日からあなたの命式と五行を解析し、恋愛・金運・健康運と相性まで。韓国発の本格四柱推命を日本語で。",
+  },
+  es: {
+    title: "K-Destiny | Astrología Saju con IA — Descubre tu plano cósmico",
+    description: "La primera plataforma de astrología coreana Saju (四柱推命) impulsada por IA. Descubre tu destino: lecturas premium, análisis de compatibilidad y predicciones personalizadas.",
+  },
+  de: {
+    title: "K-Destiny | KI-Saju-Astrologie — Ihr kosmischer Bauplan",
+    description: "Die erste KI-gestützte Plattform für koreanische Saju-Astrologie (四柱推命). Entdecken Sie Ihr Schicksal: Premium-Deutungen, Kompatibilitätsanalysen und persönliche Prognosen.",
+  },
+  fr: {
+    title: "K-Destiny | Astrologie Saju par IA — Votre plan cosmique",
+    description: "La première plateforme d'astrologie coréenne Saju (四柱推命) propulsée par l'IA. Découvrez votre destin : lectures premium, analyses de compatibilité et prédictions personnalisées.",
+  },
+};
+
 export async function generateMetadata({ params }: { params: Promise<{locale: string}> }): Promise<Metadata> {
   const { locale } = await params;
   const canonicalUrl = `${BASE_URL}/${locale}`;
+  const meta = LOCALE_META[locale] || LOCALE_META.en;
 
   return {
     metadataBase: new URL(BASE_URL),
     title: {
-      default: "K-Destiny | AI-Powered Saju Astrology — Unlock Your Cosmic Blueprint",
+      default: meta.title,
       template: "%s | K-Destiny",
     },
-    description: "The world's first AI-powered Korean Saju (四柱推命) astrology platform. Discover your destiny through ancient Eastern wisdom meets modern AI. Premium cosmic readings, compatibility analysis, and personalized fortune predictions.",
+    description: meta.description,
     keywords: [
       "saju", "사주", "四柱推命", "Korean astrology", "AI astrology",
       "destiny reading", "cosmic blueprint", "energy sync", "compatibility",
@@ -61,8 +92,8 @@ export async function generateMetadata({ params }: { params: Promise<{locale: st
     creator: "K-Destiny Inc.",
     publisher: "K-Destiny Inc.",
     openGraph: {
-      title: "K-Destiny | AI-Powered Saju Astrology — Unlock Your Cosmic Blueprint",
-      description: "The world's first AI-powered Korean Saju astrology platform. Ancient Eastern wisdom meets modern AI for premium cosmic readings and fortune predictions.",
+      title: meta.title,
+      description: meta.description,
       url: canonicalUrl,
       siteName: "K-Destiny",
       images: [
@@ -78,8 +109,8 @@ export async function generateMetadata({ params }: { params: Promise<{locale: st
     },
     twitter: {
       card: "summary_large_image",
-      title: "K-Destiny | AI-Powered Saju Astrology",
-      description: "Discover your destiny through the world's first AI-powered Korean Saju astrology platform. Premium cosmic readings & fortune predictions.",
+      title: meta.title,
+      description: meta.description,
       images: ["/og-image.jpg"],
       creator: "@thekdestiny",
     },

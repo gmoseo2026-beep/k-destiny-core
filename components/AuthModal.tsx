@@ -132,9 +132,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           {/* Close button */}
           <button
             onClick={onClose}
+            aria-label="Close login dialog"
             className="absolute top-4 right-4 p-2 rounded-full bg-black/40 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors z-20"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
 
           <div className="relative z-10">

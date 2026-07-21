@@ -317,14 +317,14 @@ export default function PricingPage() {
             { icon: <Zap className="w-3.5 h-3.5" />, text: t("trust_instant") },
             { icon: <Eye className="w-3.5 h-3.5" />, text: t("trust_cancel") },
           ].map((item) => (
-            <div key={item.text} className="flex items-center gap-2 text-[11px] font-sans tracking-widest text-gray-600 uppercase">
+            <div key={item.text} className="flex items-center gap-2 text-[11px] font-sans tracking-widest text-gray-400 uppercase">
               {item.icon}<span>{item.text}</span>
             </div>
           ))}
         </motion.div>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-          className="text-center text-gray-700 text-xs font-sans mt-10 mb-6">{t("guarantee_text")}</motion.p>
+          className="text-center text-gray-500 text-xs font-sans mt-10 mb-6">{t("guarantee_text")}</motion.p>
       </div>
 
       {/* Login gate — a purchase needs an account so the webhook can activate it */}

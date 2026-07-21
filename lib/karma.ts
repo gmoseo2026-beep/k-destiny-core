@@ -30,10 +30,33 @@ function isSameServerDay(a: Date, b: Date): boolean {
  * Safe to call on every read (entitlement) and before every chat.
  */
 export async function loadKarmaState(userId: string): Promise<KarmaState> {
-  const u = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { usageTokens: true, karmaResetAt: true, tier: true, role: true, premiumEndDate: true },
-  });
+  // DEPLOY SAFETY: `karmaResetAt` is a newly added column. If the production DB
+  // hasn't run `prisma db push` / `migrate deploy` yet, selecting it throws for
+  // EVERY logged-in request (entitlement + chat = the whole logged-in app).
+  // Degrade gracefully: fall back to the legacy select and skip the daily
+  // refill until the migration lands, instead of 500-ing the site.
+  let u: {
+    usageTokens: number;
+    karmaResetAt?: Date | null;
+    tier: string;
+    role: string;
+    premiumEndDate: Date | null;
+  } | null = null;
+  let refillSupported = true;
+
+  try {
+    u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { usageTokens: true, karmaResetAt: true, tier: true, role: true, premiumEndDate: true },
+    });
+  } catch (e) {
+    console.error("[Karma] karmaResetAt select failed (migration missing?) — degrading:", (e as Error)?.message?.slice(0, 120));
+    refillSupported = false;
+    u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { usageTokens: true, tier: true, role: true, premiumEndDate: true },
+    });
+  }
 
   const isAdmin = u?.role === "ADMIN";
   const isPremiumActive =
@@ -41,16 +64,20 @@ export async function loadKarmaState(userId: string): Promise<KarmaState> {
   let karma = u?.usageTokens ?? 0;
 
   // Premium: refill to 20 at the first access of a new day.
-  if (isPremiumActive && !isAdmin) {
+  if (isPremiumActive && !isAdmin && refillSupported) {
     const now = new Date();
     const last = u?.karmaResetAt ?? null;
     if (!last || !isSameServerDay(last, now)) {
-      const updated = await prisma.user.update({
-        where: { id: userId },
-        data: { usageTokens: DAILY_PREMIUM_KARMA, karmaResetAt: now },
-        select: { usageTokens: true },
-      });
-      karma = updated.usageTokens;
+      try {
+        const updated = await prisma.user.update({
+          where: { id: userId },
+          data: { usageTokens: DAILY_PREMIUM_KARMA, karmaResetAt: now },
+          select: { usageTokens: true },
+        });
+        karma = updated.usageTokens;
+      } catch (e) {
+        console.error("[Karma] daily refill write failed (non-fatal):", (e as Error)?.message?.slice(0, 120));
+      }
     }
   }
 
