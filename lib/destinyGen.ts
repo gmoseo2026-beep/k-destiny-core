@@ -10,11 +10,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// Free hook: prioritise fast models (flash / flash-lite). 2.5 kept last as a
-// quality safety net. The free prompt is small, so even lite reads well.
+// Reliability-first ordering. On Gemini's lower tiers, 2.5-flash is the model
+// most often hit by 429/503/RESOURCE_EXHAUSTED, so putting it FIRST made every
+// route wait out a timeout before falling back to a generic mock. 2.0-flash is
+// faster, far more available, and plenty capable — so it leads everywhere. 2.5
+// stays in the chain as a quality safety net, never as the blocking first hop.
 export const FREE_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
-// Premium sections run post-payment: quality first, latency secondary.
-export const PREMIUM_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+// Premium sections run post-payment: 2.0-flash first (fast + reliable), 2.5 as
+// the quality fallback, lite last.
+export const PREMIUM_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
 
 export const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 문어체 존댓말을 사용하세요. 어두운 다크 판타지 톤과 시적 표현을 곁들이세요." },

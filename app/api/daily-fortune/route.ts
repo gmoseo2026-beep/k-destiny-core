@@ -7,9 +7,10 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain ───
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-const MODEL_TIMEOUT_MS = 45000;
+// ─── Model Fallback Chain (reliability-first: 2.0-flash leads; 2.5 is a
+//     quality fallback, never the blocking first hop that stalls on 503) ───
+const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
+const MODEL_TIMEOUT_MS = 15000;
 const MAX_RETRIES = 1;
 
 const LOCALE_CONFIG: Record<string, string> = {
@@ -105,8 +106,13 @@ export async function GET(req: NextRequest) {
     }
 
     const lang = LOCALE_CONFIG[locale] || "English";
-    const prompt = `You are a mystical Saju fortune-teller. Write in ${lang}. Today: ${today}. Day Master: ${dayMasterKey}.
-Return JSON: {"summary":"one sentence","fullContent":"3 paragraphs","luckyColor":"color","luckyNumber":"number","luckyDir":"direction"}`;
+    const prompt = `You are a masterful Saju fortune-teller with a warm, vivid, specific voice. Write in ${lang}.
+Today: ${today}. Day Master: ${dayMasterKey}.
+
+Write today's fortune so it feels personal and USEFUL, never generic. Requirements:
+- summary: one punchy, evocative sentence that captures today's energy.
+- fullContent: 3 rich paragraphs. Para 1 = today's overall energy + the best time-of-day window to act. Para 2 = relationships & communication, with a concrete tip. Para 3 = wealth/work + one thing to avoid today. Reference the Day Master's element naturally. Be specific and encouraging — avoid vague platitudes.
+Return ONLY JSON: {"summary":"...","fullContent":"...","luckyColor":"...","luckyNumber":"...","luckyDir":"..."}`;
 
     let lastError: any = null;
 

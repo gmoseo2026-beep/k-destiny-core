@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
+import { loadKarmaState } from "@/lib/karma";
 import { NextResponse } from "next/server";
 
 // Source-of-truth entitlement check. Must never be cached — a purchase that
@@ -36,12 +37,15 @@ export async function GET() {
     );
   }
 
-  const [user, reportCount] = await Promise.all([
+  // loadKarmaState also performs the premium daily refill (lazy, on read), so
+  // opening the chat at the start of a new day shows the fresh 20 immediately.
+  const [user, reportCount, karmaState] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { tier: true, role: true, email: true, subscriptionStatus: true, premiumEndDate: true },
     }),
     prisma.purchasedReport.count({ where: { userId: session.user.id } }),
+    loadKarmaState(session.user.id),
   ]);
 
   // A PREMIUM tier only counts while the subscription window is still open.
@@ -62,6 +66,13 @@ export async function GET() {
       premium,
       hasReport,
       unlocked: premium || hasReport,
+      // Chat "Karma Energy" — the SINGLE source of truth for the chat UI.
+      //   karmaUnlimited: ADMIN only (∞).
+      //   karmaMax:       20 for active premium (daily cap), else null.
+      //   karma:          remaining tokens after any daily refill.
+      karma: karmaState.karma,
+      karmaUnlimited: karmaState.unlimited,
+      karmaMax: karmaState.dailyMax,
     },
     { status: 200, headers: NO_STORE }
   );

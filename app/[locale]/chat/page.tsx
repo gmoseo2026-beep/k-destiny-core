@@ -427,38 +427,57 @@ function ChatPageContent() {
   const [error, setError] = useState<string | null>(null);
   const [karmaTokens, setKarmaTokens] = useState(5);
   const [maxKarma, setMaxKarma] = useState(5);
+  const [unlimited, setUnlimited] = useState(false);
   const { data: session } = useSession();
   const isPremium = session?.user?.tier === 'PREMIUM' || session?.user?.role === 'ADMIN';
   const [userId, setUserId] = useState<string | null>(null);
-  
+
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const isKarmaEmpty = karmaTokens === 0;
+  const isKarmaEmpty = !unlimited && karmaTokens === 0;
 
-  // Sync karma from localStorage on mount
+  // Karma sync. For logged-in users the DB is the single source of truth
+  // (so admin top-ups and real balances show immediately); guests fall back to
+  // localStorage. Premium/Admin are unlimited and never blocked.
   useEffect(() => {
-    const isPrem = isPremium || searchParams.get("premium") === "true";
-
-    const karma = getKarma();
-    let current = karma.current;
-    let max = karma.max;
-
-    // Fallback for existing premium users who got stuck with the default 5 karma
-    if (isPrem && max === 5) {
-      max = 20;
-      current = 20;
-      saveKarma(current, max);
-    }
-
-    // First-visit bonus: non-logged-in users get 1 free message
-    const hasUsedFreeChat = localStorage.getItem("kdestiny_free_chat_used");
-    if (!session?.user?.id && !hasUsedFreeChat && current === 0) {
-      current = 1;
-      max = Math.max(max, 1);
-    }
-
-    setKarmaTokens(current);
-    setMaxKarma(max);
-  }, [searchParams]);
+    let cancelled = false;
+    (async () => {
+      if (session?.user?.id) {
+        try {
+          const res = await fetch("/api/user/entitlement", { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            if (cancelled) return;
+            // Only ADMIN is unlimited. Premium shows its 20/day cap and decrements.
+            const unlim = !!data.karmaUnlimited;
+            const karma = typeof data.karma === "number" ? data.karma : 0;
+            setUnlimited(unlim);
+            const cur = unlim ? 20 : karma;
+            const mx = unlim
+              ? 20
+              : (typeof data.karmaMax === "number" ? data.karmaMax : Math.max(karma, 5));
+            setKarmaTokens(cur);
+            setMaxKarma(mx);
+            saveKarma(cur, mx);
+            return;
+          }
+        } catch { /* fall through to localStorage */ }
+      }
+      // Guest (or entitlement fetch failed) → localStorage
+      const karma = getKarma();
+      let current = karma.current;
+      let max = karma.max;
+      const hasUsedFreeChat = localStorage.getItem("kdestiny_free_chat_used");
+      if (!session?.user?.id && !hasUsedFreeChat && current === 0) {
+        current = 1;
+        max = Math.max(max, 1);
+      }
+      if (!cancelled) {
+        setKarmaTokens(current);
+        setMaxKarma(max);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session?.user?.id, searchParams]);
 
   // Fetch current user ID from session
   useEffect(() => {
@@ -498,12 +517,15 @@ function ChatPageContent() {
     setInputValue("");
     setError(null);
 
-    // Deduct one karma token and save immediately
-    setKarmaTokens((prev) => {
-      const next = Math.max(0, prev - 1);
-      saveKarma(next, maxKarma);
-      return next;
-    });
+    // Optimistic deduction for feedback (premium/admin are unlimited — no deduction).
+    // The server's authoritative `remainingTokens` reconciles this after the reply.
+    if (!unlimited) {
+      setKarmaTokens((prev) => {
+        const next = Math.max(0, prev - 1);
+        saveKarma(next, maxKarma);
+        return next;
+      });
+    }
 
     // Mark first free chat as used (for non-logged-in users)
     if (!session?.user?.id) {
@@ -590,10 +612,13 @@ function ChatPageContent() {
       if (!response.ok) {
         const errorData = await response.json();
 
-        // Handle 403: Karma Energy depleted from server
+        // Handle 403: Karma Energy depleted from server (never happens for
+        // unlimited premium/admin, but guard anyway).
         if (response.status === 403) {
-          setKarmaTokens(0); // Sync client state with server
-          saveKarma(0, maxKarma);
+          if (!unlimited) {
+            setKarmaTokens(0); // Sync client state with server
+            saveKarma(0, maxKarma);
+          }
           throw new Error(errorData.error || "Karma Energy depleted. Master is meditating.");
         }
 
@@ -601,7 +626,22 @@ function ChatPageContent() {
       }
 
       const data = await response.json();
-      
+
+      // Karma reconciliation with the server (authoritative).
+      if (data.fallback) {
+        // Non-answer ("master is meditating") → refund the optimistic deduction.
+        if (!unlimited) {
+          setKarmaTokens((prev) => {
+            const next = Math.min(maxKarma, prev + 1);
+            saveKarma(next, maxKarma);
+            return next;
+          });
+        }
+      } else if (!unlimited && typeof data.remainingTokens === "number") {
+        setKarmaTokens(data.remainingTokens);
+        saveKarma(data.remainingTokens, maxKarma);
+      }
+
       const botMessage: ChatMessage = {
         id: `bot-${Date.now()}`,
         role: "model",
@@ -638,12 +678,14 @@ function ChatPageContent() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || "The cosmic link was temporarily broken.");
-      // Refund the karma token on error
-      setKarmaTokens((prev) => {
-        const next = Math.min(maxKarma, prev + 1);
-        saveKarma(next, maxKarma);
-        return next;
-      });
+      // Refund the optimistic deduction on error (not for unlimited users).
+      if (!unlimited) {
+        setKarmaTokens((prev) => {
+          const next = Math.min(maxKarma, prev + 1);
+          saveKarma(next, maxKarma);
+          return next;
+        });
+      }
     } finally {
       setIsTyping(false);
     }

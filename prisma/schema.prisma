@@ -67,6 +67,9 @@ model User {
   role        Role             @default(USER)
   tier        SubscriptionTier @default(FREE)
   usageTokens Int              @default(3)
+  // Date (server day) the premium 20/day karma was last refilled. Lazily reset
+  // on access — no cron needed. Null/older-than-today ⇒ refill to 20 on next use.
+  karmaResetAt DateTime?
 
   // SaaS Subscription Management
   planType           String? // '1_MONTH', '3_MONTHS', '6_MONTHS', '1_YEAR'

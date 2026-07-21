@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-const MODEL_TIMEOUT_MS = 40000;
+const MODEL_TIMEOUT_MS = 18000; // fail fast to the next model instead of stalling
 
 function isValidSections(d: any): boolean {
   return d && typeof d.love_fortune === "string" && d.love_fortune.length > 20 &&

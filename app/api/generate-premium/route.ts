@@ -10,9 +10,10 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain ───
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
-const MODEL_TIMEOUT_MS = 50000;
+// ─── Model Fallback Chain (2.0-flash leads for reliability/speed; 2.5 is the
+//     quality fallback rather than the blocking first hop that stalls on 503) ───
+const MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
+const MODEL_TIMEOUT_MS = 20000;
 const MAX_RETRIES = 1;
 
 const REPORT_PROMPTS: Record<string, { systemContext: string; task: string }> = {
@@ -56,9 +57,9 @@ function generateMockReport(reportType: string, locale: string, name: string): s
       ja: `${name}様、今日の宇宙的天気は「静寂の中の嵐」です。表面上は穏やかに見えますが、内面では強力なエネルギー転換が起きています。このエネルギーを正しく活用すれば、大きな突破口を作ることができます。\n\n今日の優先順位: キャリア面では午前9時〜11時がゴールデンタイムです。創造的なアイディアが必要な作業はこの時間に集中してください。\n\n避けるべきエネルギー: 衝動的な出費と感情的な対応は今日の金の気と衝突します。`,
     },
     "fortune-2027": {
-      ko: `${name}님의 2027년은 '대운의 문이 열리는 해'입니다. 10년 주기의 대운 전환점에 서 있으며, 특히 하반기에 인생을 바꿀 기회가 찾아옵니다.\n\nQ1 (1~3월): 겨울의 끝자락에서 내면의 정비 시간입니다. 무리한 시작보다는 계획을 세우고 에너지를 비축하세요. Q2 (4~6월): 목(木)의 기운이 폭발하는 시기. 새로운 도전과 인간관계의 확장이 예상됩니다. 5월이 특히 중요합니다.\n\nQ3 (7~9월): 재물운이 급상승합니다. 8월에 예상치 못한 기회가 찾아올 수 있으니 준비하세요. Q4 (10~12월): 한 해의 성과를 수확하는 시기. 11월에 중요한 인연이 운명처럼 다가올 것입니다.`,
-      en: `${name}, 2027 is your 'Year of the Opening Grand Gate.' You stand at a once-in-a-decade Grand Fortune transition point, with life-changing opportunities arriving especially in the second half.\n\nQ1 (Jan-Mar): A period of inner recalibration at winter's end. Plan and conserve energy rather than forcing new beginnings. Q2 (Apr-Jun): Wood energy explodes — expect new challenges and expanding networks. May is particularly significant.\n\nQ3 (Jul-Sep): Wealth fortune surges dramatically. An unexpected opportunity may arrive in August — be prepared. Q4 (Oct-Dec): Harvest season for the year's efforts. A fateful encounter awaits in November.`,
-      ja: `${name}様の2027年は「大運の門が開く年」です。10年周期の大運転換点に立っており、特に下半期に人生を変える機会が訪れます。\n\nQ1 (1〜3月): 冬の終わりに内面の整備の時間です。無理な開始よりも計画を立てエネルギーを蓄えてください。Q2 (4〜6月): 木の気が爆発する時期。新たな挑戦と人間関係の拡張が予想されます。\n\nQ3 (7〜9月): 財運が急上昇します。8月に予想外の機会が訪れる可能性があります。Q4 (10〜12月): 一年の成果を収穫する時期。11月に運命的な出会いが待っています。`,
+      ko: `${name}님의 2027년은 '대운의 문이 열리는 해'입니다. 10년에 한 번 찾아오는 대운의 전환점 위에 서 있으며, 지난 몇 해 동안 쌓아온 인내가 마침내 형태를 갖추기 시작합니다. 특히 하반기로 갈수록 인생의 궤도를 바꿀 결정적 기회가 밀려옵니다.\n\n1분기(1~3월)는 겨울의 끝자락, 내면을 정비하는 시간입니다. 무리하게 새 일을 벌이기보다 방향을 정하고 에너지를 비축하세요. 이 시기에 세운 계획이 한 해 전체의 뼈대가 됩니다. 2월 말에는 오래 미뤄둔 관계나 결정을 정리하기 좋습니다.\n\n2분기(4~6월)는 목(木)의 기운이 폭발하는 성장의 계절입니다. 새로운 도전과 인간관계의 확장이 동시에 찾아오며, 특히 5월은 한 해의 분기점입니다. 이때 내민 손이 하반기의 큰 인연으로 이어지니, 망설이지 말고 먼저 다가서세요.\n\n3분기(7~9월)는 재물운이 가파르게 상승하는 결실의 구간입니다. 8월에는 예상치 못한 기회가 문을 두드리니 미리 준비된 자만이 잡을 수 있습니다. 다만 충동적 확장은 금물 — 들어온 것을 지키는 지혜가 더 큰 부를 부릅니다.\n\n4분기(10~12월)는 한 해의 성과를 수확하고 다음 10년의 씨앗을 심는 시기입니다. 11월에는 운명처럼 다가오는 중요한 인연이 있으며, 이 만남이 이후 여러 해의 흐름을 좌우합니다. 12월에는 스스로에게 보상을 허락하고, 이룬 것을 조용히 축하하세요.`,
+      en: `${name}, 2027 is your 'Year of the Opening Grand Gate.' You stand upon a once-in-a-decade turning point, and the patience you have quietly stored over recent years finally begins to take shape. The closer you move to the second half of the year, the more decisive the opportunities that arrive to reroute your entire path.\n\nThe first quarter (Jan-Mar) is winter's end — a time to recalibrate within. Rather than forcing new ventures, set your direction and conserve energy; the plans you make now become the skeleton of the whole year. Late February is ideal for resolving a long-delayed relationship or decision.\n\nThe second quarter (Apr-Jun) is a season of explosive growth as Wood energy surges. New challenges and expanding circles arrive together, and May in particular is the year's hinge. A hand you extend now becomes a major bond in the second half — don't hesitate; reach out first.\n\nThe third quarter (Jul-Sep) is a steep climb in wealth and harvest. In August an unexpected opportunity knocks, and only the prepared will seize it. Yet resist impulsive expansion — the wisdom to protect what has come will summon far greater abundance.\n\nThe fourth quarter (Oct-Dec) is for harvesting the year and planting seeds for the next decade. November brings a fateful, important encounter that will shape the flow of several years to come. In December, allow yourself a reward and quietly celebrate what you have built.`,
+      ja: `${name}様の2027年は「大運の門が開く年」です。10年に一度の転換点に立ち、これまで静かに積み重ねてきた忍耐がついに形を成し始めます。下半期に近づくほど、人生の軌道を変える決定的な機会が押し寄せます。\n\n第1四半期(1〜3月)は冬の終わり、内面を整える時間です。無理に新しいことを始めるより、方向を定めエネルギーを蓄えてください。ここで立てた計画が一年の骨格となります。\n\n第2四半期(4〜6月)は木の気が爆発する成長の季節です。新たな挑戦と人間関係の拡張が同時に訪れ、特に5月は一年の分岐点です。差し出した手が下半期の大きな縁につながります。\n\n第3四半期(7〜9月)は財運が急上昇する実りの時期です。8月には予想外の機会が扉を叩きますが、準備された者だけがつかめます。衝動的な拡大は禁物です。\n\n第4四半期(10〜12月)は一年を収穫し、次の10年の種を蒔く時期です。11月には運命的な出会いがあり、その後数年の流れを左右します。12月には自分に報酬を許し、築いたものを静かに祝ってください。`,
     },
   };
 
@@ -119,7 +120,8 @@ export async function POST(req: Request) {
 
 RULES:
 - Write ENTIRELY in ${config.name}. ${config.toneGuide}
-- Write exactly 3 paragraphs. Each paragraph should be 3-5 sentences.
+- Write 5 to 6 RICH paragraphs, each 4-6 sentences. This is a paid premium report — it must feel deep, specific, and complete, never thin or cut off.
+- Cover every dimension the task asks for; if it names quarters or periods, give each its own developed paragraph with concrete timing, opportunities, and cautions.
 - Make the analysis deeply personal based on the provided Saju data.
 - Do NOT mention any technical terms like "Four Pillars" or "Day Master" — just deliver the mystic reading naturally.
 - Use vivid, poetic dark-fantasy imagery throughout.
@@ -133,7 +135,7 @@ CLIENT SAJU DATA (DO NOT EXPOSE RAW DATA, ONLY USE FOR ANALYSIS):
 
 TASK: ${prompt.task}
 
-Return ONLY the 3-paragraph report text as a plain string. No JSON, no markdown headers, no bullet points — just 3 beautiful paragraphs separated by double newlines.`;
+Return ONLY the report text as a plain string. No JSON, no markdown headers, no bullet points — just 5-6 beautiful paragraphs separated by double newlines.`;
 
     let lastError: any = null;
     const startTime = Date.now();
@@ -147,7 +149,7 @@ Return ONLY the 3-paragraph report text as a plain string. No JSON, no markdown 
             model: modelName,
             generationConfig: {
               temperature: 0.85,
-              maxOutputTokens: 2048,
+              maxOutputTokens: 3072,
             },
           });
 

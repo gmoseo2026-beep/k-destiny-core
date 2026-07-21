@@ -15,22 +15,26 @@ import Analytics from "../../components/Analytics";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const notoSansKR = Noto_Sans_KR({
   variable: "--font-ko",
   preload: false,
+  display: "swap",
   weight: ["400", "500", "700"],
 });
 
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-ja",
   preload: false,
+  display: "swap",
   weight: ["400", "500", "700"],
 });
 

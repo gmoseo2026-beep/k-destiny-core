@@ -24,6 +24,7 @@ const extractBirthDataTool = {
 import { getClientIp, checkChatRateLimit, checkGuestChatLimit, recordChatRequest } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
+import { loadKarmaState, consumeKarma } from "@/lib/karma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -35,8 +36,10 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain (Primary → Backup → Lite) ───
-const CHAT_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
+// ─── Model Fallback Chain (reliability-first: 2.0-flash leads. 2.5-flash is the
+//     model most often throttled on lower tiers, so it must never be the blocking
+//     first hop — that was causing long stalls before the "meditating" fallback) ───
+const CHAT_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -47,8 +50,8 @@ const LOCALE_LANGUAGES: Record<string, string> = {
   ja: "Japanese (日本語)",
 };
 
-// VPS-safe timeout — 45s per model attempt
-const MODEL_TIMEOUT_MS = 45000;
+// Fail fast to the next model instead of stalling users for 45s.
+const MODEL_TIMEOUT_MS = 15000;
 
 export async function POST(req: Request) {
   try {
@@ -61,8 +64,8 @@ export async function POST(req: Request) {
     // entirely) and `isPremium` (spoofable → free premium persona).
     const session = await getServerSession(authOptions);
     const sessionUserId: string | null = session?.user?.id || null;
-    const sessionIsPremium =
-      session?.user?.tier === "PREMIUM" || session?.user?.role === "ADMIN";
+    // Premium/admin status is resolved authoritatively from the DB in
+    // loadKarmaState below (tier can be stale/expired in the session token).
 
     // ─── 0. Input Sanitization (prompt injection mitigation) ───
     if (typeof message === "string") {
@@ -109,32 +112,48 @@ export async function POST(req: Request) {
       }
     }
 
-    // ─── 3. Karma Token Check (Prisma) ───
+    // ─── 3. Karma Token Check (lib/karma = single source of truth) ───
+    //   ADMIN → unlimited; PREMIUM → 20/day (refilled lazily here); FREE → static.
     const effectiveUserId = sessionUserId;
+    let karmaTokens = 0;
+    let isAdmin = false;
+    let isPremiumActive = false;
     let shouldDecrementToken = false;
 
     if (effectiveUserId) {
-      const dbUser = await prisma.user.findUnique({
-        where: { id: effectiveUserId },
-        select: { usageTokens: true }
-      });
+      const state = await loadKarmaState(effectiveUserId);
+      isAdmin = state.isAdmin;
+      isPremiumActive = state.isPremiumActive;
+      karmaTokens = state.karma;
 
-      const karmaTokens = dbUser?.usageTokens ?? 0;
-
-      if (karmaTokens <= 0) {
+      // Only ADMIN is unlimited. Premium consumes its 20/day; free consumes its
+      // static tokens. Both are gated at 0 (premium refills tomorrow).
+      if (!isAdmin && karmaTokens <= 0) {
         return NextResponse.json(
-          { error: "Karma Energy depleted. Master is meditating." },
+          {
+            error: isPremiumActive
+              ? "Daily Karma spent. Your 20 questions refresh tomorrow."
+              : "Karma Energy depleted. Master is meditating.",
+            remainingTokens: 0,
+            dailyLimit: isPremiumActive,
+          },
           { status: 403 }
         );
       }
-      shouldDecrementToken = true;
+      shouldDecrementToken = !isAdmin;
     }
+
+    // Full, deep reading for anyone with real access: admin, active premium, OR a
+    // signed-in user who still holds karma. Only guests / depleted accounts get
+    // the short teaser + paywall.
+    const hasFullAccess = isAdmin || isPremiumActive || (!!effectiveUserId && karmaTokens > 0);
 
     // ─── 4. Language Setup ───
     const language = LOCALE_LANGUAGES[locale || "en"] || "English";
 
     // ─── 5. Freemium vs Premium persona logic ───
-    const isPremiumUser = sessionIsPremium;
+    // Driven by real access (see hasFullAccess), NOT tier alone.
+    const isPremiumUser = hasFullAccess;
 
     // Master personality mapping based on specialty
     const MASTER_PERSONALITIES: Record<string, string> = {
@@ -372,22 +391,24 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         // ─── 7. Validation ───
         if (!parsed.message || !parsed.emotion) throw new Error("Missing fields");
 
-        // ─── 8. SUCCESS — Atomically decrement karma token ───
+        // ─── 8. SUCCESS — consume one karma token (ADMIN exempt) ───
+        // remainingTokens is authoritative: the client mirrors it instead of its
+        // own optimistic localStorage guess. null = unlimited (admin/guest).
+        let remainingTokens: number | null =
+          isAdmin || !effectiveUserId ? null : karmaTokens;
         if (shouldDecrementToken && effectiveUserId) {
           try {
-            await prisma.user.update({
-              where: { id: effectiveUserId },
-              data: { usageTokens: { decrement: 1 } },
-            });
+            remainingTokens = await consumeKarma(effectiveUserId);
           } catch (decrementError) {
             console.error("[Chat] Error decrementing usage token:", decrementError);
+            remainingTokens = Math.max(0, karmaTokens - 1);
           }
         }
 
         recordChatRequest(clientIp);
 
         console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion }, { status: 200 });
+        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion, remainingTokens }, { status: 200 });
 
       } catch (err: any) {
         lastError = err;
@@ -402,11 +423,17 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     }
     }
 
-    // All models failed — token was NOT consumed
+    // All models failed — token was NOT consumed. `fallback: true` tells the
+    // client this is a non-answer so it refunds the karma it optimistically
+    // deducted (previously it kept the charge for the "meditating" message).
     console.error("[Chat] All models failed in chat route. Last error:", lastError);
-    // Graceful JSON response instead of raw 503
     return NextResponse.json(
-      { reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.", emotion: "calm" },
+      {
+        reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens,
+      },
       { status: 200 }
     );
 

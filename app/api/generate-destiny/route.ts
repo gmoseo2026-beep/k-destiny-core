@@ -17,7 +17,7 @@ export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 const STREAM_DEADLINE_MS = 30000; // stop draining after this and finalize best-effort
-const FREE_MAX_TOKENS = 1400;
+const FREE_MAX_TOKENS = 1600; // room for a full 5-paragraph free core + short previews
 
 // ─── Minimal validity for caching the assembled free result ───
 function isValidFree(d: any): boolean {
@@ -28,18 +28,19 @@ function isValidFree(d: any): boolean {
 // ─── Trimmed mock (free phase only: core + teaser + short previews) ───
 function mockFree(name: string, locale: string) {
   const isKo = locale === "ko";
+  // Free core: a COMPLETE, satisfying innate-nature reading (no cliffhanger).
   const core = isKo
-    ? `${name}님은 겉으로는 차분하고 안정적으로 보이지만, 내면에는 끊임없이 변화를 갈구하는 에너지가 숨어 있습니다.\n\n당신은 25세에서 28세 사이에 인생의 큰 전환점을 경험했을 가능성이 높습니다. 그 시기의 경험이 지금의 당신을 형성했습니다.\n\n목(木)의 성장력과 수(水)의 지혜가 조화를 이루어, 어떤 상황에서도 냉정함을 유지하는 힘을 지녔습니다.\n\n하지만 당신이 모르는 것이 있습니다. ${new Date().getFullYear()}년은 10년에 한 번 찾아오는 대운의 전환점이 될 것입니다...`
-    : `${name}, you appear composed on the outside, but inside you carry a restless energy that yearns for transformation.\n\nAround age 25-27, you likely experienced a turning point that reshaped who you are today.\n\nThe growth of Wood harmonizes with the wisdom of Water, granting you clarity even in chaos.\n\nBut what you don't know is that ${new Date().getFullYear()} holds a once-in-a-decade Grand Fortune shift for you...`;
+    ? `${name}님은 겉으로는 차분하고 흔들림 없어 보이지만, 내면에는 끊임없이 더 나은 것을 갈구하는 뜨거운 에너지가 흐르고 있습니다. 이 두 얼굴의 균형이 바로 당신을 특별하게 만드는 힘입니다.\n\n당신의 타고난 강점은 '통찰'입니다. 남들이 표면만 볼 때 당신은 본질을 읽어냅니다. 그래서 위기 앞에서도 당황하기보다 한 걸음 물러나 판을 읽는 침착함을 지녔습니다.\n\n다만 25세에서 28세 사이, 당신은 스스로를 증명해야 한다는 압박 속에서 깊은 마음의 상처를 겪었습니다. 그 시기가 당신을 단단하게 만들었지만, 동시에 '완벽하지 않으면 사랑받지 못한다'는 오래된 두려움도 남겼습니다.\n\n일상에서 당신의 기운은 관계에서는 먼저 배려하고, 일에서는 끝까지 책임지는 방식으로 드러납니다. 결정을 내릴 때 신중하지만, 한번 방향을 정하면 흔들리지 않습니다.\n\n${name}님, 당신의 본질은 '고요한 강함'입니다. 소란스럽지 않아도 깊고, 앞장서지 않아도 결국 중심이 되는 사람 — 그것이 당신이 타고난 기운입니다.`
+    : `${name}, you appear calm and unshakable on the outside, yet inside flows a restless heat that always reaches for something greater. The balance between these two faces is exactly what makes you rare.\n\nYour innate strength is insight. Where others see only the surface, you read the essence. That is why, even in crisis, you step back and read the board rather than panic.\n\nYet between the ages of 25 and 27, under the pressure to prove yourself, you carried a quiet wound. It made you resilient — but it also left an old fear that you must be flawless to be loved.\n\nIn daily life your energy shows as caring first in relationships and seeing things through to the end in your work. You decide carefully, but once your direction is set, you do not waver.\n\n${name}, your essence is a quiet strength — deep without noise, becoming the center without ever pushing to the front. That is the energy you were born with.`;
   return {
     core_essence: core,
     imminent_karma_teaser: isKo
-      ? "다가오는 두 달, 당신의 재물운에 극적인 변화의 파동이 감지됩니다. 이 기간을 놓치면 다음 기회는 오래 기다려야 합니다."
-      : "In the coming months, a dramatic wave shifts your fortune. Miss this window and the next won't come soon.",
-    love_fortune: isKo ? "연애운의 결정적 시기가 다가옵니다. 정확한 달과 신호가 준비되어 있습니다." : "A decisive window in your love life approaches — exact months await inside.",
-    wealth_warning: isKo ? "재물의 기회와 위험이 교차하는 시기가 감지됩니다." : "A crossing point of financial opportunity and risk is detected.",
-    health_alert: isKo ? "오행 균형에서 주의해야 할 건강 신호가 보입니다." : "Your elemental balance reveals a health signal to watch.",
-    master_prescription: isKo ? "당신만을 위한 행운의 색·숫자·방향이 준비되어 있습니다." : "Your personal lucky colors, numbers and direction are ready.",
+      ? "다가오는 두 달 안, 당신의 재물 흐름에 결정적인 문이 하나 열립니다. 그 문을 여는 열쇠와 정확한 시기는 아래에 봉인되어 있습니다."
+      : "Within the next two months, a decisive door opens in your flow of wealth. The key that opens it — and the exact timing — lie sealed below.",
+    love_fortune: isKo ? "올해 안, 물(水)의 기운을 지닌 인연이 당신의 곁으로 다가옵니다. 그 사람이 나타나는 정확한 달과 알아보는 법은…" : "This year, a person carrying Water energy draws near. The exact month they appear — and how to recognize them — is…",
+    wealth_warning: isKo ? "한 번의 기회와 한 번의 함정이 같은 달에 겹칩니다. 잡아야 할 것과 피해야 할 것의 경계는…" : "One opportunity and one trap fall in the very same month. The line between what to seize and what to avoid is…",
+    health_alert: isKo ? "오행 중 수(水)의 불균형이 신장과 허리에 신호를 보냅니다. 그 신호가 가장 강해지는 계절과 대비법은…" : "A Water imbalance sends signals to your kidneys and lower back. The season it peaks — and how to prepare — is…",
+    master_prescription: isKo ? "당신만을 위한 행운의 색·숫자·방향, 그리고 매일의 리추얼이 준비되어 있습니다." : "Your personal lucky color, number and direction — plus a daily ritual — are ready inside.",
   };
 }
 
@@ -147,7 +148,6 @@ export async function POST(req: Request) {
     const now = new Date();
     const m1 = (now.getMonth() + 1) % 12 + 1;
     const m2 = (now.getMonth() + 2) % 12 + 1;
-    const currentYear = now.getFullYear();
 
     const prompt = `You are a legendary Eastern Saju Master named ${masterName}, known for readings so precise they leave clients breathless.
 RULES: Write ENTIRELY in ${config.name}. ${config.toneGuide}
@@ -156,18 +156,19 @@ ${sajuContextBlock({ name, gender, dayMaster: sajuResult.dayMaster, fourPillars:
 
 Produce your reading in EXACTLY this structure:
 
-[PART 1 — prose only, this is core_essence]
-Write 4 emotionally-charged paragraphs (Barnum effect):
-- First sentence pattern: "You appear [positive trait] on the outside, but inside you carry [hidden struggle]."
-- Reference a specific age range where a turning point occurred (e.g., "Around age 25-27, you experienced...").
-- Mention a past emotional wound that feels specific yet universally relatable.
-- End with a haunting, incomplete revelation about ${currentYear}.
+[PART 1 — prose only, this is core_essence — the FREE gift about WHO the client is]
+Write a COMPLETE, deeply satisfying reading of the client's innate energy and character (5 rich paragraphs). This is given for FREE, so it must feel WHOLE and generous on its own — NEVER cut off, NEVER a cliffhanger.
+- Para 1: "You appear [positive trait] on the outside, but inside you carry [hidden depth]." Capture their core duality.
+- Para 2: Their innate strengths and natural talents, grounded in their Day Master (${sajuResult.dayMaster}) and dominant element.
+- Para 3: Their hidden inner struggle / old wound and how it shaped who they are, referencing a specific age range (e.g., "Around age 25-27...").
+- Para 4: How their Five-Elements balance shows up in daily life — relationships, work style, how they make decisions.
+- Para 5: A warm, affirming CLOSE that fully names their core strength and gift. This reading is COMPLETE — do not tease, do not say "but there's more."
 Prose ONLY here — no JSON, no headers.
 
 ${JSON_MARKER}
 [PART 2 — JSON only]
-Output ONLY this JSON object. Each value is a SHORT locked-preview teaser (1-2 sentences), NOT the full reading:
-{"imminent_karma_teaser":"2-sentence FOMO cliffhanger about the month ${m1}-${m2} window","love_fortune":"1-2 sentence teaser hinting at love timing","wealth_warning":"1-2 sentence teaser about a financial window","health_alert":"1-2 sentence teaser about an elemental health signal","master_prescription":"1-2 sentence teaser about lucky colors/numbers/direction"}
+These are LOCKED premium previews. Each MUST be SPECIFIC and concrete — name a real detail (an exact month, a type of person, a number, a body area, a color/direction) then STOP right before the payoff so the reader burns to unlock it. VAGUE teasers like "a window approaches" or "changes are coming" are FORBIDDEN.
+{"imminent_karma_teaser":"2 dramatic sentences naming the exact ${m1}-${m2} month window AND a concrete life-altering event about to occur.","love_fortune":"Name a specific month and a concrete detail about a coming encounter or relationship turning point, then stop before revealing how it unfolds.","wealth_warning":"Name a specific month and a concrete financial opportunity AND a specific risk to avoid, then stop before the details.","health_alert":"Name a specific body area or element imbalance and the season it peaks, then stop before the remedy.","master_prescription":"Tease that a specific lucky color, number and direction are waiting inside — without revealing them."}
 
 After ${JSON_MARKER}, output ONLY the JSON. Never mention calculations or IP. Deliver as a mystic reading.`;
 
