@@ -49,6 +49,9 @@ interface DestinyResult {
   element_analysis: Record<string, number>;
   fourPillars?: { year: string; month: string; day: string; time: string | null };
   dayMaster?: string;
+  // true while only short paywall previews are loaded; the full locked
+  // sections are fetched lazily from /api/generate-destiny/sections on unlock.
+  previewOnly?: boolean;
 }
 
 function isValidResult(data: any): data is DestinyResult {
@@ -57,7 +60,6 @@ function isValidResult(data: any): data is DestinyResult {
     typeof data.core_essence === "string" &&
     data.core_essence.length > 10 &&
     typeof data.imminent_karma_teaser === "string" &&
-    typeof data.locked_secrets === "string" &&
     Array.isArray(data.lucky_elements) &&
     typeof data.element_analysis === "object" &&
     data.element_analysis !== null
@@ -145,6 +147,16 @@ const CHECKING_UNLOCK_TEXT: Record<string, { msg: string; btn: string; done: str
   fr: { msg: "Confirmation de votre achat...", btn: "Vérifier maintenant", done: "Achat confirmé ! Votre lecture complète est débloquée ✨" },
 };
 
+// ── "Loading full reading" pill (shown after unlock while sections stream) ──
+const FULL_READING_TEXT: Record<string, string> = {
+  ko: "전체 리딩을 불러오는 중...",
+  en: "Loading your full reading...",
+  ja: "全文リーディングを読み込み中...",
+  es: "Cargando tu lectura completa...",
+  de: "Vollständige Deutung wird geladen...",
+  fr: "Chargement de votre lecture complète...",
+};
+
 // ── Compact-lock caption for secondary locked sections (design: only the
 //    first locked card carries the full CTA; the rest stay quiet) ──
 const INCLUDED_TEXT: Record<string, string> = {
@@ -189,6 +201,7 @@ function ResultPageContent() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [checkingUnlock, setCheckingUnlock] = useState(false);
   const [unlockConfirmed, setUnlockConfirmed] = useState(false);
+  const [sectionsLoading, setSectionsLoading] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const unlocked = premium || entitled;
   const t = useTranslations("Result");
@@ -512,37 +525,68 @@ function ResultPageContent() {
         throw new Error(errorData.error || "Failed to generate cosmic blueprint.");
       }
 
-      const resultData = await response.json();
-
-      // 3. Validate the response has all required fields
-      if (!isValidResult(resultData)) {
-        console.warn("[Fetch] API returned incomplete data:", Object.keys(resultData));
-        if (attempt <= MAX_FETCH_RETRIES) {
-          console.log(`[Fetch] Incomplete response, auto-retrying (attempt ${attempt}/${MAX_FETCH_RETRIES})...`);
-          setRetryCount(attempt);
-          await new Promise((r) => setTimeout(r, 1500));
-          return fetchDestiny(true);
-        }
+      if (!response.body) {
         throw new Error("The cosmic reading was incomplete. Please try again.");
       }
 
-      // 4. Success! Store in state — and cache ONLY real AI readings.
-      // A `fallback: true` response is a generic mock produced during an AI
-      // outage; caching it would pin a fake reading for 24h (even for paying
-      // users). Skipping the cache means the next visit retries the real AI.
-      setAiData(resultData);
+      // 3. STREAM the NDJSON response. `meta` arrives first (instant chart),
+      //    then core_essence streams token-by-token, then the preview `fields`.
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let sawFallback = false;
+      const assembled: DestinyResult = {
+        core_essence: "",
+        imminent_karma_teaser: "",
+        locked_secrets: "",
+        lucky_elements: [],
+        element_analysis: {},
+        previewOnly: true,
+      };
+      const flushRender = () => setAiData({ ...assembled });
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const raw = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!raw) continue;
+          let evt: any;
+          try { evt = JSON.parse(raw); } catch { continue; }
+          if (evt.type === "meta") {
+            assembled.fourPillars = evt.fourPillars;
+            assembled.dayMaster = evt.dayMaster;
+            assembled.element_analysis = evt.element_analysis || {};
+            assembled.lucky_elements = evt.lucky_elements || [];
+            setIsLoading(false); // reveal the page immediately (chart + streaming essence)
+            flushRender();
+          } else if (evt.type === "core") {
+            assembled.core_essence += evt.text || "";
+            flushRender();
+          } else if (evt.type === "fields") {
+            assembled.imminent_karma_teaser = evt.imminent_karma_teaser || "";
+            assembled.love_fortune = evt.love_fortune;
+            assembled.wealth_warning = evt.wealth_warning;
+            assembled.health_alert = evt.health_alert;
+            assembled.master_prescription = evt.master_prescription;
+            if (evt.fallback) sawFallback = true;
+            flushRender();
+          }
+        }
+      }
+
+      setIsLoading(false);
       setRetryCount(0);
 
-      if (!('fallback' in resultData) || !resultData.fallback) {
+      // Cache ONLY real readings (never the AI-outage mock).
+      if (!sawFallback && assembled.core_essence.length > 40) {
         try {
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({ data: resultData, timestamp: Date.now() })
-          );
+          localStorage.setItem(cacheKey, JSON.stringify({ data: assembled, timestamp: Date.now() }));
         } catch { /* localStorage full — continue */ }
-
-        // Also persist to userStateManager for dashboard access
-        saveLastResult(resultData);
+        saveLastResult(assembled);
       }
 
     } catch (err: any) {
@@ -557,6 +601,60 @@ function ResultPageContent() {
     fetchDestiny();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Once unlocked (subscription or single report), fetch the FULL locked
+  // sections that were deferred to keep the free result fast, and merge them in.
+  useEffect(() => {
+    if (!unlocked || !aiData || aiData.previewOnly !== true) return;
+    let cancelled = false;
+    (async () => {
+      setSectionsLoading(true);
+      try {
+        const stored = sessionStorage.getItem("destinyFormData");
+        if (!stored) return;
+        const fd = JSON.parse(stored);
+        const payload: any = { ...fd, locale: currentLocale };
+        if (!payload.masterName) {
+          const m = MASTERS.find((mm) => mm.id === parseInt(masterId, 10));
+          payload.masterName = m?.name || "Master Karma";
+        }
+        if (payload.gender && payload.gender === payload.gender.toLowerCase()) {
+          payload.gender = payload.gender.charAt(0).toUpperCase() + payload.gender.slice(1);
+        }
+        const res = await fetch("/api/generate-destiny/sections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok || cancelled) return;
+        const full = await res.json();
+        if (cancelled || !full?.love_fortune) return;
+        setAiData((prev) => {
+          if (!prev) return prev;
+          const merged: DestinyResult = {
+            ...prev,
+            love_fortune: full.love_fortune,
+            wealth_warning: full.wealth_warning,
+            health_alert: full.health_alert,
+            master_prescription: full.master_prescription,
+            previewOnly: false,
+          };
+          if (!full.fallback) {
+            try {
+              const ck = generateLocalCacheKey({ name: fd.name, dob: fd.dob, time: fd.time, gender: payload.gender, locale: currentLocale });
+              localStorage.setItem(ck, JSON.stringify({ data: merged, timestamp: Date.now() }));
+            } catch { /* ignore */ }
+            saveLastResult(merged);
+          }
+          return merged;
+        });
+      } catch { /* keep previews on failure */ } finally {
+        if (!cancelled) setSectionsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unlocked, aiData?.previewOnly]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -918,6 +1016,23 @@ function ResultPageContent() {
             >
               {(CHECKING_UNLOCK_TEXT[currentLocale] || CHECKING_UNLOCK_TEXT.en).btn}
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Loading the full locked sections after unlock (deferred for speed) */}
+      <AnimatePresence>
+        {unlocked && sectionsLoading && aiData?.previewOnly && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-3 px-5 py-3 rounded-full bg-black/85 border border-gold/30 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.6)]"
+          >
+            <RefreshCw className="w-4 h-4 text-gold animate-spin" />
+            <span className="text-gold/90 text-sm font-sans">
+              {(FULL_READING_TEXT[currentLocale] || FULL_READING_TEXT.en)}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
