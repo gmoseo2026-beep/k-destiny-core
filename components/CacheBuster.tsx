@@ -17,6 +17,15 @@ export default function CacheBuster() {
 
     if (localVersion === CURRENT_VERSION) return; // 이미 최신
 
+    // ── 신규 방문자(버전 기록 없음)는 부술 캐시 자체가 없다 ──
+    // 이전 코드는 첫 방문에도 300ms 뒤 전체 reload를 실행해, 모든 첫 방문자가
+    // 페이지를 "두 번" 로드했다 (모바일 LCP 7.6s의 주범 — PageSpeed 봇 포함).
+    // 신규 방문자는 버전만 기록하고 절대 reload하지 않는다.
+    if (!localVersion) {
+      localStorage.setItem("app_version", CURRENT_VERSION);
+      return;
+    }
+
     console.log(`[CacheBuster] ${localVersion} → ${CURRENT_VERSION}. Purging all caches...`);
 
     // 1. Service Worker 전부 해제
