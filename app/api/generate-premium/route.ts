@@ -13,7 +13,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 // ─── Model Fallback Chain (2.0-flash leads for reliability/speed; 2.5 is the
 //     quality fallback rather than the blocking first hop that stalls on 503) ───
 const MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
-const MODEL_TIMEOUT_MS = 20000;
+const MODEL_TIMEOUT_MS = 45000;
 const MAX_RETRIES = 1;
 
 const REPORT_PROMPTS: Record<string, { systemContext: string; task: string }> = {
@@ -109,6 +109,9 @@ export async function POST(req: Request) {
     if (!sajuProfile) {
       return NextResponse.json({ error: "Saju profile not found. Please enter your birth data first." }, { status: 404 });
     }
+    // Reading greeting must use the SAJU PROFILE name (what the user entered for their
+    // reading), not the account name from sign-in. Fall back to account name only if absent.
+    const displayName = sajuProfile.name || user.name || "Seeker";
 
     const fourPillars = sajuProfile.fourPillars as Record<string, string>;
     const elementsScore = sajuProfile.elementsScore as Record<string, number>;
@@ -120,14 +123,15 @@ export async function POST(req: Request) {
 
 RULES:
 - Write ENTIRELY in ${config.name}. ${config.toneGuide}
-- Write 5 to 6 RICH paragraphs, each 4-6 sentences. This is a paid premium report — it must feel deep, specific, and complete, never thin or cut off.
+- Write 6 to 8 RICH paragraphs, each 5-7 sentences. This is a paid premium report — it must feel deep, specific, and complete, never thin or cut off.
+- MANDATORY LENGTH: at least 1200 Korean characters (or 1800 English characters). Fully complete every paragraph; the final paragraph must reach a clear, satisfying conclusion. NEVER end mid-sentence.
 - Cover every dimension the task asks for; if it names quarters or periods, give each its own developed paragraph with concrete timing, opportunities, and cautions.
 - Make the analysis deeply personal based on the provided Saju data.
 - Do NOT mention any technical terms like "Four Pillars" or "Day Master" — just deliver the mystic reading naturally.
 - Use vivid, poetic dark-fantasy imagery throughout.
 
 CLIENT SAJU DATA (DO NOT EXPOSE RAW DATA, ONLY USE FOR ANALYSIS):
-- Name: ${user.name || "Seeker"}
+- Name: ${displayName}
 - Day Master (Core Self): ${sajuProfile.dayMaster}
 - Four Pillars: Year=${fourPillars.year || "Unknown"}, Month=${fourPillars.month || "Unknown"}, Day=${fourPillars.day || "Unknown"}, Time=${fourPillars.time || "Unknown"}
 - Five Elements Score: ${JSON.stringify(elementsScore)}
@@ -149,7 +153,7 @@ Return ONLY the report text as a plain string. No JSON, no markdown headers, no 
             model: modelName,
             generationConfig: {
               temperature: 0.85,
-              maxOutputTokens: 3072,
+              maxOutputTokens: 8192,
             },
           });
 
@@ -160,10 +164,17 @@ Return ONLY the report text as a plain string. No JSON, no markdown headers, no 
             ),
           ]);
 
-          const reportText = result.response.text().trim();
+          const response = result.response;
+          const finishReason = response.candidates?.[0]?.finishReason;
+          const reportText = response.text().trim();
 
           if (!reportText || reportText.length < 100) {
             throw new Error("AI returned insufficient content");
+          }
+          // Reject truncated output (hit the token ceiling) — retry/fallback instead of
+          // returning a report that ends mid-sentence.
+          if (finishReason === "MAX_TOKENS") {
+            throw new Error("Response truncated (MAX_TOKENS)");
           }
 
           console.log(`[Premium AI] ✅ Success with ${modelName} in ${Date.now() - startTime}ms (${reportText.length} chars)`);
@@ -183,7 +194,7 @@ Return ONLY the report text as a plain string. No JSON, no markdown headers, no 
 
     // ─── GRACEFUL FALLBACK: Return deterministic mock instead of error ───
     console.error(`[Premium AI] All models failed for ${reportType}. Using mock fallback. Last error:`, lastError?.message);
-    const mockReport = generateMockReport(reportType, localeKey, user.name || "Seeker");
+    const mockReport = generateMockReport(reportType, localeKey, displayName);
     return NextResponse.json({ report: mockReport, fallback: true }, { status: 200 });
   } catch (error: any) {
     console.error("[Premium AI] Fatal Error:", error);

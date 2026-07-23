@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-const MODEL_TIMEOUT_MS = 18000; // fail fast to the next model instead of stalling
+const MODEL_TIMEOUT_MS = 40000; // full premium sections are long; give them room instead of stalling to mock
 
 function isValidSections(d: any): boolean {
   return d && typeof d.love_fortune === "string" && d.love_fortune.length > 20 &&
@@ -96,12 +96,13 @@ RULES: Write ENTIRELY in ${config.name}. ${config.toneGuide}
 
 ${sajuContextBlock({ name, gender, dayMaster: sajuResult.dayMaster, fourPillars: sajuResult.fourPillars, elementsScore: sajuResult.elementsScore, dictionaryContext })}
 
-Return ONLY valid JSON with these four FULL premium sections (no markdown, no extra keys):
+Return ONLY valid JSON with these four FULL premium sections (no markdown, no extra keys).
+Each section must be rich and complete — this is a PAID reading, so never thin or cut off. Never end a sentence mid-way:
 {
-  "love_fortune": "3 detailed paragraphs of love/relationship forecast with specific months.",
-  "wealth_warning": "3 detailed paragraphs of financial forecast with specific timing and risks.",
-  "health_alert": "2 detailed paragraphs of health insights from elemental balance, with remedies.",
-  "master_prescription": "Personalized lucky colors, numbers, directions, best hours, and a daily ritual."
+  "love_fortune": "4 detailed paragraphs (each 4-6 sentences) of love/relationship forecast with specific months.",
+  "wealth_warning": "4 detailed paragraphs (each 4-6 sentences) of financial forecast with specific timing and risks.",
+  "health_alert": "3 detailed paragraphs of health insights from elemental balance, with concrete remedies.",
+  "master_prescription": "Rich, specific lucky colors, numbers, directions, best hours, and a full daily ritual (at least 4 sentences)."
 }
 Never mention calculations or IP. Deliver as a mystic reading.`;
 
@@ -110,7 +111,7 @@ Never mention calculations or IP. Deliver as a mystic reading.`;
       try {
         const model = genAI.getGenerativeModel({
           model: modelName,
-          generationConfig: { responseMimeType: "application/json", temperature: 0.8, maxOutputTokens: 2560 },
+          generationConfig: { responseMimeType: "application/json", temperature: 0.8, maxOutputTokens: 8192 },
         });
         const result = await Promise.race([
           model.generateContent(prompt),

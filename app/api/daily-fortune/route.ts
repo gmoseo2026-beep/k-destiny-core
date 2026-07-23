@@ -111,7 +111,7 @@ Today: ${today}. Day Master: ${dayMasterKey}.
 
 Write today's fortune so it feels personal and USEFUL, never generic. Requirements:
 - summary: one punchy, evocative sentence that captures today's energy.
-- fullContent: 3 rich paragraphs. Para 1 = today's overall energy + the best time-of-day window to act. Para 2 = relationships & communication, with a concrete tip. Para 3 = wealth/work + one thing to avoid today. Reference the Day Master's element naturally. Be specific and encouraging — avoid vague platitudes.
+- fullContent: 4 rich paragraphs, each 4-5 full sentences, never ending mid-sentence. Para 1 = today's overall energy + the best time-of-day window to act. Para 2 = relationships & communication, with a concrete tip. Para 3 = wealth/work + one thing to avoid today. Para 4 = a short evening reflection/ritual to recharge. Reference the Day Master's element naturally. Be specific and encouraging — avoid vague platitudes.
 Return ONLY JSON: {"summary":"...","fullContent":"...","luckyColor":"...","luckyNumber":"...","luckyDir":"..."}`;
 
     let lastError: any = null;
@@ -123,7 +123,7 @@ Return ONLY JSON: {"summary":"...","fullContent":"...","luckyColor":"...","lucky
           console.log(`[Daily Fortune] Try ${modelName} (attempt ${attempt})`);
           const model = genAI.getGenerativeModel({
             model: modelName,
-            generationConfig: { responseMimeType: "application/json", temperature: 0.7, maxOutputTokens: 2048 },
+            generationConfig: { responseMimeType: "application/json", temperature: 0.7, maxOutputTokens: 3072 },
           });
 
           const result = await Promise.race([

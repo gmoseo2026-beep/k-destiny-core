@@ -16,12 +16,12 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-const STREAM_DEADLINE_MS = 30000; // stop draining after this and finalize best-effort
-const FREE_MAX_TOKENS = 1600; // room for a full 5-paragraph free core + short previews
+const STREAM_DEADLINE_MS = 50000; // stop draining after this and finalize best-effort
+const FREE_MAX_TOKENS = 4096; // Korean is token-heavy: room for a full 5-paragraph free core + JSON previews without truncation
 
 // ─── Minimal validity for caching the assembled free result ───
 function isValidFree(d: any): boolean {
-  return d && typeof d.core_essence === "string" && d.core_essence.length > 40 &&
+  return d && typeof d.core_essence === "string" && d.core_essence.length > 350 &&
     typeof d.imminent_karma_teaser === "string" && Array.isArray(d.lucky_elements);
 }
 
@@ -158,6 +158,7 @@ Produce your reading in EXACTLY this structure:
 
 [PART 1 — prose only, this is core_essence — the FREE gift about WHO the client is]
 Write a COMPLETE, deeply satisfying reading of the client's innate energy and character (5 rich paragraphs). This is given for FREE, so it must feel WHOLE and generous on its own — NEVER cut off, NEVER a cliffhanger.
+LENGTH REQUIREMENT (MANDATORY): EXACTLY 5 paragraphs, EACH 4-6 full sentences. The entire PART 1 must be at least 600 Korean characters (or 900 English characters). Do NOT output the ${JSON_MARKER} marker until all 5 paragraphs are fully written. NEVER end mid-sentence.
 - Para 1: "You appear [positive trait] on the outside, but inside you carry [hidden depth]." Capture their core duality.
 - Para 2: Their innate strengths and natural talents, grounded in their Day Master (${sajuResult.dayMaster}) and dominant element.
 - Para 3: Their hidden inner struggle / old wound and how it shaped who they are, referencing a specific age range (e.g., "Around age 25-27...").
@@ -219,7 +220,7 @@ After ${JSON_MARKER}, output ONLY the JSON. Never mention calculations or IP. De
             }
             coreText = full.slice(0, coreEnd).trim();
             tailJson = markerIdx === -1 ? "" : full.slice(markerIdx + JSON_MARKER.length);
-            if (coreText.length > 40) break; // good enough — stop trying models
+            if (coreText.length > 350) break; // good enough — stop trying models (350 guards against short/truncated cores slipping through)
             lastError = new Error("core too short");
           } catch (err: any) {
             lastError = err;
@@ -230,7 +231,7 @@ After ${JSON_MARKER}, output ONLY the JSON. Never mention calculations or IP. De
         // ── Assemble fields (parse tail JSON; fall back to mock previews) ──
         const parsed = tailJson ? repairJSON(tailJson) : null;
         const mock = mockFree(name, localeKey);
-        if (!emittedAny || coreText.length <= 40) {
+        if (!emittedAny || coreText.length <= 350) {
           // never got usable core → send the mock core as one chunk
           coreText = mock.core_essence;
           controller.enqueue(line({ type: "core", text: coreText }));
@@ -249,7 +250,7 @@ After ${JSON_MARKER}, output ONLY the JSON. Never mention calculations or IP. De
 
         // ── Cache assembled free result (only when it's a real generation) ──
         recordRequest(clientIp);
-        if (!fallback && coreText.length > 40) {
+        if (!fallback && coreText.length > 350) {
           setCachedResult(cacheKey, {
             core_essence: coreText, ...fields,
             lucky_elements: luckyElements, element_analysis: sajuResult.elementsScore,
