@@ -50,16 +50,19 @@ These rules apply to EVERY model (Claude, Gemini, Antigravity, etc.). No excepti
 - 비밀 값을 로그/콘솔에 **출력(print/echo/log)하지 않습니다.**
 
 ### 5.2 자격증명 취급 (How to use credentials)
-- 모든 SSH/배포 스크립트는 자격증명을 **`scripts/_creds.py`의 `get_creds()`** 로만 가져옵니다. host/user/password를 인라인으로 쓰지 않습니다.
-  All SSH/deploy scripts MUST obtain credentials via `get_creds()` in `scripts/_creds.py` — never inline literals.
+- 모든 SSH/배포 스크립트는 접속을 **`scripts/_creds.py`의 `connect_client()`** 로만 엽니다. host/user/password/key를 인라인으로 쓰지 않습니다.
+  All SSH/deploy scripts MUST open connections via `connect_client()` in `scripts/_creds.py` — never inline literals.
+- **인증 우선순위: SSH 키(`DEPLOY_KEY`) > 비밀번호(`DEPLOY_PASS`).** 키가 설정돼 있으면 비번 없이 접속합니다. 최초 1회 `python scripts/setup_ssh_key.py`로 서버에 공개키를 설치합니다.
 - 실제 비밀 값은 오직 두 곳에만 존재합니다: **로컬 `scripts/deploy.env`**(gitignore됨) 와 **서버 `/root/k-destiny-core/.env`**(gitignore됨). 새 스크립트도 반드시 여기서 읽습니다.
 - OpenAI 등 런타임 키를 서버에 반영할 때는 `scripts/set_env.py`를 사용합니다(키는 env에서 읽음, 하드코딩 금지).
 
 ### 5.3 커밋/푸시 전 필수 점검 (Pre-commit / pre-push gate)
-- 커밋·푸시 전 **스테이징 diff를 스캔**하여 다음 패턴이 있으면 중단하고 env 방식으로 고칩니다:
-  `sk-`, `password=`, `DEPLOY_PASS=`, `chltnrud`, `-----BEGIN ... PRIVATE KEY-----`, 서버 IP와 함께 있는 자격증명.
-  Before any commit/push, scan the staged diff for those secret patterns; if found, STOP and switch to env vars.
-- 빠른 점검 예: `git diff --cached | grep -nEi "sk-[a-z0-9-]{10}|password=|DEPLOY_PASS=|BEGIN .*PRIVATE KEY"`
+- 저장소에 **secret-guard pre-commit 훅**이 있습니다(`scripts/hooks/pre-commit`). 클론마다 1회 활성화:
+  `git config core.hooksPath scripts/hooks`
+  이 훅은 `.env`/`deploy.env` 커밋과 스테이징된 비밀(`sk-…`, 개인키, 옛 비번 등)을 자동 차단합니다. 오탐이면 그 줄 끝에 `# pragma: allowlist secret`.
+- 훅과 별개로, 커밋·푸시 전 diff를 직접 스캔해도 됩니다:
+  `git diff --cached | grep -nEi "sk-[a-z0-9-]{10}|password=|DEPLOY_PASS=|BEGIN .*PRIVATE KEY"`
+- 발견 시 중단하고 env/`deploy.env` 방식으로 고칩니다.
 
 ### 5.4 노출 시 대응 (If a secret leaks)
 - 비밀이 한 번이라도 노출(커밋·출력·공유)되면 **손상된 것으로 간주하고 즉시 교체(rotate)** 합니다. 파일에서 지우는 것만으로는 부족합니다 — git 히스토리에 남기 때문입니다.

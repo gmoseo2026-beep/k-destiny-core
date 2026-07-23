@@ -12,10 +12,9 @@ All Gemini-family models (incl. Antigravity) working in this repo MUST follow th
 
 1. **비밀을 하드코딩하지 말 것.** 비밀번호·API 키·토큰·SSH 자격증명을 커밋될 수 있는 어떤 파일에도 직접 쓰지 않는다.
    Never hardcode secrets in any committable file.
-2. **배포/SSH 스크립트는 `scripts/_creds.py`의 `get_creds()`로만** 자격증명을 읽는다. host/user/password를 인라인으로 쓰지 않는다. 실제 값은 gitignore된 `scripts/deploy.env`(로컬)와 서버 `.env`에만 존재한다.
+2. **배포/SSH 스크립트는 `scripts/_creds.py`의 `connect_client()`로만** 접속한다. host/user/password/key를 인라인으로 쓰지 않는다. 실제 값은 gitignore된 `scripts/deploy.env`(로컬)와 서버 `.env`에만 존재한다. 인증은 **SSH 키(`DEPLOY_KEY`) 우선**, 없으면 `DEPLOY_PASS`.
 3. **커밋 금지 파일:** `.env`, `.env.local`, `scripts/deploy.env`, 실제 비밀이 든 모든 파일. 비밀 값을 print/echo/log 하지 않는다.
-4. **커밋·푸시 전 스테이징 diff를 스캔**해 `sk-`, `password=`, `DEPLOY_PASS=`, `chltnrud`, `BEGIN … PRIVATE KEY` 패턴이 있으면 멈추고 env 방식으로 고친다.
-   `git diff --cached | grep -nEi "sk-[a-z0-9-]{10}|password=|DEPLOY_PASS=|BEGIN .*PRIVATE KEY"`
+4. **secret-guard 훅을 활성화**한다(클론마다 1회): `git config core.hooksPath scripts/hooks`. 커밋·푸시 전 스테이징 diff에 `sk-`, `password=`, `DEPLOY_PASS=`, `chltnrud`, `BEGIN … PRIVATE KEY` 가 있으면 멈추고 env 방식으로 고친다.
 5. **비밀이 노출되면 손상된 것 — 즉시 교체(rotate).** 파일에서 지우는 것만으로는 불충분(히스토리에 남음).
 
 ## 🚀 배포 — 안전 규칙 (Deployment)
