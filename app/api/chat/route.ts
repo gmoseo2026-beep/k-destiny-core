@@ -202,9 +202,13 @@ Format:
   "message": "your response here"
 }
 
-TWO-PART STRUCTURE RULE:
-Step 1 (Human Connection): Start by chatting normally and empathetically based ONLY on your personality. DO NOT mention Saju, stars, or destiny yet.
-Step 2 (Reading): Smoothly transition (e.g. 'But looking at how you carry yourself...') into a reading of their energy — in plain, human language. No hanja, no jargon.
+ANSWER RULE (MOST IMPORTANT):
+- ALWAYS directly answer what the user actually asked, with specific, useful substance. Example: if they ask for today's fortune, give today's energy AND one concrete, actionable insight (a focus, a timing, a do/don't) — never only mood or atmosphere.
+- Open with ONE short, warm, in-character line that hooks them, then deliver the real substance. Do NOT spend the whole reply on empathy or ambiance.
+- End on a constructive, empowering note. Even a dark or intense master must leave the seeker with something they can act on — NEVER end in bleak hopelessness or generic gloom.
+
+TONE SAFETY:
+Your personality colors HOW you speak, never WHETHER you help. Atmosphere is seasoning, not the meal. A dark/gothic/cynical persona keeps its flavor, but the actual guidance must stay clear, specific, and ultimately hopeful.
 
 ${STYLE_GUIDE}
 
@@ -215,17 +219,16 @@ Analyze the vibe of your response and choose exactly one emotion that matches it
       systemPart += `
 
 PREMIUM RULE:
-- For Step 2, give a real, substantial reading — but keep it to a few SHORT paragraphs (2-4 sentences each), not a wall of text.
-- Do NOT use "##" headers or hanja. Plain, warm, readable prose only.
-- Give one or two concrete, actionable remedies (a color, a timing) woven naturally into the sentences — not as a bullet list.
+- Give a real, substantial answer to their actual question — a few SHORT paragraphs (2-4 sentences each), not a wall of text.
+- Be concrete and personal: name specifics (a focus for today, a timing window, a do and a don't). No "##" headers, no hanja, plain warm prose.
+- Weave in one or two actionable remedies (a color, a time, a small action) naturally into the sentences — not as a bullet list.
 - Write your message in ${language}. Do NOT mix languages.`;
     } else {
       systemPart += `
 
 FREEMIUM RULE:
-- Keep both Step 1 and Step 2 extremely short (1-2 sentences total).
-- Be vague yet captivating. Make them DESPERATE to know more.
-- Do NOT provide detailed advice or specific remedies.
+- Keep it short (2-3 sentences). Give a specific, tantalizing GLIMPSE of the real answer — hint at one concrete detail (today's opportunity, a timing) — then stop right before the payoff. Captivating, NOT gloomy: make them lean in, never feel worse.
+- Do NOT provide the full advice or specific remedies.
 - You MUST end your message EXACTLY with this string:
 [SYSTEM_PAYWALL]
 - Write your message in ${language}, except for the [SYSTEM_PAYWALL] tag which must be exact.`;
@@ -438,12 +441,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         recordChatRequest(clientIp);
 
         console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-        const ndjson = [
-          JSON.stringify({ type: "emotion", emotion: parsed.emotion }),
-          JSON.stringify({ type: "delta", text: parsed.message }),
-          JSON.stringify({ type: "done", remainingTokens })
-        ].join("\n") + "\n";
-        return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion, remainingTokens }, { status: 200 });
 
       } catch (err: any) {
         lastError = err;
@@ -479,12 +477,10 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
           }
           recordChatRequest(clientIp);
           console.log("[Chat] ✅ Served by OpenAI backup provider");
-          const backupNdjson = [
-            JSON.stringify({ type: "emotion", emotion: parsedBackup.emotion || "calm" }),
-            JSON.stringify({ type: "delta", text: parsedBackup.message }),
-            JSON.stringify({ type: "done", remainingTokens })
-          ].join("\n") + "\n";
-          return new Response(backupNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+          return NextResponse.json(
+            { reply: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens },
+            { status: 200 }
+          );
         }
       } catch (backupErr: any) {
         console.error("[Chat] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
@@ -495,22 +491,28 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     // client this is a non-answer so it refunds the karma it optimistically
     // deducted (previously it kept the charge for the "meditating" message).
     console.error("[Chat] All providers failed in chat route. Last error:", lastError);
-    const fallbackNdjson = [
-      JSON.stringify({ type: "emotion", emotion: "calm" }),
-      JSON.stringify({ type: "delta", text: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요." }),
-      JSON.stringify({ type: "done", fallback: true, remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens })
-    ].join("\n") + "\n";
-    return new Response(fallbackNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+    return NextResponse.json(
+      {
+        reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens,
+      },
+      { status: 200 }
+    );
 
   } catch (error: any) {
     console.error("Error in chat API route:", error);
     // NEVER blank the chat UI: even on a fatal/unexpected error (DB down, bad
     // input, etc.) return a graceful in-character 200 so the user always sees a reply.
-    const fatalNdjson = [
-      JSON.stringify({ type: "emotion", emotion: "calm" }),
-      JSON.stringify({ type: "delta", text: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요." }),
-      JSON.stringify({ type: "done", fallback: true, remainingTokens: null })
-    ].join("\n") + "\n";
-    return new Response(fatalNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+    return NextResponse.json(
+      {
+        reply: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: null,
+      },
+      { status: 200 }
+    );
   }
 }
