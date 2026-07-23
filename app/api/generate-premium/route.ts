@@ -8,12 +8,14 @@ import { STYLE_GUIDE } from "@/lib/destinyGen";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// GEMINI_API_KEY MUST be the BILLING-ENABLED project's key (paid tier is decided
+// by the key's project, not by code). A stale free-project key = free-tier 429s.
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain (2.0-flash leads for reliability/speed; 2.5 is the
-//     quality fallback rather than the blocking first hop that stalls on 503) ───
-const MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
+// ─── Paid-tier chain: premium reports are quality-first (2.5-flash), 2.0-flash as
+//     the fast fallback. Budget "flash-lite" removed — never degrade a paid report. ───
+const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 const MODEL_TIMEOUT_MS = 45000;
 const MAX_RETRIES = 1;
 
@@ -200,9 +202,13 @@ Return ONLY the report text as a plain string. No JSON, no "##" markdown symbols
     return NextResponse.json({ report: mockReport, fallback: true }, { status: 200 });
   } catch (error: any) {
     console.error("[Premium AI] Fatal Error:", error);
+    // Graceful 200: a paying user must never hit a hard error screen.
     return NextResponse.json(
-      { error: error.message || "Failed to generate premium report" },
-      { status: 500 }
+      {
+        report: "지금은 기운의 흐름이 잠시 흐트러져 리포트를 완성하지 못했습니다. 잠시 후 다시 시도해 주세요 — 곧 선명한 통찰을 전해드리겠습니다.",
+        fallback: true,
+      },
+      { status: 200 }
     );
   }
 }

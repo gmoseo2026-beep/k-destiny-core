@@ -34,13 +34,14 @@ import { STYLE_GUIDE } from "@/lib/destinyGen";
 export const maxDuration = 60;
 
 // ─── Initialize Gemini AI client ───
+// GEMINI_API_KEY MUST be the BILLING-ENABLED project's key (paid tier is decided
+// by the key's project, not by code). A stale free-project key = free-tier 429s.
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain (reliability-first: 2.0-flash leads. 2.5-flash is the
-//     model most often throttled on lower tiers, so it must never be the blocking
-//     first hop — that was causing long stalls before the "meditating" fallback) ───
-const CHAT_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
+// ─── Paid-tier chain: 2.0-flash first (chat responsiveness), 2.5-flash as quality
+//     fallback. Budget "flash-lite" removed. ───
+const CHAT_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -89,8 +90,14 @@ export async function POST(req: Request) {
     }
 
     // ─── 2. Rate Limit Check ───
+    // FAIL-OPEN: a rate-limiter backend hiccup must never blank the chat.
     const clientIp = getClientIp(req);
-    const rateCheck = await checkChatRateLimit(clientIp);
+    let rateCheck: { allowed: boolean; retryAfterMs?: number } = { allowed: true };
+    try {
+      rateCheck = await checkChatRateLimit(clientIp);
+    } catch (e) {
+      console.error("[Chat] rate limit check failed (fail-open):", (e as Error)?.message?.slice(0, 120));
+    }
     if (!rateCheck.allowed) {
       const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 10000) / 1000);
       return NextResponse.json(
@@ -104,12 +111,16 @@ export async function POST(req: Request) {
     // had NO server-side cap beyond the general 100/day IP limit, i.e. free
     // unlimited Gemini usage for anyone who cleared localStorage.
     if (!sessionUserId) {
-      const guestCheck = await checkGuestChatLimit(clientIp);
-      if (!guestCheck.allowed) {
-        return NextResponse.json(
-          { error: "Free consultations exhausted. Create a free account to continue your reading." },
-          { status: 403 }
-        );
+      try {
+        const guestCheck = await checkGuestChatLimit(clientIp);
+        if (!guestCheck.allowed) {
+          return NextResponse.json(
+            { error: "Free consultations exhausted. Create a free account to continue your reading." },
+            { status: 403 }
+          );
+        }
+      } catch (e) {
+        console.error("[Chat] guest limit check failed (fail-open):", (e as Error)?.message?.slice(0, 120));
       }
     }
 
@@ -122,26 +133,34 @@ export async function POST(req: Request) {
     let shouldDecrementToken = false;
 
     if (effectiveUserId) {
-      const state = await loadKarmaState(effectiveUserId);
-      isAdmin = state.isAdmin;
-      isPremiumActive = state.isPremiumActive;
-      karmaTokens = state.karma;
+      try {
+        const state = await loadKarmaState(effectiveUserId);
+        isAdmin = state.isAdmin;
+        isPremiumActive = state.isPremiumActive;
+        karmaTokens = state.karma;
 
-      // Only ADMIN is unlimited. Premium consumes its 20/day; free consumes its
-      // static tokens. Both are gated at 0 (premium refills tomorrow).
-      if (!isAdmin && karmaTokens <= 0) {
-        return NextResponse.json(
-          {
-            error: isPremiumActive
-              ? "Daily Karma spent. Your 20 questions refresh tomorrow."
-              : "Karma Energy depleted. Master is meditating.",
-            remainingTokens: 0,
-            dailyLimit: isPremiumActive,
-          },
-          { status: 403 }
-        );
+        // Only ADMIN is unlimited. Premium consumes its 20/day; free consumes its
+        // static tokens. Both are gated at 0 (premium refills tomorrow).
+        if (!isAdmin && karmaTokens <= 0) {
+          return NextResponse.json(
+            {
+              error: isPremiumActive
+                ? "Daily Karma spent. Your 20 questions refresh tomorrow."
+                : "Karma Energy depleted. Master is meditating.",
+              remainingTokens: 0,
+              dailyLimit: isPremiumActive,
+            },
+            { status: 403 }
+          );
+        }
+        shouldDecrementToken = !isAdmin;
+      } catch (e) {
+        // FAIL-OPEN: a DB hiccup while loading karma must not blank the chat.
+        // Let this turn proceed without decrementing rather than returning a 500.
+        console.error("[Chat] karma load failed (fail-open):", (e as Error)?.message?.slice(0, 120));
+        karmaTokens = 1;
+        shouldDecrementToken = false;
       }
-      shouldDecrementToken = !isAdmin;
     }
 
     // Full, deep reading for anyone with real access: admin, active premium, OR a
@@ -367,7 +386,14 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
             });
 
             console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");
-            const finalResult = await secondModel.generateContent(fullPrompt);
+            // TIMEOUT: the 2nd call previously had NO timeout — if Gemini stalled,
+            // the whole request hung until the platform killed it (blank chat).
+            const finalResult: any = await Promise.race([
+              secondModel.generateContent(fullPrompt),
+              new Promise<never>((_, rej) =>
+                setTimeout(() => rej(new Error(`Timed out after ${MODEL_TIMEOUT_MS}ms (2nd call)`)), MODEL_TIMEOUT_MS)
+              ),
+            ]);
             const finalResponseText = finalResult.response.text();
             
             try {
@@ -442,9 +468,16 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
 
   } catch (error: any) {
     console.error("Error in chat API route:", error);
+    // NEVER blank the chat UI: even on a fatal/unexpected error (DB down, bad
+    // input, etc.) return a graceful in-character 200 so the user always sees a reply.
     return NextResponse.json(
-      { error: error.message || "Failed to communicate with master" },
-      { status: 500 }
+      {
+        reply: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: null,
+      },
+      { status: 200 }
     );
   }
 }

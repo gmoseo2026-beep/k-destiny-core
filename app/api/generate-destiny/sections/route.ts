@@ -140,6 +140,7 @@ Never mention calculations or jargon. Deliver it like a wise friend, not a textb
     return NextResponse.json({ ...mockSections(localeKey), fallback: true }, { status: 200 });
   } catch (error: any) {
     console.error("[Sections API] Fatal:", error);
-    return NextResponse.json({ error: error.message || "Failed to generate sections" }, { status: 500 });
+    // Graceful 200 with mock sections instead of a hard error for a paid user.
+    return NextResponse.json({ ...mockSections("ko"), fallback: true }, { status: 200 });
   }
 }

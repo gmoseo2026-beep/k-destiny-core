@@ -5,12 +5,14 @@ import { STYLE_GUIDE } from "@/lib/destinyGen";
 
 export const maxDuration = 60;
 
+// GEMINI_API_KEY MUST be the BILLING-ENABLED project's key (paid tier is decided
+// by the key's project, not by code). A stale free-project key = free-tier 429s.
 const apiKey = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 
-// ─── Model Fallback Chain (reliability-first: 2.0-flash leads; 2.5 is a
-//     quality fallback, never the blocking first hop that stalls on 503) ───
-const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
+// ─── Paid-tier chain: 2.0-flash first (fast), 2.5-flash as quality fallback.
+//     Budget "flash-lite" removed. ───
+const MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
 const MODEL_TIMEOUT_MS = 15000;
 const MAX_RETRIES = 1;
 

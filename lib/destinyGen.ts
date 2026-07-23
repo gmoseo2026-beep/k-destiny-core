@@ -8,17 +8,20 @@
  */
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// IMPORTANT: GEMINI_API_KEY MUST be the key of the BILLING-ENABLED project
+// (Google AI Studio → the project under your paid Billing Account). The free vs
+// paid tier is decided by this key's project, NOT by any code flag. A stale
+// free-project key here will hit free-tier limits (429) even though billing is on.
 export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// Reliability-first ordering. On Gemini's lower tiers, 2.5-flash is the model
-// most often hit by 429/503/RESOURCE_EXHAUSTED, so putting it FIRST made every
-// route wait out a timeout before falling back to a generic mock. 2.0-flash is
-// faster, far more available, and plenty capable — so it leads everywhere. 2.5
-// stays in the chain as a quality safety net, never as the blocking first hop.
-export const FREE_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"];
-// Premium sections run post-payment: 2.0-flash first (fast + reliable), 2.5 as
-// the quality fallback, lite last.
-export const PREMIUM_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.0-flash-lite"];
+// PAID-TIER ordering. On the paid tier 2.5-flash is reliable, so we can lead with
+// quality where it matters. The budget "flash-lite" model is dropped everywhere —
+// on a paid plan there's no reason to degrade a customer's reading to it.
+// Free core streams token-by-token, so it stays speed-first (2.0-flash), with
+// 2.5-flash as the quality fallback.
+export const FREE_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
+// Premium sections run post-payment → quality-first: 2.5-flash, then 2.0-flash.
+export const PREMIUM_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
 
 export const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 존댓말로, 친한 사람에게 조용히 이야기하듯 쉽고 또렷하게 쓰세요. 신비롭되 과하지 않게 — 시적 미사여구보다 구체적인 장면과 진심이 느껴지도록." },
