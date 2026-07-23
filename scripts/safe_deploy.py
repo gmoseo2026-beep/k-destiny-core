@@ -17,9 +17,9 @@ if not PASS:
     print("        Example: DEPLOY_PASS='...' python scripts/safe_deploy.py")
     sys.exit(3)
 
-def run_cmd(client, cmd):
+def run_cmd(client, cmd, tmo=300):
     print(f"\n>>> {cmd}")
-    stdin, stdout, stderr = client.exec_command(cmd, timeout=300)
+    stdin, stdout, stderr = client.exec_command(cmd, timeout=tmo)
     raw_out = stdout.read()
     raw_err = stderr.read()
     exit_code = stdout.channel.recv_exit_status()
@@ -42,23 +42,39 @@ def main():
     print("Connected!")
 
     # 1. Pull latest code — capture what we ACTUALLY end up on.
+    # `git reset --hard` does NOT remove untracked files, so stray files created
+    # directly on the server (e.g. a hand-added component importing an uninstalled
+    # package) survive and break every build. `git clean -fd` makes the tree match
+    # origin exactly. It does NOT use -x, so gitignored .env*/node_modules/.next
+    # are preserved (verified: those are all in .gitignore).
     run_cmd(client, "cd /root/k-destiny-core && git fetch origin main 2>&1 && git reset --hard origin/main 2>&1")
+    print("\n[clean dry-run] untracked files that will be removed:")
+    run_cmd(client, "cd /root/k-destiny-core && git clean -fdn 2>&1")
+    run_cmd(client, "cd /root/k-destiny-core && git clean -fd 2>&1")
     run_cmd(client, "cd /root/k-destiny-core && git log -1 --oneline")
 
-    # 2. Prisma
+    # 2. Dependencies — MUST run so new packages (e.g. `openai`, used by the
+    # failover path in lib/aiFallback.ts) are present. A missing dep makes the
+    # build fail with "Module not found". `npm ci` if the lockfile matches, else
+    # `npm install`.
+    run_cmd(client, "cd /root/k-destiny-core && (npm ci 2>&1 || npm install 2>&1) | tail -15", tmo=600)
+
+    # 3. Prisma
     run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")
     run_cmd(client, "cd /root/k-destiny-core && npx prisma generate 2>&1")
 
-    # 3. Clean Build.
+    # 4. Clean Build.
     # NODE_OPTIONS raises the heap so a small VPS does not silently OOM-kill the
-    # Next 16 build. A killed build = non-zero exit = restart skipped = the server
-    # keeps serving the STALE bundle (this is exactly how past "deploys" no-op'd:
-    # git pull succeeded, the build died, PM2 was never restarted).
+    # Next 16 build. NOTE: do NOT pipe `npm run build` into `tail` — a pipe makes
+    # the shell report tail's exit code (always 0), masking a real build failure
+    # and letting us restart PM2 onto a broken/empty .next (past outage cause).
+    # We capture the real code and print an explicit BUILD_EXIT marker.
     print("\nBuilding Next.js application...")
     build_exit = run_cmd(
         client,
         "cd /root/k-destiny-core && rm -rf .next && "
-        "NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1 | tail -30",
+        "NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1; "
+        "code=$?; echo \"BUILD_EXIT=$code\"; exit $code",
         tmo=600,
     )
 
