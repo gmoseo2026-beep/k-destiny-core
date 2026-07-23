@@ -7,7 +7,7 @@ import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import {
-  genAI, FREE_MODELS, LOCALE_CONFIG, JSON_MARKER,
+  genAI, FREE_MODELS, LOCALE_CONFIG, JSON_MARKER, STYLE_GUIDE,
   repairJSON, pickLuckyElements, sajuContextBlock,
 } from "@/lib/destinyGen";
 
@@ -152,19 +152,20 @@ export async function POST(req: Request) {
     const prompt = `You are a legendary Eastern Saju Master named ${masterName}, known for readings so precise they leave clients breathless.
 RULES: Write ENTIRELY in ${config.name}. ${config.toneGuide}
 
+${STYLE_GUIDE}
+
 ${sajuContextBlock({ name, gender, dayMaster: sajuResult.dayMaster, fourPillars: sajuResult.fourPillars, elementsScore: sajuResult.elementsScore, dictionaryContext })}
 
 Produce your reading in EXACTLY this structure:
 
 [PART 1 — prose only, this is core_essence — the FREE gift about WHO the client is]
-Write a COMPLETE, deeply satisfying reading of the client's innate energy and character (5 rich paragraphs). This is given for FREE, so it must feel WHOLE and generous on its own — NEVER cut off, NEVER a cliffhanger.
-LENGTH REQUIREMENT (MANDATORY): EXACTLY 5 paragraphs, EACH 4-6 full sentences. The entire PART 1 must be at least 600 Korean characters (or 900 English characters). Do NOT output the ${JSON_MARKER} marker until all 5 paragraphs are fully written. NEVER end mid-sentence.
-- Para 1: "You appear [positive trait] on the outside, but inside you carry [hidden depth]." Capture their core duality.
-- Para 2: Their innate strengths and natural talents, grounded in their Day Master (${sajuResult.dayMaster}) and dominant element.
-- Para 3: Their hidden inner struggle / old wound and how it shaped who they are, referencing a specific age range (e.g., "Around age 25-27...").
-- Para 4: How their Five-Elements balance shows up in daily life — relationships, work style, how they make decisions.
-- Para 5: A warm, affirming CLOSE that fully names their core strength and gift. This reading is COMPLETE — do not tease, do not say "but there's more."
-Prose ONLY here — no JSON, no headers.
+Write a COMPLETE, satisfying reading of who this person really is. It's FREE, so it must feel whole and generous on its own — NEVER cut off, NEVER a cliffhanger.
+LENGTH: 4 SHORT paragraphs, each 2-4 sentences (roughly 350-500 Korean characters total). Readable over long — do not pad. Do NOT output the ${JSON_MARKER} marker until all 4 paragraphs are done. NEVER end mid-sentence.
+- Para 1 (HOOK + duality): A striking opening line, then "on the outside you seem ___, but inside you carry ___" — in plain, human words. No hanja, no jargon.
+- Para 2 (their gift): Their real strengths and natural talents, described through everyday behavior, not element theory.
+- Para 3 (the old ache): A hidden tension or old wound that shaped them, tied to a specific age or moment (e.g., "around 25-27...").
+- Para 4 (warm close): Land it — name their core gift clearly and kindly. COMPLETE — do not tease, do not say "but there's more."
+Prose ONLY here — no JSON, no headers, no hanja.
 
 ${JSON_MARKER}
 [PART 2 — JSON only]

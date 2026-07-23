@@ -5,7 +5,7 @@ import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/destin
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
 import {
-  genAI, PREMIUM_MODELS, LOCALE_CONFIG, repairJSON, sajuContextBlock,
+  genAI, PREMIUM_MODELS, LOCALE_CONFIG, STYLE_GUIDE, repairJSON, sajuContextBlock,
 } from "@/lib/destinyGen";
 
 // Full locked sections (love / wealth / health / prescription). Generated AFTER
@@ -94,17 +94,19 @@ export async function POST(req: Request) {
     const prompt = `You are a legendary Eastern Saju Master named ${masterName || "Master Karma"}.
 RULES: Write ENTIRELY in ${config.name}. ${config.toneGuide}
 
+${STYLE_GUIDE}
+
 ${sajuContextBlock({ name, gender, dayMaster: sajuResult.dayMaster, fourPillars: sajuResult.fourPillars, elementsScore: sajuResult.elementsScore, dictionaryContext })}
 
-Return ONLY valid JSON with these four FULL premium sections (no markdown, no extra keys).
-Each section must be rich and complete — this is a PAID reading, so never thin or cut off. Never end a sentence mid-way:
+Return ONLY valid JSON with these four premium sections (no markdown, no hanja, no extra keys).
+Each value must be readable and specific — this is a PAID reading, so make it feel worth it, but tight. Short paragraphs, blank line between them. Never end a sentence mid-way:
 {
-  "love_fortune": "4 detailed paragraphs (each 4-6 sentences) of love/relationship forecast with specific months.",
-  "wealth_warning": "4 detailed paragraphs (each 4-6 sentences) of financial forecast with specific timing and risks.",
-  "health_alert": "3 detailed paragraphs of health insights from elemental balance, with concrete remedies.",
-  "master_prescription": "Rich, specific lucky colors, numbers, directions, best hours, and a full daily ritual (at least 4 sentences)."
+  "love_fortune": "2-3 short paragraphs of love/relationship forecast, with at least one specific month and one concrete, human detail.",
+  "wealth_warning": "2-3 short paragraphs of money forecast, with specific timing, one real opportunity and one risk to avoid.",
+  "health_alert": "2 short paragraphs of health insight in plain language, with a concrete, doable remedy.",
+  "master_prescription": "A short, specific prescription: lucky colors, numbers, direction, best hours, and one simple daily ritual — written warmly, not as a list."
 }
-Never mention calculations or IP. Deliver as a mystic reading.`;
+Never mention calculations or jargon. Deliver it like a wise friend, not a textbook.`;
 
     let lastError: any = null;
     for (const modelName of PREMIUM_MODELS) {

@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { STYLE_GUIDE } from "@/lib/destinyGen";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -32,12 +33,12 @@ const REPORT_PROMPTS: Record<string, { systemContext: string; task: string }> = 
 };
 
 const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
-  ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 문어체 존댓말을 사용하세요. 어두운 다크 판타지 톤과 시적 표현을 곁들이세요." },
-  en: { name: "English", toneGuide: "Write in a dark-fantasy, premium, mystical English tone." },
-  es: { name: "Spanish (Español)", toneGuide: "Escribe en un español elegante y místico." },
-  de: { name: "German (Deutsch)", toneGuide: "Schreibe in einem eleganten, mystischen Deutsch." },
-  fr: { name: "French (Français)", toneGuide: "Écrivez en français élégant et mystique." },
-  ja: { name: "Japanese (日本語)", toneGuide: "自然な日本語の丁寧語で書いてください。ダークファンタジーの雰囲気を出してください。" },
+  ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 존댓말로, 친한 사람에게 조용히 이야기하듯 쉽고 또렷하게 쓰세요. 신비롭되 과하지 않게 — 시적 미사여구보다 구체적인 장면과 진심이 느껴지도록." },
+  en: { name: "English", toneGuide: "Write in a warm, grounded, quietly mystical English — like a wise friend talking, not a fortune-cookie machine." },
+  es: { name: "Spanish (Español)", toneGuide: "Escribe en un español cálido, claro y sutilmente místico, como un amigo sabio que conversa." },
+  de: { name: "German (Deutsch)", toneGuide: "Schreibe in einem warmen, klaren, leise mystischen Deutsch – wie ein weiser Freund im Gespräch." },
+  fr: { name: "French (Français)", toneGuide: "Écris dans un français chaleureux, clair et discrètement mystique, comme un ami sage qui parle." },
+  ja: { name: "Japanese (日本語)", toneGuide: "親しい人に静かに語りかけるような、やさしく明快な日本語で。神秘的でも大げさにせず、詩的な飾りより具体的な情景と真心が伝わるように。" },
 };
 
 // ─── Deterministic mock fallback for each report type ───
@@ -123,12 +124,13 @@ export async function POST(req: Request) {
 
 RULES:
 - Write ENTIRELY in ${config.name}. ${config.toneGuide}
-- Write 6 to 8 RICH paragraphs, each 5-7 sentences. This is a paid premium report — it must feel deep, specific, and complete, never thin or cut off.
-- MANDATORY LENGTH: at least 1200 Korean characters (or 1800 English characters). Fully complete every paragraph; the final paragraph must reach a clear, satisfying conclusion. NEVER end mid-sentence.
-- Cover every dimension the task asks for; if it names quarters or periods, give each its own developed paragraph with concrete timing, opportunities, and cautions.
-- Make the analysis deeply personal based on the provided Saju data.
-- Do NOT mention any technical terms like "Four Pillars" or "Day Master" — just deliver the mystic reading naturally.
-- Use vivid, poetic dark-fantasy imagery throughout.
+
+${STYLE_GUIDE}
+
+- Structure: 5-6 SHORT, readable sections. Each section = a plain-language mini-title on its own line (NO "##", NO hanja, e.g. "돈의 흐름" not "재물運(財)"), then 2-4 short sentences under it. Blank line between sections.
+- This is a PAID report, so make it substantial and specific — but tight. Every sentence must add a concrete, personal detail; cut anything vague or repeated.
+- Cover every dimension the task asks for; if it names quarters or periods, give each a short, concrete paragraph (real timing, one opportunity, one caution).
+- Fully complete every section; the last one must land on a clear, warm conclusion. NEVER end mid-sentence.
 
 CLIENT SAJU DATA (DO NOT EXPOSE RAW DATA, ONLY USE FOR ANALYSIS):
 - Name: ${displayName}
@@ -139,7 +141,7 @@ CLIENT SAJU DATA (DO NOT EXPOSE RAW DATA, ONLY USE FOR ANALYSIS):
 
 TASK: ${prompt.task}
 
-Return ONLY the report text as a plain string. No JSON, no markdown headers, no bullet points — just 5-6 beautiful paragraphs separated by double newlines.`;
+Return ONLY the report text as a plain string. No JSON, no "##" markdown symbols, no hanja, no bullet-point lists — just 5-6 short titled sections separated by blank lines, each title on its own line in plain language.`;
 
     let lastError: any = null;
     const startTime = Date.now();

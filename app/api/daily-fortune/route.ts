@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
+import { STYLE_GUIDE } from "@/lib/destinyGen";
 
 export const maxDuration = 60;
 
@@ -106,12 +107,14 @@ export async function GET(req: NextRequest) {
     }
 
     const lang = LOCALE_CONFIG[locale] || "English";
-    const prompt = `You are a masterful Saju fortune-teller with a warm, vivid, specific voice. Write in ${lang}.
+    const prompt = `You are a masterful fortune-teller with a warm, vivid, specific voice. Write in ${lang}.
 Today: ${today}. Day Master: ${dayMasterKey}.
 
+${STYLE_GUIDE}
+
 Write today's fortune so it feels personal and USEFUL, never generic. Requirements:
-- summary: one punchy, evocative sentence that captures today's energy.
-- fullContent: 4 rich paragraphs, each 4-5 full sentences, never ending mid-sentence. Para 1 = today's overall energy + the best time-of-day window to act. Para 2 = relationships & communication, with a concrete tip. Para 3 = wealth/work + one thing to avoid today. Para 4 = a short evening reflection/ritual to recharge. Reference the Day Master's element naturally. Be specific and encouraging — avoid vague platitudes.
+- summary: one punchy, human sentence that captures today's mood. No hanja, no jargon.
+- fullContent: 3 SHORT paragraphs (each 2-3 sentences), blank line between them, never ending mid-sentence. Para 1 = today's overall mood + the best time-of-day window to act. Para 2 = people & communication, with one concrete tip. Para 3 = money/work + one thing to avoid today. Be specific and encouraging, in plain words — no element theory, no hanja.
 Return ONLY JSON: {"summary":"...","fullContent":"...","luckyColor":"...","luckyNumber":"...","luckyDir":"..."}`;
 
     let lastError: any = null;
