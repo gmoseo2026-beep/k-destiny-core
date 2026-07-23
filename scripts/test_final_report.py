@@ -1,8 +1,10 @@
 import paramiko
+from _creds import get_creds
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('161.97.134.176', username='root', password='***REMOVED***', timeout=15, look_for_keys=False, allow_agent=False)
+HOST, USER, PASS = get_creds()
+client.connect(HOST, username=USER, password=PASS, timeout=15, look_for_keys=False, allow_agent=False)
 
 cmds = [
     ("pull", "cd /root/k-destiny-core && git pull origin main 2>&1"),

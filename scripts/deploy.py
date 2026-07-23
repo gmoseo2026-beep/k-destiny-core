@@ -6,9 +6,8 @@ import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-HOST = "161.97.134.176"
-USER = "root"
-PASS = "***REMOVED***"
+from _creds import get_creds
+HOST, USER, PASS = get_creds()
 COMMANDS = [
     "cd /root/k-destiny-core && git pull origin main 2>&1",
     "cd /root/k-destiny-core && npm run build 2>&1 | tail -5",

@@ -1,21 +1,14 @@
 import paramiko
 import sys
 import io
-import os
+from _creds import get_creds
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-# Credentials come from the environment — NEVER hardcode them in a file that can be
-# committed. Set them in your shell (or scripts/deploy.env, which is gitignored):
-#   DEPLOY_HOST=161.97.134.176  DEPLOY_USER=root  DEPLOY_PASS=...  python scripts/safe_deploy.py
-HOST = os.environ.get("DEPLOY_HOST", "161.97.134.176")
-USER = os.environ.get("DEPLOY_USER", "root")
-PASS = os.environ.get("DEPLOY_PASS")
-if not PASS:
-    print("[ERROR] DEPLOY_PASS environment variable is not set. Refusing to run.")
-    print("        Example: DEPLOY_PASS='...' python scripts/safe_deploy.py")
-    sys.exit(3)
+# Credentials come from scripts/deploy.env (gitignored) or the environment —
+# never hardcoded here. See scripts/_creds.py.
+HOST, USER, PASS = get_creds()
 
 def run_cmd(client, cmd, tmo=300):
     print(f"\n>>> {cmd}")

@@ -1,9 +1,8 @@
 import paramiko
 import json
+from _creds import get_creds
 
-HOST = "161.97.134.176"
-USER = "root"
-PASS = "***REMOVED***"
+HOST, USER, PASS = get_creds()
 
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
