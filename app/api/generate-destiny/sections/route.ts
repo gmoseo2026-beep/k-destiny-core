@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import {
   genAI, PREMIUM_MODELS, LOCALE_CONFIG, STYLE_GUIDE, repairJSON, sajuContextBlock,
 } from "@/lib/destinyGen";
+import { backupAvailable, backupJSON } from "@/lib/aiFallback";
 
 // Full locked sections (love / wealth / health / prescription). Generated AFTER
 // unlock, off the free critical path — so latency here is not user-blocking.
@@ -136,7 +137,25 @@ Never mention calculations or jargon. Deliver it like a wise friend, not a textb
       }
     }
 
-    console.error("[Sections] All models failed, using mock:", lastError?.message);
+    // ─── BACKUP PROVIDER (OpenAI): real sections when Gemini is down, before mock ───
+    if (backupAvailable()) {
+      try {
+        const data = await backupJSON({ system: `Write ENTIRELY in ${config.name}. Return ONLY the JSON object.`, user: prompt, maxTokens: 8192, temperature: 0.8 });
+        if (isValidSections(data)) {
+          const sections = {
+            love_fortune: data.love_fortune, wealth_warning: data.wealth_warning,
+            health_alert: data.health_alert, master_prescription: data.master_prescription,
+          };
+          setCachedResult(cacheKey, sections);
+          console.log("[Sections] ✅ Served by OpenAI backup provider");
+          return NextResponse.json({ ...sections, backup: true }, { status: 200 });
+        }
+      } catch (backupErr: any) {
+        console.error("[Sections] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
+      }
+    }
+
+    console.error("[Sections] All providers failed, using mock:", lastError?.message);
     return NextResponse.json({ ...mockSections(localeKey), fallback: true }, { status: 200 });
   } catch (error: any) {
     console.error("[Sections API] Fatal:", error);

@@ -29,6 +29,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { STYLE_GUIDE } from "@/lib/destinyGen";
+import { backupAvailable, backupJSON } from "@/lib/aiFallback";
 
 // Vercel Serverless: allow up to 60s for chat (Function Calling can trigger 2 AI calls)
 export const maxDuration = 60;
@@ -452,10 +453,41 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     }
     }
 
-    // All models failed — token was NOT consumed. `fallback: true` tells the
+    // ─── BACKUP PROVIDER (OpenAI gpt-4o-mini) ───
+    // Every Gemini model failed. Before giving the user a non-answer, try the
+    // independent backup provider. The user's profile is already in fullPrompt,
+    // and systemPart asks for the {emotion, message} JSON — so this returns a
+    // REAL in-character answer even when Gemini is fully down.
+    if (backupAvailable()) {
+      try {
+        const parsedBackup = await backupJSON({
+          system: systemPart,
+          user: fullPrompt,
+          maxTokens: 2048,
+          temperature: 0.9,
+        });
+        if (parsedBackup?.message) {
+          let remainingTokens: number | null = isAdmin || !effectiveUserId ? null : karmaTokens;
+          if (shouldDecrementToken && effectiveUserId) {
+            try { remainingTokens = await consumeKarma(effectiveUserId); }
+            catch { remainingTokens = Math.max(0, karmaTokens - 1); }
+          }
+          recordChatRequest(clientIp);
+          console.log("[Chat] ✅ Served by OpenAI backup provider");
+          return NextResponse.json(
+            { reply: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens },
+            { status: 200 }
+          );
+        }
+      } catch (backupErr: any) {
+        console.error("[Chat] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
+      }
+    }
+
+    // All providers failed — token was NOT consumed. `fallback: true` tells the
     // client this is a non-answer so it refunds the karma it optimistically
     // deducted (previously it kept the charge for the "meditating" message).
-    console.error("[Chat] All models failed in chat route. Last error:", lastError);
+    console.error("[Chat] All providers failed in chat route. Last error:", lastError);
     return NextResponse.json(
       {
         reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",

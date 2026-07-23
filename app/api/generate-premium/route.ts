@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { STYLE_GUIDE } from "@/lib/destinyGen";
+import { backupAvailable, backupText } from "@/lib/aiFallback";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -196,8 +197,21 @@ Return ONLY the report text as a plain string. No JSON, no "##" markdown symbols
       }
     }
 
+    // ─── BACKUP PROVIDER (OpenAI): real report when Gemini is down, before mock ───
+    if (backupAvailable()) {
+      try {
+        const reportText = await backupText({ system: prompt.systemContext, user: fullPrompt, maxTokens: 4096, temperature: 0.9 });
+        if (reportText && reportText.length >= 100) {
+          console.log("[Premium AI] ✅ Served by OpenAI backup provider");
+          return NextResponse.json({ report: reportText, backup: true }, { status: 200 });
+        }
+      } catch (backupErr: any) {
+        console.error("[Premium AI] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
+      }
+    }
+
     // ─── GRACEFUL FALLBACK: Return deterministic mock instead of error ───
-    console.error(`[Premium AI] All models failed for ${reportType}. Using mock fallback. Last error:`, lastError?.message);
+    console.error(`[Premium AI] All providers failed for ${reportType}. Using mock fallback. Last error:`, lastError?.message);
     const mockReport = generateMockReport(reportType, localeKey, displayName);
     return NextResponse.json({ report: mockReport, fallback: true }, { status: 200 });
   } catch (error: any) {

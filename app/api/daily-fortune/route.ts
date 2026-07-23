@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { STYLE_GUIDE } from "@/lib/destinyGen";
+import { backupAvailable, backupJSON } from "@/lib/aiFallback";
 
 export const maxDuration = 60;
 
@@ -176,8 +177,30 @@ Return ONLY JSON: {"summary":"...","fullContent":"...","luckyColor":"...","lucky
       }
     }
 
+    // ─── BACKUP PROVIDER (OpenAI): real fortune when Gemini is down, before mock ───
+    if (backupAvailable()) {
+      try {
+        const data = await backupJSON({ system: `Write in ${lang}. Return ONLY the JSON object.`, user: prompt, maxTokens: 3072, temperature: 0.7 });
+        if (data?.summary && data?.fullContent) {
+          try {
+            await prisma.dailyFortune.create({
+              data: {
+                dayMasterKey, locale, date: today,
+                summary: data.summary, fullContent: data.fullContent,
+                luckyColor: data.luckyColor || null, luckyNumber: data.luckyNumber || null, luckyDir: data.luckyDir || null,
+              },
+            });
+          } catch { /* duplicate/DB write — non-fatal */ }
+          console.log("[Daily Fortune] ✅ Served by OpenAI backup provider");
+          return NextResponse.json({ ...data, date: today, cached: false, backup: true });
+        }
+      } catch (backupErr: any) {
+        console.error("[Daily Fortune] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
+      }
+    }
+
     // ─── GRACEFUL FALLBACK: Return mock instead of error ───
-    console.error("[Daily Fortune] All models failed. Using mock fallback. Last error:", lastError?.message);
+    console.error("[Daily Fortune] All providers failed. Using mock fallback. Last error:", lastError?.message);
     const mock = generateMockFortune(dayMasterKey, locale);
     return NextResponse.json({ ...mock, date: today, cached: false, fallback: true });
   } catch (error: any) {

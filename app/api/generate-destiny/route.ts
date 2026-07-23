@@ -10,6 +10,7 @@ import {
   genAI, FREE_MODELS, LOCALE_CONFIG, JSON_MARKER, STYLE_GUIDE,
   repairJSON, pickLuckyElements, sajuContextBlock,
 } from "@/lib/destinyGen";
+import { backupAvailable, backupText } from "@/lib/aiFallback";
 
 // Node runtime (Prisma). Streaming keeps the connection open while tokens flow.
 export const runtime = "nodejs";
@@ -233,8 +234,22 @@ After ${JSON_MARKER}, output ONLY the JSON. Never mention calculations or IP. De
         const parsed = tailJson ? repairJSON(tailJson) : null;
         const mock = mockFree(name, localeKey);
         if (!emittedAny || coreText.length <= 350) {
-          // never got usable core → send the mock core as one chunk
-          coreText = mock.core_essence;
+          // Gemini gave no usable core → try the OpenAI backup for a REAL core
+          // before resorting to the static mock.
+          let backupCore = "";
+          if (backupAvailable()) {
+            try {
+              backupCore = await backupText({
+                system: `You are ${masterName}. Write ENTIRELY in ${config.name}. ${config.toneGuide}\n\n${STYLE_GUIDE}`,
+                user: `${sajuContextBlock({ name, gender, dayMaster: sajuResult.dayMaster, fourPillars: sajuResult.fourPillars, elementsScore: sajuResult.elementsScore, dictionaryContext })}\n\nWrite a complete, warm 4-short-paragraph reading of who this person really is. Plain language, no hanja, no jargon, no JSON, no headers. Never end mid-sentence.`,
+                maxTokens: 1400,
+                temperature: 0.7,
+              });
+            } catch (backupErr: any) {
+              console.error("[Free] OpenAI backup core failed:", backupErr?.message?.slice(0, 150));
+            }
+          }
+          coreText = backupCore.trim().length > 350 ? backupCore.trim() : mock.core_essence;
           controller.enqueue(line({ type: "core", text: coreText }));
         }
         const fields = {
