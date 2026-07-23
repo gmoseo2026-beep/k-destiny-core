@@ -26,7 +26,7 @@ added=$(git diff --cached -U0 --diff-filter=ACM -- . \
   | grep -vi 'pragma: allowlist secret')
 
 hits=$(printf '%s\n' "$added" | grep -nEi \
-  'sk-[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|***REMOVED***|ghp_[0-9A-Za-z]{30,}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{30,}')
+  'sk-[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|ghp_[0-9A-Za-z]{30,}|gho_[0-9A-Za-z]{30,}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{30,}')
 if [ -n "$hits" ]; then
   echo "[BLOCKED] 비밀로 의심되는 값 감지 / possible secret detected:"
   printf '%s\n' "$hits" | sed 's/^/   /'
