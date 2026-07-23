@@ -638,10 +638,13 @@ function ChatPageContent() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let sbuf = "";
+      let rawAll = ""; // full body kept so we can fall back to non-NDJSON shapes
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        sbuf += decoder.decode(value, { stream: true });
+        const chunk = decoder.decode(value, { stream: true });
+        rawAll += chunk;
+        sbuf += chunk;
         let nl: number;
         while ((nl = sbuf.indexOf("\n")) >= 0) {
           const raw = sbuf.slice(0, nl).trim();
@@ -665,6 +668,37 @@ function ChatPageContent() {
             doneData = evt;
           }
         }
+      }
+
+      // ── Defense-in-depth: tolerate a non-NDJSON body ──
+      // If the server (e.g. a stale build) answered with a single JSON object like
+      // {"reply"|"message":"...","emotion":"...","remainingTokens":n} instead of the
+      // NDJSON stream, no "delta" ever fired and the bubble would stay blank. Recover
+      // by parsing the whole body once and rendering the text so the user never sees
+      // an empty reply from a format mismatch.
+      if (!botAdded) {
+        const body = (rawAll + sbuf).trim();
+        if (body) {
+          try {
+            const obj = JSON.parse(body);
+            const text = obj.reply ?? obj.message ?? obj.text ?? "";
+            if (text) {
+              acc = text;
+              emotion = obj.emotion || emotion;
+              botAdded = true;
+              setIsTyping(false);
+              setMessages((prev) => [...prev, { id: botId, role: "model", content: acc, timestamp: Date.now(), emotion }]);
+              if (doneData == null) {
+                doneData = { type: "done", remainingTokens: obj.remainingTokens, fallback: obj.fallback };
+              }
+            }
+          } catch { /* not JSON — fall through to the empty-reply guard below */ }
+        }
+      }
+
+      // Last-resort guard: never leave the user staring at nothing.
+      if (!botAdded) {
+        throw new Error("The stars are silent right now. Please try again in a moment.");
       }
 
       // Karma reconciliation with the server (authoritative).

@@ -1,13 +1,18 @@
 import paramiko
 import sys
 import io
+import os
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-HOST = "161.97.134.176"
-USER = "root"
-PASS = "***REMOVED***"
+# Credentials come from the environment — never hardcode them here.
+HOST = os.environ.get("DEPLOY_HOST", "161.97.134.176")
+USER = os.environ.get("DEPLOY_USER", "root")
+PASS = os.environ.get("DEPLOY_PASS")
+if not PASS:
+    print("[ERROR] DEPLOY_PASS environment variable is not set. Refusing to run.")
+    sys.exit(3)
 
 COMMANDS = [
     "cd /root/k-destiny-core && git pull origin main 2>&1",

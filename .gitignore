@@ -55,3 +55,7 @@ update-i18n-2.js
 
 # screenshots / misc
 screenshot.png
+
+# Deploy credentials (never commit)
+scripts/deploy.env
+deploy.env
