@@ -38,3 +38,34 @@
 ## 4. AI Agent Response Language (응답 언어 규칙)
 - 모든 결과물과 응답은 **반드시 한글(Korean)**로 제공해야 합니다.
 - All responses and results MUST be provided in **Korean (한글)**.
+
+## 5. Security — Secrets & Deployment (보안: 비밀·배포) 🔐
+**이 규칙은 어떤 AI 모델(Claude, Gemini, Antigravity 등)에도 예외 없이 적용됩니다. 위반 시 즉시 중단하고 수정할 것.**
+These rules apply to EVERY model (Claude, Gemini, Antigravity, etc.). No exceptions.
+
+### 5.1 절대 금지 (Never)
+- **비밀을 코드/파일에 하드코딩하지 마십시오.** 비밀번호, API 키, 토큰, SSH 자격증명을 커밋될 수 있는 어떤 파일(스크립트, 설정, 문서, 주석)에도 절대 직접 쓰지 않습니다.
+  Never hardcode secrets (passwords, API keys, tokens, SSH creds) in ANY committable file.
+- **다음 파일은 절대 커밋 금지** (이미 `.gitignore`됨 — 그대로 유지): `.env`, `.env.local`, `scripts/deploy.env`, 실제 비밀이 든 모든 파일.
+- 비밀 값을 로그/콘솔에 **출력(print/echo/log)하지 않습니다.**
+
+### 5.2 자격증명 취급 (How to use credentials)
+- 모든 SSH/배포 스크립트는 자격증명을 **`scripts/_creds.py`의 `get_creds()`** 로만 가져옵니다. host/user/password를 인라인으로 쓰지 않습니다.
+  All SSH/deploy scripts MUST obtain credentials via `get_creds()` in `scripts/_creds.py` — never inline literals.
+- 실제 비밀 값은 오직 두 곳에만 존재합니다: **로컬 `scripts/deploy.env`**(gitignore됨) 와 **서버 `/root/k-destiny-core/.env`**(gitignore됨). 새 스크립트도 반드시 여기서 읽습니다.
+- OpenAI 등 런타임 키를 서버에 반영할 때는 `scripts/set_env.py`를 사용합니다(키는 env에서 읽음, 하드코딩 금지).
+
+### 5.3 커밋/푸시 전 필수 점검 (Pre-commit / pre-push gate)
+- 커밋·푸시 전 **스테이징 diff를 스캔**하여 다음 패턴이 있으면 중단하고 env 방식으로 고칩니다:
+  `sk-`, `password=`, `DEPLOY_PASS=`, `chltnrud`, `-----BEGIN ... PRIVATE KEY-----`, 서버 IP와 함께 있는 자격증명.
+  Before any commit/push, scan the staged diff for those secret patterns; if found, STOP and switch to env vars.
+- 빠른 점검 예: `git diff --cached | grep -nEi "sk-[a-z0-9-]{10}|password=|DEPLOY_PASS=|BEGIN .*PRIVATE KEY"`
+
+### 5.4 노출 시 대응 (If a secret leaks)
+- 비밀이 한 번이라도 노출(커밋·출력·공유)되면 **손상된 것으로 간주하고 즉시 교체(rotate)** 합니다. 파일에서 지우는 것만으로는 부족합니다 — git 히스토리에 남기 때문입니다.
+  A leaked secret is compromised: ROTATE it immediately. Deleting the file is NOT enough (git history retains it).
+
+### 5.5 배포 규칙 (Deployment) — 무중단·거짓성공 방지
+- 배포는 **`python scripts/safe_deploy.py`** 로만 수행합니다. 이 스크립트는: origin/main pull → `git clean -fd`(untracked 잔여 파일 제거, `.env`/node_modules는 보존) → `npm ci/install` → 빌드(**실제 종료코드 확인**) → 빌드 성공 시에만 PM2 재시작 → 배포 후 `/api/chat`가 NDJSON을 내는지 검증.
+- **빌드 출력을 `| tail` 등 파이프로 넘겨 종료코드를 가리지 마십시오.** 파이프는 마지막 명령의 코드를 반환해 빌드 실패를 성공으로 오판시키고, 깨진 빌드 위에 재시작해 사이트를 죽일 수 있습니다.
+- 빌드가 실패하면 **재시작하지 않습니다.** "배포됨"이라고 보고하기 전에 배포 검증(`Deploy VERIFIED`)을 반드시 확인합니다.
