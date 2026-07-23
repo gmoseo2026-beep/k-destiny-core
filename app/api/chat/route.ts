@@ -441,7 +441,12 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         recordChatRequest(clientIp);
 
         console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion, remainingTokens }, { status: 200 });
+        const ndjson = [
+          JSON.stringify({ type: "emotion", emotion: parsed.emotion }),
+          JSON.stringify({ type: "delta", text: parsed.message }),
+          JSON.stringify({ type: "done", remainingTokens })
+        ].join("\n") + "\n";
+        return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
 
       } catch (err: any) {
         lastError = err;
@@ -477,10 +482,12 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
           }
           recordChatRequest(clientIp);
           console.log("[Chat] ✅ Served by OpenAI backup provider");
-          return NextResponse.json(
-            { reply: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens },
-            { status: 200 }
-          );
+          const backupNdjson = [
+            JSON.stringify({ type: "emotion", emotion: parsedBackup.emotion || "calm" }),
+            JSON.stringify({ type: "delta", text: parsedBackup.message }),
+            JSON.stringify({ type: "done", remainingTokens })
+          ].join("\n") + "\n";
+          return new Response(backupNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
         }
       } catch (backupErr: any) {
         console.error("[Chat] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
@@ -491,28 +498,22 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     // client this is a non-answer so it refunds the karma it optimistically
     // deducted (previously it kept the charge for the "meditating" message).
     console.error("[Chat] All providers failed in chat route. Last error:", lastError);
-    return NextResponse.json(
-      {
-        reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
-        emotion: "calm",
-        fallback: true,
-        remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens,
-      },
-      { status: 200 }
-    );
+    const fallbackNdjson = [
+      JSON.stringify({ type: "emotion", emotion: "calm" }),
+      JSON.stringify({ type: "delta", text: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요." }),
+      JSON.stringify({ type: "done", fallback: true, remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens })
+    ].join("\n") + "\n";
+    return new Response(fallbackNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
 
   } catch (error: any) {
     console.error("Error in chat API route:", error);
     // NEVER blank the chat UI: even on a fatal/unexpected error (DB down, bad
     // input, etc.) return a graceful in-character 200 so the user always sees a reply.
-    return NextResponse.json(
-      {
-        reply: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
-        emotion: "calm",
-        fallback: true,
-        remainingTokens: null,
-      },
-      { status: 200 }
-    );
+    const fatalNdjson = [
+      JSON.stringify({ type: "emotion", emotion: "calm" }),
+      JSON.stringify({ type: "delta", text: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요." }),
+      JSON.stringify({ type: "done", fallback: true, remainingTokens: null })
+    ].join("\n") + "\n";
+    return new Response(fatalNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
   }
 }
