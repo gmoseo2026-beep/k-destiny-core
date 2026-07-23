@@ -1,13 +1,13 @@
 import paramiko
 import sys
 import io
-from _creds import get_creds
+from _creds import connect_client, get_host_user
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # Credentials come from scripts/deploy.env (gitignored) or the environment.
-HOST, USER, PASS = get_creds()
+HOST, USER = get_host_user()
 
 COMMANDS = [
     "cd /root/k-destiny-core && git pull origin main 2>&1",
@@ -19,10 +19,8 @@ COMMANDS = [
 ]
 
 def main():
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     print(f"Connecting to {HOST}...")
-    client.connect(HOST, username=USER, password=PASS, timeout=15, look_for_keys=False, allow_agent=False)
+    client = connect_client()
     print("Connected!")
 
     for cmd in COMMANDS:

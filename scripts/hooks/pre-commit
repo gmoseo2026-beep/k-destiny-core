@@ -1,0 +1,43 @@
+#!/bin/sh
+# K-Destiny secret-guard — blocks commits that add secrets or secret files.
+# Enable once per clone:   git config core.hooksPath scripts/hooks
+# No external tools required (uses git + grep). See skill.md §5.
+#
+# False positive? Append  # pragma: allowlist secret  to that line.
+
+fail=0
+
+# 1) Never commit secret-bearing files (extra guard on top of .gitignore).
+secret_files=$(git diff --cached --name-only --diff-filter=ACM \
+  | grep -E '(^|/)\.env($|\.)|(^|/)deploy\.env$' \
+  | grep -vE '\.example$')
+if [ -n "$secret_files" ]; then
+  echo "[BLOCKED] 비밀이 들어있을 수 있는 파일은 커밋 금지 / do not commit secret files:"
+  echo "$secret_files" | sed 's/^/   - /'
+  fail=1
+fi
+
+# 2) Scan staged ADDED lines for real secrets. Exclude docs/examples/this hook
+#    (they legitimately mention the detection patterns).
+added=$(git diff --cached -U0 --diff-filter=ACM -- . \
+  ':(exclude)skill.md' ':(exclude)AGENTS.md' ':(exclude)GEMINI.md' \
+  ':(exclude)*.example' ':(exclude)scripts/hooks/*' ':(exclude)scripts/_creds.py' \
+  | grep -E '^\+' | grep -v '^+++' \
+  | grep -vi 'pragma: allowlist secret')
+
+hits=$(printf '%s\n' "$added" | grep -nEi \
+  'sk-[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|***REMOVED***|ghp_[0-9A-Za-z]{30,}|xox[baprs]-[0-9A-Za-z-]{10,}|AIza[0-9A-Za-z_-]{30,}')
+if [ -n "$hits" ]; then
+  echo "[BLOCKED] 비밀로 의심되는 값 감지 / possible secret detected:"
+  printf '%s\n' "$hits" | sed 's/^/   /'
+  echo "→ 환경변수 또는 scripts/deploy.env 로 옮기세요."
+  echo "  (오탐이면 그 줄 끝에  # pragma: allowlist secret  추가)"
+  fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "커밋 차단됨 (보안). 수정 후 다시 커밋하세요 / commit blocked for security."
+  exit 1
+fi
+exit 0

@@ -1,10 +1,6 @@
-import paramiko
-from _creds import get_creds
+from _creds import connect_client
 
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-HOST, USER, PASS = get_creds()
-client.connect(HOST, username=USER, password=PASS, timeout=15, look_for_keys=False, allow_agent=False)
+client = connect_client()
 
 cmds = [
     # Hermes config

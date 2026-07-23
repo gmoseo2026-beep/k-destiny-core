@@ -1,12 +1,7 @@
-import paramiko
 import json
-from _creds import get_creds
+from _creds import connect_client
 
-HOST, USER, PASS = get_creds()
-
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect(HOST, username=USER, password=PASS, timeout=15, look_for_keys=False, allow_agent=False)
+client = connect_client()
 
 cmd = 'curl -s -m 90 -X POST http://localhost:3000/api/generate-destiny -H "Content-Type: application/json" -d \'{"name":"Test","dob":"1990-07-15","gender":"Male","masterName":"Master Karma","locale":"ko"}\' 2>/dev/null'
 

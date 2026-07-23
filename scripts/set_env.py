@@ -1,10 +1,6 @@
-import paramiko
-from _creds import get_creds, get_env
+from _creds import connect_client, get_env
 
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-HOST, USER, PASS = get_creds()
-client.connect(HOST, username=USER, password=PASS)
+client = connect_client()
 
 # Set OPENAI_API_KEY in /root/k-destiny-core/.env from the local env / deploy.env
 # (never hardcode the key here). Replaces any existing line so rotations apply.
