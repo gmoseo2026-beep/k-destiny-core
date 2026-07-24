@@ -187,6 +187,31 @@ function normalizeElement(raw: string): string {
   return lower;
 }
 
+// ── Per-card "analyzing" placeholder: shown while a section is still streaming in,
+//    so a new visitor sees clear progress instead of an empty card (and doesn't
+//    think it froze and bounce). ──
+const ANALYZING_TEXT: Record<string, { core: string; karma: string }> = {
+  ko: { core: "타고난 기운을 자세히 풀어내는 중...", karma: "다가오는 운명을 읽어내는 중..." },
+  en: { core: "Unfolding your core essence...", karma: "Reading your imminent karma..." },
+  ja: { core: "生まれ持つ気を読み解いています...", karma: "近づく運命を読み取っています..." },
+  es: { core: "Revelando tu esencia...", karma: "Leyendo tu karma inminente..." },
+  de: { core: "Deine Kernenergie wird entfaltet...", karma: "Dein nahendes Karma wird gelesen..." },
+  fr: { core: "Révélation de votre essence...", karma: "Lecture de votre karma imminent..." },
+};
+
+function AnalyzingPlaceholder({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 py-3 text-gray-400">
+      <span className="flex gap-1">
+        <span className="w-2 h-2 rounded-full bg-purple-400/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="w-2 h-2 rounded-full bg-purple-400/80 animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="w-2 h-2 rounded-full bg-purple-400/80 animate-bounce" style={{ animationDelay: "300ms" }} />
+      </span>
+      <span className="font-sans text-sm animate-pulse">{label}</span>
+    </div>
+  );
+}
+
 function ResultPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -792,7 +817,11 @@ function ResultPageContent() {
                     <div className="p-3 rounded-full bg-purple-500/10 text-purple-400"><Moon className="w-6 h-6" /></div>
                     <h2 className="font-serif text-2xl text-white">{t("card_core_essence")}</h2>
                   </div>
-                  <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">{formatDestinyText(aiData.core_essence)}</div>
+                  {aiData.core_essence && aiData.core_essence.trim() ? (
+                    <div className="font-sans text-gray-300 leading-loose space-y-4 text-sm sm:text-base whitespace-pre-wrap">{formatDestinyText(aiData.core_essence)}</div>
+                  ) : (
+                    <AnalyzingPlaceholder label={(ANALYZING_TEXT[locale] || ANALYZING_TEXT.en).core} />
+                  )}
                 </motion.div>
 
                 {/* Card 2: Karma Teaser — FREE HOOK */}
@@ -801,7 +830,11 @@ function ResultPageContent() {
                     <div className="p-3 rounded-full bg-red-500/20 text-red-400"><Sparkles className="w-6 h-6" /></div>
                     <h2 className="font-serif text-xl text-white">{t("card_karma_teaser")}</h2>
                   </div>
-                  <p className="font-sans text-red-200/90 font-medium leading-relaxed text-lg sm:text-xl italic">&ldquo;{aiData.imminent_karma_teaser}&rdquo;</p>
+                  {aiData.imminent_karma_teaser && aiData.imminent_karma_teaser.trim() ? (
+                    <p className="font-sans text-red-200/90 font-medium leading-relaxed text-lg sm:text-xl italic">&ldquo;{aiData.imminent_karma_teaser}&rdquo;</p>
+                  ) : (
+                    <AnalyzingPlaceholder label={(ANALYZING_TEXT[locale] || ANALYZING_TEXT.en).karma} />
+                  )}
                 </motion.div>
 
                 {/* LOCKED SECTIONS — psychological paywall for free users */}
