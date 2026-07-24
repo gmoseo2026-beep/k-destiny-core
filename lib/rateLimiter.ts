@@ -242,6 +242,30 @@ export async function checkGuestChatLimit(ip: string): Promise<{ allowed: boolea
   return { allowed: mem.allowed };
 }
 
+// ─────────────────────────────────────────────
+// GLOBAL cost breaker — hard daily ceiling on AI generations across ALL users
+// ─────────────────────────────────────────────
+// Set DAILY_AI_CALL_CAP (e.g. "5000") to enable. 0 / unset = disabled (no change).
+// A safety ceiling on total API spend, independent of per-user karma and per-IP
+// limits. Counts on check. Fail-open on infra error so a Redis outage never
+// takes the whole product down.
+const GLOBAL_DAILY_AI_CAP = parseInt(process.env.DAILY_AI_CALL_CAP || "0", 10);
+const globalAiDayStore: { bucket: string; count: number } = { bucket: "", count: 0 };
+
+export async function checkGlobalAiCap(): Promise<boolean> {
+  if (!GLOBAL_DAILY_AI_CAP || GLOBAL_DAILY_AI_CAP <= 0) return true; // disabled
+  const day = dayBucket();
+  if (redisEnabled()) {
+    const c = await redisIncr(`rl:globalai:d:${day}`, 26 * 60 * 60);
+    if (c === null) return true; // Redis down → don't block service
+    return c <= GLOBAL_DAILY_AI_CAP;
+  }
+  // In-memory fallback (per-instance, best-effort ceiling).
+  if (globalAiDayStore.bucket !== day) { globalAiDayStore.bucket = day; globalAiDayStore.count = 0; }
+  globalAiDayStore.count += 1;
+  return globalAiDayStore.count <= GLOBAL_DAILY_AI_CAP;
+}
+
 /** @deprecated counting now happens inside checkRateLimit(). Kept as a no-op. */
 export function recordRequest(_ip: string): void { /* no-op */ }
 

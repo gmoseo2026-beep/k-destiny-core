@@ -21,7 +21,7 @@ const extractBirthDataTool = {
     }
   ]
 };
-import { getClientIp, checkChatRateLimit, checkGuestChatLimit, recordChatRequest } from "@/lib/rateLimiter";
+import { getClientIp, checkChatRateLimit, checkGuestChatLimit, recordChatRequest, checkGlobalAiCap } from "@/lib/rateLimiter";
 import { calculateFourPillars } from "@/lib/saju";
 import { prisma } from "@/lib/prisma";
 import { loadKarmaState, consumeKarma } from "@/lib/karma";
@@ -55,6 +55,11 @@ const LOCALE_LANGUAGES: Record<string, string> = {
 
 // Fail fast to the next model instead of stalling users for 45s.
 const MODEL_TIMEOUT_MS = 15000;
+
+// Admins are unlimited by default. Set METER_ADMIN=true to also charge admins
+// their karma — useful for VERIFYING that token consumption works with your own
+// admin account before launch. Default false (admin stays unlimited).
+const METER_ADMIN = process.env.METER_ADMIN === "true";
 
 export async function POST(req: Request) {
   try {
@@ -132,6 +137,9 @@ export async function POST(req: Request) {
     let isAdmin = false;
     let isPremiumActive = false;
     let shouldDecrementToken = false;
+    // `exempt` = this user is NOT charged/limited. Admins are exempt unless
+    // METER_ADMIN is on (used to verify decrement works with an admin account).
+    let exempt = false;
 
     if (effectiveUserId) {
       try {
@@ -139,10 +147,11 @@ export async function POST(req: Request) {
         isAdmin = state.isAdmin;
         isPremiumActive = state.isPremiumActive;
         karmaTokens = state.karma;
+        exempt = isAdmin && !METER_ADMIN;
 
-        // Only ADMIN is unlimited. Premium consumes its 20/day; free consumes its
-        // static tokens. Both are gated at 0 (premium refills tomorrow).
-        if (!isAdmin && karmaTokens <= 0) {
+        // Exempt users are unlimited. Everyone else (premium 20/day, free static,
+        // or a metered admin) consumes karma and is gated at 0.
+        if (!exempt && karmaTokens <= 0) {
           return NextResponse.json(
             {
               error: isPremiumActive
@@ -154,7 +163,7 @@ export async function POST(req: Request) {
             { status: 403 }
           );
         }
-        shouldDecrementToken = !isAdmin;
+        shouldDecrementToken = !exempt;
       } catch (e) {
         // FAIL-OPEN: a DB hiccup while loading karma must not blank the chat.
         // Let this turn proceed without decrementing rather than returning a 500.
@@ -206,6 +215,7 @@ ANSWER RULE (MOST IMPORTANT):
 - ALWAYS directly answer what the user actually asked, with specific, useful substance. Example: if they ask for today's fortune, give today's energy AND one concrete, actionable insight (a focus, a timing, a do/don't) — never only mood or atmosphere.
 - Open with ONE short, warm, in-character line that hooks them, then deliver the real substance. Do NOT spend the whole reply on empathy or ambiance.
 - End on a constructive, empowering note. Even a dark or intense master must leave the seeker with something they can act on — NEVER end in bleak hopelessness or generic gloom.
+- Any remedy must be PRACTICAL and doable (a real action, a time to act, a small habit). A symbolic charm (a color, an object) is fine only when paired with a concrete action — never a symbol alone.
 
 TONE SAFETY:
 Your personality colors HOW you speak, never WHETHER you help. Atmosphere is seasoning, not the meal. A dark/gothic/cynical persona keeps its flavor, but the actual guidance must stay clear, specific, and ultimately hopeful.
@@ -261,6 +271,23 @@ FREEMIUM RULE:
     }
 
     const fullPrompt = `${conversationContext}User: ${message}\n${masterName}:`;
+
+    // ─── GLOBAL COST BREAKER ───
+    // Hard daily ceiling on total AI calls (env DAILY_AI_CALL_CAP; disabled by
+    // default). When exceeded, return a graceful message WITHOUT calling any AI —
+    // no karma is charged. Protects against runaway API cost under a traffic spike.
+    if (!(await checkGlobalAiCap())) {
+      console.warn("[Chat] Global daily AI cap reached — serving graceful message.");
+      return NextResponse.json(
+        {
+          reply: "오늘은 마스터를 찾는 분이 유난히 많습니다. 잠시 후 다시 말을 걸어주세요.",
+          emotion: "calm",
+          fallback: true,
+          remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
+        },
+        { status: 200 }
+      );
+    }
 
     let lastError: any = null;
 
@@ -428,7 +455,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         // remainingTokens is authoritative: the client mirrors it instead of its
         // own optimistic localStorage guess. null = unlimited (admin/guest).
         let remainingTokens: number | null =
-          isAdmin || !effectiveUserId ? null : karmaTokens;
+          exempt || !effectiveUserId ? null : karmaTokens;
         if (shouldDecrementToken && effectiveUserId) {
           try {
             remainingTokens = await consumeKarma(effectiveUserId);
@@ -441,12 +468,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         recordChatRequest(clientIp);
 
         console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-        const ndjson = [
-          JSON.stringify({ type: "emotion", emotion: parsed.emotion }),
-          JSON.stringify({ type: "delta", text: parsed.message }),
-          JSON.stringify({ type: "done", remainingTokens })
-        ].join("\n") + "\n";
-        return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion, remainingTokens }, { status: 200 });
 
       } catch (err: any) {
         lastError = err;
@@ -475,19 +497,17 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
           temperature: 0.9,
         });
         if (parsedBackup?.message) {
-          let remainingTokens: number | null = isAdmin || !effectiveUserId ? null : karmaTokens;
+          let remainingTokens: number | null = exempt || !effectiveUserId ? null : karmaTokens;
           if (shouldDecrementToken && effectiveUserId) {
             try { remainingTokens = await consumeKarma(effectiveUserId); }
             catch { remainingTokens = Math.max(0, karmaTokens - 1); }
           }
           recordChatRequest(clientIp);
           console.log("[Chat] ✅ Served by OpenAI backup provider");
-          const backupNdjson = [
-            JSON.stringify({ type: "emotion", emotion: parsedBackup.emotion || "calm" }),
-            JSON.stringify({ type: "delta", text: parsedBackup.message }),
-            JSON.stringify({ type: "done", remainingTokens })
-          ].join("\n") + "\n";
-          return new Response(backupNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+          return NextResponse.json(
+            { reply: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens },
+            { status: 200 }
+          );
         }
       } catch (backupErr: any) {
         console.error("[Chat] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
@@ -498,22 +518,28 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     // client this is a non-answer so it refunds the karma it optimistically
     // deducted (previously it kept the charge for the "meditating" message).
     console.error("[Chat] All providers failed in chat route. Last error:", lastError);
-    const fallbackNdjson = [
-      JSON.stringify({ type: "emotion", emotion: "calm" }),
-      JSON.stringify({ type: "delta", text: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요." }),
-      JSON.stringify({ type: "done", fallback: true, remainingTokens: isAdmin || !effectiveUserId ? null : karmaTokens })
-    ].join("\n") + "\n";
-    return new Response(fallbackNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+    return NextResponse.json(
+      {
+        reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
+      },
+      { status: 200 }
+    );
 
   } catch (error: any) {
     console.error("Error in chat API route:", error);
     // NEVER blank the chat UI: even on a fatal/unexpected error (DB down, bad
     // input, etc.) return a graceful in-character 200 so the user always sees a reply.
-    const fatalNdjson = [
-      JSON.stringify({ type: "emotion", emotion: "calm" }),
-      JSON.stringify({ type: "delta", text: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요." }),
-      JSON.stringify({ type: "done", fallback: true, remainingTokens: null })
-    ].join("\n") + "\n";
-    return new Response(fatalNdjson, { status: 200, headers: { "Content-Type": "application/x-ndjson" } });
+    return NextResponse.json(
+      {
+        reply: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: null,
+      },
+      { status: 200 }
+    );
   }
 }

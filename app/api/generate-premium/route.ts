@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { STYLE_GUIDE } from "@/lib/destinyGen";
 import { backupAvailable, backupText } from "@/lib/aiFallback";
+import { checkGlobalAiCap } from "@/lib/rateLimiter";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -145,6 +146,15 @@ CLIENT SAJU DATA (DO NOT EXPOSE RAW DATA, ONLY USE FOR ANALYSIS):
 TASK: ${prompt.task}
 
 Return ONLY the report text as a plain string. No JSON, no "##" markdown symbols, no hanja, no bullet-point lists — just 5-6 short titled sections separated by blank lines, each title on its own line in plain language.`;
+
+    // ─── GLOBAL COST BREAKER: hard daily ceiling on total AI calls ───
+    if (!(await checkGlobalAiCap())) {
+      console.warn("[Premium AI] Global daily AI cap reached — serving graceful message.");
+      return NextResponse.json(
+        { report: "지금은 요청이 매우 많아 리포트 생성을 잠시 제한하고 있습니다. 잠시 후 다시 시도해 주세요.", fallback: true },
+        { status: 200 }
+      );
+    }
 
     let lastError: any = null;
     const startTime = Date.now();
