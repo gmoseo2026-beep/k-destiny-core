@@ -13,7 +13,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 // ─── Paid-tier chain: 2.0-flash first (fast), 2.5-flash as quality fallback.
 //     Budget "flash-lite" removed. ───
-const MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
+const MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
 const MODEL_TIMEOUT_MS = 15000;
 const MAX_RETRIES = 1;
 

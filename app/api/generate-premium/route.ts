@@ -17,7 +17,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 // ─── Paid-tier chain: premium reports are quality-first (2.5-flash), 2.0-flash as
 //     the fast fallback. Budget "flash-lite" removed — never degrade a paid report. ───
-const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+const MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
 const MODEL_TIMEOUT_MS = 45000;
 const MAX_RETRIES = 1;
 

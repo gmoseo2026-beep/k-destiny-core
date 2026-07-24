@@ -42,7 +42,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 // ─── Paid-tier chain: 2.0-flash first (chat responsiveness), 2.5-flash as quality
 //     fallback. Budget "flash-lite" removed. ───
-const CHAT_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
+const CHAT_MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -413,7 +413,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
             const secondModel = genAI.getGenerativeModel({
               model: modelName,
               systemInstruction: injectedSystemInstruction,
-              generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2048 }
+              generationConfig: { maxOutputTokens: 2048 }
             });
 
             console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");
