@@ -99,10 +99,14 @@ def main():
     body = vout.read().decode("utf-8", "replace")
     print("Chat response sample:", body[:400])
 
-    if '"reply"' in body or '"message"' in body:
-        print("\n[OK] Live chat is serving JSON. Deploy VERIFIED. ✅")
-    elif '"type"' in body and '"delta"' in body:
+    if '"type"' in body and ('"delta"' in body or '"done"' in body or '"emotion"' in body):
         print("\n[OK] Live chat is serving NDJSON. Deploy VERIFIED. ✅")
+    elif '"reply"' in body:
+        print("\n[STALE] Chat still returns the legacy {\"reply\":...} object — the")
+        print("        running process did NOT pick up the new build. Check that PM2")
+        print("        runs from /root/k-destiny-core and reload it: pm2 reload all.")
+        client.close()
+        sys.exit(2)
     else:
         print("\n[WARN] Could not confirm the response format. Inspect the sample above.")
 

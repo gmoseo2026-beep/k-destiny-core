@@ -42,7 +42,7 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 // ─── Paid-tier chain: 2.0-flash first (chat responsiveness), 2.5-flash as quality
 //     fallback. Budget "flash-lite" removed. ───
-const CHAT_MODELS = ["gemini-1.5-flash", "gemini-1.5-pro"];
+const CHAT_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
 
 const LOCALE_LANGUAGES: Record<string, string> = {
   ko: "Korean (한국어)",
@@ -60,6 +60,35 @@ const MODEL_TIMEOUT_MS = 15000;
 // their karma — useful for VERIFYING that token consumption works with your own
 // admin account before launch. Default false (admin stays unlimited).
 const METER_ADMIN = process.env.METER_ADMIN === "true";
+
+// The chat FRONTEND and the deploy verifier both expect an NDJSON stream from
+// /api/chat: one {type:"emotion"} line, one or more {type:"delta",text} lines,
+// then {type:"done",remainingTokens,fallback}. We compute the full reply first
+// (Gemini → OpenAI backup) and emit it as NDJSON so the contract always holds —
+// a plain JSON body here makes the frontend throw "The stars are silent".
+function ndjsonReply(d: {
+  message: string;
+  emotion: string;
+  remainingTokens: number | null;
+  fallback: boolean;
+}): Response {
+  const enc = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(enc.encode(JSON.stringify({ type: "emotion", emotion: d.emotion || "calm" }) + "\n"));
+      controller.enqueue(enc.encode(JSON.stringify({ type: "delta", text: d.message || "" }) + "\n"));
+      controller.enqueue(enc.encode(JSON.stringify({ type: "done", remainingTokens: d.remainingTokens, fallback: d.fallback }) + "\n"));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
 
 export async function POST(req: Request) {
   try {
@@ -278,15 +307,12 @@ FREEMIUM RULE:
     // no karma is charged. Protects against runaway API cost under a traffic spike.
     if (!(await checkGlobalAiCap())) {
       console.warn("[Chat] Global daily AI cap reached — serving graceful message.");
-      return NextResponse.json(
-        {
-          reply: "오늘은 마스터를 찾는 분이 유난히 많습니다. 잠시 후 다시 말을 걸어주세요.",
-          emotion: "calm",
-          fallback: true,
-          remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
-        },
-        { status: 200 }
-      );
+      return ndjsonReply({
+        message: "오늘은 마스터를 찾는 분이 유난히 많습니다. 잠시 후 다시 말을 걸어주세요.",
+        emotion: "calm",
+        fallback: true,
+        remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
+      });
     }
 
     let lastError: any = null;
@@ -413,7 +439,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
             const secondModel = genAI.getGenerativeModel({
               model: modelName,
               systemInstruction: injectedSystemInstruction,
-              generationConfig: { maxOutputTokens: 2048 }
+              generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2048 }
             });
 
             console.log("[Chat] 🔄 완벽한 사주 데이터를 주입하여 2차 추론을 시작합니다...");
@@ -468,7 +494,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
         recordChatRequest(clientIp);
 
         console.log(`[Chat] Success with model: ${modelName}${suffix}`);
-        return NextResponse.json({ reply: parsed.message, emotion: parsed.emotion, remainingTokens }, { status: 200 });
+        return ndjsonReply({ message: parsed.message, emotion: parsed.emotion, remainingTokens, fallback: false });
 
       } catch (err: any) {
         lastError = err;
@@ -504,10 +530,7 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
           }
           recordChatRequest(clientIp);
           console.log("[Chat] ✅ Served by OpenAI backup provider");
-          return NextResponse.json(
-            { reply: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens },
-            { status: 200 }
-          );
+          return ndjsonReply({ message: parsedBackup.message, emotion: parsedBackup.emotion || "calm", remainingTokens, fallback: false });
         }
       } catch (backupErr: any) {
         console.error("[Chat] OpenAI backup failed:", backupErr?.message?.slice(0, 150));
@@ -518,28 +541,23 @@ ${dictionaryContext || "표준 명리학적 해석을 사용하십시오."}
     // client this is a non-answer so it refunds the karma it optimistically
     // deducted (previously it kept the charge for the "meditating" message).
     console.error("[Chat] All providers failed in chat route. Last error:", lastError);
-    return NextResponse.json(
-      {
-        reply: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
-        emotion: "calm",
-        fallback: true,
-        remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
-      },
-      { status: 200 }
-    );
+    return ndjsonReply({
+      message: "마스터 카르마가 현재 깊은 명상 중입니다. 잠시 후 다시 말을 걸어주세요.",
+      emotion: "calm",
+      fallback: true,
+      remainingTokens: exempt || !effectiveUserId ? null : karmaTokens,
+    });
 
   } catch (error: any) {
     console.error("Error in chat API route:", error);
     // NEVER blank the chat UI: even on a fatal/unexpected error (DB down, bad
-    // input, etc.) return a graceful in-character 200 so the user always sees a reply.
-    return NextResponse.json(
-      {
-        reply: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
-        emotion: "calm",
-        fallback: true,
-        remainingTokens: null,
-      },
-      { status: 200 }
-    );
+    // input, etc.) return a graceful in-character NDJSON reply so the user always
+    // sees a message and the frontend never throws "The stars are silent".
+    return ndjsonReply({
+      message: "지금 별들의 기운이 잠시 흐트러졌습니다. 잠시 후 다시 말을 걸어주세요.",
+      emotion: "calm",
+      fallback: true,
+      remainingTokens: null,
+    });
   }
 }
