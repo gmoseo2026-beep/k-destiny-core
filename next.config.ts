@@ -22,7 +22,9 @@ const nextConfig: NextConfig = {
     return [
       {
         // HTML 페이지: 항상 서버에 재검증 요청 (모바일 캐시 방지)
-        source: "/((?!_next/static|_next/image|favicon).*)",
+        // sitemap.xml / robots.txt / og-image 는 제외 — 크롤러가 매번 재요청하지
+        // 않도록 캐시 가능해야 하고, no-store 는 색인에 도움이 되지 않는다.
+        source: "/((?!_next/static|_next/image|favicon|sitemap.xml|robots.txt|og-image).*)",
         headers: [
           {
             key: "Cache-Control",
@@ -65,6 +67,21 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
             ].join("; "),
           },
+        ],
+      },
+      {
+        // 크롤러용 파일: 1시간 캐시 + 하루 stale 허용
+        source: "/sitemap.xml",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+      {
+        source: "/robots.txt",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
         ],
       },
     ];

@@ -1,0 +1,67 @@
+{
+  "video_id": "20260725_A_wealth_top5",
+  "title_ko": "2026 하반기 돈 붙는 출생연도 TOP5",
+  "aspect": "9:16",
+  "output_dir": "C:\\kd\\out",
+  "bgm": "C:\\kd\\assets\\bgm_mystic_loop.mp3",
+  "thumbnail_prompt": "Vertical 9:16 thumbnail, elegant female Korean fortune-teller in gold-black dress (Yura style) on cosmic gold-purple background, glowing gold coins, big bold empty top area for Korean text '돈 붙는 출생연도 TOP5', dramatic premium high-CTR, no text baked in",
+  "_note": "tool=veo3(영상)/nanobanana(이미지). ref_image=Veo3 image-to-video용 마스터 이미지. extend=Veo3 연장 횟수(8초 단위). caption=assemble.py가 그 씬 구간에 구워넣는 자막.",
+  "scenes": [
+    {
+      "n": 1,
+      "tool": "veo3",
+      "prompt": "Animate this portrait: the elegant woman gently smiles and nods as if about to reveal good news, subtle eye movement, warm golden sparks and bokeh drifting, candlelight flicker, very slight camera push-in, cinematic mystical premium, 9:16, seamless, no text",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_yura_joy.webp.jpg",
+      "extend": 0,
+      "caption": "AI 사주가 뽑은\n돈 들어오는 출생연도 TOP5"
+    },
+    {
+      "n": 2,
+      "tool": "veo3",
+      "prompt": "Glowing gold coins and stardust swirl upward and form a faint Korean Four Pillars chart on black hanji paper, cinematic slow motion, deep space gold-purple glow, 9:16, no text",
+      "ref_image": "",
+      "extend": 0,
+      "caption": "5위 · 1992년생\n9월부터 막힌 돈줄이 뚫린다"
+    },
+    {
+      "n": 3,
+      "tool": "veo3",
+      "prompt": "Same mystical gold cosmic style, streams of gold light converging, elegant and premium, 9:16, no text",
+      "ref_image": "",
+      "extend": 0,
+      "caption": "4위 · 1988년생\n'정리'가 돈을 부르는 해"
+    },
+    {
+      "n": 4,
+      "tool": "veo3",
+      "prompt": "Gold light blooming outward like a slow fireworks of stardust over a dark constellation map, premium mystical, 9:16, no text",
+      "ref_image": "",
+      "extend": 0,
+      "caption": "3위 · 2000년생\n11월, 첫 목돈의 타이밍"
+    },
+    {
+      "n": 5,
+      "tool": "veo3",
+      "prompt": "Animate this portrait: the woman raises her eyes with a knowing, surprised-yet-pleased expression, golden light intensifies, sparks rising, cinematic reveal moment, 9:16, seamless, no text",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_yura_surprise.webp.jpg",
+      "extend": 0,
+      "caption": "2위 · 1996년생\n10월 결정이 내년 재물을 가른다"
+    },
+    {
+      "n": 6,
+      "tool": "veo3",
+      "prompt": "A grand golden gate of light opening in a cosmic temple, radiant premium mystical atmosphere, gold coins and petals drifting, climactic, 9:16, no text",
+      "ref_image": "",
+      "extend": 1,
+      "caption": "1위 · 1990년생\n재물문이 활짝 — 단, 지출관리가 관건"
+    },
+    {
+      "n": 7,
+      "tool": "veo3",
+      "prompt": "Animate this portrait: the woman gives a warm confident closing smile, gentle nod toward camera, soft gold particles, inviting, 9:16, seamless, no text",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_yura_joy.webp.jpg",
+      "extend": 0,
+      "caption": "네 출생연도의 진짜 사주는?\n프로필 링크에서 무료 🔮"
+    }
+  ]
+}
