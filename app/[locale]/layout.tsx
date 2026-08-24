@@ -11,6 +11,7 @@ import MaintenanceOverlay from "../../components/MaintenanceOverlay";
 import Analytics from "../../components/Analytics";
 import Script from "next/script";
 import { BASE_URL, buildPageMetadata } from "@/lib/seo";
+import InstallPWAButton from "../../components/InstallPWAButton";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -159,6 +160,7 @@ export default async function RootLayout({
             <MaintenanceOverlay />
             <CacheBuster />
             <Navbar />
+            <InstallPWAButton />
             <main className="flex-grow pt-20 md:pt-24">
               {children}
             </main>

@@ -85,6 +85,7 @@ model User {
   accounts Account[]
   sessions Session[]
   purchasedReports PurchasedReport[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -196,5 +197,16 @@ model Compatibility {
   shareToken     String   @unique
   sourceCompatId String?
   createdAt      DateTime @default(now())
+}
+
+// 8. 웹 푸시 구독 정보 (PWA 마케팅용)
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String?  // null 이면 비로그인(무료) 유저로 간주
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
 }
 
