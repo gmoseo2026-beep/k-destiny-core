@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콩닥 (kongdak) — 브랜드 보드</title>
+<style>
+  :root{
+    --coral:#FF5C77; --coral-l:#FF8AA1; --plum:#6A2C70; --plum-d:#4A1C50;
+    --gold:#FFC24B; --cream:#FFF6F1; --pink:#FFD9E0; --ink:#2B2430; --gray:#8A8291;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--cream);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 28px 80px}
+  header.hero{background:linear-gradient(135deg,#FF7A9C 0%,var(--coral) 45%,var(--plum) 100%);border-radius:28px;padding:56px 40px;color:#fff;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,194,75,.55),transparent 70%);border-radius:50%}
+  .kicker{font-size:13px;letter-spacing:.22em;text-transform:uppercase;opacity:.9;font-weight:700}
+  .hero h1{font-size:64px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px}
+  .hero .tag{font-size:19px;opacity:.95;font-weight:500}
+  section{margin-top:44px}
+  h2{font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:18px;border-bottom:2px solid var(--pink);padding-bottom:8px}
+  .logos{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .card{background:#fff;border-radius:20px;padding:30px;box-shadow:0 6px 24px rgba(106,44,112,.08)}
+  .card.dark{background:var(--plum);color:#fff}
+  .card.grad{background:linear-gradient(135deg,var(--coral),var(--plum));color:#fff}
+  .logo-row{display:flex;align-items:center;gap:14px}
+  .wordmark{font-size:44px;font-weight:800;letter-spacing:-.02em}
+  .wordmark .en{font-size:16px;font-weight:600;letter-spacing:.16em;color:var(--gray);text-transform:uppercase;display:block;margin-top:2px}
+  .center{justify-content:center;text-align:center;flex-direction:column}
+  .swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .sw{border-radius:16px;padding:18px;height:120px;display:flex;flex-direction:column;justify-content:flex-end;color:#fff;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .sw small{display:block;font-weight:500;opacity:.9;font-size:12px}
+  .sw.light{color:var(--ink)}
+  .type-samp{background:#fff;border-radius:20px;padding:30px}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:baseline}
+  .tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .chip{background:#fff;border:1.5px solid var(--pink);color:var(--plum);border-radius:999px;padding:8px 16px;font-weight:600;font-size:15px}
+  /* sample viral card */
+  .viral{max-width:340px;margin:0 auto;border-radius:26px;padding:30px 26px;background:linear-gradient(160deg,#FF8AA1,var(--coral) 55%,var(--plum));color:#fff;box-shadow:0 16px 40px rgba(106,44,112,.28);text-align:center}
+  .viral .score{font-size:80px;font-weight:800;line-height:1;margin:10px 0}
+  .viral .names{font-size:17px;opacity:.95;font-weight:600}
+  .viral .kw{display:flex;justify-content:center;gap:8px;margin:16px 0 6px;flex-wrap:wrap}
+  .viral .kw span{background:rgba(255,255,255,.22);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600}
+  .viral .cta{margin-top:16px;font-size:13px;opacity:.9}
+  .viral .brand{font-weight:800;font-size:20px;margin-top:2px}
+  .do{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .do div{background:#fff;border-radius:16px;padding:20px}
+  .do h4{font-size:14px;margin-bottom:8px}
+  .do .y{color:#1a8f4c}.do .n{color:#d33}
+  ul{padding-left:18px}li{margin:4px 0;font-size:15px}
+  .note{font-size:13px;color:var(--gray);margin-top:10px}
+  .fam{display:flex;align-items:center;gap:16px;background:#fff;border-radius:16px;padding:22px 26px}
+  .fam .plus{font-size:24px;color:var(--gray)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="kicker">Brand Board · 사주 궁합·관계 서비스</div>
+    <h1>콩닥</h1>
+    <div class="tag">우리, 잘 맞을까? — 사주로 보는 우리 사이</div>
+  </header>
+
+  <!-- LOGO -->
+  <section>
+    <h2>Logo</h2>
+    <div class="logos">
+      <div class="card">
+        <div class="logo-row">
+          <!-- symbol: two people → one heart + pulse + luck spark -->
+          <svg width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="콩닥 심볼">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#FF8AA1"/><stop offset="1" stop-color="#FF5C77"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#8A3C90"/><stop offset="1" stop-color="#6A2C70"/>
+              </linearGradient>
+            </defs>
+            <!-- left half (person A) -->
+            <path d="M32 55 C 12 41, 6 30, 6 21 C 6 13.5, 11.5 9, 18 9 C 25 9, 30 15, 32 19 L 32 55 Z" fill="url(#g1)"/>
+            <!-- right half (person B) -->
+            <path d="M32 55 C 52 41, 58 30, 58 21 C 58 13.5, 52.5 9, 46 9 C 39 9, 34 15, 32 19 L 32 55 Z" fill="url(#g2)"/>
+            <!-- heartbeat pulse -->
+            <path d="M14 31 H24 L28 22 L34 40 L38 31 H50" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".95"/>
+            <!-- luck spark -->
+            <circle cx="50" cy="14" r="4" fill="#FFC24B"/>
+          </svg>
+          <div class="wordmark">콩닥<span class="en">kongdak</span></div>
+        </div>
+        <div class="note">기본 가로형 (심볼 + 워드마크)</div>
+      </div>
+
+      <div class="card grad center">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 55 C 12 41, 6 30, 6 21 C 6 13.5, 11.5 9, 18 9 C 25 9, 30 15, 32 19 L 32 55 Z" fill="#fff" opacity=".95"/>
+          <path d="M32 55 C 52 41, 58 30, 58 21 C 58 13.5, 52.5 9, 46 9 C 39 9, 34 15, 32 19 L 32 55 Z" fill="#FFD9E0"/>
+          <path d="M14 31 H24 L28 22 L34 40 L38 31 H50" stroke="#6A2C70" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="50" cy="14" r="4" fill="#FFC24B"/>
+        </svg>
+        <div class="wordmark" style="margin-top:12px">콩닥</div>
+        <div class="note" style="color:rgba(255,255,255,.85)">그라디언트 배경형 (앱 아이콘·스플래시)</div>
+      </div>
+    </div>
+    <div class="note">심볼 의미: <b>두 사람이 만나 하나의 하트</b>(궁합) + <b>심장박동 펄스</b>(콩닥·설렘) + <b>금빛 스파크</b>(운·사주). 세 요소가 서비스 본질을 압축합니다.</div>
+  </section>
+
+  <!-- COLOR -->
+  <section>
+    <h2>Color</h2>
+    <div class="swatches">
+      <div class="sw" style="background:#FF5C77">코랄 핑크<small>#FF5C77 · Primary · 설렘/심장</small></div>
+      <div class="sw" style="background:#6A2C70">플럼<small>#6A2C70 · Secondary · 사주 신비/깊이</small></div>
+      <div class="sw light" style="background:#FFC24B">골드<small>#FFC24B · Accent · 운/행운</small></div>
+      <div class="sw light" style="background:#FFD9E0;color:#6A2C70">소프트 핑크<small>#FFD9E0 · Tint</small></div>
+      <div class="sw light" style="background:#FFF6F1;color:#2B2430">크림<small>#FFF6F1 · Background</small></div>
+      <div class="sw" style="background:#2B2430">잉크<small>#2B2430 · Text</small></div>
+    </div>
+    <div class="note">시그니처 그라디언트(공유 카드·히어로): <b>#FF8AA1 → #FF5C77 → #6A2C70</b> (코랄→플럼). 따뜻함(설렘)과 신비(사주)를 한 장에 담습니다.</div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section>
+    <h2>Typography</h2>
+    <div class="type-samp">
+      <div class="row">
+        <div><div style="font-size:34px;font-weight:800">Pretendand · 800</div><div class="note">헤드라인 / 로고 / 점수</div></div>
+        <div><div style="font-size:22px;font-weight:600">Pretendard · 600</div><div class="note">서브헤드 / 버튼</div></div>
+        <div><div style="font-size:16px;font-weight:400">Pretendard · 400 본문 텍스트입니다.</div><div class="note">본문</div></div>
+      </div>
+      <div class="note" style="margin-top:14px">권장: <b>Pretendard</b>(무료·가변, 트립각과 공유 가능). 대체: Apple SD Gothic Neo / 맑은 고딕. 숫자(궁합 점수)는 800 굵기로 임팩트.</div>
+    </div>
+  </section>
+
+  <!-- VIRAL CARD -->
+  <section>
+    <h2>Viral 궁합 Card (성장 엔진 미리보기)</h2>
+    <div class="viral">
+      <div style="font-size:14px;opacity:.9;font-weight:600">우리 궁합은</div>
+      <div class="score">88<span style="font-size:32px">%</span></div>
+      <div class="names">지민 ♥ 서연</div>
+      <div class="kw"><span>#천생연분</span><span>#불꽃케미</span><span>#물과나무</span></div>
+      <div class="cta">내 궁합도 30초면 나와요</div>
+      <div class="brand">콩닥</div>
+    </div>
+    <div class="note">공유 카드가 브랜드 노출의 핵심(K-factor). 이름·색·심볼이 카드 위에서 예쁘게 작동하도록 설계했습니다.</div>
+  </section>
+
+  <!-- FAMILY -->
+  <section>
+    <h2>트립각 패밀리</h2>
+    <div class="fam">
+      <div style="font-weight:800;font-size:22px;color:var(--plum)">트립각</div>
+      <div class="plus">×</div>
+      <div class="logo-row">
+        <svg width="34" height="34" viewBox="0 0 64 64" fill="none"><path d="M32 55 C 12 41, 6 30, 6 21 C 6 13.5, 11.5 9, 18 9 C 25 9, 30 15, 32 19 L 32 55 Z" fill="#FF5C77"/><path d="M32 55 C 52 41, 58 30, 58 21 C 58 13.5, 52.5 9, 46 9 C 39 9, 34 15, 32 19 L 32 55 Z" fill="#6A2C70"/></svg>
+        <div style="font-weight:800;font-size:22px">콩닥</div>
+      </div>
+    </div>
+    <div class="note">이름은 다르되(각 아님) <b>같은 타이포·둥근 조형·엔도스먼트</b>로 형제 브랜드임을 전달. 카피 예: “<b>트립각이 만든 사주 궁합, 콩닥</b>”. 신뢰 전이는 접미사가 아니라 이 방식으로.</div>
+  </section>
+
+  <!-- TAGLINE -->
+  <section>
+    <h2>Tagline / Voice</h2>
+    <div class="tags">
+      <span class="chip">우리, 잘 맞을까?</span>
+      <span class="chip">사주로 보는 우리 사이, 콩닥</span>
+      <span class="chip">그 사람과 나, 콩닥해볼까?</span>
+      <span class="chip">30초면 나오는 우리 궁합</span>
+    </div>
+    <div class="note">톤: 다정하고 설레는 반말/친근한 존댓말. 단정적 예언 금지, “재미·자기이해” 프레이밍 유지.</div>
+  </section>
+
+  <!-- DO / DONT -->
+  <section>
+    <h2>Do / Don't</h2>
+    <div class="do">
+      <div><h4 class="y">✔ Do</h4><ul>
+        <li>코랄→플럼 그라디언트를 히어로·카드에 주인공으로</li>
+        <li>심볼은 여백 충분히, 둥근 모서리 유지</li>
+        <li>궁합 점수는 크고 굵게(설렘 임팩트)</li>
+        <li>골드는 포인트로만(운·강조)</li>
+      </ul></div>
+      <div><h4 class="n">✘ Don't</h4><ul>
+        <li>한자·사주 전문용어를 전면에 노출</li>
+        <li>차갑고 어두운 점집 느낌의 검정/보라 남용</li>
+        <li>심볼 비율 왜곡·회전</li>
+        <li>“반드시·확정” 등 단정적 예언 카피</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <div class="note" style="margin-top:40px;text-align:center">콩닥 Brand Board v1 · 2026-08 · 도메인 kongdak.kr / kongdak.app (확보 권장)</div>
+</div>
+</body>
+</html>

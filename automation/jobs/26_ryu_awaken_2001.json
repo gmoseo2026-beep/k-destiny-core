@@ -1,0 +1,60 @@
+{
+  "video_id": "ryu_awaken_2001",
+  "output_dir": "C:\\kd\\out",
+  "clip_dir": "C:\\kd\\clips\\ryu_awaken_2001",
+  "bgm": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\automation\\assets\\bgm_mystical.mp3",
+  "title_ko": "2001년생 각성의 해",
+  "scenes": [
+    {
+      "n": 1,
+      "prompt": "Animate this portrait: a striking Korean man in a dark leather jacket stands in a rain-soaked neon-lit alley. He looks directly at camera with intense, challenging eyes. Neon signs in pink and cyan reflect off wet pavement. Rain falls heavily, streaming down his face. Camera SLOW DOLLY IN through the rain. Cinematic, 9:16 vertical, cyberpunk noir atmosphere. His mouth stays closed, no lip movement, no dialogue. Ambient rain and city sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_ryu_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "hook",
+      "speaker": "ryu",
+      "vo": {
+        "ko": "01년생. 거울을 보세요.",
+        "en": "Born in two-thousand-one. Look in the mirror."
+      },
+      "subs": {
+        "ko": "01년생.\n거울을 보세요.",
+        "en": "Born in '01.\nLook in the mirror."
+      }
+    },
+    {
+      "n": 2,
+      "prompt": "Animate this portrait: the man reaches out and touches the neon-lit wall beside him — cracks of golden energy spread from his fingertips across the wall like an earthquake. The neon signs flicker and shift colors. His expression is fierce, empowered. Rain intensifies. Camera DUTCH ANGLE ORBIT. Gold and neon particles scatter. Cinematic, 9:16 vertical, transformative energy atmosphere. His mouth stays closed, no lip movement, no dialogue. Ambient sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_ryu_warn.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_out",
+      "sub_style": "body",
+      "speaker": "ryu",
+      "vo": {
+        "ko": "거기 있는 사람, 진짜 당신이 아닙니다. 올해, 진짜가 깨어납니다.",
+        "en": "The person there — that's not the real you. This year, the real you wakes up."
+      },
+      "subs": {
+        "ko": "거기 있는 사람,\n진짜 당신이 아닙니다.\n\n올해, 진짜가 깨어납니다.",
+        "en": "The person there —\nthat's not the real you.\n\nThis year,\nthe real you wakes up."
+      }
+    },
+    {
+      "n": 3,
+      "prompt": "Animate this portrait: the man pulls his hand back. The wall settles, now bearing golden vein-like patterns. He turns to camera with a knowing smirk and steps backward into the neon haze, his silhouette dissolving into the rain. Camera SLOW PULL BACK. Cinematic, 9:16 vertical, powerful concluding atmosphere. His mouth stays closed, no lip movement, no dialogue. Ambient sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_ryu_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "cta",
+      "speaker": "ryu",
+      "vo": {
+        "ko": "니 운명, 직접 확인해. 프로필 링크. 지금.",
+        "en": "Your fate. Your call. Link in bio. Now."
+      },
+      "subs": {
+        "ko": "니 운명, 직접 확인해.\n프로필 링크. 지금.",
+        "en": "Your fate. Your call.\nLink in bio. Now."
+      }
+    }
+  ]
+}

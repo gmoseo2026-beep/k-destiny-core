@@ -1,0 +1,60 @@
+{
+  "video_id": "seoa_reconnect_1994",
+  "output_dir": "C:\\kd\\out",
+  "clip_dir": "C:\\kd\\clips\\seoa_reconnect_1994",
+  "bgm": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\automation\\assets\\bgm_mystical.mp3",
+  "title_ko": "1994년생 재회의 사주",
+  "scenes": [
+    {
+      "n": 1,
+      "prompt": "Animate this portrait: an elegant Korean female scholar in navy blazer and gold-rimmed glasses sits in a dark oak library. She slowly looks up from an ancient book and gazes directly into camera with quiet intensity, as if she just discovered something about the viewer. Soft warm lamplight illuminates floating dust motes. Camera SLOW DOLLY IN. Books and star charts visible on shelves behind her. Cinematic, 9:16 vertical, intimate scholarly atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient library sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_seoa_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "hook",
+      "speaker": "seoa",
+      "vo": {
+        "ko": "94년생. 끊겼던 인연이 다시 돌아옵니다.",
+        "en": "Born in ninety-four. A broken connection is coming back."
+      },
+      "subs": {
+        "ko": "94년생.\n끊겼던 인연이\n다시 돌아옵니다.",
+        "en": "Born in '94.\nA broken connection\nis coming back."
+      }
+    },
+    {
+      "n": 2,
+      "prompt": "Animate this portrait: the scholar traces her finger along an invisible constellation map in the air, leaving trails of soft blue-gold starlight. Her expression is focused, analytical, connecting dots only she can see. Camera SLOW ORBIT revealing the depth of her library. Warm amber and cool blue light interplay. Cinematic, 9:16 vertical, cerebral mystical atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_seoa_warn.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_out",
+      "sub_style": "body",
+      "speaker": "seoa",
+      "vo": {
+        "ko": "이번엔 다릅니다. 당신이 준비됐기 때문입니다.",
+        "en": "This time it's different. Because you're ready."
+      },
+      "subs": {
+        "ko": "이번엔 다릅니다.\n\n당신이 준비됐기\n때문입니다.",
+        "en": "This time it's different.\n\nBecause you're ready."
+      }
+    },
+    {
+      "n": 3,
+      "prompt": "Animate this portrait: the scholar lowers her hand, the star trails fading. She adjusts her glasses slightly and gives a warm, encouraging look into camera — a gentle nod. The lamplight softens. Camera SLOW PULL BACK revealing her full figure in the cozy library. Cinematic, 9:16 vertical, hopeful concluding atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_seoa_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "cta",
+      "speaker": "seoa",
+      "vo": {
+        "ko": "더 깊이 알고 싶다면, 프로필 링크에서 확인하세요.",
+        "en": "Want to know more? Check the link in my profile."
+      },
+      "subs": {
+        "ko": "더 깊이 알고 싶다면...\n프로필 링크에서 확인하세요",
+        "en": "Want to know more?\nCheck the link in my profile."
+      }
+    }
+  ]
+}

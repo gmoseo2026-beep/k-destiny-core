@@ -1,0 +1,22 @@
+{
+  "video_id": "smoke_1scene",
+  "output_dir": "C:\\kd\\out",
+  "bgm": "",
+  "title_ko": "스모크 테스트 (1씬)",
+  "scenes": [
+    {
+      "n": 1,
+      "prompt": "Animate this portrait: a dark, elegant Korean female fortune-teller looks directly into the camera with a calm but serious expression, a slow blink, then the faintest tilt of the head. Candlelight flickers, drifting gold embers, faint purple-gold mystical glow. Cinematic, 9:16 vertical. Her mouth stays closed, lips still, she does not speak, no dialogue, no lip movement, no talking. Ambient sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_calm.webp.jpg",
+      "speaker": "karma",
+      "vo": {
+        "ko": "1996년생, 잠깐 멈추세요. 10월에 대한 경고입니다.",
+        "en": "Stop scrolling if you were born in 1996. This is a warning for October."
+      },
+      "subs": {
+        "ko": "1996년생, 잠깐 멈추세요.\n10월에 대한 경고입니다",
+        "en": "Stop scrolling if you were\nborn in 1996.\n\nThis is a warning for October."
+      }
+    }
+  ]
+}

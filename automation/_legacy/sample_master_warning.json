@@ -1,0 +1,33 @@
+{
+  "video_id": "20260726_A_karma_warning_1996",
+  "title_ko": "1996년생에게 전하는 10월의 경고 (AI 사주 마스터)",
+  "aspect": "9:16",
+  "output_dir": "C:\\kd\\out",
+  "bgm": "C:\\kd\\assets\\bgm_mystic_loop.mp3",
+  "caption_hashtags": "1996년생 10월을 조심하세요 🔮 무료 사주는 프로필 링크 #사주 #운세 #1996년생 #shorts #koreanfortune #saju #fyp",
+  "thumbnail_prompt": "Vertical 9:16 thumbnail, dark gothic Korean female fortune-teller (Karma style, black lace, moonlit ruins) looking straight at camera with a serious warning expression, cosmic purple-gold glow, big empty top area for bold Korean text '1996년생, 10월 경고', dramatic high-CTR, no text baked in",
+  "_note": "Flow/Veo3-fast(Lower Priority). 30초를 '3씬 5생성'으로 구성 → 크레딧 절약 + 자막 3번 전환. extend는 씬별 override(기본 4). 마스터 감정 이미지로 image-to-video.",
+  "scenes": [
+    {
+      "n": 1,
+      "prompt": "Animate this portrait: a dark, elegant Korean female fortune-teller looks directly into the camera with a calm but serious expression, slowly leaning slightly forward as if about to warn someone, candlelight flicker, faint purple-gold mystical glow, drifting embers, cinematic, 9:16, no text",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_calm.webp.jpg",
+      "extend": 1,
+      "caption": "1996년생, 잠깐 멈추세요.\n10월에 대한 경고입니다"
+    },
+    {
+      "n": 2,
+      "prompt": "A glowing Korean Four Pillars chart forms on black hanji paper, one pillar pulses with an ominous gold-red light, stardust and smoke drifting, cinematic slow motion, mystical premium, 9:16, no text",
+      "ref_image": "",
+      "extend": 0,
+      "caption": "돈이나 인연에서\n큰 결정을 재촉받는 시기"
+    },
+    {
+      "n": 3,
+      "prompt": "Animate this portrait: the fortune-teller's expression shifts to a knowing warning look, eyes sharp, gold sparks intensify, then softens into a subtle inviting nod at the very end, cinematic, 9:16, no text",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_warn.webp.jpg",
+      "extend": 1,
+      "caption": "그때 정한 것이 오래 굳어요.\n네 사주는 프로필 링크에서 무료 🔮"
+    }
+  ]
+}

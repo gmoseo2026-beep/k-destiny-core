@@ -1,0 +1,60 @@
+{
+  "video_id": "karma_fortune_1998",
+  "output_dir": "C:\\kd\\out",
+  "clip_dir": "C:\\kd\\clips\\karma_fortune_1998",
+  "bgm": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\automation\\assets\\bgm_mystical.mp3",
+  "title_ko": "1998년생 이동운",
+  "scenes": [
+    {
+      "n": 1,
+      "prompt": "Animate this portrait: a dark, elegant Korean female fortune-teller in gothic black lace stands among moonlit stone ruins. Her eyes narrow slowly with a cold, piercing gaze directly into the camera. Candlelight flickers casting dancing shadows on her pale face. Golden embers drift upward lazily. Camera SLOW DOLLY IN pushing closer to her face. Cinematic lighting, 9:16 vertical, dark moody atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient mystical sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "hook",
+      "speaker": "karma",
+      "vo": {
+        "ko": "98년생. 다음 달, 당신은 움직여야 합니다.",
+        "en": "Born in ninety-eight. Next month, you must move."
+      },
+      "subs": {
+        "ko": "98년생.\n다음 달, 당신은\n움직여야 합니다.",
+        "en": "Born in '98.\nNext month,\nyou MUST move."
+      }
+    },
+    {
+      "n": 2,
+      "prompt": "Animate this portrait: the fortune-teller slowly raises one hand, fingers slightly spread. Faint purple-gold mystical energy pulses around her fingers. Her eyes glow with a subtle supernatural light. Camera SLOW ORBIT, dramatic DUTCH ANGLE tilt. Shadows shift dramatically, candlelight surges then dims. Gold and purple particles swirl. Cinematic, 9:16 vertical, mystical dark atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient mystical sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_warn.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_out",
+      "sub_style": "body",
+      "speaker": "karma",
+      "vo": {
+        "ko": "새로운 곳이 당신을 기다리고 있습니다. 주저하지 마세요.",
+        "en": "A new place is waiting for you. Don't hesitate."
+      },
+      "subs": {
+        "ko": "새로운 곳이\n당신을 기다리고 있습니다.\n\n주저하지 마세요.",
+        "en": "A new place is\nwaiting for you.\n\nDon't hesitate."
+      }
+    },
+    {
+      "n": 3,
+      "prompt": "Animate this portrait: the fortune-teller stares piercingly into the viewer's soul with wide, intense eyes. She slowly lowers her hand. The flames surge dramatically then gradually die down. Gold embers fade into darkness. Camera SLOW PULL BACK revealing her full mysterious silhouette. Final dramatic shadow engulfs the frame. Cinematic, 9:16 vertical, ominous dark atmosphere. Her mouth stays closed, no lip movement, no dialogue. Ambient mystical sound only, no speech, no music. No text, no captions, no subtitles, no watermark.",
+      "ref_image": "C:\\Users\\gmose\\OneDrive\\바탕 화면\\k-destiny\\public\\images\\master_karma_calm.webp.jpg",
+      "extend": 0,
+      "motion": "zoom_in",
+      "sub_style": "cta",
+      "speaker": "karma",
+      "vo": {
+        "ko": "당신의 운명이 궁금하다면, 지금 프로필 링크를 확인하세요.",
+        "en": "Curious about your destiny? Check the link in bio. Now."
+      },
+      "subs": {
+        "ko": "당신의 운명이 궁금하다면...\n지금 프로필 링크를 확인하세요",
+        "en": "Curious about your destiny?\nCheck the link in bio. Now."
+      }
+    }
+  ]
+}
