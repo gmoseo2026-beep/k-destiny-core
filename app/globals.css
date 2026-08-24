@@ -88,3 +88,11 @@ select option {
   background: #FFF6F1;
   color: #2B2430;
 }
+
+/* Global Button Click Effect */
+button, [role="button"] {
+  transition: transform 0.1s ease-in-out;
+}
+button:active, [role="button"]:active {
+  transform: scale(0.96);
+}

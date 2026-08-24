@@ -181,7 +181,8 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
     const kakao = getReadyKakao();
     if (kakao) {
       trackEvent("share_created", { shareToken: data.shareToken, type: "kakao" });
-      const origin = typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr";
+      // Kakao Developer 콘솔에 등록된 도메인을 우선 사용해야만 클릭 시 링크가 작동합니다.
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr");
       const shareUrl = `${origin}/${locale}/compat/${data.shareToken}?ref=${data.shareToken}`;
 
       kakao.Share.sendDefault({

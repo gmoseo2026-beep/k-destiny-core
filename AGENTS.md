@@ -46,6 +46,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 기존 파일의 패턴·폴더 구조·네이밍을 그대로 따른다(새 컨벤션 발명 금지). TypeScript strict, `any` 지양.
 - UI 브랜드 토큰: 코랄 `#FF5C77`, 플럼 `#6A2C70`, 골드 `#FFC24B`, 크림 `#FFF6F1`, 잉크 `#2B2430`, 폰트 Pretendard. 시그니처 그라디언트 `#FF8AA1→#FF5C77→#6A2C70`.
 - 모바일 우선. 퍼널은 **랜딩→결과 2클릭 이내**(로그인·가입은 저장/결제 시점으로 이연).
+- **버튼 액션(클릭) 애니메이션**: 콩닥의 모든 페이지 클릭 버튼(`button`, `[role="button"]`)은 클릭(active) 시 약간 축소되는 동일한 물리적 애니메이션 효과(`transform: scale(0.96)`)를 가져야 한다. (globals.css에 전역 정의됨)
 - 커밋: 작은 단위, 명령형 한 줄(예: `feat(compat): 궁합 점수 엔진 추가`). `.env`·빌드산출물 커밋 금지.
 
 ## 6. 완료 정의 (DoD)
