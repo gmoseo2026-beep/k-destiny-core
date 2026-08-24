@@ -1,19 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050505;
-  --foreground: #ffffff;
-  --gold: #D4AF37;
-  --gold-glow: rgba(212, 175, 55, 0.5);
-  --purple-dark: #4B0082;
-  --purple-glow: rgba(75, 0, 130, 0.5);
+  --background: #FFF6F1;
+  --foreground: #2B2430;
+  --coral: #FF5C77;
+  --coral-light: #FF8AA1;
+  --plum: #6A2C70;
+  --gold: #FFC24B;
+  --cream: #FFF6F1;
+  --ink: #2B2430;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-coral: var(--coral);
+  --color-coral-light: var(--coral-light);
+  --color-plum: var(--plum);
   --color-gold: var(--gold);
-  --color-purple-dark: var(--purple-dark);
+  --color-cream: var(--cream);
+  --color-ink: var(--ink);
 
   --font-sans: var(--font-inter);
   --font-serif: var(--font-cinzel);
@@ -41,25 +47,11 @@ html:lang(ja) body {
   word-break: keep-all;
 }
 
-/* Custom Utilities for Glow Effects */
+/* Custom Utilities */
 @layer utilities {
-  .text-glow-gold {
-    text-shadow: 0 0 15px var(--gold-glow), 0 0 30px var(--gold-glow);
-  }
-
-  .bg-glow-purple {
-    box-shadow: 0 0 40px var(--purple-glow), inset 0 0 20px var(--purple-glow);
-  }
-
   .transform-style-3d {
     transform-style: preserve-3d;
   }
-}
-
-/* Local stardust pattern to avoid external network dependency */
-.bg-stardust {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='3' cy='7' r='0.7' fill='%23ffffff' opacity='0.15'/%3E%3Ccircle cx='45' cy='23' r='0.5' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='87' cy='11' r='0.6' fill='%23ffffff' opacity='0.12'/%3E%3Ccircle cx='130' cy='32' r='0.4' fill='%23ffffff' opacity='0.08'/%3E%3Ccircle cx='175' cy='5' r='0.8' fill='%23ffffff' opacity='0.14'/%3E%3Ccircle cx='22' cy='68' r='0.5' fill='%23ffffff' opacity='0.09'/%3E%3Ccircle cx='64' cy='54' r='0.7' fill='%23ffffff' opacity='0.11'/%3E%3Ccircle cx='110' cy='72' r='0.4' fill='%23ffffff' opacity='0.13'/%3E%3Ccircle cx='155' cy='48' r='0.6' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='190' cy='65' r='0.5' fill='%23ffffff' opacity='0.07'/%3E%3Ccircle cx='12' cy='110' r='0.6' fill='%23ffffff' opacity='0.12'/%3E%3Ccircle cx='52' cy='95' r='0.4' fill='%23ffffff' opacity='0.08'/%3E%3Ccircle cx='98' cy='118' r='0.8' fill='%23ffffff' opacity='0.15'/%3E%3Ccircle cx='142' cy='102' r='0.5' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='182' cy='112' r='0.7' fill='%23ffffff' opacity='0.11'/%3E%3Ccircle cx='32' cy='148' r='0.5' fill='%23ffffff' opacity='0.09'/%3E%3Ccircle cx='75' cy='155' r='0.6' fill='%23ffffff' opacity='0.13'/%3E%3Ccircle cx='118' cy='142' r='0.4' fill='%23ffffff' opacity='0.07'/%3E%3Ccircle cx='162' cy='160' r='0.8' fill='%23ffffff' opacity='0.14'/%3E%3Ccircle cx='195' cy='145' r='0.5' fill='%23ffffff' opacity='0.1'/%3E%3Ccircle cx='8' cy='185' r='0.7' fill='%23ffffff' opacity='0.11'/%3E%3Ccircle cx='55' cy='192' r='0.4' fill='%23ffffff' opacity='0.08'/%3E%3Ccircle cx='105' cy='178' r='0.6' fill='%23ffffff' opacity='0.12'/%3E%3Ccircle cx='148' cy='195' r='0.5' fill='%23ffffff' opacity='0.09'/%3E%3Ccircle cx='188' cy='182' r='0.7' fill='%23ffffff' opacity='0.13'/%3E%3C/svg%3E");
-  background-repeat: repeat;
 }
 
 /* Respect users who ask for less motion — also cuts continuous main-thread
@@ -73,7 +65,7 @@ html:lang(ja) body {
   }
 }
 
-/* Smooth scrollbar styling for dark theme */
+/* Smooth scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -83,16 +75,16 @@ html:lang(ja) body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.2);
+  background: rgba(255, 92, 119, 0.2);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(212, 175, 55, 0.4);
+  background: rgba(255, 92, 119, 0.4);
 }
 
-/* Select option styling for dark theme */
+/* Select option styling */
 select option {
-  background: #0a0a0a;
-  color: #ffffff;
+  background: #FFF6F1;
+  color: #2B2430;
 }

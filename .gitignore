@@ -61,3 +61,18 @@ scripts/deploy.env
 deploy.env
 
 __pycache__/
+
+# 영상 자동화 (automation/) — 로컬 전용 산출물
+automation/_facts/
+automation/credit_ledger.json
+automation/flow_run.log
+automation/upload_manifest.csv
+automation/_legacy/__pycache__/
+automation/**/_norm/
+automation/**/_concat.txt
+automation/**/_subs.ass
+automation/test_r5/
+automation/out/
+
+# 법무 초안 — 사업자등록번호·대표자·주소 등 사업자 상세 포함. 커밋 금지.
+콩닥_약관_개인정보_초안.md

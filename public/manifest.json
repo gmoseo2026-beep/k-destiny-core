@@ -1,0 +1,13 @@
+{
+  "name": "콩닥 (kongdak)",
+  "short_name": "콩닥",
+  "description": "우리, 얼마나 잘 맞을까? 사주 기반 궁합 서비스",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#FFF6F1",
+  "theme_color": "#FF5C77",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -3,7 +3,7 @@
  *
  * WHY THIS EXISTS (revenue-critical):
  * The Gumroad webhook (`app/api/webhooks/gumroad/route.ts`) matches a purchase
- * to a K-Destiny account by EMAIL. If the buyer pays with a different email than
+ * to a 콩닥 account by EMAIL. If the buyer pays with a different email than
  * their account email, the webhook can't find the user and the purchase never
  * activates — the customer pays and gets nothing.
  *

@@ -171,3 +171,29 @@ model DailyFortune {
 
   @@unique([dayMasterKey, locale, date])
 }
+
+// 7. 콩닥 Phase A 궁합 모델
+model Compatibility {
+  id             String   @id @default(cuid())
+  // 1. 입력 (비회원 허용)
+  userId         String?
+  personA        Json
+  personB        Json
+  relation       String   @default("love") // love | crush | friend
+  
+  // 2. 결과 (결정론)
+  score          Int
+  keywords       String[]
+  breakdown      Json
+  
+  // 3. AI 해석 캐시
+  summaryKo      String?  @db.Text
+  premiumKo      String?  @db.Text
+  isPaid         Boolean  @default(false)
+  
+  // 4. 바이럴 추적
+  shareToken     String   @unique
+  sourceCompatId String?
+  createdAt      DateTime @default(now())
+}
+

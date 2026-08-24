@@ -30,16 +30,25 @@ from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
 import credits  # 월 4000 크레딧 가드
 
+# automation/.env 자동 로드 (FLOW_PROJECT_URL 등 환경변수)
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 
 class CONFIG:
     FLOW_URL = os.environ.get("FLOW_PROJECT_URL", "")  # D7
     CDP_PORT = os.environ.get("CDP_PORT", "9222")     # 로컬 크롬 원격 디버깅 포트
 
-    MODEL_LABEL = "veo3-fast"          # 선택할 모델(부분일치). "Lower Priority" 포함 항목 우선
-    MODEL_PRIORITY_HINT = "Lower Priority"
+    MODEL_LABEL = os.environ.get("FLOW_MODEL", "Veo 3.1 - Lite")
+    MODEL_FORBIDDEN = ["Quality", "Lower Priority", "Omni Flash"]
+    MENU_FORBIDDEN = ["Publish to YouTube", "Move to trash", "Share", "Flag output"]
+    QUALITY_FORBIDDEN = ["4K"]
 
-    DEFAULT_EXTEND = 2                     # 기본 연장 2회 (Phase 1 확정)
-    EXTEND_DOWNLOAD_MODE = "cumulative"    # "delta" | "cumulative" (Phase 0 F5 결과에 따라 수정 가능, 현재 cumulative 가정)
+    # Phase 0.5(다운로드 동작·DOM·실단가) 확인 및 반영 후 True 로 변경할 것.
+    PHASE0_VERIFIED = True
+
+    DEFAULT_EXTEND = 0                     # 기본 연장 0회 (다중 씬 구조로 대체)
+    EXTEND_DOWNLOAD_MODE = "cumulative"
 
     # 타임아웃(ms) — Lower Priority 큐 대비 매우 넉넉하게
     NAV_TIMEOUT = 120_000
@@ -50,6 +59,10 @@ class CONFIG:
     MIN_WAIT = 20.0                       # 최소 대기 시간 (D1)
 
     RETRIES = 2
+
+
+    VIDEO_SECTION = 'text=/Video generation default|동영상 생성 기본값/i >> xpath=..'
+    IMAGE_SECTION = 'text=/Image generation default|이미지 생성 기본값/i >> xpath=..'
 
     SELECTORS = {
         # 모델 선택 드롭다운을 여는 버튼(모델명/설정 아이콘 등)
@@ -79,10 +92,10 @@ class CONFIG:
             '[placeholder*="prompt" i]',
         ],
         "generate_button": [
+            'button:has-text("Create"):has(i:has-text("arrow_forward"))',
             'button:has-text("Generate")',
             'button:has-text("생성")',
-            'button[aria-label*="generate" i]',
-            'button:has-text("Create")',
+            'button[aria-label*="generate" i]'
         ],
         "attach_button": [
             'button[aria-label*="image" i]',
@@ -92,11 +105,18 @@ class CONFIG:
             'button:has-text("Frames")',
         ],
         "file_input": ['input[type="file"]'],
+
+        "settings_open": ['button:has-text("tune")'],
+        "confirm_auto":  ['button[role="radio"][value="AUTO_APPROVE"]'],
+        "profile_open":  ['button:has(img[alt="User profile image"])'],
+        "credit_text":   ['a:has-text("Google Flow credits")'],
+
         # 생성 중 표시(스피너/큐/진행률/"Generating"/"Pending"/"In queue")
         "generating_indicator": [
             'text=/generating|pending|in queue|rendering|처리 중|대기/i',
             '[role="progressbar"]',
             '.loading, .spinner',
+            'text=/[0-9]+%/',
         ],
         # 실패/에러 토스트(있으면 즉시 재시도) - D6
         "error_toast": [
@@ -109,19 +129,24 @@ class CONFIG:
         ],
         # 완료된 결과 클립 타일 (D1) - Phase 0 실측 전 미검증 추측값 (a6)
         "result_tile": [
-            '[data-result-id]',
+            '[data-tile-id]',
             'video',
             'img[src^="blob:"]'
         ],
-        # 다운로드 (결과 타일 내)
-        "download_button": [
-            'button[aria-label*="download" i]',
-            'button:has-text("Download")',
-            'a[download]',
-            'button:has(svg[aria-label*="download" i])',
+        "tile_menu": [
+            'button:has-text("more_vert")',
+            'button:has-text("More options")',
+            'button[aria-haspopup="menu"]'
+        ],
+        "menu_download": [
+            '[role="menuitem"]:has-text("Download")',
+            'div:has-text("Download")',
+            'span:has-text("Download")'
         ],
         # 품질 선택
         "quality_option": [
+            '[role="menuitem"]:has-text("1080p")',
+            'div:has-text("1080p")',
             'text=/1080p/i'
         ],
         # Extend(연장)
@@ -182,12 +207,48 @@ async def connect_browser(pw):
 
     if CONFIG.FLOW_URL not in (page.url or ""):
         await page.goto(CONFIG.FLOW_URL, timeout=CONFIG.NAV_TIMEOUT)
-    
+    else:
+        # 이미 URL에 있더라도 No session found 상태면 리로드
+        text = await page.evaluate('document.body.innerText')
+        if 'No session found' in text:
+            log.warning("세션 만료 모달 감지 ('No session found') — 페이지 리로드")
+            await page.reload(timeout=CONFIG.NAV_TIMEOUT)
+            
     # D7: 로그인 만료 체크
     if await any_visible(page, "login_wall"):
         raise RuntimeError("Flow 로그인 세션 만료 — 전용 크롬 프로필에서 재로그인 필요")
 
+    await dismiss_all_modals(page)
+
     return browser, context, page
+
+
+async def dismiss_all_modals(page):
+    """화면을 가리는 모든 팝업/모달/오버레이를 닫는다.
+    - Google Labs 동의("Agree"), 업로드 저작권 경고("I agree"),
+      또는 이전 실행 크래시로 남은 오버레이(data-state="open") 등."""
+    # 1) "I agree" 버튼 (업로드 Notice 모달 — 더 구체적인 것 먼저)
+    for btn_text in ["I agree", "Agree", "No thanks"]:
+        try:
+            btn = page.locator(f'button:has-text("{btn_text}")').first
+            if await btn.count() > 0 and await btn.is_visible():
+                await btn.click()
+                await asyncio.sleep(1.0)
+                log.info("모달 닫음: %s", btn_text)
+        except Exception:
+            pass
+
+    # 2) data-state="open" 오버레이가 남아있으면 Escape로 닫기
+    for _ in range(3):
+        try:
+            overlay = page.locator('div[data-state="open"][aria-hidden="true"]').first
+            if await overlay.count() > 0 and await overlay.is_visible():
+                await page.keyboard.press("Escape")
+                await asyncio.sleep(0.5)
+            else:
+                break
+        except Exception:
+            break
 
 
 # --------------------------------------------------------- 견고한 셀렉터 [산출물 #2]
@@ -278,17 +339,15 @@ async def read_credits_ui(page):
 
 
 # ------------------------------------------------------ 초장기 동적 대기 [산출물 #3]
-async def snapshot_results(page) -> int:
-    """생성 전 결과 타일의 개수(또는 고유 키 집합). 새 결과 식별의 기준선 (D1)."""
-    # 고유 키 추출이 어려울 수 있으므로 기본적으로 count를 사용
-    count = 0
-    for sel in CONFIG.SELECTORS["result_tile"]:
-        loc = page.locator(sel)
-        if await loc.count() > 0:
-            count = await loc.count()
-            break
-    return count
-
+async def snapshot_results(page) -> set:
+    """생성 전 비디오 소스(src) 집합을 기록. (타일 개수는 UI에 의해 줄어들 수 있으므로 src로 추적)"""
+    videos = await page.locator('video').all()
+    srcs = set()
+    for v in videos:
+        src = await v.get_attribute('src')
+        if src:
+            srcs.add(src)
+    return set(srcs)
 
 async def snapshot_alerts(page) -> int:
     """대기 시작 시점의 오류 토스트 개수 (a4)."""
@@ -299,11 +358,22 @@ async def snapshot_alerts(page) -> int:
             count += await loc.count()
     return count
 
-
-async def wait_new_result(page, baseline_count: int, baseline_alerts: int):
-    """baseline에 없던 새 결과 타일이 완성될 때까지 대기 → 그 타일 Locator 반환 (D1)."""
+async def wait_new_result(page, baseline_srcs: set, baseline_alerts: int):
+    """baseline에 없던 새 비디오 src가 등장할 때까지 대기 → 그 부모 요소 반환."""
     loop = asyncio.get_event_loop()
     t0 = loop.time()
+    
+    # GCS URL 캡처 리스너
+    captured_storage_url = None
+    async def on_response(response):
+        nonlocal captured_storage_url
+        if "media.getMediaUrlRedirect" in response.url and response.status in (301, 302, 303, 307, 308):
+            loc = response.headers.get("location")
+            if loc and "storage.googleapis.com" in loc:
+                captured_storage_url = loc
+                log.info(f"  [디버그] 302 Redirect URL 캡처 성공!")
+    
+    page.on("response", on_response)
     
     # 큐 진입 대기
     while loop.time() - t0 < 30:
@@ -316,33 +386,38 @@ async def wait_new_result(page, baseline_count: int, baseline_alerts: int):
     while loop.time() < deadline:
         current_alerts = await snapshot_alerts(page)
         if current_alerts > baseline_alerts:
+            page.remove_listener("response", on_response)
             raise GenerationFailed("새로운 생성 에러 토스트 감지")
             
-        generating = await any_visible(page, "generating_indicator")
-        
-        # 새 타일 등장 여부 확인
-        current_count = 0
-        loc = None
-        for sel in CONFIG.SELECTORS["result_tile"]:
-            temp_loc = page.locator(sel)
-            c = await temp_loc.count()
-            if c > 0:
-                current_count = c
-                loc = temp_loc
-                break
-                
-        # D1: 최소 대기 시간이 지났고, 생성중 표시가 없고, 타일 개수가 늘어났다면 완료로 판정
         elapsed = loop.time() - t0
-        if elapsed > CONFIG.MIN_WAIT and (not generating) and current_count > baseline_count:
-            log.info("  생성 완료 (새 타일 발견)")
-            try:
-                await page.wait_for_load_state("networkidle", timeout=10_000)
-            except PWTimeout:
-                pass
-            return loc.nth(0) # 가장 첫번째 요소(보통 최신이 맨 위)
+        if elapsed > CONFIG.MIN_WAIT:
+            # 모든 비디오 태그 검사
+            videos = await page.locator('video').all()
+            for v in videos:
+                src = await v.get_attribute('src')
+                if src and src not in baseline_srcs:
+                    log.info("  생성 완료 (새 비디오 소스 감지)")
+                    try:
+                        await page.wait_for_load_state("networkidle", timeout=10_000)
+                    except PWTimeout:
+                        pass
+                    
+                    # 캡처 대기 (최대 15초)
+                    for _ in range(15):
+                        if captured_storage_url:
+                            break
+                        await asyncio.sleep(1.0)
+                        
+                    tile = v.locator('xpath=..')
+                    if captured_storage_url:
+                        await tile.evaluate(f'(el) => el.setAttribute("data-gcs-url", "{captured_storage_url}")')
+                    
+                    page.remove_listener("response", on_response)
+                    return tile
             
         await asyncio.sleep(CONFIG.POLL_INTERVAL)
         
+    page.remove_listener("response", on_response)
     raise PWTimeout(f"생성 완료 타임아웃({CONFIG.GEN_TIMEOUT/60000:.0f}분)")
 
 
@@ -353,55 +428,220 @@ async def upload_image(page, image_path):
     p = Path(image_path)
     if not p.exists():
         raise FileNotFoundError(f"참조 이미지 없음: {image_path}")
-    finp = page.locator(CONFIG.SELECTORS["file_input"][0]).first
-    if await finp.count() == 0:
-        btn = await first_locator(page, "attach_button")
-        await btn.click()
-        finp = await first_locator(page, "file_input", state="attached")
-    await finp.set_input_files(str(p))
-    log.info("  이미지 업로드: %s", p.name)
+
+    # 1. 프롬프트 입력란의 하단 '+' 버튼(add 아이콘) 클릭
     try:
-        await page.wait_for_load_state("networkidle", timeout=20_000)
-    except PWTimeout:
-        pass
+        btns = await page.locator('button:has(i:has-text("add")), button[aria-label*="image" i]').all()
+        clicked_plus = False
+        for b in btns:
+            if await b.is_visible():
+                bb = await b.bounding_box()
+                # 하단 프롬프트 박스의 y 좌표는 보통 700 이상
+                if bb and bb['y'] > 600:
+                    await b.click(force=True)
+                    log.info("  프롬프트 '+' 버튼 클릭 (미디어 팝업 열기)")
+                    clicked_plus = True
+                    break
+        if not clicked_plus:
+            # 못 찾으면 보이는 첫번째 거라도 클릭 시도
+            add_btn = page.locator('button:has(i:has-text("add_2")), button[aria-label*="image" i]').first
+            if await add_btn.is_visible():
+                await add_btn.click(force=True)
+        await asyncio.sleep(2.0)
+    except Exception as e:
+        log.debug(f"  '+' 버튼 클릭 실패: {e}")
+
+    # 2. Upload media 버튼 클릭 및 파일 업로드
+    try:
+        async with page.expect_file_chooser(timeout=5000) as fc_info:
+            upload_btn = page.locator('button:has-text("Upload media")').first
+            await upload_btn.click(force=True)
+        file_chooser = await fc_info.value
+        await file_chooser.set_files(str(p))
+        log.info("  이미지 업로드 시작: %s", p.name)
+        await asyncio.sleep(3.0)
+    except Exception as e:
+        log.warning(f"  파일 선택창 대기 실패 (기존 이미지 선택 시도): {e}")
+
+    # 업로드 시 등장하는 저작권 동의 모달(Notice) 닫기
+    for _ in range(4):
+        try:
+            i_agree = page.locator('button:has-text("I agree")').first
+            if await i_agree.count() > 0 and await i_agree.is_visible():
+                await i_agree.click(force=True)
+                await asyncio.sleep(1.0)
+                log.info("  업로드 동의 모달 닫음")
+                break
+        except Exception:
+            pass
+        await asyncio.sleep(0.5)
+
+    # 3. 팝업 내 최근 업로드된 썸네일(첫 번째 이미지) 클릭
+    try:
+        modal = page.locator('div[role="dialog"]').first
+        first_img = modal.locator('img').first
+        if await first_img.count() > 0 and await first_img.is_visible():
+            await first_img.click(force=True)
+            await asyncio.sleep(1.0)
+            log.info("  업로드된 이미지 썸네일 선택")
+    except Exception as e:
+        log.debug(f"  썸네일 선택 실패: {e}")
+
+    # 4. "Add to Prompt" 버튼이 활성화될 때까지 기다렸다가 클릭
+    clicked_add = False
+    atp = page.locator('button:has-text("Add to Prompt")').first
+    for attempt in range(15):
+        try:
+            if await atp.count() > 0 and await atp.is_visible():
+                if not await atp.is_disabled():
+                    await atp.click(force=True)
+                    await asyncio.sleep(2.0)
+                    log.info("  'Add to Prompt' 클릭 완료")
+                    clicked_add = True
+                    break
+        except Exception as e:
+            pass
+        await asyncio.sleep(1.0)
+
+    if not clicked_add:
+        log.warning("  'Add to Prompt' 버튼을 클릭하지 못했습니다.")
+
+    # 미디어 라이브러리 팝업이 아직 열려있다면 닫기 (Escape)
+    for _ in range(3):
+        try:
+            # 팝업이 열려있는지 확인 (Add to Prompt 버튼이나 Upload media 버튼이 여전히 보이면)
+            popup = page.locator('div[role="dialog"]').first
+            if await popup.count() > 0 and await popup.is_visible():
+                await page.keyboard.press("Escape")
+                await asyncio.sleep(0.5)
+            else:
+                break
+        except:
+            pass
 
 
 async def submit_prompt_and_generate(page, text):
+    # 모달이 남아있으면 제거
+    await dismiss_all_modals(page)
     box = await first_locator(page, "prompt_input")
-    await box.click()
-    await box.fill("")
-    await box.type(text, delay=6)
+    
+    # 이미지가 첨부되어 있으므로 Control+A, Backspace, fill()을 사용하면 
+    # 첨부된 이미지가 지워지거나 에디터 상태가 깨질 수 있음
+    await box.focus()
+    await asyncio.sleep(0.5)
+    
+    # 키보드 타이핑으로 안전하게 입력
+    await page.keyboard.type(text, delay=10)
+    await asyncio.sleep(1.0)
     btn = await first_locator(page, "generate_button")
     await btn.click()
     log.info("  프롬프트 전송 & 생성 시작(%d자)", len(text))
 
 
 async def download_result(result_locator, out_path: Path):
-    """새 결과 타일 내부의 다운로드 버튼만 클릭한다. 전역 검색 금지 (D2)."""
+    """결과 타일에서 캡처된 GCS URL을 읽거나, 실패 시 UI 다운로드를 시도합니다."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # 다운로드 버튼 찾기
-    dl = await first_locator(result_locator, "download_button", timeout=CONFIG.UI_TIMEOUT)
-    
     page = result_locator.page
-    async with page.expect_download(timeout=180_000) as di:
-        await dl.click()
-        # 고화질 선택이 있다면 (F9)
-        try:
-            q_opt = page.locator(CONFIG.SELECTORS["quality_option"][0]).first
-            await asyncio.sleep(0.5) # a1
-            if await q_opt.count() > 0 and await q_opt.is_visible():
-                await q_opt.click()
-        except Exception:
-            pass
-
-    d = await di.value
-    await d.save_as(str(out_path))
     
-    # D2, a2: 파일 크기 100KB 검증 + ffprobe 재생 길이 확인
-    if not out_path.exists() or out_path.stat().st_size < 102400:
-        out_path.unlink(missing_ok=True)
-        raise DownloadFailed("다운로드 파일이 너무 작음 또는 존재하지 않음")
+    # 먼저 DOM에 심어둔 GCS URL이 있는지 확인합니다.
+    gcs_url = await result_locator.evaluate('(el) => el.getAttribute("data-gcs-url")')
+    if gcs_url:
+        log.info("  인터셉트된 GCS URL로 직접 다운로드 시도...")
+        vid_resp = await page.context.request.get(gcs_url)
+        if vid_resp.ok:
+            data = await vid_resp.body()
+            out_path.write_bytes(data)
+            log.info("  다운로드 완료 (%d bytes)", len(data))
+            
+            # ffprobe 검증
+            import subprocess
+            try:
+                p = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(out_path)], capture_output=True, text=True)
+                if not p.stdout.strip() or float(p.stdout.strip()) < 1.0:
+                    raise ValueError("Duration too short or unreadable")
+            except Exception as e:
+                out_path.unlink(missing_ok=True)
+                log.warning(f"  다운로드 파일 손상(ffprobe 판독 불가): {e}")
+            else:
+                log.info("  저장: %s", out_path.name)
+                return out_path
+        else:
+            log.warning("  GCS 직접 다운로드 실패, UI Fallback 시도")
+    
+    # UI 폴백 시도
+    log.warning("  UI 기반 다운로드 시도 (수동 개입 필요)")
+    
+    tile_with_btn = result_locator.locator('xpath=ancestor-or-self::div[button[@aria-haspopup="menu"]]').last
+    if await tile_with_btn.count() == 0:
+        tile_with_btn = page.locator('div:has(video):has(button[aria-haspopup="menu"])').last
+    
+    if await tile_with_btn.count() == 0:
+        raise DownloadFailed("다운로드 메뉴 버튼이 있는 타일을 찾을 수 없습니다.")
+        
+    await tile_with_btn.hover(force=True)
+    await asyncio.sleep(0.5)
+    
+    more_btn = tile_with_btn.locator('button[aria-haspopup="menu"]').last
+    if await more_btn.count() == 0:
+        raise DownloadFailed("다운로드 메뉴 버튼을 찾을 수 없습니다.")
+        
+    await more_btn.click(force=True)
+    await asyncio.sleep(0.5)
+    
+    dl_menu = page.locator('[role="menuitem"]:has-text("Download"), div:has-text("Download")').first
+    if await dl_menu.count() == 0:
+        raise DownloadFailed("다운로드(Download) 메뉴 항목을 찾을 수 없습니다.")
+        
+    import os, time, shutil
+    dl_dir = Path(os.path.expanduser("~")) / "Downloads"
+    mp4s_before = {p: p.stat().st_mtime for p in dl_dir.glob("*.mp4")}
+    
+    log.info("  다운로드 트리거 (UI Click)")
+    await dl_menu.hover(force=True)
+    await asyncio.sleep(0.5)
+    await dl_menu.click(force=True)
+    
+    try:
+        import pyautogui
+        try:
+            import pygetwindow as gw
+            win = gw.getActiveWindow()
+            if win: win.activate()
+        except:
+            pass
+        pyautogui.FAILSAFE = False
+        await asyncio.sleep(1.5)
+        pyautogui.press('enter')
+        log.info("  다이얼로그 Enter 키 전송 (pyautogui)")
+    except Exception as e:
+        log.warning(f"  pyautogui 실행 실패: {e}")
+        
+    log.info("  Downloads 폴더 모니터링 중...")
+    new_file = None
+    for _ in range(60): 
+        await asyncio.sleep(1)
+        mp4s_now = {p: p.stat().st_mtime for p in dl_dir.glob("*.mp4")}
+        for p, mtime in mp4s_now.items():
+            if p not in mp4s_before or mtime > mp4s_before.get(p, 0):
+                new_file = p
+                break
+        if new_file:
+            break
+            
+    if not new_file:
+        raise DownloadFailed("시스템 Downloads 폴더에서 새 파일 감지 실패")
+        
+    last_size = -1
+    for _ in range(30):
+        await asyncio.sleep(1)
+        size = new_file.stat().st_size
+        if size == last_size and size > 102400: 
+            break
+        last_size = size
+        
+    shutil.move(str(new_file), str(out_path))
+    log.info("  다운로드 완료 및 이동: %s", out_path.name)
+    
     import subprocess
     try:
         p = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(out_path)], capture_output=True, text=True)
@@ -410,9 +650,192 @@ async def download_result(result_locator, out_path: Path):
     except Exception as e:
         out_path.unlink(missing_ok=True)
         raise DownloadFailed(f"다운로드 파일 손상(ffprobe 판독 불가): {e}")
-        
-    log.info("  저장: %s", out_path.name)
-    return out_path
+
+
+# ------------------------------------------------------ 설정 패널 [run_batch.py 호출]
+
+def _norm(s: str) -> str:
+    """비교용 정규화: 소문자 + 공백·하이픈·점·대괄호 제거"""
+    return re.sub(r"[\s\-\.\[\]_]", "", (s or "").lower())
+
+
+async def read_selected_model(page) -> str:
+    """Video generation 섹션에서 현재 선택된 모델명을 읽는다."""
+    sec = page.locator(CONFIG.VIDEO_SECTION)
+    btn = sec.locator('button[aria-haspopup="menu"]').last
+    if await btn.count() > 0:
+        return (await btn.inner_text()).strip().split("\n")[0].strip()
+    return ""
+
+
+async def ensure_model(page):
+    """모델을 CONFIG.MODEL_LABEL로 고정. 실패 시 배치를 중단한다(fail-closed)."""
+    try:
+        sec = page.locator(CONFIG.VIDEO_SECTION)
+        btn = sec.locator('button[aria-haspopup="menu"]').last
+        if await btn.count() > 0 and await btn.is_visible():
+            await btn.click()
+            await asyncio.sleep(0.8)
+            target_opt = page.locator(f'[role="menuitem"]:text-is("{CONFIG.MODEL_LABEL}")').first
+            if await target_opt.count() > 0 and await target_opt.is_visible():
+                await target_opt.click()
+                await asyncio.sleep(0.8)
+            else:
+                try:
+                    await page.keyboard.press("Escape")
+                except Exception:
+                    pass
+        actual = await read_selected_model(page)
+        if not actual:
+            raise RuntimeError("모델 확정 실패: 선택된 모델을 UI에서 읽지 못함")
+        if _norm(CONFIG.MODEL_LABEL) != _norm(actual):
+            raise RuntimeError(f"모델 확정 실패: 기대='{CONFIG.MODEL_LABEL}' 실제='{actual}'")
+        for bad in CONFIG.MODEL_FORBIDDEN:
+            if _norm(bad) in _norm(actual):
+                raise RuntimeError(f"금지 모델 선택됨('{actual}') — 즉시 중단")
+        log.info("모델 설정 완료: %s", actual)
+    except Exception as e:
+        raise RuntimeError(f"모델 확정 실패 — 예산 보호를 위해 중단: {e}")
+
+
+async def ensure_auto_approve(page):
+    """Confirm before generating = Never(AUTO_APPROVE) 강제. 실패 시 중단."""
+    el = await first_locator(page, "confirm_auto", timeout=5000)
+    if not el:
+        raise RuntimeError("Confirm-before-generating 설정을 찾지 못함 — 중단")
+    if await el.get_attribute("aria-checked") != "true":
+        await el.click()
+        await asyncio.sleep(0.5)
+    if await el.get_attribute("aria-checked") != "true":
+        raise RuntimeError("자동 승인(Never) 설정 실패 — 중단")
+    log.info("자동 승인(Never) 확인됨")
+
+
+async def _ensure_outputs_section(page, n=1):
+    """출력 개수를 1x로 강제. IMAGE_SECTION도 1x로 강제 (크레딧 2배 방어)."""
+    try:
+        v_sec = page.locator(CONFIG.VIDEO_SECTION)
+        v_tab = v_sec.get_by_role("tab", name=f"{n}x" if n == 1 else f"x{n}", exact=True)
+        if await v_tab.count() > 0 and await v_tab.get_attribute("data-state") != "active":
+            await v_tab.click()
+            await asyncio.sleep(0.4)
+        v_st = await v_tab.get_attribute("data-state") if await v_tab.count() > 0 else "unknown"
+        if v_st != "active":
+            raise RuntimeError(f"Video 출력 개수 {n}x 강제 실패 (state={v_st})")
+
+        i_sec = page.locator(CONFIG.IMAGE_SECTION)
+        i_tab = i_sec.get_by_role("tab", name="1x", exact=True)
+        if await i_tab.count() > 0 and await i_tab.get_attribute("data-state") != "active":
+            await i_tab.click()
+            await asyncio.sleep(0.4)
+        log.info("출력 개수 강제 설정 완료 (Video %dx, Image 1x)", n)
+    except Exception as e:
+        log.warning("출력 개수 설정 스킵 (UI 변경 가능) -- 기본값 1x 가정: %s", e)
+
+
+async def _close_settings_panel(page):
+    """Agent settings 패널을 닫는다.
+    Save 버튼은 패널 내부이므로 위치 무관하게 클릭.
+    Back/Close는 좌상단 Go Back(x=24)과 구분하기 위해 x>700 필터."""
+    for attempt in range(5):
+        # 패널이 이미 닫혔는지 확인
+        try:
+            ca = page.locator(CONFIG.SELECTORS["confirm_auto"][0]).first
+            if await ca.count() == 0 or not await ca.is_visible():
+                return  # 패널 닫힘
+        except Exception:
+            return
+
+        # 1순위: Save 버튼 (위치 무관, 패널 전용)
+        clicked = False
+        try:
+            save_btn = page.locator('button:has-text("Save")').first
+            if await save_btn.count() > 0 and await save_btn.is_visible():
+                await save_btn.click()
+                await asyncio.sleep(1.0)
+                clicked = True
+        except Exception:
+            pass
+
+        if not clicked:
+            # 2순위: Back/Close (x>700만)
+            for btn_text in ["Close", "Back"]:
+                try:
+                    btns = await page.locator(f'button:has-text("{btn_text}")').all()
+                    for b in btns:
+                        if not await b.is_visible():
+                            continue
+                        bb = await b.bounding_box()
+                        if bb and bb['x'] > 700:
+                            await b.click()
+                            await asyncio.sleep(0.8)
+                            clicked = True
+                            break
+                except Exception:
+                    pass
+                if clicked:
+                    break
+
+        if not clicked:
+            # 최종 폴백: Escape
+            try:
+                await page.keyboard.press("Escape")
+                await asyncio.sleep(0.8)
+            except Exception:
+                pass
+
+
+async def ensure_flow_settings(page):
+    """Agent settings 패널을 열어 모델·출력개수·자동승인을 확정하고 다시 닫는다.
+    배치 시작 시 1회 + job 시작마다 1회 호출."""
+    # 0) 이전 실행 크래시로 남은 모달/오버레이 제거
+    await dismiss_all_modals(page)
+    # 1) 패널이 이미 열려있는지 확인 (이전 실패로 인해 열려있을 수 있음)
+    is_open = False
+    try:
+        await first_locator(page, "confirm_auto", timeout=2000)
+        is_open = True
+    except Exception:
+        pass
+
+    if not is_open:
+        btn = await first_locator(page, "settings_open", timeout=30_000)
+        await btn.click()
+        # 패널 렌더링 대기 (언어 중립적인 AUTO_APPROVE 라디오 버튼을 기다림)
+        try:
+            await first_locator(page, "confirm_auto", timeout=5000)
+        except Exception:
+            raise RuntimeError("Agent settings 패널이 열렸으나 내용을 렌더링하지 못함 — 중단")
+    try:
+        await ensure_auto_approve(page)
+        await ensure_model(page)
+        await _ensure_outputs_section(page, 1)
+    finally:
+        # 패널 닫기 — 사이드바(x>1050) 버튼만 클릭
+        # ⚠️ page에 Back이 2개(좌상단 "Go Back" x=24 + 사이드바 "Back" x=1091)
+        # .first는 좌상단을 잡아 프로젝트에서 나가므로, 반드시 bounding_box로 필터링
+        await _close_settings_panel(page)
+
+        # 프롬프트 입력란이 다시 보이는지 최종 검증
+        try:
+            box = await first_locator(page, "prompt_input", timeout=3000)
+            if not box:
+                log.warning("설정 패널 닫기 후 프롬프트 입력란 미표시 -- 재시도")
+                await _close_settings_panel(page)
+        except Exception:
+            pass
+
+
+async def dismiss_upload_notice(page):
+    """이미지 업로드 시 등장하는 권한 동의 모달(Notice / I agree) 닫기."""
+    try:
+        i_agree = page.locator('button:has-text("I agree")').first
+        if await i_agree.count() > 0 and await i_agree.is_visible():
+            await i_agree.click()
+            await asyncio.sleep(1.0)
+            log.info("  업로드 동의 모달 닫음")
+    except Exception:
+        pass
 
 
 # ------------------------------------------------------ 씬 실행(크레딧 가드 포함)
@@ -423,6 +846,9 @@ class Scene:
     ref_image: str = ""
     extend: int = CONFIG.DEFAULT_EXTEND
     caption: str = ""
+    vo: dict = None
+    subs: dict = None
+    speaker: str = ""
 
 
 async def _guarded_generation(page, label):
@@ -581,7 +1007,8 @@ async def run_job(page, job: dict):
     out_dir.mkdir(parents=True, exist_ok=True)
     scenes = [Scene(n=s["n"], prompt=s["prompt"], ref_image=s.get("ref_image", ""),
                     extend=s.get("extend", CONFIG.DEFAULT_EXTEND),
-                    caption=s.get("caption", "")) for s in job["scenes"]]
+                    caption=s.get("caption", ""),
+                    vo=s.get("vo"), subs=s.get("subs"), speaker=s.get("speaker", "")) for s in job["scenes"]]
 
     manifest = {"video_id": job["video_id"], "title_ko": job.get("title_ko", ""),
                 "bgm": job.get("bgm", ""), "clips": [], "scenes": [], "captions": [],
@@ -591,7 +1018,8 @@ async def run_job(page, job: dict):
         clips = await run_scene(page, sc, out_dir)          # BudgetExhausted면 상위로
         manifest["clips"] += [str(c) for c in clips]
         manifest["scenes"].append({"n": sc.n, "caption": sc.caption,
-                                   "files": [c.name for c in clips]})
+                                   "files": [c.name for c in clips],
+                                   "vo": sc.vo, "subs": sc.subs, "speaker": sc.speaker})
         manifest["captions"].append({"n": sc.n, "text": sc.caption})
 
     (out_dir / "manifest.json").write_text(

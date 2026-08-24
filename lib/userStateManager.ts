@@ -1,7 +1,7 @@
 /**
- * User State Manager — localStorage-based persistence for K-Destiny.
- * Manages profile (saju info), selected master, and last analysis result.
- * Can be migrated to Supabase DB later.
+ * User State Manager — localStorage-based persistence for 콩닥(kongdak).
+ * Phase A 현재 남은 소비자는 로그아웃 시의 clearAllUserData() 뿐이다.
+ * (프로필·마스터·카르마 저장소는 해당 화면이 제거되면서 함께 쓰이지 않게 됐다.)
  */
 
 // ─── Types ───
@@ -29,13 +29,13 @@ export interface SavedResult {
 
 // ─── Keys ───
 const KEYS = {
-  PROFILE: "kdestiny_profile",
-  MASTER: "kdestiny_master",
-  LAST_RESULT: "kdestiny_last_result",
-  PREMIUM: "kdestiny_premium",
-  PREMIUM_EXPIRY: "kdestiny_premium_expiry",
-  KARMA_CURRENT: "kdestiny_karma_current",
-  KARMA_MAX: "kdestiny_karma_max",
+  PROFILE: "kongdak_profile",
+  MASTER: "kongdak_master",
+  LAST_RESULT: "kongdak_last_result",
+  PREMIUM: "kongdak_premium",
+  PREMIUM_EXPIRY: "kongdak_premium_expiry",
+  KARMA_CURRENT: "kongdak_karma_current",
+  KARMA_MAX: "kongdak_karma_max",
 } as const;
 
 // ─── Helpers ───
@@ -209,7 +209,10 @@ export function clearAllUserData(): void {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("kdestiny_") ||
+        (key.startsWith("kongdak_") ||
+          // 아래 두 접두사는 개편 이전 시절의 데이터다. 기존 브라우저에
+          // 남아있을 수 있어 로그아웃 시 함께 지운다.
+          key.startsWith("kdestiny_") ||
           key.startsWith("destiny_result_") ||
           key === "mock_supabase_user" ||
           key === "app_version")

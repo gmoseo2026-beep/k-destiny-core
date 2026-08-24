@@ -196,10 +196,14 @@ function memoryCheck(
  */
 export function getClientIp(req: Request): string {
   const headers = new Headers(req.headers);
+  // 순서가 곧 신뢰도다. x-forwarded-for 는 클라이언트가 임의로 보낼 수 있고
+  // Cloudflare 는 기존 값에 이어붙이므로 [0] 은 공격자가 고른 값이 된다
+  // (실측: 실 IP 가 429 인 상태에서 XFF 만 바꿔 200 을 무제한 획득).
+  // 따라서 프록시가 직접 세팅하는 헤더를 먼저 신뢰하고, 없을 때만 XFF 로 내려간다.
   return (
+    headers.get("cf-connecting-ip")?.trim() ||
+    headers.get("x-real-ip")?.trim() ||
     headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headers.get("x-real-ip") ||
-    headers.get("cf-connecting-ip") ||
     "unknown"
   );
 }

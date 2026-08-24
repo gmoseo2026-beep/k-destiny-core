@@ -74,7 +74,7 @@ function exportToCSV(users: UserData[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `k-destiny-users-${new Date().toISOString().split('T')[0]}.csv`;
+  link.download = `kongdak-users-${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -128,7 +128,7 @@ export default function AdminDashboard({ users: rawUsers, stats }: { users: any[
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-white tracking-tight">Global Command Center</h1>
-          <p className="text-gray-400 font-sans text-sm mt-1">Monitor system metrics and manage user access across the K-Destiny platform.</p>
+          <p className="text-gray-400 font-sans text-sm mt-1">Monitor system metrics and manage user access across the Kongdak platform.</p>
         </div>
         <button
           onClick={() => exportToCSV(filteredUsers)}

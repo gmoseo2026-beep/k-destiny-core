@@ -17,11 +17,9 @@ export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 // PAID-TIER ordering. On the paid tier 2.5-flash is reliable, so we can lead with
 // quality where it matters. The budget "flash-lite" model is dropped everywhere —
 // on a paid plan there's no reason to degrade a customer's reading to it.
-// Free core streams token-by-token, so it stays speed-first (2.0-flash), with
-// 2.5-flash as the quality fallback.
-export const FREE_MODELS = ["gemini-2.0-flash", "gemini-2.5-flash"];
-// Premium sections run post-payment → quality-first: 2.5-flash, then 2.0-flash.
-export const PREMIUM_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"];
+export const FREE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
+// Premium sections run post-payment → quality-first: 2.5-flash, then gemini-flash-latest.
+export const PREMIUM_MODELS = ["gemini-2.5-flash", "gemini-flash-latest"];
 
 export const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> = {
   ko: { name: "Korean (한국어)", toneGuide: "자연스러운 한국어 존댓말로, 친한 사람에게 조용히 이야기하듯 쉽고 또렷하게 쓰세요. 신비롭되 과하지 않게 — 시적 미사여구보다 구체적인 장면과 진심이 느껴지도록." },
@@ -50,7 +48,7 @@ FORMAT: Short paragraphs of 2-4 sentences, separated by a blank line. Warm, conf
 export const JSON_MARKER = "§§§JSON§§§";
 
 /** Best-effort JSON recovery from a possibly-fenced / noisy model response. */
-export function repairJSON(raw: string): any {
+export function repairJSON(raw: string): Record<string, unknown> | null {
   const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
   try { return JSON.parse(cleaned); } catch { /* fall through */ }
   const match = cleaned.match(/\{[\s\S]*\}/);
@@ -88,4 +86,68 @@ CLIENT's DETERMINISTIC SAJU (DO NOT CALCULATE, STRICTLY USE THIS):
 
 PROPRIETARY IP CONTEXT:
 ${dictionaryContext || `(Use standard Eastern Saju wisdom for ${dayMaster} as Day Master)`}`;
+}
+
+/** 천간 한자 -> 평문 한국어 자연/오행 서술 매핑 (프롬프트 내 한자 노출 차단) */
+export const DAY_MASTER_KOREAN_DESC: Record<string, string> = {
+  '甲': '곧고 푸른 나무 기운',
+  '乙': '유연하고 다정한 풀꽃 나무 기운',
+  '丙': '밝고 열정적인 큰 불 기운',
+  '丁': '따뜻하고 섬세한 등불 기운',
+  '戊': '든든하고 넓은 큰 산 흙 기운',
+  '己': '포근하고 비옥한 들판 흙 기운',
+  '庚': '단단하고 강직한 바위 쇠 기운',
+  '辛': '반짝이고 섬세한 보석 쇠 기운',
+  '壬': '깊고 자유로운 바다 물 기운',
+  '癸': '맑고 촉촉한 단비 물 기운',
+};
+
+const STRICT_NO_HANJA_RULE = `⚠️ 절대 규칙: 한자(漢字 기호 일체)와 사주 전문용어(오행, 일간, 천간, 지지, 상생, 상극, 원국 등)를 출력에 절대 쓰지 마세요. 오직 친근하고 다정한 순수 한국어 일상 언어로만 서술하세요.`;
+
+/** Shared context block for Compatibility (Kongdak Phase A) */
+export function compatContextBlock(params: {
+  personA: { name?: string; gender: string; dayMaster: string; elementsScore: Record<string, number> };
+  personB: { name?: string; gender: string; dayMaster: string; elementsScore: Record<string, number> };
+  relation: string;
+  compatResult: { score: number; keywords: string[]; breakdown: Record<string, number> };
+}): string {
+  const { personA, personB, relation, compatResult } = params;
+  const energyA = DAY_MASTER_KOREAN_DESC[personA.dayMaster] || '자연의 기운';
+  const energyB = DAY_MASTER_KOREAN_DESC[personB.dayMaster] || '자연의 기운';
+
+  return `RELATIONSHIP TYPE: ${relation}
+PERSON A (User): Name=${personA.name || "User"}, Gender=${personA.gender}, Natural Energy=${energyA}, Elements Distribution=${JSON.stringify(personA.elementsScore)}
+PERSON B (Partner): Name=${personB.name || "Partner"}, Gender=${personB.gender}, Natural Energy=${energyB}, Elements Distribution=${JSON.stringify(personB.elementsScore)}
+
+DETERMINISTIC COMPATIBILITY RESULT (DO NOT CALCULATE, USE THIS AS FACT):
+- Overall Score: ${compatResult.score} / 100
+- Core Keywords: ${compatResult.keywords.join(", ")}
+- Breakdown: ${JSON.stringify(compatResult.breakdown)}
+
+YOUR TASK:
+Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. Use the Core Keywords as your guiding theme.`;
+}
+
+export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string): string {
+  if (isPremium) {
+    return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
+    
+Write a deeply insightful, premium compatibility report. Break it down into the following sections with clear headings:
+1. "우리 관계의 핵심 에너지" (Core dynamic based on the keywords and score)
+2. "서로에게 끌리는 진짜 이유" (Elemental complement or natural synergy)
+3. "조심해야 할 함정과 갈등 포인트" (Differences or lack of elements)
+4. "오래가기 위한 현실적인 조언" (Actionable relationship advice)
+
+Make it sound like a very expensive, deeply personal reading by a wise mentor. No generic filler. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.`;
+  } else {
+    return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
+    
+Write a captivating, highly shareable "free preview" compatibility reading.
+Must be exactly 3 short paragraphs.
+- Paragraph 1: The Hook. Start with a bold statement about their dynamic based on the Core Keywords.
+- Paragraph 2: The Why. Briefly explain how their energies mix in plain words (e.g., warmth meets steady ground).
+- Paragraph 3: The Teaser. End on a slightly suspenseful or deeply resonant note that makes them curious about their deeper dynamic.
+
+Do NOT give away the full relationship advice. Keep it punchy and viral. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.`;
+  }
 }

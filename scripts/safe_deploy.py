@@ -44,6 +44,33 @@ def main():
     run_cmd(client, "cd /root/k-destiny-core && git clean -fd 2>&1")
     run_cmd(client, "cd /root/k-destiny-core && git log -1 --oneline")
 
+    # 1-1. Sync .env — Ensure runtime secrets and build-time NEXT_PUBLIC_* variables
+    # are in place on the server before `npm run build` and `prisma db push`.
+    # (Values are NEVER logged or printed; only key names are verified).
+    import os
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    local_env = os.path.join(project_root, ".env")
+    if not os.path.exists(local_env):
+        local_env = os.path.join(project_root, ".env.local")
+
+    if os.path.exists(local_env):
+        print(f"\n[ENV SYNC] Uploading local {os.path.basename(local_env)} to /root/k-destiny-core/.env via SFTP...")
+        sftp = client.open_sftp()
+        try:
+            # Backup existing .env if present
+            try:
+                sftp.stat("/root/k-destiny-core/.env")
+                client.exec_command("cp /root/k-destiny-core/.env /root/k-destiny-core/.env.bak")
+            except IOError:
+                pass
+            sftp.put(local_env, "/root/k-destiny-core/.env")
+            client.exec_command("chmod 600 /root/k-destiny-core/.env")
+            print("[ENV SYNC] Successfully synced .env to server (chmod 600 set). ✅")
+        finally:
+            sftp.close()
+    else:
+        print("\n[ENV SYNC] Notice: No local .env/.env.local found. Using existing server .env.")
+
     # 2. Dependencies — MUST run so new packages (e.g. `openai`, used by the
     # failover path in lib/aiFallback.ts) are present. A missing dep makes the
     # build fail with "Module not found". `npm ci` if the lockfile matches, else

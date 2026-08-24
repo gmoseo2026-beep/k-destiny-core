@@ -17,46 +17,80 @@ import sys
 import traceback
 from pathlib import Path
 
+import ctypes
+
 from playwright.async_api import async_playwright
+
+def prevent_sleep():
+    try:
+        # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+    except Exception:
+        pass
+
+def allow_sleep():
+    try:
+        # ES_CONTINUOUS
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+    except Exception:
+        pass
 import flow_rpa as rpa
 import credits
 import assemble
 
 
 async def produce(job_paths):
+    if not rpa.CONFIG.PHASE0_VERIFIED:
+        raise RuntimeError(
+            "Phase 0.5 미검증 상태입니다. 지금 실행하면 (1) 다운로드가 실패하거나 "
+            "(2) 엉뚱한 타일을 받거나 (3) 잘못된 모델이 선택될 수 있습니다.\n"
+            "automation/FLOW_UI_FACTS.md 의 F4·F6·F9 를 채우고 반영한 뒤 "
+            "CONFIG.PHASE0_VERIFIED = True 로 바꾸세요."
+        )
+        
+    prevent_sleep()
     generated_manifests = []
-    rpa.log.info("배치 시작 | %s", credits.status_line())
+    rpa.log.info("배치 시작 (절전모드 방지 적용) | %s", credits.status_line())
     
     # ---------------------------------------------------- 1. 생성 단계 (D12 분리)
     async with async_playwright() as pw:
-        browser, context, page = await rpa.connect_browser(pw)
-        try:
-            await rpa.ensure_model_lower_priority(page)
-            await rpa.ensure_outputs_per_prompt(page, n=1)
+        browser = None
+        for jp in job_paths:
+            if not credits.can_spend():
+                rpa.log.warning("크레딧 상한 도달 → 생성 중단(정상). %s", credits.status_line())
+                break
             
-            for jp in job_paths:
-                if not credits.can_spend():
-                    rpa.log.warning("크레딧 상한 도달 → 생성 중단(정상). %s", credits.status_line())
-                    break
-                job = json.loads(Path(jp).read_text(encoding="utf-8"))
-                try:
-                    manifest = await rpa.run_job(page, job)
-                    generated_manifests.append((job, str(manifest)))
-                except rpa.BudgetExhausted as b:
-                    rpa.log.warning("크레딧 상한 → 생성 정상 종료. %s", b)
-                    break
-                except Exception as e:
-                    rpa.log.error("생성 작업 실패 %s: %s", job.get("video_id"), e)
-        finally:
-            # D13: 종료 시 창은 닫지 않고 연결만 놓아줌. (원격 크롬이므로)
+            job = json.loads(Path(jp).read_text(encoding="utf-8"))
+            
             try:
-                # 연결이 여전히 살아있는지 확인
-                is_connected = browser.is_connected()
-                if not is_connected:
+                # 매 job 마다 CDP 연결 상태 확인 및 재연결 (크롬 뻗힘 복구력)
+                if browser is None or not browser.is_connected():
+                    rpa.log.info("CDP 연결 시도...")
+                    browser, context, page = await rpa.connect_browser(pw)
+                    await rpa.ensure_flow_settings(page)
+                    
+                manifest = await rpa.run_job(page, job)
+                generated_manifests.append((job, str(manifest)))
+            except rpa.BudgetExhausted as b:
+                rpa.log.warning("크레딧 상한 → 생성 정상 종료. %s", b)
+                break
+            except Exception as e:
+                rpa.log.error("생성 작업 실패 %s: %s", job.get("video_id"), e)
+                # 에러 발생 시 브라우저 연결을 초기화하여 다음 루프에서 재연결 유도
+                try:
+                    if browser: await browser.close()
+                except Exception:
+                    pass
+                browser = None
+                
+        # D13: 종료 시 창은 닫지 않고 연결만 놓아줌. (원격 크롬이므로)
+        if browser:
+            try:
+                if not browser.is_connected():
                     rpa.log.warning("CDP 연결이 이미 끊어졌습니다 (사용자가 창을 닫았을 수 있음).")
+                await browser.close()
             except Exception:
                 pass
-            await browser.close()
             
     rpa.log.info("=== 모든 생성 단계 완료, 조립(Assemble) 시작 ===")
 
@@ -74,6 +108,7 @@ async def produce(job_paths):
             traceback.print_exc()
 
     rpa.log.info("배치 최종 종료 | %s", credits.status_line())
+    allow_sleep()
     return results
 
 
@@ -91,11 +126,12 @@ def write_upload_manifest(results, out_csv="upload_manifest.csv"):
     with open(out_csv, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader(); w.writerows(rows)
-    print(f"\n📋 업로드 예약표: {out_csv} ({len(rows)}편)")
+    print(f"\n[Upload Manifest]: {out_csv} ({len(rows)}건)")
 
 
 if __name__ == "__main__":
-    jobs = sys.argv[1:] or [str(p) for p in sorted(Path("jobs").glob("*.json"))]
+    jobs_dir = Path(__file__).resolve().parent / "jobs"
+    jobs = sys.argv[1:] or [str(p) for p in sorted(jobs_dir.glob("*.json"))]
     if not jobs:
         print("jobs/ 폴더에 .json 을 넣거나 인자로 경로를 주세요.")
         sys.exit(1)

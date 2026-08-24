@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-credits.py — 월별 크레딧 예산 가드 (월 4000 상한 절대 초과 방지)
+credits.py - 월별 크레딧 예산 가드 (월 4000 상한 절대 초과 방지)
 =====================================================================
 Google Flow의 Veo 생성은 크레딧을 소모한다. 이 모듈은 '이번 달 쓴 크레딧'을
 로컬 원장(credit_ledger.json)에 누적하고, 다음 생성이 상한을 넘길 것 같으면
@@ -39,7 +39,7 @@ def _load() -> dict:
     if not LEDGER.exists():
         # D3: 원장 무결성 경고 (월 중순 이후인데 원장이 없으면 의심)
         if datetime.datetime.now().day > 15:
-            log.warning("원장이 없습니다 — 경로가 바뀌었을 수 있습니다. 상한 가드가 무력화될 위험.")
+            log.warning("원장이 없습니다 - 경로가 바뀌었을 수 있습니다. 상한 가드가 무력화될 위험.")
         return {}
     try:
         return json.loads(LEDGER.read_text(encoding="utf-8"))

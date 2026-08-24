@@ -72,7 +72,7 @@ export default function MaintenanceOverlay() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(6, 5, 14, 0.97)",
+        background: "rgba(255, 246, 241, 0.97)",
         backdropFilter: "blur(20px)",
         cursor: "pointer",
       }}
@@ -87,7 +87,7 @@ export default function MaintenanceOverlay() {
           width: "50vw",
           height: "50vw",
           borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(212,175,55,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse at center, rgba(255,138,161,0.18) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -98,7 +98,7 @@ export default function MaintenanceOverlay() {
           width: 80,
           height: 80,
           borderRadius: "50%",
-          border: "2px solid rgba(212,175,55,0.3)",
+          border: "2px solid rgba(255,92,119,0.35)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -112,14 +112,13 @@ export default function MaintenanceOverlay() {
       {/* Title */}
       <h1
         style={{
-          fontFamily: "'Cinzel', serif",
+          fontFamily: "var(--font-ko), sans-serif",
           fontSize: "clamp(1.2rem, 4vw, 2rem)",
-          fontWeight: 700,
-          color: "#d4af37",
+          fontWeight: 800,
+          color: "#6A2C70",
           textAlign: "center",
           marginBottom: 16,
-          letterSpacing: "0.05em",
-          textShadow: "0 2px 10px rgba(212,175,55,0.3)",
+          letterSpacing: "-0.01em",
         }}
       >
         {msg.title}
@@ -130,7 +129,7 @@ export default function MaintenanceOverlay() {
         style={{
           fontFamily: "'Inter', sans-serif",
           fontSize: "clamp(0.85rem, 2.5vw, 1.1rem)",
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(43,36,48,0.55)",
           textAlign: "center",
           lineHeight: 1.8,
           maxWidth: 400,
@@ -145,21 +144,22 @@ export default function MaintenanceOverlay() {
         style={{
           width: 60,
           height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(212,175,55,0.4), transparent)",
+          background: "linear-gradient(90deg, transparent, rgba(255,92,119,0.4), transparent)",
           margin: "32px 0",
         }}
       />
 
-      {/* K-Destiny branding */}
+      {/* 콩닥 branding */}
       <p
         style={{
-          fontFamily: "'Cinzel', serif",
+          fontFamily: "var(--font-ko), sans-serif",
           fontSize: 14,
-          color: "rgba(212,175,55,0.3)",
+          fontWeight: 800,
+          color: "rgba(255,92,119,0.55)",
           letterSpacing: "0.2em",
         }}
       >
-        K-DESTINY
+        콩닥 · KONGDAK
       </p>
 
       {/* Pulse animation */}

@@ -1,74 +1,46 @@
 "use client";
 
-import { useTransition } from "react";
-import { Link, useRouter, usePathname } from "@/i18n/routing";
-import { useLocale, useTranslations } from "next-intl";
-import { Globe, LayoutDashboard, Shield } from "lucide-react";
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import { LayoutDashboard, Shield } from "lucide-react";
 import LoginButton from "./LoginButton";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
+import KongdakMascot from "./KongdakMascot";
 
-const languages = [
-  { code: 'en', name: 'EN' },
-  { code: 'ko', name: '한국어' },
-  { code: 'es', name: 'ES' },
-  { code: 'de', name: 'DE' },
-  { code: 'fr', name: 'FR' },
-  { code: 'ja', name: '日本語' },
-];
-
+// 로케일 선택 UI 는 두지 않는다. 콩닥 Phase A 는 국내 전용이고
+// en/ja/es/de/fr 은 동면(비노출) 상태라 전환 진입점을 노출하지 않는다.
 export default function Navbar() {
   const t = useTranslations("Dashboard");
-  const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
   const { data: session } = useSession();
 
-  const handleLanguageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextLocale = event.target.value;
-    startTransition(() => {
-      router.replace(pathname, { locale: nextLocale });
-    });
-  };
-
-  // Hide on dashboard (dashboard has its own layout)
-  const isDashboard = pathname.includes('/dashboard');
-  if (isDashboard) return null;
-
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-black/95 backdrop-blur-md border-b border-white/5">
-      <div className="flex items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 max-w-7xl mx-auto">
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-[#FFF6F1]/80 backdrop-blur-md border-b border-[#2B2430]/8">
+      <div className="flex items-center justify-between p-3 sm:p-4 max-w-7xl mx-auto">
         
-        {/* Language Selector — always visible, compact */}
-        {!isDashboard && (
-          <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md border border-white/10 pl-2.5 pr-1 py-1.5 rounded-full shadow-sm">
-            <Globe className="w-3.5 h-3.5 text-gold/70 shrink-0" />
-            <select
-              defaultValue={locale}
-              disabled={isPending}
-              onChange={handleLanguageChange}
-              className="bg-transparent text-xs font-sans text-gray-300 outline-none cursor-pointer appearance-none pr-4"
-              style={{ backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23D4AF37%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right .1em top 55%', backgroundSize: '.55em auto' }}
-            >
-              {languages.map((lang) => (
-                <option key={lang.code} value={lang.code} className="bg-background text-foreground">
-                  {lang.name}
-                </option>
-              ))}
-            </select>
+        {/* Brand Logo */}
+        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 transition-transform hover:scale-105 active:scale-95">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 relative">
+            <KongdakMascot size={36} animate="none" />
           </div>
-        )}
+          <div className="flex flex-col justify-center">
+            <span className="font-serif font-bold text-lg sm:text-xl text-ink leading-none">콩닥</span>
+            <span className="font-sans font-bold text-[9px] sm:text-[10px] text-coral tracking-widest uppercase mt-0.5">kongdak</span>
+          </div>
+        </Link>
+
+        {/* Right side actions */}
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
 
         {/* Dashboard Link if logged in */}
         {session && (
           <Link href="/dashboard">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/50 border border-gold/30 hover:border-gold/60 hover:bg-gold/10 backdrop-blur-md shadow-sm group active:scale-95 active:bg-opacity-80 transition-all duration-150 ease-in-out transform-gpu"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-[#2B2430]/8 hover:border-coral/40 hover:bg-coral/[0.03] shadow-sm group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-gold/80 group-hover:text-gold" />
-              <span className="font-sans text-xs font-medium text-gray-200 group-hover:text-white tracking-wide hidden sm:block">
+              <LayoutDashboard className="w-3.5 h-3.5 text-coral/80 group-hover:text-coral" />
+              <span className="font-sans text-xs font-medium text-ink/70 group-hover:text-ink tracking-wide hidden sm:block">
                 {t("btn_dashboard")}
               </span>
             </motion.button>
@@ -80,10 +52,10 @@ export default function Navbar() {
           <Link href="/admin">
             <motion.button
               whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-red-950/60 border border-red-500/40 hover:border-red-400/70 hover:bg-red-900/40 backdrop-blur-md shadow-[0_0_12px_rgba(239,68,68,0.15)] group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-red-50 border border-red-200 hover:border-red-300 hover:bg-red-100 shadow-sm group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
             >
-              <Shield className="w-3.5 h-3.5 text-red-400/90 group-hover:text-red-300" />
-              <span className="font-sans text-xs font-medium text-red-300/90 group-hover:text-red-200 tracking-wide">
+              <Shield className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
+              <span className="font-sans text-xs font-medium text-red-600 group-hover:text-red-700 tracking-wide">
                 Admin
               </span>
             </motion.button>
@@ -92,6 +64,7 @@ export default function Navbar() {
 
         {/* NextAuth Login Button */}
         <LoginButton />
+        </div>
       </div>
     </div>
   );

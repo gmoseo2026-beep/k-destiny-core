@@ -11,12 +11,8 @@ import { BASE_URL, LOCALES } from '@/lib/seo';
  */
 const PRIVATE_PATHS = [
   'dashboard',
-  'result',
-  'blueprint',
-  'chat',
-  'daily',
-  'onboarding',
   'admin',
+  'me',
 ];
 
 function disallowList(extra: string[] = []): string[] {
@@ -32,8 +28,8 @@ function disallowList(extra: string[] = []): string[] {
 
 export default function robots(): MetadataRoute.Robots {
   const full = disallowList();
-  // AI crawlers: same private areas, minus the ones we are happy for them to
-  // summarise (result/blueprint/daily are personal readings, so still blocked).
+  // AI crawlers: same private areas. Compatibility results (/compat/<id>) stay
+  // crawlable so Kakao/Twitter/Slack unfurlers can read the share card's OG tags.
   const forAI = disallowList();
 
   return {

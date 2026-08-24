@@ -36,6 +36,42 @@ export default function LoginPage() {
     }
   };
 
+  const handleKakaoLogin = async () => {
+    if (isInAppBrowser()) {
+      setMessage({ type: "error", text: locale === 'ko' 
+        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
+        : "Social login is not available in this in-app browser. Please use the email login below."
+      });
+      return;
+    }
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      await signIn("kakao", { callbackUrl: `/${locale}/dashboard` });
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || t("error_general") });
+      setIsLoading(false);
+    }
+  };
+
+  const handleNaverLogin = async () => {
+    if (isInAppBrowser()) {
+      setMessage({ type: "error", text: locale === 'ko' 
+        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
+        : "Social login is not available in this in-app browser. Please use the email login below."
+      });
+      return;
+    }
+    setIsLoading(true);
+    setMessage(null);
+    try {
+      await signIn("naver", { callbackUrl: `/${locale}/dashboard` });
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || t("error_general") });
+      setIsLoading(false);
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -162,25 +198,63 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
 
-          {/* Google OAuth Button — NextAuth (hidden visual cue for in-app) */}
-          <motion.button
-            onClick={handleGoogleLogin}
-            whileHover={{ scale: inApp ? 1 : 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
-              inApp
-                ? 'bg-white/[0.02] border-white/[0.06] opacity-50 cursor-not-allowed'
-                : 'bg-white/5 border-white/10 hover:bg-white/10'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
-              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-            </svg>
-            <span className="font-sans font-medium text-white tracking-wide">{t("btn_google")}</span>
-          </motion.button>
+          {/* Social Logins */}
+          <div className="space-y-3">
+            <motion.button
+              onClick={handleKakaoLogin}
+              whileHover={{ scale: inApp ? 1 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+                inApp
+                  ? 'bg-[#FEE500]/50 border-[#FEE500]/10 opacity-50 cursor-not-allowed text-black/50'
+                  : 'bg-[#FEE500] hover:bg-[#FEE500]/90 border-transparent text-black'
+              }`}
+            >
+              <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
+                <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
+              </svg>
+              <span className="font-sans font-bold tracking-wide">
+                {locale === 'ko' ? '카카오 로그인' : 'Continue with Kakao'}
+              </span>
+            </motion.button>
+
+            <motion.button
+              onClick={handleNaverLogin}
+              whileHover={{ scale: inApp ? 1 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+                inApp
+                  ? 'bg-[#03C75A]/50 border-[#03C75A]/10 opacity-50 cursor-not-allowed text-white/50'
+                  : 'bg-[#03C75A] hover:bg-[#03C75A]/90 border-transparent text-white'
+              }`}
+            >
+              <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
+                <path d="M19.689 9.878L12.01 20.31h-4.33V9.878h4.332v10.432l7.678-10.432h4.33v10.432h-4.331V9.878z" />
+              </svg>
+              <span className="font-sans font-bold tracking-wide">
+                {locale === 'ko' ? '네이버 로그인' : 'Continue with Naver'}
+              </span>
+            </motion.button>
+
+            <motion.button
+              onClick={handleGoogleLogin}
+              whileHover={{ scale: inApp ? 1 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+                inApp
+                  ? 'bg-white/[0.02] border-white/[0.06] opacity-50 cursor-not-allowed'
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+              </svg>
+              <span className="font-sans font-medium text-white tracking-wide">{t("btn_google")}</span>
+            </motion.button>
+          </div>
 
           {/* In-App Browser hint */}
           {inApp && (

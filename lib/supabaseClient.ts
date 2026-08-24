@@ -105,8 +105,8 @@ const mockSupabase = {
       if (typeof window !== "undefined") {
         const mockUser = {
           id: "mock-user-12345",
-          email: "cosmic.traveler@example.com",
-          user_metadata: { full_name: "Cosmic Traveler" },
+          email: "demo.user@example.com",
+          user_metadata: { full_name: "데모 사용자" },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString()
@@ -125,8 +125,8 @@ const mockSupabase = {
       if (typeof window !== "undefined") {
         const mockUser = {
           id: "mock-user-12345",
-          email: email || "cosmic.traveler@example.com",
-          user_metadata: { full_name: email ? email.split("@")[0] : "Cosmic Traveler" },
+          email: email || "demo.user@example.com",
+          user_metadata: { full_name: email ? email.split("@")[0] : "데모 사용자" },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString()
@@ -140,8 +140,8 @@ const mockSupabase = {
       if (typeof window !== "undefined") {
         const mockUser = {
           id: "mock-user-12345",
-          email: email || "cosmic.traveler@example.com",
-          user_metadata: { full_name: email ? email.split("@")[0] : "Cosmic Traveler" },
+          email: email || "demo.user@example.com",
+          user_metadata: { full_name: email ? email.split("@")[0] : "데모 사용자" },
           app_metadata: {},
           aud: "authenticated",
           created_at: new Date().toISOString()

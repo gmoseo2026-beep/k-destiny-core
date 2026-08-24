@@ -5,12 +5,12 @@ import { getMessages } from 'next-intl/server';
 import "../globals.css";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
-import ExpiryWarningModal from "../../components/ExpiryWarningModal";
 import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
 import KakaoEscape from "../../components/KakaoEscape";
 import MaintenanceOverlay from "../../components/MaintenanceOverlay";
 import Analytics from "../../components/Analytics";
+import Script from "next/script";
 import { BASE_URL, buildPageMetadata } from "@/lib/seo";
 
 const inter = Inter({
@@ -48,17 +48,18 @@ const notoSansJP = Noto_Sans_JP({
 // them.
 export async function generateMetadata({ params }: { params: Promise<{locale: string}> }): Promise<Metadata> {
   const { locale } = await params;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || BASE_URL;
 
   return {
+    metadataBase: new URL(siteUrl),
     ...buildPageMetadata('', locale),
     keywords: [
-      "saju", "사주", "四柱推命", "Korean astrology", "AI astrology",
-      "destiny reading", "cosmic blueprint", "energy sync", "compatibility",
-      "fortune prediction", "K-Destiny", "Eastern astrology", "운세", "궁합",
+      "궁합", "사주궁합", "사주", "무료궁합", "커플궁합", "썸", "연애운",
+      "생년월일 궁합", "콩닥", "kongdak", "saju", "compatibility",
     ],
-    authors: [{ name: "K-Destiny Inc.", url: BASE_URL }],
-    creator: "K-Destiny Inc.",
-    publisher: "K-Destiny Inc.",
+    authors: [{ name: "콩닥 (kongdak)", url: BASE_URL }],
+    creator: "콩닥 (kongdak)",
+    publisher: "디아이컴퍼니",
   };
 }
 
@@ -68,71 +69,52 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://thekdestiny.com/#website",
-      "url": "https://thekdestiny.com",
-      "name": "K-Destiny",
-      "description": "The world's first AI-powered Korean Saju (四柱推命) astrology platform",
-      "publisher": { "@id": "https://thekdestiny.com/#organization" },
-      "inLanguage": ["en", "ko", "ja", "es", "de", "fr"],
+      "@id": `${BASE_URL}/#website`,
+      "url": BASE_URL,
+      "name": "콩닥 (kongdak)",
+      "description": "두 사람의 생년월일로 보는 사주 궁합 서비스",
+      "publisher": { "@id": `${BASE_URL}/#organization` },
+      "inLanguage": ["ko"],
     },
     {
       "@type": "Organization",
-      "@id": "https://thekdestiny.com/#organization",
-      "name": "K-Destiny Inc.",
-      "url": "https://thekdestiny.com",
+      "@id": `${BASE_URL}/#organization`,
+      "name": "디아이컴퍼니",
+      "alternateName": "콩닥 (kongdak)",
+      "url": BASE_URL,
       "logo": {
         "@type": "ImageObject",
-        "url": "https://thekdestiny.com/og-image.jpg",
+        "url": `${BASE_URL}/og-image.jpg`,
         "width": 1200,
         "height": 630,
       },
       "contactPoint": {
         "@type": "ContactPoint",
-        "email": "support@thekdestiny.com",
+        "email": "help@kongdak.kr",
         "contactType": "customer service",
-        "availableLanguage": ["English", "Korean", "Japanese"],
+        "availableLanguage": ["Korean"],
       },
-      "sameAs": [
-        "https://twitter.com/thekdestiny",
-        "https://www.instagram.com/thekdestiny",
-      ],
     },
     {
-      "@type": "SoftwareApplication",
-      "@id": "https://thekdestiny.com/#app",
-      "name": "K-Destiny",
+      "@type": "WebApplication",
+      "@id": `${BASE_URL}/#app`,
+      "name": "콩닥 (kongdak)",
       "applicationCategory": "LifestyleApplication",
       "operatingSystem": "Web",
-      "url": "https://thekdestiny.com",
-      "description": "AI-powered Korean Saju astrology platform providing personalized destiny readings, energy compatibility analysis, and premium fortune predictions using ancient Eastern Four Pillars wisdom enhanced by Google Gemini AI.",
+      "url": BASE_URL,
+      "description": "두 사람의 생년월일을 입력하면 사주를 바탕으로 궁합 점수와 케미 키워드, AI 해석을 무료로 제공합니다. 오락 및 자기이해를 위한 참고용 서비스입니다.",
+      "inLanguage": "ko",
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "USD",
-        "description": "Free cosmic blueprint with premium tier available",
+        "priceCurrency": "KRW",
       },
       "featureList": [
-        "AI-Powered Saju Birth Chart Analysis",
-        "Energy Compatibility Sync (궁합)",
-        "Monthly Karma Report",
-        "Daily Remedy Coaching",
-        "2027 Fortune Prediction",
-        "AI Master Chat Consultation",
-        "Multi-language support (EN, KO, JA, ES, DE, FR)",
+        "사주 기반 궁합 점수",
+        "우리 사이 케미 키워드",
+        "AI 궁합 해석",
+        "카카오톡 공유 카드",
       ],
-    },
-    {
-      "@type": "Service",
-      "name": "K-Destiny Saju Astrology Reading",
-      "serviceType": "Astrology Service",
-      "provider": { "@id": "https://thekdestiny.com/#organization" },
-      "description": "Professional AI-powered Korean Saju (Four Pillars of Destiny) astrology reading service. Analyzes birth date and time using the traditional Eastern cosmological framework enhanced by Google Gemini AI to deliver personalized cosmic blueprints.",
-      "areaServed": "Worldwide",
-      "availableChannel": {
-        "@type": "ServiceChannel",
-        "serviceUrl": "https://thekdestiny.com",
-        "serviceType": "Web Application",
-      },
     },
   ],
 };
@@ -162,6 +144,10 @@ export default async function RootLayout({
           equivalent instead of /ko/pricing — a broken (non-reciprocal) cluster
           that Google ignores.
         */}
+        {/* PWA Tags */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#FF5C77" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body
         className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
@@ -173,13 +159,28 @@ export default async function RootLayout({
             <CacheBuster />
             <KakaoEscape />
             <Navbar />
-            <main className="flex-grow pt-24 md:pt-28">
+            <main className="flex-grow pt-20 md:pt-24">
               {children}
             </main>
             <Footer />
-            <ExpiryWarningModal />
           </Providers>
         </NextIntlClientProvider>
+
+        {/* Kakao SDK */}
+        <Script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" strategy="lazyOnload" />
+
+        {/* Service Worker Registration */}
+        <Script id="sw-registration" strategy="lazyOnload">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                  console.log('Service Worker registration failed: ', err);
+                });
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );
