@@ -137,13 +137,13 @@ export default function InstallPWAButton() {
       <AnimatePresence>
         {showBanner && (
           <motion.div
-            initial={{ y: -100, opacity: 0 }}
+            initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
+            exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 right-0 z-50 p-2 md:p-4"
+            className="fixed bottom-4 md:bottom-8 left-0 right-0 z-[100] p-4"
           >
-            <div className="mx-auto max-w-md bg-white border border-[#FF8AA1]/30 shadow-xl rounded-2xl p-4 flex items-center justify-between gap-3 relative overflow-hidden">
+            <div className="mx-auto max-w-md bg-white border border-[#FF8AA1]/30 shadow-2xl rounded-2xl p-4 flex items-center justify-between gap-3 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#FF8AA1] to-[#FF5C77]"></div>
               
               <div className="flex items-center gap-3">
