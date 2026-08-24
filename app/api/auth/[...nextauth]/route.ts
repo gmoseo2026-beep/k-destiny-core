@@ -72,9 +72,31 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token }) {
-      // Always fetch the freshest data from DB if email exists
-      if (token.email) {
+    async jwt({ token, user }) {
+      if (user?.id) {
+        token.id = user.id;
+      }
+      const userId = (token.id as string) || (token.sub as string);
+
+      if (userId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, role: true, tier: true, premiumEndDate: true, email: true, name: true, image: true },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          if (dbUser.email) token.email = dbUser.email;
+          if (dbUser.name) token.name = dbUser.name;
+          if (dbUser.image) token.picture = dbUser.image;
+
+          const expired =
+            dbUser.tier === 'PREMIUM' &&
+            dbUser.premiumEndDate !== null &&
+            dbUser.premiumEndDate <= new Date();
+          token.tier = expired ? 'FREE' : dbUser.tier;
+        }
+      } else if (token.email) {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
           select: { id: true, role: true, tier: true, premiumEndDate: true },
@@ -82,9 +104,6 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
-          // Effective tier: an expired subscription must not keep granting
-          // PREMIUM through the session token. premiumEndDate === null means
-          // non-expiring access (e.g. manual/admin grant) and stays PREMIUM.
           const expired =
             dbUser.tier === 'PREMIUM' &&
             dbUser.premiumEndDate !== null &&
@@ -96,7 +115,7 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
+        session.user.id = ((token.id as string) || (token.sub as string)) || '';
         session.user.role = token.role as string;
         session.user.tier = token.tier as string;
         // Explicitly pass email & name from JWT to prevent loss
