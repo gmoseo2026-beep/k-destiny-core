@@ -183,15 +183,26 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
     const kakao = getReadyKakao();
     if (kakao) {
       trackEvent("share_created", { shareToken: data.shareToken, type: "kakao" });
-      const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://kongdak.kr");
-      const shareUrl = `${origin}/${locale}/compat/${data.shareToken}?ref=${data.shareToken}`;
+
+      // 로컬 개발(localhost)이 아닌 경우 공식 사이트 URL(https://kongdak.kr)로 정규화하여
+      // 카카오 콘솔의 도메인 불일치로 인한 버튼/링크 누락 방지
+      let baseDomain = process.env.NEXT_PUBLIC_SITE_URL || "https://kongdak.kr";
+      if (typeof window !== "undefined") {
+        const hostname = window.location.hostname;
+        if (hostname === "localhost" || hostname === "127.0.0.1") {
+          baseDomain = window.location.origin;
+        }
+      }
+
+      const shareUrl = `${baseDomain}/${locale}/compat/${data.shareToken}?ref=${data.shareToken}`;
+      const imageUrl = `${baseDomain}/api/og/compat?shareToken=${encodeURIComponent(data.shareToken)}&w=800&h=400`;
 
       kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
           title: '우리, 얼마나 잘 맞을까? 🔮',
-          description: `${data.personA.name} ❤️ ${data.personB.name}의 궁합 점수는 ${data.score}점! 지금 확인해보세요.`,
-          imageUrl: `${origin}/api/og/compat?shareToken=${data.shareToken}&w=800&h=400`,
+          description: `${data.personA.name} ❤️ ${data.personB.name}의 궁합 점수는 ${data.score}점!\n지금 바로 확인해보세요 👇\n${shareUrl}`,
+          imageUrl: imageUrl,
           imageWidth: 800,
           imageHeight: 400,
           link: {
@@ -201,7 +212,7 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
         },
         buttons: [
           {
-            title: '궁합 결과 보기',
+            title: '궁합 결과 보기 💘',
             link: {
               mobileWebUrl: shareUrl,
               webUrl: shareUrl,
