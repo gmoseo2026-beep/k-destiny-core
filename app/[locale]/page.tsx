@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import KongdakHero from "@/components/KongdakHero";
+import HomeRoot from "@/components/HomeRoot";
 
 export const metadata: Metadata = {
   title: "콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합",
@@ -15,8 +15,7 @@ export default async function Home({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] flex flex-col items-center justify-center">
-      <KongdakHero locale={locale} />
+      <HomeRoot locale={locale} />
     </main>
   );
 }
-
