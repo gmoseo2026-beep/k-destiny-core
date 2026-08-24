@@ -32,20 +32,7 @@ export default function Navbar() {
         {/* Right side actions */}
         <div className="flex items-center justify-end gap-2 sm:gap-3">
 
-        {/* Dashboard Link if logged in */}
-        {session && (
-          <Link href="/dashboard">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-[#2B2430]/8 hover:border-coral/40 hover:bg-coral/[0.03] shadow-sm group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-coral/80 group-hover:text-coral" />
-              <span className="font-sans text-xs font-medium text-ink/70 group-hover:text-ink tracking-wide hidden sm:block">
-                {t("btn_dashboard")}
-              </span>
-            </motion.button>
-          </Link>
-        )}
+
 
         {/* Admin Dashboard — strictly visible to ADMIN role only */}
         {session && (session.user as any)?.role === 'ADMIN' && (
@@ -55,8 +42,8 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-red-50 border border-red-200 hover:border-red-300 hover:bg-red-100 shadow-sm group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
             >
               <Shield className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
-              <span className="font-sans text-xs font-medium text-red-600 group-hover:text-red-700 tracking-wide">
-                Admin
+              <span className="hidden sm:block font-sans text-xs font-medium text-red-600 group-hover:text-red-700 tracking-wide">
+                관리자
               </span>
             </motion.button>
           </Link>

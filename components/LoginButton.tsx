@@ -26,12 +26,7 @@ export default function LoginButton() {
   if (session && session.user) {
     return (
       <div className="flex items-center gap-4">
-        {/* Admin Badge */}
-        {(session.user as any).role === 'ADMIN' && (
-          <span className="text-[10px] uppercase tracking-widest font-bold bg-red-100 text-red-600 px-2.5 py-1 rounded-full border border-red-200">
-            Admin
-          </span>
-        )}
+
         
         <div className="flex items-center gap-1.5 sm:gap-3 bg-white border border-[#2B2430]/8 rounded-full pl-1.5 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5 hover:bg-coral/[0.03] hover:border-coral/30 shadow-sm transition-all group">
           {session.user.image ? (
