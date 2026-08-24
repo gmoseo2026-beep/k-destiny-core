@@ -140,11 +140,10 @@ export default function AdminDashboard({ users: rawUsers, stats }: { users: any[
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={<Users className="w-14 h-14 text-blue-500" />} label="전체 회원" value={stats.totalUsers} color="hover:border-blue-500/30" />
-        <StatCard icon={<Crown className="w-14 h-14 text-gold" />} label="유료 구독자" value={stats.premiumUsers} color="hover:border-gold/30" />
-        <StatCard icon={<Sparkles className="w-14 h-14 text-coral" />} label="오늘의 사주" value={stats.sajuReadingsToday} color="hover:border-coral/30" />
-        <StatCard icon={<DollarSign className="w-14 h-14 text-purple-500" />} label="활성 구독" value={stats.activeSubscriptions ?? 0} color="hover:border-purple-500/30" />
+        <StatCard icon={<Sparkles className="w-14 h-14 text-coral" />} label="오늘의 궁합" value={stats.todayCompatibilities ?? 0} color="hover:border-coral/30" />
+        <StatCard icon={<Crown className="w-14 h-14 text-gold" />} label="누적 궁합 수" value={stats.totalCompatibilities ?? 0} color="hover:border-gold/30" />
       </div>
 
       {/* Filter Bar */}
