@@ -57,6 +57,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${nameA} ❤️ ${nameB} 궁합 점수: ${compat.score}점 — 콩닥`,
       description: `우리의 케미 키워드: ${keywordText} | 사주로 보는 우리 사이`,
+      url: `${siteUrl}/ko/compat/${compat.shareToken}`,
+      siteName: "콩닥 (kongdak)",
+      type: "website",
       images: [
         {
           url: ogImageUrl,
