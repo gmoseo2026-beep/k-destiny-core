@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.kakaocdn.net',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.pstatic.net',
+      },
     ],
   },
 
@@ -63,7 +75,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.googletagmanager.com https://t1.kakaocdn.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.kakaocdn.net",
+              "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.kakaocdn.net https://*.pstatic.net",
               "connect-src 'self' https://accounts.google.com https://generativelanguage.googleapis.com https://*.google.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.kakao.com https://*.kakaocdn.net",
               "frame-src https://accounts.google.com https://*.kakao.com",
               "frame-ancestors 'none'",
