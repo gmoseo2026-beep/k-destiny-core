@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { calculateFourPillars } from "@/lib/saju";
 import { calculateCompatibility } from "@/lib/compatibility";
 import prisma from "@/lib/prisma";
@@ -144,9 +146,14 @@ export async function POST(req: NextRequest) {
     // 5. 예측 불가능한 암호학적 난수 shareToken 발급
     const shareToken = generateSecureShareToken();
 
+    // 세션 조회 (로그인 유저인 경우 Compatibility 에 userId 연결)
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || null;
+
     // 6. DB 저장 (PII 평문 저장 없음)
     const compat = await prisma.compatibility.create({
       data: {
+        userId,
         personA: safePersonA,
         personB: safePersonB,
         relation: safeRelation,
@@ -176,6 +183,7 @@ export async function POST(req: NextRequest) {
 /**
  * GET /api/compat?shareToken=...
  * shareToken으로 궁합 결과를 안전하게 조회합니다. (ID 열거 불가 및 PII/원자료 역산 필드 클라이언트 반환 차단)
+ * 파라미터가 없을 경우, 로그인 유저의 지난 궁합 목록을 반환합니다.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -184,7 +192,45 @@ export async function GET(req: NextRequest) {
     const id = searchParams.get("id");
 
     if (!shareToken && !id) {
-      return NextResponse.json({ error: "shareToken 또는 id가 필요합니다." }, { status: 400 });
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "shareToken 또는 id가 필요합니다." }, { status: 400 });
+      }
+
+      const userCompats = await prisma.compatibility.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          shareToken: true,
+          relation: true,
+          score: true,
+          keywords: true,
+          summaryKo: true,
+          createdAt: true,
+          personA: true,
+          personB: true,
+        },
+      });
+
+      const items = userCompats.map((c) => {
+        const pA = (c.personA as { name?: string; gender?: string } | null) || {};
+        const pB = (c.personB as { name?: string; gender?: string } | null) || {};
+        return {
+          id: c.id,
+          shareToken: c.shareToken,
+          relation: c.relation,
+          score: c.score,
+          keywords: c.keywords,
+          summaryKo: c.summaryKo,
+          createdAt: c.createdAt,
+          personA: { name: pA.name || "나", gender: pA.gender || "M" },
+          personB: { name: pB.name || "상대방", gender: pB.gender || "F" },
+        };
+      });
+
+      return NextResponse.json({ items });
     }
 
     const compat = await prisma.compatibility.findUnique({

@@ -7,13 +7,11 @@ export default async function AdminPage() {
   });
 
   const totalUsers = users.length;
-  const premiumUsers = users.filter((u) => u.tier === 'PREMIUM').length;
-  const activeSubscriptions = users.filter((u) => u.subscriptionStatus === 'ACTIVE').length;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const sajuReadingsToday = await prisma.userSajuProfile.count({
+  const todayCompatibilities = await prisma.compatibility.count({
     where: {
       createdAt: {
         gte: today,
@@ -21,11 +19,12 @@ export default async function AdminPage() {
     },
   });
 
+  const totalCompatibilities = await prisma.compatibility.count();
+
   const stats = {
     totalUsers,
-    premiumUsers,
-    sajuReadingsToday,
-    activeSubscriptions,
+    todayCompatibilities,
+    totalCompatibilities,
   };
 
   return <AdminDashboard users={JSON.parse(JSON.stringify(users))} stats={stats} />;

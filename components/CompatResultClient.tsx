@@ -30,6 +30,8 @@ interface KakaoSDK {
         title: string;
         description: string;
         imageUrl: string;
+        imageWidth?: number;
+        imageHeight?: number;
         link: KakaoLink;
       };
       buttons?: { title: string; link: KakaoLink }[];
@@ -181,8 +183,7 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
     const kakao = getReadyKakao();
     if (kakao) {
       trackEvent("share_created", { shareToken: data.shareToken, type: "kakao" });
-      // Kakao Developer 콘솔에 등록된 도메인을 우선 사용해야만 클릭 시 링크가 작동합니다.
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr");
+      const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL || "https://kongdak.kr");
       const shareUrl = `${origin}/${locale}/compat/${data.shareToken}?ref=${data.shareToken}`;
 
       kakao.Share.sendDefault({
@@ -191,6 +192,8 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
           title: '우리, 얼마나 잘 맞을까? 🔮',
           description: `${data.personA.name} ❤️ ${data.personB.name}의 궁합 점수는 ${data.score}점! 지금 확인해보세요.`,
           imageUrl: `${origin}/api/og/compat?shareToken=${data.shareToken}&w=800&h=400`,
+          imageWidth: 800,
+          imageHeight: 400,
           link: {
             mobileWebUrl: shareUrl,
             webUrl: shareUrl,

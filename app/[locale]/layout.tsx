@@ -7,7 +7,6 @@ import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
-import KakaoEscape from "../../components/KakaoEscape";
 import MaintenanceOverlay from "../../components/MaintenanceOverlay";
 import Analytics from "../../components/Analytics";
 import Script from "next/script";
@@ -157,7 +156,6 @@ export default async function RootLayout({
           <Providers>
             <MaintenanceOverlay />
             <CacheBuster />
-            <KakaoEscape />
             <Navbar />
             <main className="flex-grow pt-20 md:pt-24">
               {children}
