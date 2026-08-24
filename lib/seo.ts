@@ -181,6 +181,16 @@ export function buildPageMetadata(path: string, locale: string): Metadata {
       description: meta.description,
       images: ['/og-image.jpg'],
     },
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: 'any' },
+        { url: '/icon.svg', type: 'image/svg+xml' },
+        { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      ],
+      apple: [
+        { url: '/icons/apple-touch-icon-180.png', sizes: '180x180', type: 'image/png' },
+      ],
+    },
     robots: noindex
       ? { index: false, follow: true }
       : {

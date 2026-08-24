@@ -143,9 +143,11 @@ export default async function RootLayout({
           equivalent instead of /ko/pricing — a broken (non-reciprocal) cluster
           that Google ignores.
         */}
-        {/* PWA Tags */}
+        {/* PWA & Favicon Tags */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#FF5C77" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body
