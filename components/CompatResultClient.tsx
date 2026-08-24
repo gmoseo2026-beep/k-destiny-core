@@ -24,7 +24,7 @@ interface KakaoSDK {
   init: (jsKey: string) => void;
   isInitialized: () => boolean;
   Share: {
-    sendDefault: (settings: {
+    sendDefault?: (settings: {
       objectType: "feed";
       content: {
         title: string;
@@ -35,6 +35,11 @@ interface KakaoSDK {
         link: KakaoLink;
       };
       buttons?: { title: string; link: KakaoLink }[];
+    }) => void;
+    sendScrap: (settings: {
+      requestUrl: string;
+      templateId?: number;
+      templateArgs?: Record<string, string>;
     }) => void;
   };
 }
@@ -176,7 +181,7 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
     setTimeout(() => setCopyToast(null), 3000);
   };
 
-  // 5. 카카오톡 공유 핸들러
+  // 5. 카카오톡 공유 핸들러 (sendScrap 방식 우선)
   const handleKakaoShare = () => {
     // 공유 이벤트는 SDK 가 실제로 준비된 경우에만 발사한다.
     // (SDK 로드 실패 시에도 발사하면 K 계수의 분모만 부풀려져 바이럴 실패로 오독된다)
@@ -184,8 +189,7 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
     if (kakao) {
       trackEvent("share_created", { shareToken: data.shareToken, type: "kakao" });
 
-      // 로컬 개발(localhost)이 아닌 경우 공식 사이트 URL(https://kongdak.kr)로 정규화하여
-      // 카카오 콘솔의 도메인 불일치로 인한 버튼/링크 누락 방지
+      // 로컬 개발(localhost)이 아닌 경우 공식 사이트 URL(https://kongdak.kr)로 정규화
       let baseDomain = process.env.NEXT_PUBLIC_SITE_URL || "https://kongdak.kr";
       if (typeof window !== "undefined") {
         const hostname = window.location.hostname;
@@ -195,31 +199,39 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
       }
 
       const shareUrl = `${baseDomain}/${locale}/compat/${data.shareToken}?ref=${data.shareToken}`;
-      const imageUrl = `${baseDomain}/api/og/compat?shareToken=${encodeURIComponent(data.shareToken)}&w=800&h=400`;
 
-      kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: '우리, 얼마나 잘 맞을까? 🔮',
-          description: `${data.personA.name} ❤️ ${data.personB.name}의 궁합 점수는 ${data.score}점!\n지금 바로 확인해보세요 👇\n${shareUrl}`,
-          imageUrl: imageUrl,
-          imageWidth: 800,
-          imageHeight: 400,
-          link: {
-            mobileWebUrl: shareUrl,
-            webUrl: shareUrl,
-          },
-        },
-        buttons: [
-          {
-            title: '궁합 결과 보기 💘',
+      // sendScrap 방식: 페이지의 OpenGraph(OG) 메타데이터를 카카오가 읽어
+      // 파란색 공식 링크가 포함된 터치 가능한 정식 공유 카드로 즉시 전송
+      if (typeof kakao.Share?.sendScrap === "function") {
+        kakao.Share.sendScrap({
+          requestUrl: shareUrl,
+        });
+      } else if (typeof kakao.Share?.sendDefault === "function") {
+        const imageUrl = `${baseDomain}/api/og/compat?shareToken=${encodeURIComponent(data.shareToken)}&w=800&h=400`;
+        kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: `${data.personA.name} ❤️ ${data.personB.name} 궁합 점수: ${data.score}점 — 콩닥`,
+            description: `${data.personA.name} ❤️ ${data.personB.name}의 궁합 점수는 ${data.score}점!\n지금 바로 확인해보세요 👇\n${shareUrl}`,
+            imageUrl: imageUrl,
+            imageWidth: 800,
+            imageHeight: 400,
             link: {
               mobileWebUrl: shareUrl,
               webUrl: shareUrl,
             },
           },
-        ],
-      });
+          buttons: [
+            {
+              title: '궁합 결과 보기 💘',
+              link: {
+                mobileWebUrl: shareUrl,
+                webUrl: shareUrl,
+              },
+            },
+          ],
+        });
+      }
     } else {
       setCopyToast("카카오톡 공유를 준비 중입니다. 잠시 후 다시 시도해주세요.");
       setTimeout(() => setCopyToast(null), 2000);
