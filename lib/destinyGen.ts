@@ -128,17 +128,47 @@ YOUR TASK:
 Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. Use the Core Keywords as your guiding theme.`;
 }
 
+export interface DeepReportContent {
+  coreDynamic: string;          // 우리 관계의 핵심 에너지 (2~3문장)
+  strengths: string[];          // 우리가 가진 시너지 강점 3가지
+  cautions: string[];           // 서로 주의해야 할 점 3가지
+  conflictsAndSolutions: {
+    trigger: string;            // 갈등 유발 포인트 (말투, 연락, 고집 등)
+    solution: string;           // 현명하게 푸는 구체적 대처법
+  }[];                          // 3개
+  actionableAdvice: string;     // 오래가기 위한 현실적인 연애 조언
+  monthlyFortune: string;       // 이번 달 두 사람의 애정운 흐름
+  idealMatchEnergy: {           // [매칭 빌드업] 나와 가장 잘 맞는 이상형 기운
+    energyName: string;         // e.g. "포근하고 든든한 흙 기운"
+    traits: string;             // 이런 성향의 사람이 나의 부족한 점을 채워줍니다
+  };
+}
+
 export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string): string {
   if (isPremium) {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
     
-Write a deeply insightful, premium compatibility report. Break it down into the following sections with clear headings:
-1. "우리 관계의 핵심 에너지" (Core dynamic based on the keywords and score)
-2. "서로에게 끌리는 진짜 이유" (Elemental complement or natural synergy)
-3. "조심해야 할 함정과 갈등 포인트" (Differences or lack of elements)
-4. "오래가기 위한 현실적인 조언" (Actionable relationship advice)
+Write a deeply insightful, premium compatibility report. You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
-Make it sound like a very expensive, deeply personal reading by a wise mentor. No generic filler. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.`;
+\`\`\`typescript
+interface DeepReportContent {
+  coreDynamic: string;          // 우리 관계의 핵심 에너지 (2~3문장)
+  strengths: string[];          // 우리가 가진 시너지 강점 3가지
+  cautions: string[];           // 서로 주의해야 할 점 3가지
+  conflictsAndSolutions: {
+    trigger: string;            // 갈등 유발 포인트 (말투, 연락, 고집 등)
+    solution: string;           // 현명하게 푸는 구체적 대처법
+  }[];                          // exactly 3 items
+  actionableAdvice: string;     // 오래가기 위한 현실적인 연애 조언
+  monthlyFortune: string;       // 이번 달 두 사람의 애정운 흐름
+  idealMatchEnergy: {           // [매칭 빌드업] 나와 가장 잘 맞는 이상형 기운 (Based on Person A's elemental needs)
+    energyName: string;         // e.g. "포근하고 든든한 흙 기운"
+    traits: string;             // 이런 성향의 사람이 나의 부족한 점을 채워줍니다
+  };
+}
+\`\`\`
+
+Make it sound like a very expensive, deeply personal reading by a wise mentor. No generic filler. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms. Output ONLY the JSON block. Do NOT include markdown code fences (like \`\`\`json). Return raw valid JSON.`;
   } else {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
     

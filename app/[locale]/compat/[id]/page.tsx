@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import CompatResultClient from "@/components/CompatResultClient";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
@@ -82,6 +84,9 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   const { locale, id } = await params;
   const { ref } = await searchParams;
 
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
+
   // shareToken 또는 cuid(id)로 DB 조회
   // (cuid 25자·shareToken 24자로 둘 다 20자를 넘어 길이 분기가 불가능하므로 OR 조회)
   const compat = await prisma.compatibility.findFirst({
@@ -148,6 +153,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
         initialData={initialData}
         locale={locale}
         refToken={ref}
+        isAdmin={isAdmin}
       />
     </main>
   );

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
+import { DeepReportContent } from "@/lib/destinyGen";
 
 interface CompatData {
   id: string;
@@ -77,13 +78,19 @@ interface CompatResultClientProps {
   initialData: CompatData;
   locale: string;
   refToken?: string;
+  isAdmin?: boolean;
 }
 
-export default function CompatResultClient({ initialData, locale, refToken }: CompatResultClientProps) {
+export default function CompatResultClient({ initialData, locale, refToken, isAdmin }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
   const [copyToast, setCopyToast] = useState<string | null>(null);
+  
+  // Premium Report State
+  const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
+  const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
+  const [deepReportError, setDeepReportError] = useState<string | null>(null);
 
   // 1. 유입 및 paywall 노출 GA4 이벤트 발사 + 주소창 ref 자동 동기화
   useEffect(() => {
@@ -160,6 +167,29 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
         setCopyToast("링크 복사에 실패했습니다.");
         setTimeout(() => setCopyToast(null), 2000);
       }
+    }
+  };
+
+  const handleGenerateDeepReport = async () => {
+    setIsLoadingDeepReport(true);
+    setDeepReportError(null);
+    try {
+      const res = await fetch("/api/compat/deep-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ compatId: data.id, locale })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to generate");
+      }
+      const json: DeepReportContent = await res.json();
+      setDeepReport(json);
+    } catch (e: any) {
+      console.error(e);
+      setDeepReportError(e.message || "오류가 발생했습니다.");
+    } finally {
+      setIsLoadingDeepReport(false);
     }
   };
 
@@ -350,24 +380,105 @@ export default function CompatResultClient({ initialData, locale, refToken }: Co
         </button>
       </div>
 
-      {/* Premium Teaser (Phase A에서는 단건 9,900원 티저만 노출, 결제 연동은 Step 2) */}
-      <div className="w-full bg-gradient-to-br from-[#FFF6F1] to-[#FFD9E0]/50 border border-[#FF8AA1]/40 rounded-2xl p-5 mt-8 text-center relative overflow-hidden">
-        <div className="inline-block bg-[#6A2C70] text-[#FFC24B] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-2">
-          Special Reading
+      {/* Premium Section */}
+      {deepReport ? (
+        <div className="w-full mt-8 flex flex-col gap-6">
+          <div className="text-center mb-2">
+            <div className="inline-block bg-[#6A2C70] text-[#FFC24B] text-xs font-black px-4 py-1.5 rounded-full shadow-md uppercase tracking-widest">
+              Premium Reading
+            </div>
+          </div>
+          
+          <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-[#6A2C70]">
+            <h3 className="text-lg font-black text-[#6A2C70] mb-3">🔮 우리 관계의 핵심 에너지</h3>
+            <p className="text-sm text-[#2B2430] leading-relaxed font-medium">{deepReport.coreDynamic}</p>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 bg-white rounded-2xl p-6 shadow-md border-l-4 border-[#FF8AA1]">
+              <h3 className="text-base font-black text-[#FF5C77] mb-3">✨ 시너지 강점</h3>
+              <ul className="text-sm text-[#2B2430] leading-relaxed space-y-2 font-medium list-disc list-inside">
+                {deepReport.strengths.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+            <div className="flex-1 bg-white rounded-2xl p-6 shadow-md border-l-4 border-gray-400">
+              <h3 className="text-base font-black text-gray-700 mb-3">⚠️ 주의할 점</h3>
+              <ul className="text-sm text-[#2B2430] leading-relaxed space-y-2 font-medium list-disc list-inside">
+                {deepReport.cautions.map((c, i) => <li key={i}>{c}</li>)}
+              </ul>
+            </div>
+          </div>
+
+          <div className="w-full bg-[#FFF6F1] rounded-2xl p-6 shadow-md border border-[#FFD9E0]/50">
+            <h3 className="text-lg font-black text-[#FF5C77] mb-4 text-center">🔥 갈등 포인트 & 대처법</h3>
+            <div className="space-y-4">
+              {deepReport.conflictsAndSolutions.map((cs, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                  <div className="font-bold text-[#6A2C70] text-sm mb-1">Q. {cs.trigger}</div>
+                  <div className="text-sm text-[#2B2430] font-medium leading-relaxed pl-4 border-l-2 border-[#FFC24B] bg-[#FFF6F1]/30 p-2 rounded-r-md">
+                    {cs.solution}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-[#FFC24B]">
+            <h3 className="text-base font-black text-[#2B2430] mb-3">💡 연애 조언 & 애정운</h3>
+            <p className="text-sm text-[#2B2430] leading-relaxed font-medium mb-4">{deepReport.actionableAdvice}</p>
+            <div className="bg-[#FFF6F1] p-4 rounded-xl text-sm text-[#6A2C70] font-bold">
+              이번 달 애정운: {deepReport.monthlyFortune}
+            </div>
+          </div>
+
+          <div className="w-full bg-gradient-to-r from-[#FF8AA1]/10 to-[#6A2C70]/10 rounded-2xl p-6 shadow-sm border border-[#FF5C77]/20 text-center">
+            <span className="text-2xl mb-2 block">💘</span>
+            <h3 className="text-base font-black text-[#6A2C70] mb-2">나와 찰떡인 이상형 사주 기운</h3>
+            <p className="text-sm font-bold text-[#FF5C77] mb-1">{deepReport.idealMatchEnergy.energyName}</p>
+            <p className="text-xs text-[#2B2430] font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
+          </div>
         </div>
-        <h4 className="text-base font-bold text-[#2B2430] mb-1">
-          우리 관계의 갈등 포인트와 현실적인 연애 조언이 궁금하다면?
-        </h4>
-        <p className="text-xs text-[#8A8291] mb-4">
-          서로에게 끌리는 진짜 이유와 타이밍까지 담긴 심층 궁합 리포트
-        </p>
-        <button
-          disabled
-          className="w-full bg-[#6A2C70]/80 text-white/90 py-3 rounded-xl font-bold text-sm cursor-not-allowed opacity-90"
-        >
-          심층 궁합 열람하기 (서비스 준비 중)
-        </button>
-      </div>
+      ) : (
+        <div className="w-full bg-gradient-to-br from-[#FFF6F1] to-[#FFD9E0]/50 border border-[#FF8AA1]/40 rounded-2xl p-6 mt-8 text-center relative overflow-hidden shadow-sm">
+          <div className="inline-block bg-[#6A2C70] text-[#FFC24B] text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
+            Special Reading
+          </div>
+          <h4 className="text-lg font-black text-[#2B2430] mb-2">
+            우리 관계의 진짜 갈등 포인트와<br/>현실적인 연애 조언이 궁금하다면?
+          </h4>
+          <p className="text-sm text-[#8A8291] mb-6 font-medium">
+            서로에게 끌리는 진짜 이유와 타이밍까지<br/>AI가 분석한 심층 궁합 리포트를 만나보세요.
+          </p>
+          
+          {isAdmin ? (
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleGenerateDeepReport}
+                disabled={isLoadingDeepReport}
+                className="w-full bg-[#6A2C70] hover:bg-[#6A2C70]/90 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
+              >
+                {isLoadingDeepReport ? "리포트 생성 중..." : "🛠️ [어드민] 결제 우회 리포트 즉시 열람"}
+              </button>
+              {deepReportError && <p className="text-xs text-red-500 mt-1">{deepReportError}</p>}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <button
+                disabled
+                className="w-full bg-[#FF5C77]/50 text-white py-3.5 rounded-xl font-bold text-sm cursor-not-allowed opacity-90 shadow-sm"
+              >
+                첫 결제 특가 1,900원으로 잠금 해제 💘 (오픈 준비 중)
+              </button>
+              <button
+                disabled
+                className="w-full bg-white border border-[#FF5C77]/30 text-[#FF5C77]/60 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed opacity-90 shadow-sm"
+              >
+                게스트로 2,900원 바로 결제
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* New Test CTA */}
       <div className="mt-8 text-center">
