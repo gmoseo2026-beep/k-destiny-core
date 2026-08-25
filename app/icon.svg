@@ -1,40 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FF7E9B"/>
-      <stop offset="1" stop-color="#FF5C77"/>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8AA1" />
+      <stop offset="50%" stop-color="#FF5C77" />
+      <stop offset="100%" stop-color="#6A2C70" />
     </linearGradient>
-    <radialGradient id="cheek" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#FF3D6E" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#FF3D6E" stop-opacity="0"/>
-    </radialGradient>
   </defs>
-
-  <!-- little arms -->
-  <path d="M40 120 q-16 4 -20 20" fill="none" stroke="#FF5C77" stroke-width="9" stroke-linecap="round"/>
-  <path d="M200 120 q16 4 20 20" fill="none" stroke="#FF5C77" stroke-width="9" stroke-linecap="round"/>
-
-  <!-- heart body -->
-  <path d="M120 205 C 45 155, 22 116, 22 82 C 22 52, 45 32, 74 32 C 93 32, 108 43, 120 60 C 132 43, 147 32, 166 32 C 195 32, 218 52, 218 82 C 218 116, 195 155, 120 205 Z"
-        fill="url(#body)" stroke="#EC4A69" stroke-width="3"/>
-
-  <!-- sparkle -->
-  <path d="M175 55 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#FFC24B"/>
-
-  <!-- cheeks -->
-  <ellipse cx="74" cy="112" rx="16" ry="11" fill="url(#cheek)"/>
-  <ellipse cx="166" cy="112" rx="16" ry="11" fill="url(#cheek)"/>
-
-  <!-- eyes -->
-  <g>
-    <circle cx="94" cy="96" r="13" fill="#FFFFFF"/>
-    <circle cx="146" cy="96" r="13" fill="#FFFFFF"/>
-    <circle cx="96" cy="98" r="7.5" fill="#2B2430"/>
-    <circle cx="144" cy="98" r="7.5" fill="#2B2430"/>
-    <circle cx="93" cy="95" r="2.6" fill="#FFFFFF"/>
-    <circle cx="141" cy="95" r="2.6" fill="#FFFFFF"/>
-  </g>
-
-  <!-- mouth (small happy) -->
-  <path d="M110 112 Q120 124 130 112" fill="none" stroke="#2B2430" stroke-width="3.2" stroke-linecap="round"/>
+  <rect width="512" height="512" rx="112" fill="#FFF6F1" />
+  <path d="M256 410.5 l-24.7-22.5 C143.7 308.5 86 256.3 86 191 c0-53.2 41.5-95 95-95 c30.6 0 59.9 14.5 75 37.6 c15.1-23.1 44.4-37.6 75-37.6 c53.5 0 95 41.8 95 95 c0 65.3-57.7 117.5-145.3 197.5 L256 410.5z" fill="url(#grad)" />
 </svg>

@@ -1,13 +1,18 @@
 import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import webpush from 'web-push';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env
+// Load .env fallback if not injected
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const prisma = new PrismaClient();
+console.log('Using DB URL:', process.env.DATABASE_URL?.replace(/:[^:]*@/, ':***@'));
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
@@ -29,22 +34,23 @@ async function sendMarketingPush() {
   console.log(`Sending Push:\nTitle: ${title}\nBody: ${body}\nURL: ${url}`);
 
   try {
-    // 활성 구독자(PREMIUM 이고 구독 상태인 경우)는 제외해야 하지만, 현재 문서 기준으로
-    // "User.tier !== 'PREMIUM' 이거나 userId가 null인 대상 전원"으로 필터링.
+    const isMarketingOnly = args.includes('--non-premium') || args.includes('--marketing');
     
     const subscriptions = await prisma.pushSubscription.findMany({
-      where: {
-        OR: [
-          { userId: null }, // 비로그인 사용자
-          {
-            user: {
-              tier: {
-                not: 'PREMIUM', // 활성 구독자가 아닌 경우
+      where: isMarketingOnly
+        ? {
+            OR: [
+              { userId: null },
+              {
+                user: {
+                  tier: {
+                    not: 'PREMIUM',
+                  },
+                },
               },
-            },
-          },
-        ],
-      },
+            ],
+          }
+        : undefined,
     });
 
     console.log(`Found ${subscriptions.length} target subscriptions.`);

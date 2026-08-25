@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
-import { Heart, ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import { Heart, ArrowRight, BookOpen, Sparkles, Bell, Check } from "lucide-react";
 import KongdakMascot from "@/components/KongdakMascot";
+import { subscribeToPush } from "@/lib/push";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,6 +42,23 @@ export default function DashboardView() {
   const { data: session } = useSession();
   const [historyItems, setHistoryItems] = useState<CompatItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<string>("default");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+      if (Notification.permission === "granted") {
+        subscribeToPush();
+      }
+    }
+  }, [session]);
+
+  const handleEnableNotif = async () => {
+    const res = await subscribeToPush();
+    if (res.success && typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+    }
+  };
 
   useEffect(() => {
     if (session?.user) {
@@ -104,6 +122,29 @@ export default function DashboardView() {
             </div>
           </Link>
         </motion.div>
+
+        {/* Notification card if not granted */}
+        {notifPermission === "default" && (
+          <motion.div variants={itemVariants} className="mt-4">
+            <div className="flex items-center justify-between rounded-2xl bg-white border border-[#FF8AA1]/30 p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FFF6F1] flex items-center justify-center text-[#FF5C77] flex-shrink-0">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-[#2B2430]">운세 & 궁합 알림 받기</p>
+                  <p className="text-[11px] text-gray-500">새로운 운세 소식을 실시간 푸시로 받아보세요 💘</p>
+                </div>
+              </div>
+              <button
+                onClick={handleEnableNotif}
+                className="bg-[#FF5C77] text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform flex-shrink-0"
+              >
+                알림 켜기
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* History section */}
         <motion.div

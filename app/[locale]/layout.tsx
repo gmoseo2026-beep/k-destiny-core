@@ -172,14 +172,19 @@ export default async function RootLayout({
         <Script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" strategy="lazyOnload" />
 
         {/* Service Worker Registration */}
-        <Script id="sw-registration" strategy="lazyOnload">
+        <Script id="sw-registration" strategy="afterInteractive">
           {`
             if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
+              function registerSW() {
                 navigator.serviceWorker.register('/sw.js').catch(function(err) {
                   console.log('Service Worker registration failed: ', err);
                 });
-              });
+              }
+              if (document.readyState === 'complete') {
+                registerSW();
+              } else {
+                window.addEventListener('load', registerSW);
+              }
             }
           `}
         </Script>

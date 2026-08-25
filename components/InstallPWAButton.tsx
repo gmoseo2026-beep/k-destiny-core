@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { X, Download, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { subscribeToPush } from '@/lib/push';
 
 export default function InstallPWAButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -11,10 +12,18 @@ export default function InstallPWAButton() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const { data: session } = useSession();
 
+  // 1. 푸시 토큰 자동 동기화 (권한이 이미 있으면 PWA/일반 웹 무관하게 즉시 DB 동기화)
   useEffect(() => {
-    // 1. 이미 설치된 상태인지 체크 (PWA)
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      subscribeToPush();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    // 2. PWA 설치 여부 확인
     const checkStandalone = () => {
       const isStandaloneMedia = window.matchMedia('(display-mode: standalone)').matches;
       // @ts-ignore - iOS standalone 
@@ -22,35 +31,43 @@ export default function InstallPWAButton() {
       return isStandaloneMedia || isStandaloneNav;
     };
 
-    if (checkStandalone()) {
-      setIsStandalone(true);
+    const standalone = checkStandalone();
+    setIsStandalone(standalone);
+
+    // 3. PWA 모드로 실행 중이고, 아직 알림 권한이 설정되지 않은 경우 알림 권한 유도 배너 표시
+    if (standalone) {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        const notifDismissed = localStorage.getItem('kongdak_notif_dismissed');
+        if (!notifDismissed || Date.now() - parseInt(notifDismissed, 10) > 3 * 24 * 60 * 60 * 1000) {
+          setShowNotificationPrompt(true);
+        }
+      }
       return;
     }
 
-    // 2. 이전에 닫은 적이 있는지 체크 (7일간 숨김)
+    // 4. 일반 웹 모드일 때: 이전에 닫은 적이 있는지 체크 (7일간 숨김)
     const dismissedAt = localStorage.getItem('kongdak_pwa_dismissed');
     if (dismissedAt) {
       const timeSinceDismissed = Date.now() - parseInt(dismissedAt, 10);
       if (timeSinceDismissed < 7 * 24 * 60 * 60 * 1000) {
-        return; // 아직 7일 안지남
+        return;
       }
     }
 
-    // 3. iOS 여부 감지
+    // 5. iOS 여부 감지
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
 
-    // 4. beforeinstallprompt 이벤트 리스너 등록
+    // 6. beforeinstallprompt 이벤트 리스너 등록
     const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault(); // 기본 프롬프트 무시
+      e.preventDefault();
       setDeferredPrompt(e);
-      setShowBanner(true); // 커스텀 배너 표시
+      setShowBanner(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     
-    // iOS 이거나 데스크톱/안드로이드인데 프롬프트 이벤트 없이 일정 시간 후 배너 표시 (대안)
     const timer = setTimeout(() => {
       if (!checkStandalone() && !localStorage.getItem('kongdak_pwa_dismissed')) {
         setShowBanner(true);
@@ -68,38 +85,9 @@ export default function InstallPWAButton() {
     localStorage.setItem('kongdak_pwa_dismissed', Date.now().toString());
   };
 
-  const subscribeToPush = async () => {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        const registration = await navigator.serviceWorker.ready;
-        
-        // VAPID public key
-        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        if (!vapidPublicKey) {
-          console.warn('VAPID public key not found');
-          return;
-        }
-
-        const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: convertedVapidKey,
-        });
-
-        // DB에 구독 정보 전송
-        await fetch('/api/push/subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(subscription),
-        });
-      }
-    } catch (error) {
-      console.error('Push subscription failed:', error);
-    }
+  const handleNotifDismiss = () => {
+    setShowNotificationPrompt(false);
+    localStorage.setItem('kongdak_notif_dismissed', Date.now().toString());
   };
 
   const handleInstallClick = async () => {
@@ -130,7 +118,54 @@ export default function InstallPWAButton() {
     }
   };
 
-  if (isStandalone) return null;
+  if (isStandalone) {
+    return (
+      <AnimatePresence>
+        {showNotificationPrompt && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed bottom-4 md:bottom-8 left-0 right-0 z-[100] p-4"
+          >
+            <div className="mx-auto max-w-md bg-white border border-[#FF8AA1]/30 shadow-2xl rounded-2xl p-4 flex items-center justify-between gap-3 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#FF8AA1] to-[#FF5C77]"></div>
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#FFF6F1] flex items-center justify-center flex-shrink-0">
+                  <Bell className="w-5 h-5 text-[#FF5C77]" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#2B2430]">알림을 켜고 소식을 받으세요</p>
+                  <p className="text-xs text-gray-500">새로운 운세와 궁합 소식을 전해드려요 💘</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    await subscribeToPush();
+                    setShowNotificationPrompt(false);
+                  }}
+                  className="bg-[#FF5C77] text-white text-xs font-semibold py-2 px-4 rounded-full active:scale-95 transition-transform"
+                >
+                  알림 켜기
+                </button>
+                <button
+                  onClick={handleNotifDismiss}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                  aria-label="닫기"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
 
   return (
     <>
