@@ -58,10 +58,7 @@ export default function KongdakMascot({
   const resolvedExpr: MascotExpression =
     expression ?? (typeof score === "number" ? getExpressionByScore(score) : "canon");
 
-  const src =
-    resolvedExpr === "canon"
-      ? "/mascot/kongdak-mascot.svg"
-      : EXPRESSION_SRC_MAP[resolvedExpr];
+  const src = EXPRESSION_SRC_MAP[resolvedExpr];
 
   // 애니메이션 변형 설정
   const getAnimationProps = () => {

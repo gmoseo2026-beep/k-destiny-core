@@ -183,7 +183,7 @@ export default function InstallPWAButton() {
               
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#FFF6F1] flex items-center justify-center flex-shrink-0">
-                  <img src="/mascot/kongdak-mascot.svg" alt="콩닥" className="w-7 h-7" />
+                  <img src="/mascot/transparent/doogeun_cat_canon.png" alt="콩닥" className="w-7 h-7" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#2B2430]">콩닥 앱 설치하고</p>
@@ -222,7 +222,7 @@ export default function InstallPWAButton() {
             >
               <div className="text-center mb-6">
                 <div className="w-16 h-16 mx-auto bg-[#FFF6F1] rounded-2xl flex items-center justify-center mb-4">
-                  <img src="/mascot/kongdak-mascot.svg" alt="콩닥" className="w-10 h-10" />
+                  <img src="/mascot/transparent/doogeun_cat_canon.png" alt="콩닥" className="w-10 h-10" />
                 </div>
                 <h3 className="text-lg font-bold text-[#2B2430] mb-2">iOS 홈 화면에 추가하기</h3>
                 <p className="text-sm text-gray-600">
