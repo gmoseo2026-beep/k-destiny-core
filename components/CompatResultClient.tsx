@@ -319,7 +319,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           {/* Person B (상대) + 닥이 */}
           <div className="flex flex-col items-center gap-1.5 z-10">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/15 backdrop-blur-md p-1 border border-white/30 shadow-md flex items-center justify-center">
-              <KongdakMascot size={52} expression="flutter" animate="pulse" />
+              <KongdakMascot size={52} expression="canon_white" animate="pulse" />
             </div>
             <span className="text-xs font-bold text-white bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm truncate max-w-[85px]">
               {data.personB.name}

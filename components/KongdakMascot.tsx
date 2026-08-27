@@ -12,7 +12,8 @@ export type MascotExpression =
   | "cringe"
   | "hyunta"
   | "factattack"
-  | "couple";
+  | "couple"
+  | "canon_white";
 
 export interface KongdakMascotProps {
   size?: number;
@@ -41,6 +42,7 @@ const EXPRESSION_SRC_MAP: Record<MascotExpression, string> = {
   hyunta: "/mascot/transparent/expr_5_hyunta.png",
   factattack: "/mascot/transparent/expr_6_factattack.png",
   couple: "/mascot/transparent/couple_red_thread.png",
+  canon_white: "/mascot/transparent/doogeun_cat_canon_white.png",
 };
 
 export default function KongdakMascot({
