@@ -75,7 +75,7 @@ def main():
     # failover path in lib/aiFallback.ts) are present. A missing dep makes the
     # build fail with "Module not found". `npm ci` if the lockfile matches, else
     # `npm install`.
-    run_cmd(client, "cd /root/k-destiny-core && (npm ci 2>&1 || npm install 2>&1) | tail -15", tmo=600)
+    run_cmd(client, "cd /root/k-destiny-core && export PUPPETEER_SKIP_DOWNLOAD=true && (npm ci 2>&1 || npm install 2>&1) | tail -15", tmo=600)
 
     # 3. Prisma
     run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")

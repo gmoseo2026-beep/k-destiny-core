@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
 import { DeepReportContent } from "@/lib/destinyGen";
+import { loadTossPayments } from "@tosspayments/payment-sdk";
 
 interface CompatData {
   id: string;
@@ -78,10 +79,10 @@ interface CompatResultClientProps {
   initialData: CompatData;
   locale: string;
   refToken?: string;
-  isAdmin?: boolean;
+  isPremium?: boolean;
 }
 
-export default function CompatResultClient({ initialData, locale, refToken, isAdmin }: CompatResultClientProps) {
+export default function CompatResultClient({ initialData, locale, refToken, isPremium }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
@@ -284,31 +285,70 @@ export default function CompatResultClient({ initialData, locale, refToken, isAd
       )}
 
       {/* Main Score Card */}
-      <div className="w-full bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-3xl p-8 text-white text-center shadow-lg relative overflow-hidden mt-4">
+      <div className="w-full bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white text-center shadow-lg relative overflow-hidden mt-4">
         {/* Background Sparkle Decor */}
         <div className="absolute top-4 right-4 text-[#FFC24B] text-2xl animate-pulse">✨</div>
-        <div className="absolute bottom-6 left-6 text-white/20 text-4xl font-black">kongdak</div>
+        <div className="absolute bottom-4 left-6 text-white/10 text-3xl font-black select-none pointer-events-none">kongdak</div>
 
-        {/* Kongdak Mascot Decor */}
-        <div className="flex justify-center mb-2">
-          <KongdakMascot size={52} animate="heartbeat" />
+        <h2 className="text-sm sm:text-base font-extrabold text-white/90 uppercase tracking-wider mb-4">
+          우리 두 사람의 사주 궁합
+        </h2>
+
+        {/* Triangular Couple & Destiny Red Thread Layout */}
+        <div className="relative flex items-center justify-between w-full max-w-xs sm:max-w-sm mx-auto mb-4 px-2">
+          {/* Person A (나) + 콩이 */}
+          <div className="flex flex-col items-center gap-1.5 z-10">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/15 backdrop-blur-md p-1 border border-white/30 shadow-md flex items-center justify-center">
+              <KongdakMascot size={52} expression="canon" animate="pulse" />
+            </div>
+            <span className="text-xs font-bold text-white bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm truncate max-w-[85px]">
+              {data.personA.name}
+            </span>
+          </div>
+
+          {/* Center: Red Thread Fate Heart */}
+          <div className="flex flex-col items-center justify-center flex-1 px-1 z-10">
+            <div className="w-16 h-12 flex items-center justify-center animate-pulse">
+              <KongdakMascot size={56} expression="couple" animate="heartbeat" />
+            </div>
+            <span className="text-[10px] font-extrabold text-[#FFC24B] tracking-wider uppercase bg-black/25 px-2 py-0.5 rounded-full mt-0.5">
+              인연의 붉은 실
+            </span>
+          </div>
+
+          {/* Person B (상대) + 닥이 */}
+          <div className="flex flex-col items-center gap-1.5 z-10">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/15 backdrop-blur-md p-1 border border-white/30 shadow-md flex items-center justify-center">
+              <KongdakMascot size={52} expression="flutter" animate="pulse" />
+            </div>
+            <span className="text-xs font-bold text-white bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm truncate max-w-[85px]">
+              {data.personB.name}
+            </span>
+          </div>
         </div>
 
-        <p className="text-sm font-semibold tracking-wider text-white/90 uppercase mb-2">
-          {data.personA.name} ❤️ {data.personB.name}
-        </p>
-        <h2 className="text-xl font-bold text-white mb-6">우리 두 사람의 궁합</h2>
+        {/* Big Score with Reaction Mascot */}
+        <div className="flex items-center justify-center gap-3 my-2">
+          <KongdakMascot size={64} score={data.score} animate="heartbeat" />
+          <div className="flex items-baseline gap-1">
+            <span className="text-6xl sm:text-7xl font-black tracking-tight drop-shadow-md">
+              {data.score}
+            </span>
+            <span className="text-2xl sm:text-3xl font-bold text-[#FFC24B]">점</span>
+          </div>
+        </div>
 
-        {/* Big Score */}
-        <div className="flex items-baseline justify-center gap-1 my-4">
-          <span className="text-7xl sm:text-8xl font-black tracking-tight drop-shadow-md">
-            {data.score}
-          </span>
-          <span className="text-3xl font-bold text-[#FFC24B]">점</span>
+        {/* Score Reaction Mood Badge */}
+        <div className="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-[#FFF6F1] px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-white/20 my-2 shadow-sm">
+          {data.score >= 90 && "💖 심쿵주의! 천생연분 궁합"}
+          {data.score >= 80 && data.score < 90 && "🔥 불꽃 케미! 찰떡호흡 궁합"}
+          {data.score >= 70 && data.score < 80 && "💕 두근두근! 설레는 꿀케미"}
+          {data.score >= 60 && data.score < 70 && "💧 오글오글! 매력적인 밀당 케미"}
+          {data.score < 60 && "🌱 반전매력! 서로 맞춰가는 노력형 케미"}
         </div>
 
         {/* Keywords 3 Chips */}
-        <div className="flex flex-wrap justify-center gap-2 mt-6">
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
           {data.keywords.map((kw, i) => (
             <span
               key={i}
@@ -450,31 +490,96 @@ export default function CompatResultClient({ initialData, locale, refToken, isAd
             서로에게 끌리는 진짜 이유와 타이밍까지<br/>AI가 분석한 심층 궁합 리포트를 만나보세요.
           </p>
           
-          {isAdmin ? (
+          {isPremium ? (
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleGenerateDeepReport}
                 disabled={isLoadingDeepReport}
-                className="w-full bg-[#6A2C70] hover:bg-[#6A2C70]/90 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
+                className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
               >
-                {isLoadingDeepReport ? "리포트 생성 중..." : "🛠️ [어드민] 결제 우회 리포트 즉시 열람"}
+                {isLoadingDeepReport ? "리포트 생성 중..." : "✨ 콩닥 플러스: 심층 리포트 즉시 열람"}
               </button>
               {deepReportError && <p className="text-xs text-red-500 mt-1">{deepReportError}</p>}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
+              <div className="bg-[#FFF6F1]/80 text-[#6A2C70] font-bold p-3 rounded-lg text-sm mb-2 border border-[#FFD9E0]">
+                🔒 이 커플의 갈등 포인트 3개와 관계 조언이 준비됐어요
+              </div>
               <button
-                disabled
-                className="w-full bg-[#FF5C77]/50 text-white py-3.5 rounded-xl font-bold text-sm cursor-not-allowed opacity-90 shadow-sm"
+                onClick={async () => {
+                  try {
+                    const email = prompt("결제 내역 확인을 위해 이메일을 입력해주세요:", "");
+                    if (email === null) return;
+                    const res = await fetch("/api/payments/order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ type: 'SINGLE', compatId: data.id, email }),
+                    });
+                    if (!res.ok) throw new Error("주문 생성 실패");
+                    const order = await res.json();
+                    
+                    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY as string;
+                    if (!clientKey) {
+                      alert("결제 설정이 누락되었습니다. (Client Key)");
+                      return;
+                    }
+                    const tossPayments = await loadTossPayments(clientKey);
+                    
+                    const origin = window.location.origin;
+                    await tossPayments.requestPayment("카드", {
+                      amount: order.amount,
+                      orderId: order.orderId,
+                      orderName: "콩닥 심층 궁합 리포트",
+                      customerName: "게스트",
+                      customerEmail: email,
+                      successUrl: `${origin}/${locale}/checkout/success?type=SINGLE&compatId=${data.id}`,
+                      failUrl: `${origin}/${locale}/checkout/fail?type=SINGLE&compatId=${data.id}`,
+                    });
+                  } catch (e) {
+                    alert("결제 초기화에 실패했습니다.");
+                  }
+                }}
+                className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] py-4 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-[0.98]"
               >
-                첫 결제 특가 1,900원으로 잠금 해제 💘 (오픈 준비 중)
+                잠금 해제 · 2,900원(첫 결제 1,900원)
               </button>
               <button
-                disabled
-                className="w-full bg-white border border-[#FF5C77]/30 text-[#FF5C77]/60 py-3.5 rounded-xl font-bold text-sm cursor-not-allowed opacity-90 shadow-sm"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/payments/order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ type: 'SUBSCRIPTION', compatId: data.id }),
+                    });
+                    if (!res.ok) {
+                      if (res.status === 401) {
+                        alert("구독은 로그인이 필요합니다.");
+                        window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
+                        return;
+                      }
+                      throw new Error("주문 생성 실패");
+                    }
+                    const order = await res.json();
+                    
+                    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+                    const tossPayments = await loadTossPayments(clientKey);
+                    
+                    const origin = window.location.origin;
+                    await tossPayments.requestBillingAuth("카드", {
+                      customerKey: order.userId,
+                      successUrl: `${origin}/${locale}/checkout/success?type=SUBSCRIPTION&compatId=${data.id}`,
+                      failUrl: `${origin}/${locale}/checkout/fail?type=SUBSCRIPTION&compatId=${data.id}`,
+                    });
+                  } catch (e) {
+                    alert("구독 결제 초기화에 실패했습니다.");
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
               >
-                게스트로 2,900원 바로 결제
+                무제한 구독 · 9,900원/월
               </button>
+              <p className="text-[11px] text-[#8A8291] mt-1">모든 심층 궁합 무료 + 매주 맞춤 운세 배달</p>
             </div>
           )}
         </div>

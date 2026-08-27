@@ -181,3 +181,45 @@ Must be exactly 3 short paragraphs.
 Do NOT give away the full relationship advice. Keep it punchy and viral. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.`;
   }
 }
+
+export interface WeeklyFortuneContent {
+  summary: string;           // 이번 주 총평 (2~3문장)
+  loveLuck: string;          // 연애/애정운 흐름
+  wealthLuck: string;        // 금전/재물운 흐름
+  bestDay: {                 // 이번 주 가장 기운이 좋은 요일
+    day: string;             // 예: "수요일", "금요일"
+    reason: string;          // 그 날이 좋은 이유
+  };
+  caution: string;           // 이번 주 특별히 주의할 점
+  // 커플 운세일 경우 아래 필드 추가 (개인 운세일 땐 생략 가능)
+  partnerStatus?: string;    // 상대방의 현재 기운/심리 상태
+  communicationTip?: string; // 서로 오해 없이 대화하기 좋은 팁
+}
+
+export function buildWeeklyFortunePrompt(contextBlock: string, isCouple: boolean, toneGuide: string): string {
+  const coupleJsonFields = isCouple ? `
+  partnerStatus: string;     // 상대방의 현재 기운과 심리 (이번 주 상대방이 어떤 상태인지)
+  communicationTip: string;  // 서로 오해 없이 다가가거나 대화하기 좋은 팁` : '';
+
+  return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
+    
+Write a deeply insightful weekly fortune reading for this week. You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+interface WeeklyFortuneContent {
+  summary: string;           // 이번 주 총평 (2~3문장)
+  loveLuck: string;          // 연애/애정운 흐름
+  wealthLuck: string;        // 금전/재물운 흐름
+  bestDay: {
+    day: string;             // 예: "수요일", "금요일" 등 구체적인 요일
+    reason: string;          // 왜 그 날이 가장 좋은지 설명
+  };
+  caution: string;           // 주의해야 할 점 1가지${coupleJsonFields}
+}
+\`\`\`
+
+Make it sound like a very expensive, deeply personal reading by a wise mentor. 
+Give practical, realistic advice rather than vague mystical statements. 
+Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.
+Output ONLY the JSON block. Do NOT include markdown code fences (like \`\`\`json). Return raw valid JSON.`;
+}

@@ -8,19 +8,38 @@ import KongdakMascot from "@/components/KongdakMascot";
 interface CompatNewClientProps {
   locale: string;
   refToken?: string;
+  initialProfile?: any;
 }
 
-export default function CompatNewClient({ locale, refToken }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, initialProfile }: CompatNewClientProps) {
   const router = useRouter();
 
-  const [nameA, setNameA] = useState("");
-  const [yearA, setYearA] = useState("");
-  const [monthA, setMonthA] = useState("");
-  const [dayA, setDayA] = useState("");
-  const [genderA, setGenderA] = useState<"F" | "M">("F");
-  const [ampmA, setAmpmA] = useState("");
-  const [hourA, setHourA] = useState("1");
-  const [minA, setMinA] = useState("0");
+  const [nameA, setNameA] = useState(initialProfile?.name || "");
+  const [yearA, setYearA] = useState(initialProfile?.birthYear || "");
+  const [monthA, setMonthA] = useState(initialProfile?.birthMonth || "");
+  const [dayA, setDayA] = useState(initialProfile?.birthDay || "");
+  const [genderA, setGenderA] = useState<"F" | "M">(initialProfile?.gender || "F");
+  
+  let defaultAmpmA = "";
+  let defaultHourA = "1";
+  let defaultMinA = "0";
+  if (initialProfile && !initialProfile.unknownTime && initialProfile.birthTime) {
+    const [hStr, mStr] = initialProfile.birthTime.split(":");
+    let h = parseInt(hStr);
+    defaultMinA = parseInt(mStr).toString();
+    if (h >= 12) {
+      defaultAmpmA = "PM";
+      if (h > 12) h -= 12;
+    } else {
+      defaultAmpmA = "AM";
+      if (h === 0) h = 12;
+    }
+    defaultHourA = h.toString();
+  }
+
+  const [ampmA, setAmpmA] = useState(defaultAmpmA);
+  const [hourA, setHourA] = useState(defaultHourA);
+  const [minA, setMinA] = useState(defaultMinA);
 
   const [nameB, setNameB] = useState("");
   const [yearB, setYearB] = useState("");
@@ -169,9 +188,16 @@ export default function CompatNewClient({ locale, refToken }: CompatNewClientPro
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {/* Person A (Me) */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center gap-2 border-b border-[#FFF6F1] pb-2">
-            <span className="text-base">👤</span>
-            <h3 className="font-bold text-sm text-[#2B2430]">내 정보</h3>
+          <div className="flex items-center justify-between border-b border-[#FFF6F1] pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base">👤</span>
+              <h3 className="font-bold text-sm text-[#2B2430]">내 정보</h3>
+            </div>
+            {initialProfile && (
+              <span className="text-[10px] bg-[#FF5C77]/10 text-[#FF5C77] px-2 py-0.5 rounded-full font-bold">
+                저장된 프로필 불러옴
+              </span>
+            )}
           </div>
 
           <div>

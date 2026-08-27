@@ -88,6 +88,7 @@ model User {
   pushSubscriptions PushSubscription[]
   orders          Order[]
   subscriptions   Subscription?
+  weeklyFortunes  WeeklyFortune[]
 }
 
 model Account {
@@ -281,10 +282,24 @@ model Subscription {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// 12. 심층 리포트 AI 생성 캐시 (구조화 JSON)
+// 12. 심층 리포트 AI 생성 캐시 (구조화된 JSON)
 model DeepReport {
   id             String   @id @default(cuid())
   compatId       String   @unique
   content        Json     // 구조화된 심층 리포트 JSON 데이터
   createdAt      DateTime @default(now())
+}
+
+// 13. 이번 주 종합 운세 (개인 및 커플)
+model WeeklyFortune {
+  id             String   @id @default(cuid())
+  userId         String   // 운세를 요청한 주체
+  targetCompatId String?  // 커플 운세일 경우 연결된 Compatibility ID (null이면 개인 운세)
+  weekStartDate  String   // "YYYY-MM-DD" 포맷 (월요일 기준)
+  content        Json     // 생성된 주간 운세 JSON
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStartDate, targetCompatId]) // 해당 주차에 동일 타겟으로 중복 생성 방지
 }

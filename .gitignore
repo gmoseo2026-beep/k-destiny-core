@@ -59,6 +59,7 @@ screenshot.png
 # Deploy credentials (never commit)
 scripts/deploy.env
 deploy.env
+*.zip
 
 __pycache__/
 

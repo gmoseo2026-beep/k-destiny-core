@@ -53,15 +53,20 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Support Contact */}
-        <div className="mt-6 pt-4 border-t border-[#2B2430]/8 flex items-center justify-center gap-2">
-          <Mail className="w-3.5 h-3.5 text-coral/40" />
-          <a
-            href="mailto:help@kongdak.kr"
-            className="font-sans text-xs text-gray-500 hover:text-coral transition-colors tracking-wide"
-          >
-            help@kongdak.kr
-          </a>
+        {/* Support Contact & Business Info */}
+        <div className="mt-6 pt-4 border-t border-[#2B2430]/8 flex flex-col items-center justify-center gap-2">
+          <div className="flex items-center gap-2">
+            <Mail className="w-3.5 h-3.5 text-coral/40" />
+            <a
+              href="mailto:help@kongdak.kr"
+              className="font-sans text-xs text-gray-500 hover:text-coral transition-colors tracking-wide"
+            >
+              help@kongdak.kr
+            </a>
+          </div>
+          <p className="font-sans text-xs text-gray-500 tracking-wide text-center mt-1">
+            {t("business_info")}
+          </p>
         </div>
       </div>
 

@@ -85,7 +85,17 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   const { ref } = await searchParams;
 
   const session = await getServerSession(authOptions);
-  const isAdmin = session?.user?.role === "ADMIN";
+  
+  // Calculate isPremium exactly like in user/entitlement/route.ts
+  const userRow = session?.user?.id ? await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { tier: true, role: true, premiumEndDate: true },
+  }) : null;
+  const now = new Date();
+  const premiumActive =
+    userRow?.tier === "PREMIUM" &&
+    (!userRow.premiumEndDate || userRow.premiumEndDate > now);
+  const isPremium = premiumActive || userRow?.role === "ADMIN";
 
   // shareToken 또는 cuid(id)로 DB 조회
   // (cuid 25자·shareToken 24자로 둘 다 20자를 넘어 길이 분기가 불가능하므로 OR 조회)
@@ -153,7 +163,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
         initialData={initialData}
         locale={locale}
         refToken={ref}
-        isAdmin={isAdmin}
+        isPremium={isPremium}
       />
     </main>
   );

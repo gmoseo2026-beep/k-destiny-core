@@ -1,0 +1,205 @@
+[TAILING] Tailing last 100 lines for [k-destiny] process (change the value with --lines option)
+/root/.pm2/logs/k-destiny-out.log last 100 lines:
+0|k-destin | [Chat] Trying model: gemini-2.0-flash
+0|k-destin | [Chat] Trying model: gemini-2.0-flash (retry 1)
+0|k-destin | [Chat] Trying model: gemini-2.5-flash
+0|k-destin | [Chat] Success with model: gemini-2.5-flash
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 296ms
+0|k-destin | [Chat] Trying model: gemini-2.0-flash
+0|k-destin | [Chat] Trying model: gemini-2.0-flash (retry 1)
+0|k-destin | [Chat] Trying model: gemini-2.5-flash
+0|k-destin | [Chat] Success with model: gemini-2.5-flash
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 1926ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 591ms
+0|k-destin | [Chat] Trying model: gemini-2.0-flash
+0|k-destin | [Chat] Trying model: gemini-2.0-flash (retry 1)
+0|k-destin | [Chat] Trying model: gemini-2.5-flash
+0|k-destin | [Chat] Success with model: gemini-2.5-flash
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 619ms
+0|k-destin | [Chat] Trying model: gemini-2.0-flash
+0|k-destin | [Chat] Trying model: gemini-2.0-flash (retry 1)
+0|k-destin | [Chat] Trying model: gemini-2.5-flash
+0|k-destin | [Chat] Success with model: gemini-2.5-flash
+0|k-destin | [Gumroad Webhook] Received: [
+0|k-destin |   'seller_id',
+0|k-destin |   'product_id',
+0|k-destin |   'product_name',
+0|k-destin |   'permalink',
+0|k-destin |   'product_permalink',
+0|k-destin |   'short_product_id',
+0|k-destin |   'email',
+0|k-destin |   'price',
+0|k-destin |   'gumroad_fee',
+0|k-destin |   'currency',
+0|k-destin |   'quantity',
+0|k-destin |   'discover_fee_charged',
+0|k-destin |   'can_contact',
+0|k-destin |   'referrer',
+0|k-destin |   'card[visual]',
+0|k-destin |   'card[type]',
+0|k-destin |   'card[bin]',
+0|k-destin |   'card[expiry_month]',
+0|k-destin |   'card[expiry_year]',
+0|k-destin |   'order_number',
+0|k-destin |   'sale_id',
+0|k-destin |   'sale_timestamp',
+0|k-destin |   'full_name',
+0|k-destin |   'url_params[action]',
+0|k-destin |   'url_params[controller]',
+0|k-destin |   'url_params[format]',
+0|k-destin |   'url_params[id]',
+0|k-destin |   'ip_country',
+0|k-destin |   'is_gift_receiver_purchase',
+0|k-destin |   'refunded',
+0|k-destin |   'resource_name',
+0|k-destin |   'disputed',
+0|k-destin |   'dispute_won'
+0|k-destin | ]
+0|k-destin | [Gumroad] ✅ Single report purchased for mindhistory.ai@gmail.com
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 390ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 423ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 452ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 692ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 585ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 513ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 329ms
+0|k-destin | ▲ Next.js 16.2.9
+0|k-destin | - Local:         http://localhost:3000
+0|k-destin | - Network:       http://161.97.134.176:3000
+0|k-destin | ✓ Ready in 272ms
+
+/root/.pm2/logs/k-destiny-error.log last 100 lines:
+0|k-destin |     '{\n' +
+0|k-destin |     '  data: {\n' +
+0|k-destin |     '    provider: "kakao",\n' +
+0|k-destin |     '    type: "oauth",\n' +
+0|k-destin |     '    providerAccountId: "5054403840",\n' +
+0|k-destin |     '    access_token: "YO-3mPdYqdEutCTWjT5FAAUkNn8O91JdAAAAAQoNGVMAAAGgMl5PTuAsyCcGfplL",\n' +
+0|k-destin |     '    token_type: "bearer",\n' +
+0|k-destin |     '    refresh_token: "IUKwKLk3VhX5ThKTQAFMEEqCwAJKhG24AAAAAgoNGVMAAAGgMl5PTOAsyCcGfplL",\n' +
+0|k-destin |     '    expires_at: 1787573035,\n' +
+0|k-destin |     '    scope: "profile_image profile_nickname",\n' +
+0|k-destin |     '    refresh_token_expires_in: 5183999,\n' +
+0|k-destin |     '    ~~~~~~~~~~~~~~~~~~~~~~~~\n' +
+0|k-destin |     '    userId: "cmt6tz1h80003jfkup542lw15",\n' +
+0|k-destin |     '?   id?: String,\n' +
+0|k-destin |     '?   id_token?: String | Null,\n' +
+0|k-destin |     '?   session_state?: String | Null\n' +
+0|k-destin |     '  }\n' +
+0|k-destin |     '}\n' +
+0|k-destin |     '\n' +
+0|k-destin |     'Unknown argument `refresh_token_expires_in`. Available options are marked with ?.',
+0|k-destin |   stack: 'PrismaClientValidationError: \n' +
+0|k-destin |     'Invalid `prisma.account.create()` invocation:\n' +
+0|k-destin |     '\n' +
+0|k-destin |     '{\n' +
+0|k-destin |     '  data: {\n' +
+0|k-destin |     '    provider: "kakao",\n' +
+0|k-destin |     '    type: "oauth",\n' +
+0|k-destin |     '    providerAccountId: "5054403840",\n' +
+0|k-destin |     '    access_token: "YO-3mPdYqdEutCTWjT5FAAUkNn8O91JdAAAAAQoNGVMAAAGgMl5PTuAsyCcGfplL",\n' +
+0|k-destin |     '    token_type: "bearer",\n' +
+0|k-destin |     '    refresh_token: "IUKwKLk3VhX5ThKTQAFMEEqCwAJKhG24AAAAAgoNGVMAAAGgMl5PTOAsyCcGfplL",\n' +
+0|k-destin |     '    expires_at: 1787573035,\n' +
+0|k-destin |     '    scope: "profile_image profile_nickname",\n' +
+0|k-destin |     '    refresh_token_expires_in: 5183999,\n' +
+0|k-destin |     '    ~~~~~~~~~~~~~~~~~~~~~~~~\n' +
+0|k-destin |     '    userId: "cmt6tz1h80003jfkup542lw15",\n' +
+0|k-destin |     '?   id?: String,\n' +
+0|k-destin |     '?   id_token?: String | Null,\n' +
+0|k-destin |     '?   session_state?: String | Null\n' +
+0|k-destin |     '  }\n' +
+0|k-destin |     '}\n' +
+0|k-destin |     '\n' +
+0|k-destin |     'Unknown argument `refresh_token_expires_in`. Available options are marked with ?.\n' +
+0|k-destin |     '    at ar (/root/k-destiny-core/node_modules/@prisma/client/runtime/client.js:10:1374)\n' +
+0|k-destin |     '    at zr.handleRequestError (/root/k-destiny-core/node_modules/@prisma/client/runtime/client.js:65:7929)\n' +
+0|k-destin |     '    at zr.handleAndLogRequestError (/root/k-destiny-core/node_modules/@prisma/client/runtime/client.js:65:7581)\n' +
+0|k-destin |     '    at zr.request (/root/k-destiny-core/node_modules/@prisma/client/runtime/client.js:65:7288)\n' +
+0|k-destin |     '    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n' +
+0|k-destin |     '    at async a (/root/k-destiny-core/node_modules/@prisma/client/runtime/client.js:75:6862)',
+0|k-destin |   name: 'PrismaClientValidationError'
+0|k-destin | }
+0|k-destin | [next-auth][error][OAUTH_CALLBACK_HANDLER_ERROR] 
+0|k-destin | https://next-auth.js.org/errors#oauth_callback_handler_error 
+0|k-destin | Invalid `prisma.account.create()` invocation:
+0|k-destin | 
+0|k-destin | {
+0|k-destin |   data: {
+0|k-destin |     provider: "kakao",
+0|k-destin |     type: "oauth",
+0|k-destin |     providerAccountId: "5054403840",
+0|k-destin |     access_token: "YO-3mPdYqdEutCTWjT5FAAUkNn8O91JdAAAAAQoNGVMAAAGgMl5PTuAsyCcGfplL",
+0|k-destin |     token_type: "bearer",
+0|k-destin |     refresh_token: "IUKwKLk3VhX5ThKTQAFMEEqCwAJKhG24AAAAAgoNGVMAAAGgMl5PTOAsyCcGfplL",
+0|k-destin |     expires_at: 1787573035,
+0|k-destin |     scope: "profile_image profile_nickname",
+0|k-destin |     refresh_token_expires_in: 5183999,
+0|k-destin |     ~~~~~~~~~~~~~~~~~~~~~~~~
+0|k-destin |     userId: "cmt6tz1h80003jfkup542lw15",
+0|k-destin | ?   id?: String,
+0|k-destin | ?   id_token?: String | Null,
+0|k-destin | ?   session_state?: String | Null
+0|k-destin |   }
+0|k-destin | }
+0|k-destin | 
+0|k-destin | Unknown argument `refresh_token_expires_in`. Available options are marked with ?. Error [LinkAccountError]: 
+0|k-destin | Invalid `prisma.account.create()` invocation:
+0|k-destin | 
+0|k-destin | {
+0|k-destin |   data: {
+0|k-destin |     provider: "kakao",
+0|k-destin |     type: "oauth",
+0|k-destin |     providerAccountId: "5054403840",
+0|k-destin |     access_token: "YO-3mPdYqdEutCTWjT5FAAUkNn8O91JdAAAAAQoNGVMAAAGgMl5PTuAsyCcGfplL",
+0|k-destin |     token_type: "bearer",
+0|k-destin |     refresh_token: "IUKwKLk3VhX5ThKTQAFMEEqCwAJKhG24AAAAAgoNGVMAAAGgMl5PTOAsyCcGfplL",
+0|k-destin |     expires_at: 1787573035,
+0|k-destin |     scope: "profile_image profile_nickname",
+0|k-destin |     refresh_token_expires_in: 5183999,
+0|k-destin |     ~~~~~~~~~~~~~~~~~~~~~~~~
+0|k-destin |     userId: "cmt6tz1h80003jfkup542lw15",
+0|k-destin | ?   id?: String,
+0|k-destin | ?   id_token?: String | Null,
+0|k-destin | ?   session_state?: String | Null
+0|k-destin |   }
+0|k-destin | }
+0|k-destin | 
+0|k-destin | Unknown argument `refresh_token_expires_in`. Available options are marked with ?.
+0|k-destin |     at ignore-listed frames {
+0|k-destin |   code: undefined
+0|k-destin | }
+

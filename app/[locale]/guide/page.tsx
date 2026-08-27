@@ -31,9 +31,9 @@ const itemVariants = {
 };
 
 const steps = [
-  { icon: Calendar, tint: "bg-coral/10", iconColor: "text-coral" },
-  { icon: Heart, tint: "bg-plum/10", iconColor: "text-plum" },
-  { icon: Share2, tint: "bg-gold/15", iconColor: "text-[#C98A0E]" },
+  { icon: Heart, tint: "bg-coral/10", iconColor: "text-coral" },
+  { icon: Sparkles, tint: "bg-plum/10", iconColor: "text-plum" },
+  { icon: Calendar, tint: "bg-gold/15", iconColor: "text-[#C98A0E]" },
 ];
 
 export default function GuidePage() {

@@ -34,6 +34,19 @@ export default function Navbar() {
 
 
 
+        {/* Fortune Dashboard Link */}
+        <Link href="/fortune/weekly">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#FFF6F1] border border-[#FFD9E0] hover:border-[#FF8AA1] shadow-sm active:scale-95 transition-all duration-150"
+          >
+            <span className="text-sm">🔮</span>
+            <span className="font-sans text-xs font-bold text-[#6A2C70] whitespace-nowrap">
+              이번 주 운세
+            </span>
+          </motion.button>
+        </Link>
+
         {/* Admin Dashboard — strictly visible to ADMIN role only */}
         {session && (session.user as any)?.role === 'ADMIN' && (
           <Link href="/admin">

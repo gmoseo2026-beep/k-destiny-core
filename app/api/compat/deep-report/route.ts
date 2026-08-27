@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
-    const { compatId, email, locale = "ko" } = body;
+    // [Vuln 3 Fix] 게스트 사용자 검증을 위해 클라이언트가 임의로 보내는 email 대신 orderId를 고유 증명(Token)으로 사용
+    const { compatId, orderId, locale = "ko" } = body;
 
     if (!compatId) {
       return NextResponse.json({ error: "Missing compatId" }, { status: 400 });
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       role: session?.user?.role,
       tier: session?.user?.tier,
       compatId,
-      email: email || undefined
+      orderId
     });
 
     if (!entitlement.entitled) {

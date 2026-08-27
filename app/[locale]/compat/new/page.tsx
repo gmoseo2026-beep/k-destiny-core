@@ -1,6 +1,9 @@
 import { Metadata } from "next";
 import CompatNewClient from "@/components/CompatNewClient";
 import { canonicalUrlFor } from "@/lib/seo";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import prisma from "@/lib/prisma";
 
 const TITLE = "상대방 정보 입력 — 콩닥 궁합";
 const DESCRIPTION = "두 사람의 생년월일시로 알아보는 진짜 사주 궁합과 타고난 에너지 케미";
@@ -34,6 +37,14 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
   const { locale } = await params;
   const { ref } = await searchParams;
 
+  const session = await getServerSession(authOptions);
+  let profile = null;
+  if (session?.user?.id) {
+    profile = await prisma.userSajuProfile.findUnique({
+      where: { userId: session.user.id }
+    });
+  }
+
   return (
     <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 flex flex-col items-center">
       {/* Top Header */}
@@ -59,7 +70,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
       </div>
 
       {/* Form Component */}
-      <CompatNewClient locale={locale} refToken={ref} />
+      <CompatNewClient locale={locale} refToken={ref} initialProfile={profile} />
     </main>
   );
 }
