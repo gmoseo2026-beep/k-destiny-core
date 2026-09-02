@@ -20,12 +20,22 @@ export async function isEntitled(params: {
     return { entitled: true, reason: 'ADMIN' };
   }
 
-  // 2. Active subscription (or Premium tier unexpired)
-  if (tier === 'PREMIUM') {
-    return { entitled: true, reason: 'SUBSCRIPTION' };
-  }
-
   if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { tier: true, premiumEndDate: true }
+    });
+
+    if (user && user.tier === 'PREMIUM') {
+      const now = new Date();
+      if (!user.premiumEndDate || user.premiumEndDate > now) {
+        return { entitled: true, reason: 'SUBSCRIPTION' };
+      }
+      // If expired, treat as FREE (we can optionally update tier to FREE here)
+      // We fall through to check UNLOCKs.
+    }
+    
+    // Check for active subscriptions just in case
     const activeSub = await prisma.subscription.findFirst({
       where: {
         userId,

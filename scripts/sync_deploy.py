@@ -59,27 +59,8 @@ def main():
     run_cmd(client, "unzip -o /root/deploy.zip -d /root/k-destiny-core")
     run_cmd(client, "rm /root/deploy.zip")
     
-    # 3. Prisma
-    run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")
-    run_cmd(client, "cd /root/k-destiny-core && npx prisma generate 2>&1")
-
-    # 4. Clean Build.
-    print_f("\nBuilding Next.js application...")
-    build_exit = run_cmd(
-        client,
-        "cd /root/k-destiny-core && rm -rf .next && "
-        "NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1; "
-        "code=$?; echo \"BUILD_EXIT=$code\"; exit $code",
-        tmo=600,
-    )
-
-    if build_exit != 0:
-        print_f("\n[ERROR] Build failed! Check the output above. 🛑")
-        print_f("ABORTING deployment. The old version is still running (PM2 was not restarted).")
-        sys.exit(1)
-
-    print_f("\n[SUCCESS] Build passed! Restarting PM2... 🔄")
-    run_cmd(client, "cd /root/k-destiny-core && pm2 restart k-destiny")
+    # 3. Use finish_deploy.py for npm install, build, and pm2 restart.
+    print_f("Deployment files updated successfully. Run python scripts/finish_deploy.py to build and restart.")
 
     client.close()
 

@@ -8,16 +8,20 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
-    const { type, compatId, email } = body;
+    const { type, compatId, email, planId } = body;
     
     let amount = 2900;
     
-    if (type === 'SUBSCRIPTION') {
-      amount = 9900;
+    if (type === 'PERIOD_PASS') {
       if (!session?.user?.id) {
-         return NextResponse.json({ error: "Login required for subscription" }, { status: 401 });
+         return NextResponse.json({ error: "Login required for period pass" }, { status: 401 });
       }
-    } else {
+      
+      if (planId === '1_MONTH') amount = 9900;
+      else if (planId === '3_MONTHS') amount = 24900;
+      else return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+
+    } else if (type === 'SINGLE') {
       // Check for first purchase for SINGLE
       if (session?.user?.id) {
         const pastOrders = await prisma.order.findFirst({
@@ -32,6 +36,8 @@ export async function POST(req: NextRequest) {
       } else {
         return NextResponse.json({ error: "Email is required for guest checkout" }, { status: 400 });
       }
+    } else {
+      return NextResponse.json({ error: "Invalid order type" }, { status: 400 });
     }
 
     const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
@@ -43,6 +49,7 @@ export async function POST(req: NextRequest) {
         email: email || session?.user?.email || null,
         compatId: type === 'SINGLE' ? compatId : null,
         type: type,
+        planId: type === 'PERIOD_PASS' ? planId : null,
         amount,
         status: "PENDING"
       }

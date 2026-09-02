@@ -68,6 +68,29 @@ export async function POST(req: NextRequest) {
           }
         });
       }
+    } else if (order.type === 'PERIOD_PASS' && order.userId) {
+      const user = await prisma.user.findUnique({ where: { id: order.userId } });
+      const now = new Date();
+      
+      let baseDate = now;
+      if (user?.premiumEndDate && user.premiumEndDate > now) {
+         baseDate = user.premiumEndDate;
+      }
+      
+      const newEndDate = new Date(baseDate);
+      if (order.planId === '1_MONTH') newEndDate.setMonth(newEndDate.getMonth() + 1);
+      else if (order.planId === '3_MONTHS') newEndDate.setMonth(newEndDate.getMonth() + 3);
+      
+      await prisma.user.update({
+        where: { id: order.userId },
+        data: {
+           tier: 'PREMIUM',
+           premiumStartDate: user?.premiumStartDate || now,
+           premiumEndDate: newEndDate,
+           planType: order.planId,
+           paidAmount: (user?.paidAmount || 0) + order.amount,
+        }
+      });
     }
 
     return NextResponse.json({ 

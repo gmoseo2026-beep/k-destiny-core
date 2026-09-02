@@ -17,11 +17,19 @@ function getAuthHeader() {
 
 export const tossProvider: PaymentProvider = {
   requestPaymentParams(order: Order) {
-    // 클라이언트에서 결제창 띄울 때 사용할 데이터
+    let orderName = "콩닥 플러스 무제한 패스";
+    if (order.type === 'SINGLE') orderName = "콩닥 심층 궁합 리포트";
+    else if (order.type === 'PERIOD_PASS') {
+      if (order.planId === '1_MONTH') orderName = "콩닥 플러스 1개월 패스";
+      else if (order.planId === '3_MONTHS') orderName = "콩닥 플러스 3개월 패스";
+      else if (order.planId === '6_MONTHS') orderName = "콩닥 플러스 6개월 패스";
+      else if (order.planId === '1_YEAR') orderName = "콩닥 플러스 1년 패스";
+    }
+
     return {
       amount: order.amount,
       orderId: order.orderId,
-      orderName: order.type === 'SINGLE' ? "콩닥 심층 궁합 리포트" : "콩닥 플러스 무제한 구독",
+      orderName,
       customerEmail: order.email || undefined,
     };
   },

@@ -88,10 +88,12 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
   const [copyToast, setCopyToast] = useState<string | null>(null);
   
-  // Premium Report State
   const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
   const [deepReportError, setDeepReportError] = useState<string | null>(null);
+
+  // Period Pass Selection State
+  const [selectedPlan, setSelectedPlan] = useState<string>("1_MONTH");
 
   // 1. 유입 및 paywall 노출 GA4 이벤트 발사 + 주소창 ref 자동 동기화
   useEffect(() => {
@@ -530,7 +532,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     await tossPayments.requestPayment("카드", {
                       amount: order.amount,
                       orderId: order.orderId,
-                      orderName: "콩닥 심층 궁합 리포트",
+                      orderName: order.orderName || "콩닥 심층 궁합 리포트",
                       customerName: "게스트",
                       customerEmail: email,
                       successUrl: `${origin}/${locale}/checkout/success?type=SINGLE&compatId=${data.id}`,
@@ -544,41 +546,58 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               >
                 잠금 해제 · 2,900원(첫 결제 1,900원)
               </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch("/api/payments/order", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ type: 'SUBSCRIPTION', compatId: data.id }),
-                    });
-                    if (!res.ok) {
-                      if (res.status === 401) {
-                        alert("구독은 로그인이 필요합니다.");
-                        window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
-                        return;
+              
+              <div className="bg-white rounded-xl p-4 shadow-sm border border-[#FFD9E0]/50 flex flex-col gap-3 mt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-[#2B2430]">콩닥 플러스 패스 (무제한 열람)</span>
+                  <select 
+                    value={selectedPlan}
+                    onChange={(e) => setSelectedPlan(e.target.value)}
+                    className="bg-[#FFF6F1] text-[#6A2C70] border border-[#FF8AA1]/30 rounded-lg text-sm font-bold p-1.5 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]"
+                  >
+                    <option value="1_MONTH">1개월 패스 (9,900원)</option>
+                    <option value="3_MONTHS">3개월 패스 (24,900원)</option>
+                  </select>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch("/api/payments/order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ type: 'PERIOD_PASS', compatId: data.id, planId: selectedPlan }),
+                      });
+                      if (!res.ok) {
+                        if (res.status === 401) {
+                          alert("패스권 구매는 로그인이 필요합니다.");
+                          window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
+                          return;
+                        }
+                        throw new Error("주문 생성 실패");
                       }
-                      throw new Error("주문 생성 실패");
+                      const order = await res.json();
+                      
+                      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
+                      const tossPayments = await loadTossPayments(clientKey);
+                      
+                      const origin = window.location.origin;
+                      await tossPayments.requestPayment("카드", {
+                        amount: order.amount,
+                        orderId: order.orderId,
+                        orderName: order.orderName || "콩닥 플러스 무제한 패스",
+                        customerEmail: order.email || undefined,
+                        successUrl: `${origin}/${locale}/checkout/success?type=PERIOD_PASS&compatId=${data.id}`,
+                        failUrl: `${origin}/${locale}/checkout/fail?type=PERIOD_PASS&compatId=${data.id}`,
+                      });
+                    } catch (e) {
+                      alert("패스권 결제 초기화에 실패했습니다.");
                     }
-                    const order = await res.json();
-                    
-                    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
-                    const tossPayments = await loadTossPayments(clientKey);
-                    
-                    const origin = window.location.origin;
-                    await tossPayments.requestBillingAuth("카드", {
-                      customerKey: order.userId,
-                      successUrl: `${origin}/${locale}/checkout/success?type=SUBSCRIPTION&compatId=${data.id}`,
-                      failUrl: `${origin}/${locale}/checkout/fail?type=SUBSCRIPTION&compatId=${data.id}`,
-                    });
-                  } catch (e) {
-                    alert("구독 결제 초기화에 실패했습니다.");
-                  }
-                }}
-                className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
-              >
-                무제한 구독 · 9,900원/월
-              </button>
+                  }}
+                  className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
+                >
+                  패스권 결제하기
+                </button>
+              </div>
               <p className="text-[11px] text-[#8A8291] mt-1">모든 심층 궁합 무료 + 매주 맞춤 운세 배달</p>
             </div>
           )}

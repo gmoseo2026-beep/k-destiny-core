@@ -217,6 +217,7 @@ model PushSubscription {
 enum OrderType {
   SINGLE
   SUBSCRIPTION
+  PERIOD_PASS
 }
 
 enum OrderStatus {
@@ -233,6 +234,7 @@ model Order {
   email          String?     // 게스트 결제용
   compatId       String?     // 단건 결제 대상 궁합 ID
   type           OrderType   @default(SINGLE)
+  planId         String?     // 기간권 종류 ('1_MONTH', '3_MONTHS', '6_MONTHS', '1_YEAR')
   amount         Int         // 결제 금액 (원 단위: 1900, 2900, 9900)
   status         OrderStatus @default(PENDING)
   provider       String      @default("toss")
