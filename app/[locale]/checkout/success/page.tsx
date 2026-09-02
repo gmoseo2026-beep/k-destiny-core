@@ -18,7 +18,7 @@ function CheckoutSuccessContent({ locale }: { locale: string }) {
         const type = searchParams.get("type");
         const compatId = searchParams.get("compatId");
         
-        if (type === "SINGLE") {
+        if (type === "SINGLE" || type === "PERIOD_PASS") {
           const paymentKey = searchParams.get("paymentKey");
           const orderId = searchParams.get("orderId");
           const amount = searchParams.get("amount");

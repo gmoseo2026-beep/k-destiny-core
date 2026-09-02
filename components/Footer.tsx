@@ -34,6 +34,12 @@ export default function Footer() {
               Guide
             </Link>
             <Link
+              href="/pricing"
+              className="font-sans text-xs text-gray-500 hover:text-coral transition-colors tracking-wide uppercase"
+            >
+              {t("pricing")}
+            </Link>
+            <Link
               href="/terms"
               className="font-sans text-xs text-gray-500 hover:text-coral transition-colors tracking-wide uppercase"
             >

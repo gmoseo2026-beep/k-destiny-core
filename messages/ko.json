@@ -106,6 +106,7 @@
   },
   "Footer": {
     "home": "홈",
+    "pricing": "요금안내",
     "terms": "이용약관",
     "privacy": "개인정보처리방침",
     "disclaimer": "오락 및 자기이해 목적의 참고 정보입니다.",
@@ -126,5 +127,28 @@
     "disclaimer": "콩닥의 모든 해석은 오락 및 자기이해를 위한 참고 정보예요. 관계에 대한 판단은 두 분의 몫입니다.",
     "btn_start": "우리 궁합 보러 가기",
     "btn_back": "홈으로 돌아가기"
+  },
+  "Pricing": {
+    "title": "요금 및 이용권 안내",
+    "subtitle": "콩닥의 맞춤형 심층 분석 리포트와 패스권을 만나보세요.",
+    "product_single_title": "심층 궁합 리포트 (단건)",
+    "product_single_desc": "두 사람의 기운과 성향을 분석한 상세한 리포트",
+    "product_single_price": "2,900원",
+    "product_single_price_first": "첫 결제 1,900원",
+    "product_single_btn": "궁합 보러 가기",
+    "product_1m_title": "콩닥 플러스 1개월",
+    "product_1m_desc": "1개월간 모든 심층 리포트 무제한 열람",
+    "product_1m_price": "9,900원",
+    "product_1m_btn": "결제하기",
+    "product_3m_title": "콩닥 플러스 3개월",
+    "product_3m_desc": "3개월간 모든 심층 리포트 무제한 열람",
+    "product_3m_price": "24,900원",
+    "product_3m_btn": "결제하기",
+    "info_title": "구매 안내",
+    "info_type": "상품 형태: 무형의 디지털 콘텐츠(웹 열람형), 별도 배송 없음",
+    "info_delivery": "서비스 제공 시기: 결제 완료 즉시 이용 가능. 이용권은 결제일부터 각 1개월/3개월.",
+    "info_method": "결제수단: 신용카드 등",
+    "info_refund": "교환/환불/취소: 단건은 콘텐츠 열람 전 전액 환불·열람 후 제한, 이용권은 미개시 시 7일 내 전액 환불·이용 개시 후 잔여기간 일할 계산 환불. 자세한 내용은 이용약관 제9조 참조.",
+    "info_sub": "정기결제(자동결제) 없음 — 모두 1회성 결제입니다."
   }
 }

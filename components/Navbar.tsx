@@ -47,6 +47,18 @@ export default function Navbar() {
           </motion.button>
         </Link>
 
+        {/* Pricing Link */}
+        <Link href="/pricing">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-[#FFD9E0] hover:border-[#FF8AA1] shadow-sm active:scale-95 transition-all duration-150"
+          >
+            <span className="font-sans text-xs font-bold text-[#FF5C77] whitespace-nowrap">
+              요금안내
+            </span>
+          </motion.button>
+        </Link>
+
         {/* Admin Dashboard — strictly visible to ADMIN role only */}
         {session && (session.user as any)?.role === 'ADMIN' && (
           <Link href="/admin">
