@@ -26,6 +26,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "본인의 관리자 권한을 스스로 해제할 수 없습니다." }, { status: 400 });
     }
 
+    // 마지막 남은 관리자 강등 방지
+    if (targetUser.role === "ADMIN" && role !== "ADMIN") {
+      const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "시스템에 최소 1명의 관리자가 유지되어야 하므로 강등할 수 없습니다." },
+          { status: 400 }
+        );
+      }
+    }
+
     const previousRole = targetUser.role;
     const updatedUser = await prisma.user.update({
       where: { id: userId },

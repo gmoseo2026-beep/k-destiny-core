@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("query")?.trim();
 
-    if (!query) {
-      return NextResponse.json({ error: "검색어를 입력해주세요." }, { status: 400 });
+    if (!query || query.length < 2) {
+      return NextResponse.json({ error: "검색어는 최소 2글자 이상 입력해주세요." }, { status: 400 });
     }
 
     // 1. 회원 조회 (이메일 또는 ID)
@@ -86,7 +86,23 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const compatMap = new Map(compatibilities.map((c) => [c.id, c]));
+    const compatMap = new Map(
+      compatibilities.map((c) => {
+        const pA: any = c.personA;
+        const pB: any = c.personB;
+        return [
+          c.id,
+          {
+            id: c.id,
+            shareToken: c.shareToken,
+            score: c.score,
+            createdAt: c.createdAt,
+            personA: pA ? { name: pA.name, gender: pA.gender } : null,
+            personB: pB ? { name: pB.name, gender: pB.gender } : null,
+          },
+        ];
+      })
+    );
 
     return NextResponse.json({
       query,

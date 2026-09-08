@@ -50,8 +50,7 @@ def main():
     import os
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     local_env = os.path.join(project_root, ".env")
-    if not os.path.exists(local_env):
-        local_env = os.path.join(project_root, ".env.local")
+    # M-2: Do NOT fallback to .env.local (development secrets must never leak to production)
 
     if os.path.exists(local_env):
         print(f"\n[ENV SYNC] Uploading local {os.path.basename(local_env)} to /root/k-destiny-core/.env via SFTP...")

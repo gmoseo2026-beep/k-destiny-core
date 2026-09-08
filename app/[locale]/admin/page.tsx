@@ -1,7 +1,10 @@
 import prisma from "@/lib/prisma";
 import AdminDashboard from "./AdminDashboard";
+import { getAdminSessionOrThrow } from "@/lib/adminAuth";
 
 export default async function AdminPage() {
+  await getAdminSessionOrThrow();
+
   const now = new Date();
 
   // 날짜 기준점 계산

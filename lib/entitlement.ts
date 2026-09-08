@@ -71,13 +71,12 @@ export async function isEntitled(params: {
       }
     }
 
-    // [Vuln 3 Fix] IDOR 방지: 단건 해금 시 반드시 소유권 검증 (userId 또는 email)
+    // [Vuln 3 Fix] IDOR 방지: 단건 해금 시 반드시 소유권 검증 (userId)
+    // 게스트는 위에서 orderId(주문 소유권 토큰)를 통해 이미 검증됨.
     const whereClause: Prisma.UnlockWhereInput = { compatId };
 
     if (userId) {
       whereClause.userId = userId;
-    } else if (email) {
-      whereClause.email = email;
     } else {
       // 증명 수단이 없으면 접근 차단
       return { entitled: false, reason: 'NONE' };

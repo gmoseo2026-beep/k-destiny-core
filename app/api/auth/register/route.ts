@@ -50,18 +50,6 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
-      // If user exists via Google (no password set), allow password linking
-      if (!existingUser.password) {
-        const hashedPassword = await bcrypt.hash(password, 12);
-        await prisma.user.update({
-          where: { email },
-          data: { password: hashedPassword },
-        });
-        return NextResponse.json(
-          { message: 'Password set for existing account' },
-          { status: 200 }
-        );
-      }
       return NextResponse.json(
         { error: 'An account with this email already exists' },
         { status: 409 }

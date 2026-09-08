@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "발급/연장 사유를 입력해주세요." }, { status: 400 });
     }
 
-    const targetEmail = email && typeof email === "string" && email.trim() !== "" ? email.trim().toLowerCase() : null;
-    const targetUserId = userId && typeof userId === "string" && userId.trim() !== "" ? userId.trim() : null;
+    let targetEmail = email && typeof email === "string" && email.trim() !== "" ? email.trim().toLowerCase() : null;
+    let targetUserId = userId && typeof userId === "string" && userId.trim() !== "" ? userId.trim() : null;
 
     // 3) email 또는 userId 중 하나는 필수 (둘 다 없으면 400 — compatId 단독 조회 금지)
     if (!targetUserId && !targetEmail) {
@@ -24,6 +24,17 @@ export async function POST(req: NextRequest) {
         { error: "email 또는 userId 중 하나는 필수입니다. (compatId 단독 조회 및 발급 금지)" },
         { status: 400 }
       );
+    }
+
+    // 1-1. email이 전달되었고 userId가 없는 경우, 기존 회원인지 확인하여 userId로 자동 연결
+    if (!targetUserId && targetEmail) {
+      const existingMember = await prisma.user.findUnique({
+        where: { email: targetEmail },
+        select: { id: true },
+      });
+      if (existingMember) {
+        targetUserId = existingMember.id;
+      }
     }
 
     // 1. 궁합 레코드 조회
@@ -57,6 +68,7 @@ export async function POST(req: NextRequest) {
     });
 
     let resultUnlock;
+    let manualOrder: any = null;
 
     if (existingUnlock) {
       // 기존 Unlock 만료일 및 소유자 업데이트
@@ -71,7 +83,7 @@ export async function POST(req: NextRequest) {
     } else {
       // 새 Unlock 발급: Unlock은 Order(id)를 외래키로 참조하므로 관리자 수동 주문(0원) 생성 후 연결
       const manualOrderId = `admin_ord_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const manualOrder = await prisma.order.create({
+      manualOrder = await prisma.order.create({
         data: {
           orderId: manualOrderId,
           userId: targetUserId ?? null,
@@ -115,8 +127,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `성공적으로 심층 리포트 열람 권한이 부여되었습니다. (만료일: ${expiresAt.toLocaleDateString("ko-KR")})`,
+      message: `언락이 성공적으로 ${existingUnlock ? "연장" : "발급"}되었습니다. (만료: ${expiresAt.toISOString().slice(0, 10)})`,
       unlock: resultUnlock,
+      claimOrderId: manualOrder?.orderId ?? null,
       shareToken: compat.shareToken,
     });
   } catch (error: any) {

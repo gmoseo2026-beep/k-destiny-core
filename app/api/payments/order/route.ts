@@ -22,15 +22,27 @@ export async function POST(req: NextRequest) {
       else return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
     } else if (type === 'SINGLE') {
-      // Check for first purchase for SINGLE
+      // Check for first purchase for SINGLE (admin_manual 및 0원 수동 보상 주문은 첫구매 할인 자격을 소진시키지 않음)
       if (session?.user?.id) {
         const pastOrders = await prisma.order.findFirst({
-          where: { userId: session.user.id, status: 'PAID', type: 'SINGLE' }
+          where: {
+            userId: session.user.id,
+            status: 'PAID',
+            type: 'SINGLE',
+            provider: { not: 'admin_manual' },
+            amount: { gt: 0 },
+          }
         });
         if (!pastOrders) amount = 1900;
       } else if (email) {
         const pastOrders = await prisma.order.findFirst({
-          where: { email, status: 'PAID', type: 'SINGLE' }
+          where: {
+            email,
+            status: 'PAID',
+            type: 'SINGLE',
+            provider: { not: 'admin_manual' },
+            amount: { gt: 0 },
+          }
         });
         if (!pastOrders) amount = 1900;
       } else {

@@ -41,12 +41,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Unlock 레코드 확인
+    // 2. Unlock 레코드 확인 (Unlock.orderId는 Order.id를 외래키로 참조)
     const unlock = await prisma.unlock.findUnique({
       where: {
         compatId_orderId: {
           compatId,
-          orderId,
+          orderId: order.id,
         },
       },
     });
@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
     if (unlock.userId && unlock.userId !== session.user.id) {
       return NextResponse.json({ error: "이미 다른 계정에 연동된 결제 건입니다." }, { status: 409 });
     }
+
+    // 해당 궁합의 최초 PAID 주문인지 확인 (공유 링크로 다수가 구매할 수 있으므로, 최초 주문자만 Compatibility 원작성자로 귀속)
+    const firstPaidOrder = await prisma.order.findFirst({
+      where: { compatId, status: "PAID" },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
+    });
+    const isFirstOrder = firstPaidOrder?.id === order.id;
 
     // 3. 계정 연동 업데이트 (Unlock, Order, Compatibility)
     await prisma.$transaction(async (tx) => {
@@ -78,16 +86,18 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Compatibility에 userId가 없으면 할당
-      await tx.compatibility.updateMany({
-        where: {
-          id: compatId,
-          userId: null,
-        },
-        data: {
-          userId: session.user.id,
-        },
-      });
+      // Compatibility에 userId가 없고 이 주문이 최초 결제 주문인 경우에만 귀속
+      if (isFirstOrder) {
+        await tx.compatibility.updateMany({
+          where: {
+            id: compatId,
+            userId: null,
+          },
+          data: {
+            userId: session.user.id,
+          },
+        });
+      }
     });
 
     return NextResponse.json({
