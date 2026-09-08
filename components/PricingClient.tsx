@@ -78,7 +78,7 @@ export default function PricingClient({ locale }: { locale: string }) {
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span>영구 보관 및 언제든 다시 열람</span>
+              <span>결제일로부터 90일간 언제든 다시 열람 (이후 만료)</span>
             </li>
           </ul>
 

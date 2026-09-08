@@ -48,15 +48,22 @@ export async function isEntitled(params: {
     }
   }
 
-  // 3. Single unlock check for a specific compatId
+  // 3. Single unlock check for a specific compatId (유효기간: 90일)
   if (compatId) {
+    const now = new Date();
+
     if (orderId) {
       // 게스트 인증: 추측 불가 토큰인 orderId로 소유권 증명
       const order = await prisma.order.findUnique({
-        where: { orderId }
+        where: { orderId },
+        include: { unlocks: true },
       });
       if (order && order.status === 'PAID' && order.compatId === compatId) {
-        return { entitled: true, reason: 'UNLOCK' };
+        const matchingUnlock = order.unlocks?.find((u) => u.compatId === compatId);
+        const expiresAt = matchingUnlock?.expiresAt ?? (order.createdAt ? new Date(order.createdAt.getTime() + 90 * 24 * 60 * 60 * 1000) : null);
+        if (!expiresAt || expiresAt > now) {
+          return { entitled: true, reason: 'UNLOCK' };
+        }
       }
     }
 
@@ -75,7 +82,12 @@ export async function isEntitled(params: {
     const unlock = await prisma.unlock.findFirst({
       where: whereClause
     });
-    if (unlock) return { entitled: true, reason: 'UNLOCK' };
+    if (unlock) {
+      // 만료 체크: expiresAt이 없거나 미래인 경우만 유효
+      if (!unlock.expiresAt || unlock.expiresAt > now) {
+        return { entitled: true, reason: 'UNLOCK' };
+      }
+    }
   }
 
   return { entitled: false, reason: 'NONE' };

@@ -16,8 +16,15 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
     if (order.type === "SINGLE" && order.compatId) {
       const exist = await tx.unlock.findUnique({ where: { compatId: order.compatId } });
       if (!exist) {
+        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
         await tx.unlock.create({
-          data: { compatId: order.compatId, orderId: order.id, userId: order.userId, email: order.email },
+          data: {
+            compatId: order.compatId,
+            orderId: order.id,
+            userId: order.userId,
+            email: order.email,
+            expiresAt,
+          },
         });
       }
     } else if (order.type === "PERIOD_PASS" && order.userId) {

@@ -251,14 +251,15 @@ model Order {
 
 // 10. 단건 궁합 언락 권한
 model Unlock {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   compatId  String
   orderId   String
   userId    String?
   email     String?
-  createdAt DateTime @default(now())
+  expiresAt DateTime? // 열람 만료 시점 (단건: 생성시점 + 90일)
+  createdAt DateTime  @default(now())
 
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@unique([compatId])
   @@index([userId])

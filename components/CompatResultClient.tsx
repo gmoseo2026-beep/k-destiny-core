@@ -437,6 +437,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <div className="inline-block bg-[#6A2C70] text-[#FFC24B] text-xs font-black px-4 py-1.5 rounded-full shadow-md uppercase tracking-widest">
               Premium Reading
             </div>
+            <p className="text-[11px] text-[#8A8291] mt-1.5 font-medium">
+              열람 유효기간: 결제일로부터 90일간 이용 가능
+            </p>
           </div>
           
           <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-[#6A2C70]">
