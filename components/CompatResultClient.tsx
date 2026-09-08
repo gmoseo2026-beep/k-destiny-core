@@ -4,7 +4,9 @@ import React, { useState, useEffect } from "react";
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
 import { DeepReportContent } from "@/lib/destinyGen";
-import { loadTossPayments } from "@tosspayments/payment-sdk";
+import { useSession } from "next-auth/react";
+import GuestCheckoutModal from "@/components/GuestCheckoutModal";
+import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 
 interface CompatData {
   id: string;
@@ -91,6 +93,12 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
   const [deepReportError, setDeepReportError] = useState<string | null>(null);
+
+  // Session & PortOne Checkout Modal State
+  const { data: session } = useSession();
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutType, setCheckoutType] = useState<"SINGLE" | "PERIOD_PASS">("SINGLE");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Period Pass Selection State
   const [selectedPlan, setSelectedPlan] = useState<string>("1_MONTH");
@@ -509,38 +517,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 🔒 이 커플의 갈등 포인트 3개와 관계 조언이 준비됐어요
               </div>
               <button
-                onClick={async () => {
-                  try {
-                    const email = prompt("결제 내역 확인을 위해 이메일을 입력해주세요:", "");
-                    if (email === null) return;
-                    const res = await fetch("/api/payments/order", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ type: 'SINGLE', compatId: data.id, email }),
-                    });
-                    if (!res.ok) throw new Error("주문 생성 실패");
-                    const order = await res.json();
-                    
-                    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY as string;
-                    if (!clientKey) {
-                      alert("결제 설정이 누락되었습니다. (Client Key)");
-                      return;
-                    }
-                    const tossPayments = await loadTossPayments(clientKey);
-                    
-                    const origin = window.location.origin;
-                    await tossPayments.requestPayment("카드", {
-                      amount: order.amount,
-                      orderId: order.orderId,
-                      orderName: order.orderName || "콩닥 심층 궁합 리포트",
-                      customerName: "게스트",
-                      customerEmail: email,
-                      successUrl: `${origin}/${locale}/checkout/success?type=SINGLE&compatId=${data.id}`,
-                      failUrl: `${origin}/${locale}/checkout/fail?type=SINGLE&compatId=${data.id}`,
-                    });
-                  } catch (e) {
-                    alert("결제 초기화에 실패했습니다.");
-                  }
+                onClick={() => {
+                  setCheckoutType("SINGLE");
+                  setCheckoutModalOpen(true);
                 }}
                 className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] py-4 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-[0.98]"
               >
@@ -560,38 +539,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   </select>
                 </div>
                 <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch("/api/payments/order", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ type: 'PERIOD_PASS', compatId: data.id, planId: selectedPlan }),
-                      });
-                      if (!res.ok) {
-                        if (res.status === 401) {
-                          alert("패스권 구매는 로그인이 필요합니다.");
-                          window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
-                          return;
-                        }
-                        throw new Error("주문 생성 실패");
-                      }
-                      const order = await res.json();
-                      
-                      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
-                      const tossPayments = await loadTossPayments(clientKey);
-                      
-                      const origin = window.location.origin;
-                      await tossPayments.requestPayment("카드", {
-                        amount: order.amount,
-                        orderId: order.orderId,
-                        orderName: order.orderName || "콩닥 플러스 무제한 패스",
-                        customerEmail: order.email || undefined,
-                        successUrl: `${origin}/${locale}/checkout/success?type=PERIOD_PASS&compatId=${data.id}`,
-                        failUrl: `${origin}/${locale}/checkout/fail?type=PERIOD_PASS&compatId=${data.id}`,
-                      });
-                    } catch (e) {
-                      alert("패스권 결제 초기화에 실패했습니다.");
+                  onClick={() => {
+                    if (!session?.user?.id) {
+                      alert("패스권 구매는 로그인이 필요합니다.");
+                      window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
+                      return;
                     }
+                    setCheckoutType("PERIOD_PASS");
+                    setCheckoutModalOpen(true);
                   }}
                   className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98]"
                 >
@@ -603,6 +558,49 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           )}
         </div>
       )}
+
+      {/* Guest & Pass Checkout Modal */}
+      <GuestCheckoutModal
+        isOpen={checkoutModalOpen}
+        onClose={() => setCheckoutModalOpen(false)}
+        title={checkoutType === "SINGLE" ? "심층 궁합 리포트 잠금 해제" : "콩닥 플러스 무제한 이용권"}
+        orderName={
+          checkoutType === "SINGLE"
+            ? "콩닥 심층 궁합 리포트"
+            : selectedPlan === "1_MONTH"
+            ? "콩닥 플러스 1개월 이용권"
+            : "콩닥 플러스 3개월 이용권"
+        }
+        priceLabel={
+          checkoutType === "SINGLE"
+            ? "2,900원 (첫 결제 1,900원)"
+            : selectedPlan === "1_MONTH"
+            ? "9,900원"
+            : "24,900원"
+        }
+        initialName={session?.user?.name || ""}
+        initialEmail={session?.user?.email || ""}
+        initialPhone=""
+        isLoading={isProcessingPayment}
+        onSubmit={async (buyer) => {
+          try {
+            setIsProcessingPayment(true);
+            await requestPortOnePayment({
+              type: checkoutType,
+              planId: checkoutType === "PERIOD_PASS" ? (selectedPlan as "1_MONTH" | "3_MONTHS") : undefined,
+              compatId: data.id,
+              buyer,
+              locale,
+            });
+          } catch (e: any) {
+            alert(e.message || "결제 진행 중 오류가 발생했습니다.");
+          } finally {
+            setIsProcessingPayment(false);
+            setCheckoutModalOpen(false);
+          }
+        }}
+      />
+
 
       {/* New Test CTA */}
       <div className="mt-8 text-center">

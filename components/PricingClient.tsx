@@ -4,49 +4,26 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import KongdakMascot from "./KongdakMascot";
-import { loadTossPayments } from "@tosspayments/payment-sdk";
+import { useSession } from "next-auth/react";
+import GuestCheckoutModal from "@/components/GuestCheckoutModal";
+import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 
 export default function PricingClient({ locale }: { locale: string }) {
   const t = useTranslations("Pricing");
   const router = useRouter();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const [selectedPlan, setSelectedPlan] = useState<"1_MONTH" | "3_MONTHS">("1_MONTH");
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const handlePeriodPassCheckout = async (planId: "1_MONTH" | "3_MONTHS") => {
-    try {
-      setLoadingPlan(planId);
-      const res = await fetch("/api/payments/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: 'PERIOD_PASS', compatId: null, planId }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          alert("패스권 구매는 로그인이 필요합니다.");
-          window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
-          return;
-        }
-        throw new Error("주문 생성 실패");
-      }
-      
-      const order = await res.json();
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || "test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq";
-      const tossPayments = await loadTossPayments(clientKey);
-      const origin = window.location.origin;
-      
-      await tossPayments.requestPayment("카드", {
-        amount: order.amount,
-        orderId: order.orderId,
-        orderName: order.orderName || "콩닥 플러스 무제한 패스",
-        customerEmail: order.email || undefined,
-        successUrl: `${origin}/${locale}/checkout/success?type=PERIOD_PASS`,
-        failUrl: `${origin}/${locale}/checkout/fail?type=PERIOD_PASS`,
-      });
-    } catch (e) {
-      alert("패스권 결제 초기화에 실패했습니다.");
-    } finally {
-      setLoadingPlan(null);
+  const handlePeriodPassCheckout = (planId: "1_MONTH" | "3_MONTHS") => {
+    if (!session?.user?.id) {
+      alert("패스권 구매는 로그인이 필요합니다.");
+      window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
+      return;
     }
+    setSelectedPlan(planId);
+    setCheckoutModalOpen(true);
   };
 
   return (
@@ -160,10 +137,10 @@ export default function PricingClient({ locale }: { locale: string }) {
           {/* Action Button */}
           <button
             onClick={() => handlePeriodPassCheckout("1_MONTH")}
-            disabled={loadingPlan === "1_MONTH"}
+            disabled={isProcessingPayment}
             className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:opacity-95 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-auto"
           >
-            {loadingPlan === "1_MONTH" ? "결제창 연결 중..." : t("product_1m_btn")}
+            {isProcessingPayment && selectedPlan === "1_MONTH" ? "결제창 연결 중..." : t("product_1m_btn")}
           </button>
         </div>
 
@@ -208,10 +185,10 @@ export default function PricingClient({ locale }: { locale: string }) {
           {/* Action Button */}
           <button
             onClick={() => handlePeriodPassCheckout("3_MONTHS")}
-            disabled={loadingPlan === "3_MONTHS"}
+            disabled={isProcessingPayment}
             className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#6A2C70] border border-[#FF8AA1]/40 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50 mt-auto shadow-2xs"
           >
-            {loadingPlan === "3_MONTHS" ? "결제창 연결 중..." : t("product_3m_btn")}
+            {isProcessingPayment && selectedPlan === "3_MONTHS" ? "결제창 연결 중..." : t("product_3m_btn")}
           </button>
         </div>
 
@@ -249,6 +226,35 @@ export default function PricingClient({ locale }: { locale: string }) {
         </ul>
       </div>
 
+      {/* Pass Checkout Modal */}
+      <GuestCheckoutModal
+        isOpen={checkoutModalOpen}
+        onClose={() => setCheckoutModalOpen(false)}
+        title="콩닥 플러스 무제한 이용권"
+        orderName={selectedPlan === "1_MONTH" ? "콩닥 플러스 1개월 이용권" : "콩닥 플러스 3개월 이용권"}
+        priceLabel={selectedPlan === "1_MONTH" ? "9,900원" : "24,900원"}
+        initialName={session?.user?.name || ""}
+        initialEmail={session?.user?.email || ""}
+        initialPhone=""
+        isLoading={isProcessingPayment}
+        onSubmit={async (buyer: BuyerInfo) => {
+          try {
+            setIsProcessingPayment(true);
+            await requestPortOnePayment({
+              type: "PERIOD_PASS",
+              planId: selectedPlan,
+              compatId: undefined,
+              buyer,
+              locale,
+            });
+          } catch (e: any) {
+            alert(e.message || "결제 진행 중 오류가 발생했습니다.");
+          } finally {
+            setIsProcessingPayment(false);
+            setCheckoutModalOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

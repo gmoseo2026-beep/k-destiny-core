@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
         type: type,
         planId: type === 'PERIOD_PASS' ? planId : null,
         amount,
-        status: "PENDING"
+        status: "PENDING",
+        provider: process.env.PG_PROVIDER || "portone",
       }
     });
 
