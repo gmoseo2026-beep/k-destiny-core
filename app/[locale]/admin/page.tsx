@@ -56,6 +56,9 @@ export default async function AdminPage() {
   const userSpendMap = new Map<string, number>();
 
   for (const o of orders) {
+    // 1) 수동 보상(admin_manual) 및 0원 주문은 매출·전환·ARPPU 집계에서 제외
+    if (o.provider === "admin_manual" || o.amount === 0) continue;
+
     const oTime = new Date(o.createdAt).getTime();
 
     if (o.status === "PAID") {

@@ -272,6 +272,10 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
       alert('궁합 식별자(compatId)를 입력해주세요.');
       return;
     }
+    if (!grantEmail.trim()) {
+      alert('고객 이메일을 입력해주세요. (compatId 단독 발급 금지)');
+      return;
+    }
     if (!grantReason.trim()) {
       alert('발급 사유를 입력해주세요.');
       return;
@@ -1181,7 +1185,7 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
 
               <div>
                 <label className="font-bold text-[#2B2430] block mb-1">
-                  고객 이메일 (선택)
+                  고객 이메일 <span className="text-rose-500">*</span> <span className="text-xs text-gray-400 font-normal">(열람자 특정 필수)</span>
                 </label>
                 <input
                   type="email"
@@ -1194,7 +1198,7 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
 
               <div>
                 <label className="font-bold text-[#2B2430] block mb-1">
-                  유효 일수 (Days)
+                  유효 일수 <span className="text-xs text-gray-400 font-normal">(최대 90일, KG 열람 유효기간 준수)</span>
                 </label>
                 <select
                   value={grantDays}
@@ -1202,9 +1206,7 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
                   className="w-full p-2.5 border border-[#FFD9E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5C77]"
                 >
                   <option value={30}>30일 (+1개월)</option>
-                  <option value={90}>90일 (+3개월, 표준 단건 열람기간)</option>
-                  <option value={180}>180일 (+6개월)</option>
-                  <option value={365}>365일 (+1년)</option>
+                  <option value={90}>90일 (+3개월, KG 표준 최대 열람기간)</option>
                 </select>
               </div>
 

@@ -15,6 +15,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "발급/연장 사유를 입력해주세요." }, { status: 400 });
     }
 
+    const targetEmail = email && typeof email === "string" && email.trim() !== "" ? email.trim().toLowerCase() : null;
+    const targetUserId = userId && typeof userId === "string" && userId.trim() !== "" ? userId.trim() : null;
+
+    // 3) email 또는 userId 중 하나는 필수 (둘 다 없으면 400 — compatId 단독 조회 금지)
+    if (!targetUserId && !targetEmail) {
+      return NextResponse.json(
+        { error: "email 또는 userId 중 하나는 필수입니다. (compatId 단독 조회 및 발급 금지)" },
+        { status: 400 }
+      );
+    }
+
     // 1. 궁합 레코드 조회
     const compat = await prisma.compatibility.findFirst({
       where: {
@@ -26,15 +37,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "해당 궁합 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + Number(days) * 24 * 60 * 60 * 1000);
+    // 2) days 를 최대 90으로 clamp (KG 열람 유효기간 준수)
+    const rawDays = Number(days);
+    const clampedDays = isNaN(rawDays) ? 90 : Math.min(Math.max(rawDays, 1), 90);
 
-    // 2. 이미 존재하는 Unlock 레코드 확인
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + clampedDays * 24 * 60 * 60 * 1000);
+
+    // 3. 이미 존재하는 Unlock 레코드 확인 (compatId + userId 또는 email 특정 조회)
+    const unlockWhere: any = { compatId: compat.id };
+    if (targetUserId) {
+      unlockWhere.userId = targetUserId;
+    } else {
+      unlockWhere.email = targetEmail;
+    }
+
     let existingUnlock = await prisma.unlock.findFirst({
-      where: {
-        compatId: compat.id,
-        ...(userId ? { userId } : email ? { email } : {}),
-      },
+      where: unlockWhere,
     });
 
     let resultUnlock;
@@ -45,8 +64,8 @@ export async function POST(req: NextRequest) {
         where: { id: existingUnlock.id },
         data: {
           expiresAt,
-          userId: userId ?? existingUnlock.userId,
-          email: email ?? existingUnlock.email,
+          userId: targetUserId ?? existingUnlock.userId,
+          email: targetEmail ?? existingUnlock.email,
         },
       });
     } else {
@@ -55,8 +74,8 @@ export async function POST(req: NextRequest) {
       const manualOrder = await prisma.order.create({
         data: {
           orderId: manualOrderId,
-          userId: userId ?? null,
-          email: email ?? null,
+          userId: targetUserId ?? null,
+          email: targetEmail ?? null,
           compatId: compat.id,
           type: "SINGLE",
           amount: 0,
@@ -69,8 +88,8 @@ export async function POST(req: NextRequest) {
         data: {
           compatId: compat.id,
           orderId: manualOrder.id,
-          userId: userId ?? null,
-          email: email ?? null,
+          userId: targetUserId ?? null,
+          email: targetEmail ?? null,
           expiresAt,
         },
       });
@@ -85,9 +104,9 @@ export async function POST(req: NextRequest) {
       detail: {
         compatId: compat.id,
         shareToken: compat.shareToken,
-        email,
-        userId,
-        days: Number(days),
+        email: targetEmail,
+        userId: targetUserId,
+        days: clampedDays,
         expiresAt: expiresAt.toISOString(),
         reason: reason.trim(),
         wasExisting: !!existingUnlock,
