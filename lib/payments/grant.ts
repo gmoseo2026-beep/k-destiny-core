@@ -1,16 +1,18 @@
 import prisma from "@/lib/prisma";
 
 export async function applyPaidOrder(orderId: string, providerTxId?: string) {
-  const order = await prisma.order.findUnique({ where: { orderId } });
-  if (!order) return { ok: false, reason: "no_order" };
-  if (order.status === "PAID") return { ok: true, already: true };
+  return await prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({ where: { orderId } });
+    if (!order) return { ok: false, reason: "no_order" };
 
-  await prisma.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { orderId },
+    // 원자적 status 체크 + 전환 (이미 PAID면 count === 0 → 권한부여 스킵)
+    const res = await tx.order.updateMany({
+      where: { orderId, status: { not: "PAID" } },
       data: { status: "PAID", tossPaymentKey: providerTxId ?? order.tossPaymentKey },
     });
+    if (res.count === 0) return { ok: true, already: true };
 
+    // 이후 Unlock / 패스 연장 진행 (같은 트랜잭션 안에서)
     if (order.type === "SINGLE" && order.compatId) {
       const exist = await tx.unlock.findUnique({ where: { compatId: order.compatId } });
       if (!exist) {
@@ -31,6 +33,8 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
         });
       }
     }
+
+    return { ok: true };
   });
-  return { ok: true };
 }
+
