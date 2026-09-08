@@ -62,6 +62,55 @@ function PayCompleteContent() {
       });
   }, [sp]);
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyResultLink = async () => {
+    if (!paidCompatId) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr";
+    const link = `${origin}/${locale}/compat/${paidCompatId}`;
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      alert("링크 복사에 실패했습니다.");
+    }
+  };
+
+  const handleShareKakaoSelf = () => {
+    if (!paidCompatId) return;
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr";
+    const link = `${origin}/${locale}/compat/${paidCompatId}`;
+    const kakao = typeof window !== "undefined" ? window.Kakao : undefined;
+
+    if (kakao && kakao.isInitialized && kakao.isInitialized() && kakao.Share?.sendDefault) {
+      kakao.Share.sendDefault({
+        objectType: "feed",
+        content: {
+          title: "콩닥 — 내가 결제한 궁합 리포트 보관함 💌",
+          description: "결제 완료된 궁합 결과 링크입니다. 언제든 다시 열어보세요!",
+          imageUrl: `${origin}/og-image.png`,
+          link: {
+            mobileWebUrl: link,
+            webUrl: link,
+          },
+        },
+      });
+    } else {
+      // SDK 미초기화 시 링크 복사로 폴백
+      handleCopyResultLink();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FFF6F1] flex items-center justify-center px-4 py-12">
       <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-md border border-[#FFD9E0]/60 text-center flex flex-col items-center">
@@ -79,16 +128,43 @@ function PayCompleteContent() {
           {status === "error" && "결제 안내"}
         </h1>
 
-        <p className="text-sm text-[#6A5E72] leading-relaxed mb-8 whitespace-pre-line">
+        <p className="text-sm text-[#6A5E72] leading-relaxed mb-6 whitespace-pre-line">
           {msg}
         </p>
+
+        {status === "success" && paidCompatId && (
+          <div className="w-full bg-[#FFF0F3] border border-[#FFD9E0] rounded-2xl p-4 text-left mb-6">
+            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-[#FF5C77]">
+              <span>💡</span>
+              <span>비회원 결과 보관 안내</span>
+            </div>
+            <p className="text-xs text-[#6A5E72] leading-relaxed mb-3">
+              현재 브라우저에 열람 권한이 자동 저장되었습니다. 링크를 잃어버리거나 다른 기기에서 보시려면 링크를 꼭 보관해 두세요!
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyResultLink}
+                className="flex-1 bg-white border border-[#FFD9E0] text-[#6A2C70] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FFF6F1] transition-all flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <span>{copied ? "✓ 복사 완료!" : "🔗 링크 복사"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleShareKakaoSelf}
+                className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <span>💬 카톡으로 저장</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="w-full flex flex-col gap-3">
           {status === "success" && (
             <button
               onClick={() => {
-                // 결제한 궁합 결과로 직접 이동한다. router.back() 은 결제창 이전 히스토리로
-                // 되돌아가 열람 화면에 도달하지 못하는 경우가 있어 신뢰하지 않는다.
+                // 결제한 궁합 결과로 직접 이동한다.
                 if (paidCompatId) {
                   router.replace(`/${locale}/compat/${paidCompatId}`);
                 } else if (window.history.length > 2) {
@@ -103,9 +179,18 @@ function PayCompleteContent() {
             </button>
           )}
 
+          {status === "success" && paidCompatId && (
+            <Link
+              href={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/compat/${paidCompatId}`)}`}
+              className="w-full bg-[#FFF6F1] text-[#6A2C70] border border-[#FFD9E0] py-3 rounded-2xl font-bold text-xs hover:bg-[#FFD9E0]/40 transition-all active:scale-95 block text-center"
+            >
+              ✨ 가입하고 내 계정에 평생 보관하기
+            </Link>
+          )}
+
           <Link
             href={`/${locale}`}
-            className="w-full bg-[#FFF6F1] text-[#6A2C70] border border-[#FFD9E0] py-3.5 rounded-2xl font-bold text-sm hover:bg-[#FFD9E0]/40 transition-all active:scale-95 block text-center"
+            className="w-full text-[#8A8291] py-2 font-medium text-xs hover:text-[#6A2C70] transition-colors block text-center"
           >
             콩닥 홈으로 가기
           </Link>

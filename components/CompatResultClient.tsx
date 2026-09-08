@@ -140,6 +140,31 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     getReadyKakao();
   }, [refToken, data.shareToken]);
 
+  // [CLAIM UNLOCK] 로그인한 사용자이고 기기에 unlockToken(게스트 구매 토큰)이 있다면 자동으로 계정에 연동
+  useEffect(() => {
+    if (session?.user?.id && unlockToken && data.id) {
+      const claimKey = `claimed_${data.id}_${unlockToken}`;
+      if (typeof window !== "undefined" && window.sessionStorage.getItem(claimKey)) {
+        return; // 이미 이번 세션에서 시도함
+      }
+      fetch("/api/user/claim-unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ compatId: data.id, orderId: unlockToken }),
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            if (typeof window !== "undefined") {
+              window.sessionStorage.setItem(claimKey, "true");
+            }
+            setCopyToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
+            setTimeout(() => setCopyToast(null), 4000);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session?.user?.id, unlockToken, data.id]);
+
   // 2. AI 무료 해석이 아직 없으면 클라이언트에서 비동기 생성 요청
   useEffect(() => {
     if (!summary && initialData.shareToken) {
@@ -511,6 +536,34 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <p className="text-sm font-bold text-[#FF5C77] mb-1">{deepReport.idealMatchEnergy.energyName}</p>
             <p className="text-xs text-[#2B2430] font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
           </div>
+
+          {/* Guest Retention & Account Binding Banner */}
+          {!session?.user?.id && (
+            <div className="w-full bg-[#FFF0F3] border border-[#FFD9E0] rounded-2xl p-5 text-left shadow-sm">
+              <div className="flex items-center gap-2 mb-2 text-xs font-bold text-[#FF5C77]">
+                <span>💡</span>
+                <span>비회원 결과 보관 안내</span>
+              </div>
+              <p className="text-xs text-[#6A5E72] leading-relaxed mb-4">
+                현재 사용 중인 브라우저에 열람 권한이 보관되어 있습니다. 기기를 바꾸거나 캐시를 지워도 언제든 다시 보려면 링크를 복사해 두시거나, 무료 회원가입으로 내 계정에 안전하게 저장해 두세요!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleShareLink}
+                  className="flex-1 bg-white border border-[#FFD9E0] text-[#6A2C70] py-2.5 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FFF6F1] transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <span>🔗 결과 링크 복사하기</span>
+                </button>
+                <a
+                  href={`/${locale}/login?callbackUrl=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : `/${locale}/compat/${data.shareToken}`)}`}
+                  className="flex-1 bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all flex items-center justify-center gap-1.5 active:scale-95 text-center"
+                >
+                  <span>✨ 3초 가입하고 결과 영구 저장</span>
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="w-full bg-gradient-to-br from-[#FFF6F1] to-[#FFD9E0]/50 border border-[#FF8AA1]/40 rounded-2xl p-6 mt-8 text-center relative overflow-hidden shadow-sm">
