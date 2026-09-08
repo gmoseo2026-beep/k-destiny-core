@@ -24,6 +24,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "유효하지 않은 주문입니다." }, { status: 404 });
     }
 
+    // 주문에 연결된 userId가 이미 다른 사용자면 귀속 거부
+    if (order.userId && order.userId !== session.user.id) {
+      return NextResponse.json({ error: "이미 다른 계정에 연동된 주문입니다." }, { status: 409 });
+    }
+
+    // 결제 시 입력된 이메일이 존재할 경우, 로그인한 사용자의 이메일과 대소문자 무시 일치해야만 귀속 허용
+    if (order.email) {
+      const orderEmail = order.email.trim().toLowerCase();
+      const userEmail = session.user.email?.trim().toLowerCase();
+      if (!userEmail || orderEmail !== userEmail) {
+        return NextResponse.json(
+          { error: "결제 시 입력한 이메일과 로그인한 계정의 이메일이 일치하지 않습니다." },
+          { status: 403 }
+        );
+      }
+    }
+
     // 2. Unlock 레코드 확인
     const unlock = await prisma.unlock.findUnique({
       where: {
