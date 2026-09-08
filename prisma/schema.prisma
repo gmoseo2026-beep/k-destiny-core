@@ -311,3 +311,19 @@ model WeeklyFortune {
 
   @@unique([userId, weekStartDate, targetCompatId]) // 해당 주차에 동일 타겟으로 중복 생성 방지
 }
+
+// 14. 관리자 운영 감사 로그
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminUserId String
+  action      String   // 'REFUND' | 'UNLOCK_GRANT' | 'UNLOCK_EXTEND' | 'ROLE_CHANGE'
+  targetType  String   // 'ORDER' | 'UNLOCK' | 'USER'
+  targetId    String
+  detail      Json?
+  createdAt   DateTime @default(now())
+
+  @@index([adminUserId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
