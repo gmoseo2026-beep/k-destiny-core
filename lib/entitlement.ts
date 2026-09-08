@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 export interface EntitlementResult {
   entitled: boolean;
@@ -59,17 +60,20 @@ export async function isEntitled(params: {
         include: { unlocks: true },
       });
       if (order && order.status === 'PAID' && order.compatId === compatId) {
+        // [SECURITY / M-5] Unlock 행이 없으면 "부여된 적 없음"이다 → 거부.
+        // 이전에는 행이 없을 때 order.createdAt + 90일을 합성해서 부여했는데(fail-open),
+        // 부여 실패·수동 삭제·취소 웹훅 유실 케이스가 전부 무료로 통과했다.
+        // 유효기간 판정의 유일한 출처는 DB 의 Unlock.expiresAt 이다.
         const matchingUnlock = order.unlocks?.find((u) => u.compatId === compatId);
-        const expiresAt = matchingUnlock?.expiresAt ?? (order.createdAt ? new Date(order.createdAt.getTime() + 90 * 24 * 60 * 60 * 1000) : null);
-        if (!expiresAt || expiresAt > now) {
+        if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
           return { entitled: true, reason: 'UNLOCK' };
         }
       }
     }
 
     // [Vuln 3 Fix] IDOR 방지: 단건 해금 시 반드시 소유권 검증 (userId 또는 email)
-    const whereClause: any = { compatId };
-    
+    const whereClause: Prisma.UnlockWhereInput = { compatId };
+
     if (userId) {
       whereClause.userId = userId;
     } else if (email) {
@@ -79,14 +83,17 @@ export async function isEntitled(params: {
       return { entitled: false, reason: 'NONE' };
     }
 
+    // [SECURITY / H-2] 같은 궁합을 여러 명이 결제하면 compatId 당 Unlock 이 여러 행이다.
+    // 만료 조건을 WHERE 에 넣어, 어느 행 하나라도 유효하면 통과하도록 판정을 확정한다.
+    // (orderBy 없는 findFirst 는 어떤 행이 잡힐지 비결정적이라 만료된 행에 걸릴 수 있었다)
     const unlock = await prisma.unlock.findFirst({
-      where: whereClause
+      where: {
+        ...whereClause,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
     });
     if (unlock) {
-      // 만료 체크: expiresAt이 없거나 미래인 경우만 유효
-      if (!unlock.expiresAt || unlock.expiresAt > now) {
-        return { entitled: true, reason: 'UNLOCK' };
-      }
+      return { entitled: true, reason: 'UNLOCK' };
     }
   }
 

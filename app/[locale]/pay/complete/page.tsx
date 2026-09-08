@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
+import { rememberUnlockToken } from "@/lib/payments/client";
 
 function PayCompleteContent() {
   const sp = useSearchParams();
@@ -13,6 +14,8 @@ function PayCompleteContent() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [msg, setMsg] = useState("결제 상태를 확인하고 있습니다...");
+  // [SECURITY / H-2] 결제한 궁합으로 곧장 돌려보내기 위한 값(서버 응답에서만 받는다).
+  const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
 
   useEffect(() => {
     const paymentId = sp.get("paymentId");
@@ -38,6 +41,13 @@ function PayCompleteContent() {
     })
       .then(async (r) => {
         if (r.ok) {
+          // [SECURITY / H-2] 게스트는 세션이 없으므로 서버가 확정해 돌려준 orderId 를
+          // 이 기기에 보관해야 리포트 열람 시 소유권을 증명할 수 있다.
+          const result = await r.json().catch(() => null);
+          if (result?.type === "SINGLE" && result?.compatId && result?.orderId) {
+            rememberUnlockToken(result.compatId, result.orderId);
+            setPaidCompatId(result.compatId);
+          }
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
         } else {
@@ -77,8 +87,11 @@ function PayCompleteContent() {
           {status === "success" && (
             <button
               onClick={() => {
-                // 이전 화면(궁합 결과)으로 돌아가거나 홈으로 이동
-                if (window.history.length > 2) {
+                // 결제한 궁합 결과로 직접 이동한다. router.back() 은 결제창 이전 히스토리로
+                // 되돌아가 열람 화면에 도달하지 못하는 경우가 있어 신뢰하지 않는다.
+                if (paidCompatId) {
+                  router.replace(`/${locale}/compat/${paidCompatId}`);
+                } else if (window.history.length > 2) {
                   router.back();
                 } else {
                   router.push(`/${locale}`);

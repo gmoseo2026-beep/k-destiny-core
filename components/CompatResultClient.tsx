@@ -1,12 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
 import { DeepReportContent } from "@/lib/destinyGen";
 import { useSession } from "next-auth/react";
 import GuestCheckoutModal from "@/components/GuestCheckoutModal";
-import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+import {
+  requestPortOnePayment,
+  recallUnlockToken,
+  forgetUnlockToken,
+  subscribeUnlockToken,
+  BuyerInfo,
+} from "@/lib/payments/client";
 
 interface CompatData {
   id: string;
@@ -93,6 +99,17 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
   const [deepReportError, setDeepReportError] = useState<string | null>(null);
+
+  // [SECURITY / H-2] 게스트/단건 구매자의 열람 증명 토큰(orderId).
+  // 서버는 이 값을 받아야만 세션 없는 구매자의 소유권을 확인할 수 있다.
+  // localStorage 는 클라이언트 전용 외부 저장소이므로 useSyncExternalStore 로 읽는다.
+  // 서버 스냅샷을 null 로 두면 하이드레이션 불일치 없이 마운트 직후 값이 반영된다.
+  // (값은 결제 완료 후 full reload 로만 바뀌므로 구독은 필요 없다)
+  const unlockToken = useSyncExternalStore(
+    subscribeUnlockToken,
+    useCallback(() => recallUnlockToken(data.id), [data.id]),
+    useCallback(() => null, [])
+  );
 
   // Session & PortOne Checkout Modal State
   const { data: session } = useSession();
@@ -188,9 +205,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       const res = await fetch("/api/compat/deep-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ compatId: data.id, locale })
+        // orderId 는 게스트 소유권 증명 토큰. 없으면(로그인 패스 보유자) 서버가 세션으로 판정한다.
+        body: JSON.stringify({ compatId: data.id, locale, orderId: unlockToken ?? undefined })
       });
       if (!res.ok) {
+        // [SECURITY / H-4] 서버가 권한 없음으로 판정하면(환불·만료·회수) 이 기기의 토큰은 무효다.
+        // 폐기해서 열람 UI 대신 결제 UI로 되돌린다. 판정 주체는 어디까지나 서버다.
+        if (res.status === 403) forgetUnlockToken(data.id);
         const errData = await res.json();
         throw new Error(errData.error || "Failed to generate");
       }
@@ -503,7 +524,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             서로에게 끌리는 진짜 이유와 타이밍까지<br/>AI가 분석한 심층 궁합 리포트를 만나보세요.
           </p>
           
-          {isPremium ? (
+          {isPremium || unlockToken ? (
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleGenerateDeepReport}

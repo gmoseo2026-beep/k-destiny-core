@@ -261,7 +261,12 @@ model Unlock {
 
   order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@unique([compatId])
+  // [SECURITY / H-2] compatId 단독 유니크였을 때는 같은 궁합을 두 번째로 결제한
+  // 사람에게 Unlock 행이 아예 생성되지 않아(대금만 수령) 열람이 막혔다.
+  // 공유 링크로 여러 명이 같은 compatId를 구매하는 것이 이 서비스의 기본 시나리오이므로
+  // 주문 단위로 1행을 보장한다. 동일 주문의 중복 부여는 이 복합 유니크가 막는다.
+  @@unique([compatId, orderId])
+  @@index([compatId])
   @@index([userId])
 }
 

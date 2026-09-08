@@ -1,74 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { payments } from "@/lib/payments";
+// [SECURITY / H-3] 이 웹훅은 영구 비활성화되었습니다.
+//
+// 이전 구현에는 서명검증이 전혀 없었습니다(tossProvider.verifyWebhook 은
+// 요청 본문을 그대로 반환할 뿐입니다). 누구나 POST 할 수 있는 상태에서
+// 권한부여/회수 로직에 직접 도달했고, 현재 PortOne 프로바이더에서
+// 응답 필드명이 달라(getPayment → id/amount.total) 우연히 400으로 막히고
+// 있을 뿐이었습니다. PG_PROVIDER 롤백이나 필드명 변경 한 번이면
+// 무인증 권한부여 엔드포인트가 됩니다.
+//
+// 현재 정상 웹훅은 /api/webhooks/portone 하나뿐입니다.
+// (@portone/server-sdk Webhook.verify 서명검증 → getPayment 재조회 →
+//  status/amount 대조 → applyPaidOrder / revokePaidOrder)
+//
+// Toss 부활 시: 이 파일을 되살리지 말고, portone 라우트와 동일한
+// [서명검증 → PG 재조회 → 금액대조 → 원자적 부여] 순서로 새로 작성할 것.
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { eventType, data } = body;
-
-    // Toss Payments 웹훅 (멱등성 보장)
-    if (eventType === "PAYMENT_STATUS_CHANGED") {
-      const { orderId, paymentKey } = data;
-      
-      const order = await prisma.order.findUnique({ where: { orderId }});
-      if (!order) {
-        return NextResponse.json({ success: true }, { status: 200 });
-      }
-
-      // 웹훅 위조 방지: 실제 Toss 서버에 조회하여 교차 검증
-      if (!paymentKey) {
-        return NextResponse.json({ error: "Missing paymentKey" }, { status: 400 });
-      }
-
-      const verifiedPayment = await payments.getPayment(paymentKey);
-      if (
-        verifiedPayment.orderId !== order.orderId ||
-        verifiedPayment.totalAmount !== order.amount
-      ) {
-        return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
-      }
-
-      const verifiedStatus = verifiedPayment.status;
-
-      if (verifiedStatus === "CANCELED" || verifiedStatus === "PARTIAL_CANCELED") {
-        await prisma.order.update({
-          where: { orderId },
-          data: { status: "CANCELED" }
-        });
-        
-        if (order.type === 'SINGLE') {
-          await prisma.unlock.deleteMany({
-            where: { orderId: order.id }
-          });
-        }
-      } else if (verifiedStatus === "DONE" && order.status !== "PAID") {
-        await prisma.order.update({
-          where: { orderId },
-          data: { status: "PAID", tossPaymentKey: paymentKey }
-        });
-
-        if (order.type === 'SINGLE' && order.compatId) {
-          const existingUnlock = await prisma.unlock.findUnique({
-            where: { compatId: order.compatId }
-          });
-          if (!existingUnlock) {
-            await prisma.unlock.create({
-              data: {
-                compatId: order.compatId,
-                orderId: order.id,
-                userId: order.userId,
-                email: order.email,
-              }
-            });
-          }
-        }
-      }
-    }
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: any) {
-    console.error("Toss webhook error:", error);
-    return NextResponse.json({ success: false }, { status: 400 });
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: "This webhook endpoint is no longer active." },
+    { status: 410 }
+  );
 }

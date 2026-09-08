@@ -1,110 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { payments } from "@/lib/payments";
-import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+// [SECURITY / C-1] 이 라우트는 영구 비활성화되었습니다.
+//
+// 구(Toss) 승인 플로우 잔재로, PortOne 프로바이더에서는 confirmPayment()가
+// "승인"이 아니라 단순 조회(getPayment)로 매핑됩니다. 그럼에도 이 라우트는
+// 반환된 status/amount를 검증하지 않고 무조건 status=PAID로 전환해
+// 권한을 부여했습니다. 즉 아래가 모두 가능했습니다.
+//
+//   - READY/FAILED/CANCELLED 상태의 paymentKey 하나로 무한 무료 결제
+//   - 요청 본문의 amount 만으로 금액 검증을 통과 (정가는 화면에 노출됨)
+//   - CANCELED(환불) 주문의 권한 재부여
+//   - applyPaidOrder() 원자 가드 우회 → PERIOD_PASS 이중 연장 race
+//
+// 정상 경로는 /api/payments/complete 하나뿐입니다.
+// (PortOne getPayment 재조회 → status/amount 대조 → applyPaidOrder 원자 부여)
+//
+// 참고: app/api/checkout/route.ts 의 비활성화 패턴과 동일하게 410으로 응답합니다.
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    const body = await req.json();
-    const { paymentKey, orderId, amount } = body;
-
-    if (!paymentKey || !orderId || !amount) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
-    }
-
-    const order = await prisma.order.findUnique({
-      where: { orderId }
-    });
-
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
-
-    // 로그인 사용자 주문일 경우 소유권 검증
-    if (order.userId && order.userId !== session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    if (order.status === "PAID") {
-      return NextResponse.json({ message: "Already paid" }, { status: 200 });
-    }
-
-    // 서버 결제 금액 검증
-    if (order.amount !== Number(amount)) {
-      return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
-    }
-
-    // PG 승인 요청
-    const pgResponse = await payments.confirmPayment({
-      paymentKey,
-      orderId,
-      amount: order.amount,
-    });
-
-    // 상태 업데이트
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        status: "PAID",
-        tossPaymentKey: paymentKey,
-      }
-    });
-
-    // 건별 언락 (단건 결제일 경우)
-    if (order.type === 'SINGLE' && order.compatId) {
-      const existingUnlock = await prisma.unlock.findUnique({
-        where: { compatId: order.compatId }
-      });
-      
-      if (!existingUnlock) {
-        await prisma.unlock.create({
-          data: {
-            compatId: order.compatId,
-            orderId: order.id,
-            userId: order.userId,
-            email: order.email,
-          }
-        });
-      }
-    } else if (order.type === 'PERIOD_PASS' && order.userId) {
-      const user = await prisma.user.findUnique({ where: { id: order.userId } });
-      const now = new Date();
-      
-      let baseDate = now;
-      if (user?.premiumEndDate && user.premiumEndDate > now) {
-         baseDate = user.premiumEndDate;
-      }
-      
-      const newEndDate = new Date(baseDate);
-      if (order.planId === '1_MONTH') newEndDate.setMonth(newEndDate.getMonth() + 1);
-      else if (order.planId === '3_MONTHS') newEndDate.setMonth(newEndDate.getMonth() + 3);
-      
-      await prisma.user.update({
-        where: { id: order.userId },
-        data: {
-           tier: 'PREMIUM',
-           premiumStartDate: user?.premiumStartDate || now,
-           premiumEndDate: newEndDate,
-           planType: order.planId,
-           paidAmount: (user?.paidAmount || 0) + order.amount,
-        }
-      });
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      orderId, 
-      paymentInfo: {
-        status: pgResponse.status,
-        totalAmount: pgResponse.totalAmount,
-        approvedAt: pgResponse.approvedAt
-      } 
-    }, { status: 200 });
-
-  } catch (error: any) {
-    console.error("Payment confirmation failed:", error);
-    return NextResponse.json({ error: error.message || "Confirmation failed" }, { status: 500 });
-  }
+export async function POST() {
+  return NextResponse.json(
+    { error: "This payment confirmation endpoint is no longer active. Use /api/payments/complete." },
+    { status: 410 }
+  );
 }

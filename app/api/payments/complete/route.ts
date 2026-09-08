@@ -29,7 +29,20 @@ export async function POST(req: NextRequest) {
     }
 
     await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
-    return NextResponse.json({ success: true }, { status: 200 });
+
+    // [SECURITY / H-2] 게스트는 세션이 없으므로 리포트 열람 시 소유권을 증명할 수단이
+    // orderId(추측 불가 UUID) 뿐이다. 이전에는 이 값을 클라에 돌려주지 않아
+    // 결제에 성공한 게스트가 리포트를 영원히 열지 못했다.
+    // URL 쿼리로는 넘기지 않는다(히스토리·Referer·GA4 page_location 유출) — 응답 본문으로만 전달.
+    return NextResponse.json(
+      {
+        success: true,
+        orderId: order.orderId,
+        type: order.type,
+        compatId: order.compatId,
+      },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
   } catch (e: any) {
     console.error("[payments/complete]", e);
     return NextResponse.json({ error: e.message || "complete failed" }, { status: 500 });
