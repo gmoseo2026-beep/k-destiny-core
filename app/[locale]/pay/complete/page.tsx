@@ -22,6 +22,18 @@ function PayCompleteContent() {
     const code = sp.get("code"); // 실패 시 PortOne이 code 부여
     const message = sp.get("message");
 
+    // [SECURITY / M-10] paymentId(=orderId)는 lib/entitlement.ts 에서 게스트 열람 베어러
+    // 토큰으로 쓰이는 값이다. PortOne 리다이렉트가 이 값을 쿼리로 실어 오므로, 값을 읽은 즉시
+    // 주소창에서 지워 브라우저 히스토리·이후 SPA page_view 에 남지 않게 한다.
+    // (GA4 최초 page_view 쪽은 components/Analytics.tsx 의 page_location 정제가 함께 막는다)
+    if (typeof window !== "undefined" && window.location.search) {
+      const cleaned = new URL(window.location.href);
+      ["paymentId", "orderId", "claimToken", "token"].forEach((k) =>
+        cleaned.searchParams.delete(k)
+      );
+      window.history.replaceState({}, "", cleaned.pathname + cleaned.search + cleaned.hash);
+    }
+
     if (!paymentId) {
       setStatus("error");
       setMsg("잘못된 접근입니다. (주문 번호가 누락되었습니다)");

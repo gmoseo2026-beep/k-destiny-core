@@ -95,6 +95,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
   const [copyToast, setCopyToast] = useState<string | null>(null);
+  const [claimAvailable, setClaimAvailable] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   
   const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
@@ -140,30 +142,60 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     getReadyKakao();
   }, [refToken, data.shareToken]);
 
-  // [CLAIM UNLOCK] 로그인한 사용자이고 (unlockToken 또는 kd_claim 쿠키 보유 시) 자동으로 계정에 연동
+  // [CLAIM UNLOCK] 로그인 상태에서 연동 가능한 결제가 있으면 배너로 안내한다.
+  //
+  // [SECURITY / M-8] 예전에는 진입 즉시 자동으로 귀속시켰다. 공용 PC(PC방 등)에서 게스트가
+  // 결제만 하고 로그인하지 않은 채 자리를 뜨면, 같은 브라우저에서 다음으로 로그인한 사람에게
+  // 결제가 조용히 넘어갔다. 이제 GET 으로 가능 여부만 확인하고, 실제 귀속은 사용자가 누를 때만 한다.
+  //
+  // [SECURITY / H-7] body 에서 orderId 를 제거했다. 서버는 httpOnly kd_claim 쿠키로만 소유권을
+  // 판정한다(orderId 문자열만으로 타인의 미연동 주문을 선점할 수 있었던 폴백 경로 제거).
   useEffect(() => {
-    if (session?.user?.id && data.id) {
-      const claimKey = `claimed_${data.id}_${unlockToken || "cookie"}`;
-      if (typeof window !== "undefined" && window.sessionStorage.getItem(claimKey)) {
-        return; // 이미 이번 세션에서 시도함
-      }
-      fetch("/api/user/claim-unlock", {
+    if (!session?.user?.id || !data.id) return;
+    if (typeof window !== "undefined" && window.sessionStorage.getItem(`claimed_${data.id}`)) {
+      return; // 이미 이번 세션에서 처리함
+    }
+
+    let isMounted = true;
+    fetch("/api/user/claim-unlock")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((result) => {
+        if (isMounted && result?.claimable) setClaimAvailable(true);
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user?.id, data.id]);
+
+  const handleClaimUnlock = async () => {
+    setIsClaiming(true);
+    try {
+      const res = await fetch("/api/user/claim-unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ compatId: data.id, orderId: unlockToken || undefined }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            if (typeof window !== "undefined") {
-              window.sessionStorage.setItem(claimKey, "true");
-            }
-            setCopyToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
-            setTimeout(() => setCopyToast(null), 4000);
-          }
-        })
-        .catch(() => {});
+        body: JSON.stringify({ compatId: data.id }),
+      });
+      if (res.ok) {
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(`claimed_${data.id}`, "true");
+        }
+        setClaimAvailable(false);
+        setCopyToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
+        setTimeout(() => setCopyToast(null), 4000);
+      } else {
+        setClaimAvailable(false);
+        setCopyToast("연동할 수 있는 결제를 찾지 못했어요.");
+        setTimeout(() => setCopyToast(null), 3000);
+      }
+    } catch {
+      setCopyToast("연동 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
+      setTimeout(() => setCopyToast(null), 3000);
+    } finally {
+      setIsClaiming(false);
     }
-  }, [session?.user?.id, unlockToken, data.id]);
+  };
 
   // 2. AI 무료 해석이 아직 없으면 클라이언트에서 비동기 생성 요청
   useEffect(() => {
@@ -337,6 +369,24 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       {copyToast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#2B2430] text-white px-5 py-3 rounded-full text-sm font-semibold shadow-xl transition-all duration-300 border border-[#FF8AA1]/30">
           {copyToast}
+        </div>
+      )}
+
+      {/* [SECURITY / M-8] 결제 연동은 사용자가 직접 확인할 때만 수행한다(자동 귀속 금지) */}
+      {claimAvailable && (
+        <div className="w-full mt-4 bg-white border border-[#FFD9E0] rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+          <span className="text-xl shrink-0">💌</span>
+          <p className="flex-1 text-xs text-[#6A5E72] leading-relaxed font-medium">
+            결제하신 궁합 결과가 있어요. 이 계정에 저장할까요?
+          </p>
+          <button
+            type="button"
+            onClick={handleClaimUnlock}
+            disabled={isClaiming}
+            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
+          >
+            {isClaiming ? "연동 중..." : "연동하기"}
+          </button>
         </div>
       )}
 

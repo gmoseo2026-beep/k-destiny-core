@@ -64,26 +64,25 @@ export default function DashboardView() {
   };
 
   const [claimToast, setClaimToast] = useState<string | null>(null);
+  const [claimAvailable, setClaimAvailable] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   useEffect(() => {
     if (!session?.user) return;
 
     let isMounted = true;
-    // [자동 연동] 결제 후 로그인하여 대시보드에 진입한 경우 kd_claim 쿠키를 통해 자동 귀속
-    fetch("/api/user/claim-unlock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    })
-      .then(async (res) => {
-        if (res.ok && isMounted) {
-          setClaimToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
-          setTimeout(() => setClaimToast(null), 4500);
-        }
+    // [연동 안내] 결제 후 로그인해 대시보드에 진입한 경우 kd_claim 쿠키로 연동 "가능 여부"만 확인한다.
+    //
+    // [SECURITY / M-8] 예전에는 진입 즉시 POST 로 자동 귀속시켰다. 공용 PC(PC방 등)에서 게스트가
+    // 결제만 하고 로그인하지 않은 채 자리를 뜨면, 같은 브라우저에서 다음으로 로그인한 사람이
+    // 대시보드를 열기만 해도 그 결제가 조용히 넘어갔다. 이제 배너로 안내하고 클릭했을 때만 귀속한다.
+    fetch("/api/user/claim-unlock")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((result) => {
+        if (isMounted && result?.claimable) setClaimAvailable(true);
       })
       .catch(() => {})
       .finally(() => {
-        // 연동 처리 후 최신 궁합 기록 로드
         fetch("/api/compat")
           .then((res) => res.json())
           .then((data) => {
@@ -104,6 +103,32 @@ export default function DashboardView() {
     };
   }, [session]);
 
+  const handleClaimUnlock = async () => {
+    setIsClaiming(true);
+    try {
+      const res = await fetch("/api/user/claim-unlock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      setClaimAvailable(false);
+      if (res.ok) {
+        setClaimToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
+        setTimeout(() => setClaimToast(null), 4500);
+        const data = await fetch("/api/compat").then((r) => r.json());
+        if (Array.isArray(data?.items)) setHistoryItems(data.items);
+      } else {
+        setClaimToast("연동할 수 있는 결제를 찾지 못했어요.");
+        setTimeout(() => setClaimToast(null), 3500);
+      }
+    } catch {
+      setClaimToast("연동 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
+      setTimeout(() => setClaimToast(null), 3500);
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   const firstName = session?.user?.name?.split(" ")[0] || t("guest_name");
 
   return (
@@ -112,6 +137,22 @@ export default function DashboardView() {
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#6A2C70] text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 animate-bounce border border-white/20">
           <span>🎉</span>
           <span>{claimToast}</span>
+        </div>
+      )}
+      {claimAvailable && (
+        <div className="max-w-3xl mx-auto mb-6 bg-white border border-[#FFD9E0] rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+          <span className="text-xl shrink-0">💌</span>
+          <p className="flex-1 text-xs sm:text-sm text-[#6A5E72] leading-relaxed font-medium">
+            결제하신 궁합 결과가 있어요. 이 계정에 저장할까요?
+          </p>
+          <button
+            type="button"
+            onClick={handleClaimUnlock}
+            disabled={isClaiming}
+            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
+          >
+            {isClaiming ? "연동 중..." : "연동하기"}
+          </button>
         </div>
       )}
       <motion.div
