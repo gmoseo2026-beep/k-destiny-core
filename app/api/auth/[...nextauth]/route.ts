@@ -95,6 +95,21 @@ export const authOptions: NextAuthOptions = {
             dbUser.premiumEndDate !== null &&
             dbUser.premiumEndDate <= new Date();
           token.tier = expired ? 'FREE' : dbUser.tier;
+        } else {
+          // [SECURITY / H-8] 탈퇴·삭제된 사용자의 토큰을 즉시 무효화한다.
+          //
+          // 세션 전략이 jwt 라 Session 행 Cascade 삭제로는 세션이 끊기지 않는다. else 분기가
+          // 없으면 토큰이 마지막 id/role/tier 를 그대로 유지한 채 만료(기본 30일)까지 살아남는다.
+          // delete 라우트가 ADMIN 삭제를 막기 때문에 운영상 "강등 후 삭제"가 유일한 정상 절차인데,
+          // 그 사이 대상이 요청을 보내지 않으면 role='ADMIN' 인 채로 동결되고 DB 에 행이 없어
+          // 다시 강등할 수단조차 없다. 정상 절차를 따를수록 재현되는 경로다.
+          //
+          // id 를 지우면 session 콜백이 session.user.id 를 '' 로 만들고, 모든 라우트의
+          // `session?.user?.id` 가드가 401 로 떨어진다(getAdminSessionOrThrow 포함).
+          delete token.id;
+          delete token.role;
+          delete token.tier;
+          token.sub = undefined;
         }
       } else if (token.email) {
         const dbUser = await prisma.user.findUnique({
@@ -109,6 +124,12 @@ export const authOptions: NextAuthOptions = {
             dbUser.premiumEndDate !== null &&
             dbUser.premiumEndDate <= new Date();
           token.tier = expired ? 'FREE' : dbUser.tier;
+        } else {
+          // [SECURITY / H-8] 이메일로도 사용자를 못 찾으면 탈퇴한 계정이다 → 토큰 무효화.
+          delete token.id;
+          delete token.role;
+          delete token.tier;
+          token.sub = undefined;
         }
       }
       return token;
