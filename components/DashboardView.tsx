@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
-import { Heart, ArrowRight, BookOpen, Sparkles, Bell, Check } from "lucide-react";
+import { Heart, ArrowRight, Sparkles, Bell, BookOpen } from "lucide-react";
 import KongdakMascot from "@/components/KongdakMascot";
 import { subscribeToPush } from "@/lib/push";
 
@@ -42,11 +42,14 @@ export default function DashboardView() {
   const { data: session } = useSession();
   const [historyItems, setHistoryItems] = useState<CompatItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<string>("default");
+  const [notifPermission, setNotifPermission] = useState<string>(() =>
+    typeof window !== "undefined" && "Notification" in window
+      ? Notification.permission
+      : "default"
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
       if (Notification.permission === "granted") {
         subscribeToPush();
       }
@@ -60,29 +63,57 @@ export default function DashboardView() {
     }
   };
 
+  const [claimToast, setClaimToast] = useState<string | null>(null);
+
   useEffect(() => {
-    if (session?.user) {
-      setLoading(true);
-      fetch("/api/compat")
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data?.items)) {
-            setHistoryItems(data.items);
-          }
-        })
-        .catch((err) => {
-          console.error("Failed to load compat history:", err);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    if (!session?.user) return;
+
+    let isMounted = true;
+    // [자동 연동] 결제 후 로그인하여 대시보드에 진입한 경우 kd_claim 쿠키를 통해 자동 귀속
+    fetch("/api/user/claim-unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+      .then(async (res) => {
+        if (res.ok && isMounted) {
+          setClaimToast("구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다! 🎉");
+          setTimeout(() => setClaimToast(null), 4500);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        // 연동 처리 후 최신 궁합 기록 로드
+        fetch("/api/compat")
+          .then((res) => res.json())
+          .then((data) => {
+            if (isMounted && Array.isArray(data?.items)) {
+              setHistoryItems(data.items);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load compat history:", err);
+          })
+          .finally(() => {
+            if (isMounted) setLoading(false);
+          });
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [session]);
 
   const firstName = session?.user?.name?.split(" ")[0] || t("guest_name");
 
   return (
-    <main className="min-h-[70vh] w-full bg-background px-4 sm:px-6 py-10 sm:py-14">
+    <main className="min-h-[70vh] w-full bg-background px-4 sm:px-6 py-10 sm:py-14 relative">
+      {claimToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#6A2C70] text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 animate-bounce border border-white/20">
+          <span>🎉</span>
+          <span>{claimToast}</span>
+        </div>
+      )}
       <motion.div
         variants={containerVariants}
         initial="hidden"

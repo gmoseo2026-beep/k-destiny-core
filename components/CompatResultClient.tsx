@@ -140,17 +140,17 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     getReadyKakao();
   }, [refToken, data.shareToken]);
 
-  // [CLAIM UNLOCK] 로그인한 사용자이고 기기에 unlockToken(게스트 구매 토큰)이 있다면 자동으로 계정에 연동
+  // [CLAIM UNLOCK] 로그인한 사용자이고 (unlockToken 또는 kd_claim 쿠키 보유 시) 자동으로 계정에 연동
   useEffect(() => {
-    if (session?.user?.id && unlockToken && data.id) {
-      const claimKey = `claimed_${data.id}_${unlockToken}`;
+    if (session?.user?.id && data.id) {
+      const claimKey = `claimed_${data.id}_${unlockToken || "cookie"}`;
       if (typeof window !== "undefined" && window.sessionStorage.getItem(claimKey)) {
         return; // 이미 이번 세션에서 시도함
       }
       fetch("/api/user/claim-unlock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ compatId: data.id, orderId: unlockToken }),
+        body: JSON.stringify({ compatId: data.id, orderId: unlockToken || undefined }),
       })
         .then(async (res) => {
           if (res.ok) {

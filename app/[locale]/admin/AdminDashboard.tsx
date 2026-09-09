@@ -174,11 +174,67 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
   const [grantReason, setGrantReason] = useState('');
   const [isGranting, setIsGranting] = useState(false);
 
+  // 회원 탈퇴(삭제) 모달 상태
+  const [deleteModalUser, setDeleteModalUser] = useState<UserItem | { id: string; email: string | null; name: string | null } | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
   // 토스트 메시지
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // ─── 회원 탈퇴(삭제) 처리 핸들러 ───
+  const handleExecuteDeleteUser = async () => {
+    if (!deleteModalUser) return;
+    if (!deleteReason.trim()) {
+      alert('탈퇴 사유를 반드시 입력해주세요.');
+      return;
+    }
+
+    if (!confirm(`[경고] 회원 (${deleteModalUser.email || deleteModalUser.name || deleteModalUser.id}) 님을 정말 탈퇴 처리하시겠습니까?\n사유: ${deleteReason}`)) {
+      return;
+    }
+
+    try {
+      setIsDeletingUser(true);
+      const res = await fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: deleteModalUser.id,
+          reason: deleteReason.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || '회원 탈퇴 처리에 실패했습니다.');
+      }
+
+      // 로컬 회원 목록 갱신
+      setUsers((prev) => prev.filter((u) => u.id !== deleteModalUser.id));
+      if (csResult) {
+        setCsResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                users: prev.users.filter((u) => u.id !== deleteModalUser.id),
+              }
+            : null
+        );
+      }
+
+      showToast('회원 탈퇴 및 개인정보 파기가 완료되었습니다! ✅');
+      setDeleteModalUser(null);
+      setDeleteReason('');
+    } catch (err: any) {
+      alert(err.message || '오류가 발생했습니다.');
+    } finally {
+      setIsDeletingUser(false);
+    }
   };
 
   // ─── 필터링된 주문 목록 ───
@@ -700,9 +756,19 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
                       <div key={u.id} className="p-4 bg-[#FFF6F1] rounded-2xl border border-[#FFD9E0] space-y-1 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-sm text-[#2B2430]">{u.name || '이름 없음'}</span>
-                          <span className="px-2 py-0.5 bg-white text-[#6A2C70] font-bold rounded-md border border-[#FFD9E0]">
-                            {u.role}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 bg-white text-[#6A2C70] font-bold rounded-md border border-[#FFD9E0]">
+                              {u.role}
+                            </span>
+                            {u.role !== 'ADMIN' && (
+                              <button
+                                onClick={() => setDeleteModalUser(u)}
+                                className="px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-md text-[11px] font-bold hover:bg-rose-100 active:scale-95 transition-all"
+                              >
+                                탈퇴 처리
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <div className="text-[#6A5E72]">{u.email}</div>
                         <div className="pt-2 text-[11px] text-[#8A8291] flex justify-between">
@@ -1016,12 +1082,22 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
                         {formatDate(u.createdAt)}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleToggleRole(u)}
-                          className="px-2 py-1 bg-white border border-[#FFD9E0] text-[#6A2C70] rounded-lg text-[11px] font-bold hover:bg-[#FFF6F1]"
-                        >
-                          {u.role === 'ADMIN' ? '관리자 해제' : '관리자 승급'}
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleToggleRole(u)}
+                            className="px-2 py-1 bg-white border border-[#FFD9E0] text-[#6A2C70] rounded-lg text-[11px] font-bold hover:bg-[#FFF6F1]"
+                          >
+                            {u.role === 'ADMIN' ? '관리자 해제' : '관리자 승급'}
+                          </button>
+                          {u.role !== 'ADMIN' && (
+                            <button
+                              onClick={() => setDeleteModalUser(u)}
+                              className="px-2 py-1 bg-rose-50 border border-rose-200 text-rose-600 rounded-lg text-[11px] font-bold hover:bg-rose-100 active:scale-95 transition-all"
+                            >
+                              탈퇴 처리
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1239,6 +1315,83 @@ export default function AdminDashboard({ stats: initialStats, orders: initialOrd
                 className="flex-1 py-2.5 bg-[#6A2C70] text-white rounded-xl text-xs font-bold hover:opacity-90 active:scale-95 disabled:opacity-50"
               >
                 {isGranting ? '발급 중...' : '언락 권한 발급'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─────────────────────────────────────────────────────────────
+          MODAL: 회원 탈퇴(삭제) 모달
+      ───────────────────────────────────────────────────────────── */}
+      {deleteModalUser && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <h3 className="text-base font-black text-[#2B2430]">회원 탈퇴(삭제) 처리</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setDeleteModalUser(null);
+                  setDeleteReason('');
+                }}
+                className="text-[#8A8291] hover:text-black"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-rose-50 rounded-xl text-xs space-y-1.5 border border-rose-200 text-rose-800">
+              <div className="font-bold flex items-center gap-1">
+                <span>⚠️</span>
+                <span>주의: 탈퇴 처리 시 개인정보가 영구 파기됩니다.</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-700">
+                개인정보보호법에 따라 사주 명식(생년월일·시간) 및 소셜 연동 계정은 즉시 영구 삭제되며 동일 이메일로 재가입이 가능해집니다.
+                <strong> 주문·결제 기록은 전자상거래법에 의거 5년 보관을 위해 익명화(userId=null)되어 안전하게 유지</strong>됩니다.
+              </p>
+            </div>
+
+            <div className="p-3 bg-[#FFF6F1] rounded-xl text-xs space-y-1 border border-[#FFD9E0]">
+              <div><strong>대상 회원:</strong> {deleteModalUser.name || '이름 없음'}</div>
+              <div><strong>이메일:</strong> {deleteModalUser.email || '—'}</div>
+              <div><strong>회원 ID:</strong> <span className="font-mono text-[11px]">{deleteModalUser.id}</span></div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-[#2B2430] block mb-1">
+                  탈퇴 사유 <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="예: 고객 직접 탈퇴 요청, 테스트 계정 정리, 약관 위반 등"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className="w-full p-2.5 border border-[#FFD9E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteModalUser(null);
+                  setDeleteReason('');
+                }}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingUser}
+                onClick={handleExecuteDeleteUser}
+                className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 active:scale-95 disabled:opacity-50"
+              >
+                {isDeletingUser ? '처리 중...' : '정말 탈퇴 처리'}
               </button>
             </div>
           </div>

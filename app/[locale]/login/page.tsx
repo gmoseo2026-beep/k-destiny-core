@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
 import { isInAppBrowser } from "@/lib/inAppBrowser";
+import KongdakMascot from "@/components/KongdakMascot";
 
 export default function LoginPage() {
   const t = useTranslations("Login");
@@ -30,8 +31,9 @@ export default function LoginPage() {
     setMessage(null);
     try {
       await signIn("google", { callbackUrl: `/${locale}/dashboard` });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setMessage({ type: "error", text: err.message || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -48,8 +50,9 @@ export default function LoginPage() {
     setMessage(null);
     try {
       await signIn("kakao", { callbackUrl: `/${locale}/dashboard` });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setMessage({ type: "error", text: err.message || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -66,8 +69,9 @@ export default function LoginPage() {
     setMessage(null);
     try {
       await signIn("naver", { callbackUrl: `/${locale}/dashboard` });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setMessage({ type: "error", text: err.message || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -120,47 +124,40 @@ export default function LoginPage() {
       } else {
         window.location.href = `/${locale}/dashboard`;
       }
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      setMessage({ type: "error", text: err.message || t("error_general") });
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="relative min-h-[100dvh] w-full bg-background flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden">
-      {/* Mystical Background */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-stardust opacity-20 mix-blend-screen" />
-        <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-dark/20 via-transparent to-transparent blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold/10 via-transparent to-transparent blur-[120px]" />
-      </div>
-
+    <main className="relative min-h-[100dvh] w-full bg-[#FFF8F0] flex flex-col items-center justify-center p-4 sm:p-8">
       <div className="relative z-10 w-full max-w-md mx-auto">
+        {/* Brand Header with Mascot */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-          className="text-center mb-8 sm:mb-10"
+          transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+          className="text-center mb-6 sm:mb-8"
         >
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-gold" />
+          <div className="flex justify-center mb-2">
+            <KongdakMascot size={72} animate="bounce" />
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 text-balance">
-            <span className="bg-gradient-to-b from-white via-gray-200 to-gray-500 bg-clip-text text-transparent drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
-              {t("title")}
-            </span>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#2B2430] mb-2">
+            {t("title")}
           </h1>
-          <p className="font-sans text-gray-400 text-sm sm:text-base text-balance">
+          <p className="text-xs sm:text-sm text-[#8A8291] font-medium leading-relaxed max-w-xs mx-auto">
             {t("subtitle")}
           </p>
         </motion.div>
 
-        {/* Glassmorphism Card */}
+        {/* Kongdak Light Theme Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-10 shadow-[0_0_40px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]"
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.06)] border border-[#FFD9E0]/70"
         >
           {/* Loading State Overlay */}
           <AnimatePresence>
@@ -169,17 +166,12 @@ export default function LoginPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-50 rounded-3xl bg-background/80 backdrop-blur-md flex flex-col items-center justify-center border border-gold/30"
+                className="absolute inset-0 z-50 rounded-3xl bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center border border-[#FFD9E0]"
               >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  className="mb-4 relative"
-                >
-                  <div className="absolute inset-0 bg-gold/20 blur-xl rounded-full" />
-                  <Loader2 className="w-10 h-10 text-gold drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" />
-                </motion.div>
-                <p className="font-sans text-sm text-gold/70 animate-pulse">{t("loading")}</p>
+                <div className="mb-3">
+                  <Loader2 className="w-10 h-10 text-[#FF5C77] animate-spin" />
+                </div>
+                <p className="text-xs font-bold text-[#6A2C70] animate-pulse">{t("loading")}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -191,7 +183,11 @@ export default function LoginPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className={`mb-6 p-3 rounded-xl text-sm font-sans ${message.type === 'error' ? 'bg-red-500/10 border border-red-500/50 text-red-200' : 'bg-green-500/10 border border-green-500/50 text-green-200'}`}
+                className={`mb-5 p-3 rounded-2xl text-xs font-bold ${
+                  message.type === 'error' 
+                    ? 'bg-rose-50 border border-rose-200 text-rose-700' 
+                    : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                }`}
               >
                 {message.text}
               </motion.div>
@@ -199,109 +195,111 @@ export default function LoginPage() {
           </AnimatePresence>
 
           {/* Social Logins */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <motion.button
               onClick={handleKakaoLogin}
-              whileHover={{ scale: inApp ? 1 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileTap={{ scale: 0.97 }}
+              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
                 inApp
-                  ? 'bg-[#FEE500]/50 border-[#FEE500]/10 opacity-50 cursor-not-allowed text-black/50'
-                  : 'bg-[#FEE500] hover:bg-[#FEE500]/90 border-transparent text-black'
+                  ? 'bg-[#FEE500]/50 opacity-50 cursor-not-allowed text-black/50'
+                  : 'bg-[#FEE500] hover:bg-[#FEE500]/90 text-black'
               }`}
             >
-              <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
+              <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
                 <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
               </svg>
-              <span className="font-sans font-bold tracking-wide">
-                {locale === 'ko' ? '카카오 로그인' : 'Continue with Kakao'}
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
+                {locale === 'ko' ? '카카오로 시작하기' : 'Continue with Kakao'}
               </span>
             </motion.button>
 
             <motion.button
               onClick={handleNaverLogin}
-              whileHover={{ scale: inApp ? 1 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileTap={{ scale: 0.97 }}
+              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
                 inApp
-                  ? 'bg-[#03C75A]/50 border-[#03C75A]/10 opacity-50 cursor-not-allowed text-white/50'
-                  : 'bg-[#03C75A] hover:bg-[#03C75A]/90 border-transparent text-white'
+                  ? 'bg-[#03C75A]/50 opacity-50 cursor-not-allowed text-white/50'
+                  : 'bg-[#03C75A] hover:bg-[#03C75A]/90 text-white'
               }`}
             >
-              <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
+              <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
                 <path d="M19.689 9.878L12.01 20.31h-4.33V9.878h4.332v10.432l7.678-10.432h4.33v10.432h-4.331V9.878z" />
               </svg>
-              <span className="font-sans font-bold tracking-wide">
-                {locale === 'ko' ? '네이버 로그인' : 'Continue with Naver'}
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
+                {locale === 'ko' ? '네이버로 시작하기' : 'Continue with Naver'}
               </span>
             </motion.button>
 
             <motion.button
               onClick={handleGoogleLogin}
-              whileHover={{ scale: inApp ? 1 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors shadow-inner ${
+              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileTap={{ scale: 0.97 }}
+              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
                 inApp
-                  ? 'bg-white/[0.02] border-white/[0.06] opacity-50 cursor-not-allowed'
-                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  ? 'bg-gray-100 border border-gray-200 opacity-50 cursor-not-allowed text-gray-400'
+                  : 'bg-white hover:bg-gray-50 border border-[#E5E0DC] text-[#2B2430]'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
                 <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
                 <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
                 <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
                 <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
               </svg>
-              <span className="font-sans font-medium text-white tracking-wide">{t("btn_google")}</span>
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
+                {t("btn_google")}
+              </span>
             </motion.button>
           </div>
 
           {/* In-App Browser hint */}
           {inApp && (
-            <motion.p
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-2 text-center text-xs text-yellow-400/70 font-sans"
+              className="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-center text-xs font-semibold"
             >
               {locale === 'ko' 
                 ? '⚠️ 인앱 브라우저 감지 — 아래 이메일 로그인을 이용해 주세요' 
                 : '⚠️ In-app browser detected — use email login below'}
-            </motion.p>
+            </motion.div>
           )}
 
           {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-gray-500 font-sans uppercase tracking-widest">{t("or")}</span>
-            <div className="h-px flex-1 bg-white/10" />
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1 bg-[#FFD9E0]" />
+            <span className="text-[11px] text-[#8A8291] font-bold uppercase tracking-wider">{t("or")}</span>
+            <div className="h-px flex-1 bg-[#FFD9E0]" />
           </div>
 
           {/* Email / Password Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-4">
+          <form onSubmit={handleEmailAuth} className="space-y-3.5">
             {isSignUp && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
               >
-                <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
-                  <User className="w-3.5 h-3.5" />
-                  {locale === 'ko' ? '이름 (선택)' : 'Name (optional)'}
+                <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
+                  <User className="w-3.5 h-3.5 text-[#FF5C77]" />
+                  <span>{locale === 'ko' ? '이름 (선택)' : 'Name (optional)'}</span>
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={locale === 'ko' ? '예: 홍길동' : 'e.g. John'}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner placeholder:text-gray-600"
+                  placeholder={locale === 'ko' ? '예: 콩닥이' : 'e.g. Kongdak'}
+                  className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
                 />
               </motion.div>
             )}
 
             <div>
-              <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
-                <Mail className="w-3.5 h-3.5" />
-                {t("label_email")}
+              <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
+                <Mail className="w-3.5 h-3.5 text-[#FF5C77]" />
+                <span>{t("label_email")}</span>
               </label>
               <input
                 type="email"
@@ -309,14 +307,14 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("placeholder_email")}
                 required
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner placeholder:text-gray-600"
+                className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
               />
             </div>
 
             <div>
-              <label className="text-xs sm:text-sm font-sans font-medium text-gray-300 tracking-wide uppercase flex items-center gap-2 mb-2">
-                <Lock className="w-3.5 h-3.5" />
-                {t("label_password")}
+              <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#FF5C77]" />
+                <span>{t("label_password")}</span>
               </label>
               <input
                 type="password"
@@ -325,15 +323,15 @@ export default function LoginPage() {
                 placeholder={t("placeholder_password")}
                 required
                 minLength={6}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 sm:py-4 text-white focus:outline-none focus:ring-2 focus:ring-gold/50 focus:border-gold/50 transition-all font-sans text-base shadow-inner placeholder:text-gray-600"
+                className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
               />
             </div>
 
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-gold/80 to-gold/60 hover:from-gold hover:to-gold/80 text-black font-sans font-bold text-sm tracking-wide transition-all shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.97 }}
+              className="w-full mt-2 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 active:scale-[0.96] transition-all"
             >
               {isSignUp ? t("btn_signup") : t("btn_signin")}
             </motion.button>
@@ -342,11 +340,10 @@ export default function LoginPage() {
           {/* Toggle Sign In / Sign Up */}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-            className="w-full mt-4 text-center text-sm text-gray-400 hover:text-gold transition-colors font-sans"
+            className="w-full mt-4 text-center text-xs text-[#8A8291] hover:text-[#FF5C77] font-semibold transition-colors"
           >
             {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
           </button>
-
         </motion.div>
       </div>
     </main>

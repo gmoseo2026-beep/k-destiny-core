@@ -10,75 +10,83 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    const { compatId, orderId } = await req.json();
-    if (!compatId || !orderId) {
-      return NextResponse.json({ error: "compatId와 orderId가 필요합니다." }, { status: 400 });
-    }
+    const body = await req.json().catch(() => ({}));
+    const { compatId, orderId, claimToken: bodyClaimToken } = body;
+    const cookieClaimToken = req.cookies.get("kd_claim")?.value;
 
-    // 1. 주문 유효성 확인
-    const order = await prisma.order.findUnique({
-      where: { orderId },
-    });
+    const effectiveClaimToken = bodyClaimToken || cookieClaimToken;
 
-    if (!order || order.status !== "PAID" || order.compatId !== compatId) {
-      return NextResponse.json({ error: "유효하지 않은 주문입니다." }, { status: 404 });
-    }
+    let order = null;
 
-    // 주문에 연결된 userId가 이미 다른 사용자면 귀속 거부
-    if (order.userId && order.userId !== session.user.id) {
-      return NextResponse.json({ error: "이미 다른 계정에 연동된 주문입니다." }, { status: 409 });
-    }
+    // 1. claimToken 기반 조회 (쿠키 또는 body 우선)
+    if (effectiveClaimToken) {
+      order = await prisma.order.findUnique({
+        where: { claimToken: effectiveClaimToken },
+      });
 
-    // 결제 시 입력된 이메일이 존재할 경우, 로그인한 사용자의 이메일과 대소문자 무시 일치해야만 귀속 허용
-    if (order.email) {
-      const orderEmail = order.email.trim().toLowerCase();
-      const userEmail = session.user.email?.trim().toLowerCase();
-      if (!userEmail || orderEmail !== userEmail) {
-        return NextResponse.json(
-          { error: "결제 시 입력한 이메일과 로그인한 계정의 이메일이 일치하지 않습니다." },
-          { status: 403 }
-        );
+      if (order && order.claimTokenExpiresAt && order.claimTokenExpiresAt < new Date()) {
+        return NextResponse.json({ error: "만료된 연동 토큰입니다." }, { status: 400 });
       }
     }
 
-    // 2. Unlock 레코드 확인 (Unlock.orderId는 Order.id를 외래키로 참조)
-    const unlock = await prisma.unlock.findUnique({
-      where: {
-        compatId_orderId: {
-          compatId,
-          orderId: order.id,
-        },
-      },
-    });
-
-    if (!unlock) {
-      return NextResponse.json({ error: "열람 권한 내역을 찾을 수 없습니다." }, { status: 404 });
+    // 2. orderId 기반 조회 (하위 호환)
+    if (!order && orderId) {
+      order = await prisma.order.findUnique({
+        where: { orderId },
+      });
     }
 
-    // 이미 다른 회원에게 귀속된 경우 도용 방지
-    if (unlock.userId && unlock.userId !== session.user.id) {
-      return NextResponse.json({ error: "이미 다른 계정에 연동된 결제 건입니다." }, { status: 409 });
+    if (!order) {
+      return NextResponse.json(
+        { error: "연동할 결제 주문을 찾을 수 없습니다." },
+        { status: 404 }
+      );
     }
 
-    // 해당 궁합의 최초 PAID 주문인지 확인 (공유 링크로 다수가 구매할 수 있으므로, 최초 주문자만 Compatibility 원작성자로 귀속)
-    const firstPaidOrder = await prisma.order.findFirst({
-      where: { compatId, status: "PAID" },
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    });
-    const isFirstOrder = firstPaidOrder?.id === order.id;
+    if (order.status !== "PAID") {
+      return NextResponse.json(
+        { error: "결제가 완료되지 않은 주문입니다." },
+        { status: 400 }
+      );
+    }
 
-    // 3. 계정 연동 업데이트 (Unlock, Order, Compatibility)
+    const targetCompatId = compatId || order.compatId;
+
+    // 이미 다른 회원에게 연동된 경우 선점 방지
+    if (order.userId && order.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "이미 다른 계정에 연동된 주문입니다." },
+        { status: 409 }
+      );
+    }
+
+    // [OAuth 연동 권장안 A]
+    // 기존의 order.email === session.user.email 403 차단 조건은 완전히 제거.
+    // 카카오(이메일 미제공) 및 네이버/구글(이메일 불일치) 회원도 주문/토큰 소유권으로 안전하게 연동됨.
+
+    // 3. Unlock 레코드 확인 (Order.id 연결)
+    const unlock = await prisma.unlock.findFirst({
+      where: { orderId: order.id },
+    });
+
+    if (unlock && unlock.userId && unlock.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "이미 다른 계정에 연동된 결제 권한입니다." },
+        { status: 409 }
+      );
+    }
+
+    // 4. 계정 연동 업데이트 (Unlock, Order, Compatibility)
     await prisma.$transaction(async (tx) => {
       // Unlock에 userId 할당
-      if (!unlock.userId) {
+      if (unlock && !unlock.userId) {
         await tx.unlock.update({
           where: { id: unlock.id },
           data: { userId: session.user.id },
         });
       }
 
-      // Order에 userId가 없으면 할당
+      // Order에 userId 할당
       if (!order.userId) {
         await tx.order.update({
           where: { id: order.id },
@@ -86,29 +94,44 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Compatibility에 userId가 없고 이 주문이 최초 결제 주문인 경우에만 귀속
-      if (isFirstOrder) {
-        await tx.compatibility.updateMany({
-          where: {
-            id: compatId,
-            userId: null,
-          },
-          data: {
-            userId: session.user.id,
-          },
+      // Compatibility 최초 결제 주문인 경우에만 원작성자로 귀속
+      if (targetCompatId) {
+        const firstPaidOrder = await tx.order.findFirst({
+          where: { compatId: targetCompatId, status: "PAID" },
+          orderBy: { createdAt: "asc" },
+          select: { id: true },
         });
+
+        if (firstPaidOrder?.id === order.id) {
+          await tx.compatibility.updateMany({
+            where: {
+              id: targetCompatId,
+              userId: null,
+            },
+            data: {
+              userId: session.user.id,
+            },
+          });
+        }
       }
     });
 
-    return NextResponse.json({
+    // 5. 연동 완료 응답 생성 및 1회성 claimToken 쿠키 삭제
+    const response = NextResponse.json({
       success: true,
       message: "궁합 결과가 계정에 성공적으로 연동되었습니다.",
-      compatId,
+      compatId: targetCompatId,
+      orderId: order.orderId,
     });
-  } catch (error: any) {
-    console.error("[claim-unlock] Error:", error);
+
+    response.cookies.delete("kd_claim");
+
+    return response;
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error("[claim-unlock] Error:", err);
     return NextResponse.json(
-      { error: error.message || "계정 연동 중 오류가 발생했습니다." },
+      { error: err.message || "계정 연동 중 오류가 발생했습니다." },
       { status: 500 }
     );
   }
