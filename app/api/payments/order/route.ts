@@ -68,8 +68,15 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    return NextResponse.json(order, { status: 200 });
-  } catch(e: any) {
-    return NextResponse.json({ error: e.message || "Failed to create order" }, { status: 500 });
+    // [SECURITY / L-7] Order 레코드 전체를 돌려주지 않는다. 생성 시점엔 claimToken 이 null 이라
+    // 지금은 무해하지만, 결제창 호출에 필요한 필드만 화이트리스트로 내보내는 편이 안전하다.
+    return NextResponse.json(
+      { orderId: order.orderId, amount: order.amount, type: order.type },
+      { status: 200 }
+    );
+  } catch (e) {
+    // [SECURITY / L-4] Prisma 예외 원문은 서버 로그에만 남긴다.
+    console.error("[payments/order]", e);
+    return NextResponse.json({ error: "주문 생성에 실패했습니다." }, { status: 500 });
   }
 }
