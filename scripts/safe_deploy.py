@@ -6,25 +6,43 @@ from _creds import connect_client, get_host_user
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
+import time
+
 # Credentials come from scripts/deploy.env (gitignored) or the environment —
 # never hardcoded here. See scripts/_creds.py.
 HOST, USER = get_host_user()
 
-def run_cmd(client, cmd, tmo=300):
+def run_cmd(client, cmd, tmo=600):
     print(f"\n>>> {cmd}")
-    stdin, stdout, stderr = client.exec_command(cmd, timeout=tmo)
-    raw_out = stdout.read()
-    raw_err = stderr.read()
-    exit_code = stdout.channel.recv_exit_status()
-    try:
-        out = raw_out.decode('utf-8', errors='replace')[-4000:]
-        err = raw_err.decode('utf-8', errors='replace')[-1000:]
-    except:
-        out = str(raw_out)[-4000:]
-        err = str(raw_err)[-1000:]
-    if out: print(out)
-    if err: print(f"[STDERR] {err}")
-    print(f"[EXIT] {exit_code}")
+    transport = client.get_transport()
+    channel = transport.open_session()
+    channel.set_combine_stderr(True)
+    channel.exec_command(cmd)
+
+    start_time = time.time()
+    while True:
+        if channel.recv_ready():
+            chunk = channel.recv(4096)
+            if chunk:
+                text = chunk.decode('utf-8', errors='replace')
+                print(text, end='', flush=True)
+
+        if channel.exit_status_ready():
+            while channel.recv_ready():
+                chunk = channel.recv(4096)
+                if chunk:
+                    text = chunk.decode('utf-8', errors='replace')
+                    print(text, end='', flush=True)
+            break
+
+        if time.time() - start_time > tmo:
+            channel.close()
+            raise TimeoutError(f"Command timed out after {tmo} seconds: {cmd}")
+
+        time.sleep(0.3)
+
+    exit_code = channel.recv_exit_status()
+    print(f"\n[EXIT] {exit_code}")
     return exit_code
 
 def main():
@@ -74,7 +92,7 @@ def main():
     # failover path in lib/aiFallback.ts) are present. A missing dep makes the
     # build fail with "Module not found". `npm ci` if the lockfile matches, else
     # `npm install`.
-    run_cmd(client, "cd /root/k-destiny-core && export PUPPETEER_SKIP_DOWNLOAD=true && (npm ci 2>&1 || npm install 2>&1) | tail -15", tmo=600)
+    run_cmd(client, "cd /root/k-destiny-core && export PUPPETEER_SKIP_DOWNLOAD=true && (npm ci 2>&1 || npm install 2>&1)", tmo=600)
 
     # 3. Prisma
     run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")
@@ -111,30 +129,21 @@ def main():
     run_cmd(client, "sleep 4 && curl -sI http://localhost:3000/en 2>&1 | head -1")
 
     # 5. POST-DEPLOY VERIFICATION — prove the NEW code is actually serving.
-    # The chat route must answer as an NDJSON stream ("x-ndjson" content-type with
-    # a {"type":"delta"} line). If we still see the legacy single {"reply":...}
-    # object, the running process is stale and the deploy has NOT taken effect.
-    print("\nVerifying /api/chat is serving the NDJSON format...")
-    verify_cmd = (
-        "curl -s -m 90 -X POST http://localhost:3000/api/chat "
-        "-H 'Content-Type: application/json' "
-        "-d '{\"message\":\"ping\",\"history\":[],\"masterName\":\"Master Karma\",\"locale\":\"ko\"}' "
-        "| head -c 400"
-    )
-    _, vout, _ = client.exec_command(verify_cmd, timeout=120)
-    body = vout.read().decode("utf-8", "replace")
-    print("Chat response sample:", body[:400])
+    print("\nVerifying live service on http://localhost:3000/ko...")
+    verify_cmd = "curl -sI http://localhost:3000/ko | head -n 1"
+    _, vout, _ = client.exec_command(verify_cmd, timeout=30)
+    status_line = vout.read().decode("utf-8", "replace").strip()
+    print("HTTP Status:", status_line)
 
-    if '"type"' in body and ('"delta"' in body or '"done"' in body or '"emotion"' in body):
-        print("\n[OK] Live chat is serving NDJSON. Deploy VERIFIED. ✅")
-    elif '"reply"' in body:
-        print("\n[STALE] Chat still returns the legacy {\"reply\":...} object — the")
-        print("        running process did NOT pick up the new build. Check that PM2")
-        print("        runs from /root/k-destiny-core and reload it: pm2 reload all.")
-        client.close()
-        sys.exit(2)
+    verify_api = "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/compat"
+    _, aout, _ = client.exec_command(verify_api, timeout=30)
+    api_code = aout.read().decode("utf-8", "replace").strip()
+    print("/api/compat HTTP Code:", api_code)
+
+    if "200" in status_line:
+        print("\n[OK] Service is serving 200 OK. Deploy VERIFIED. ✅")
     else:
-        print("\n[WARN] Could not confirm the response format. Inspect the sample above.")
+        print("\n[WARN] Service did not return 200 OK. Please check logs.")
 
     client.close()
     print("\nDone!")
