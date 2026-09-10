@@ -4,11 +4,57 @@ import KakaoProvider from 'next-auth/providers/kakao';
 import NaverProvider from 'next-auth/providers/naver';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import type { Adapter, AdapterUser } from 'next-auth/adapters';
+import type { JWT } from 'next-auth/jwt';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+const normalizeEmail = (value?: string | null) => value?.trim().toLowerCase() ?? null;
+
+/**
+ * [SECURITY / H-8, M-3] 삭제된 사용자의 JWT 를 완전히 무효화한다.
+ *
+ * 세션 전략이 jwt 라 Session 행 Cascade 삭제로는 세션이 끊기지 않는다. 식별자를 하나라도
+ * 남기면 jwt 콜백의 재조회 분기가 그 값으로 사용자를 다시 찾아내 토큰이 되살아난다.
+ */
+function invalidateToken(token: JWT) {
+  delete token.id;
+  delete token.role;
+  delete token.tier;
+  delete token.name;
+  delete token.picture;
+  token.email = undefined;
+  token.sub = undefined;
+}
+
+/**
+ * [SECURITY / M-1] User.email 을 항상 소문자로 저장하고, 조회도 소문자로 맞춘다.
+ *
+ * Postgres 의 유니크 인덱스는 대소문자를 구분하므로 `a@x.com` 과 `A@x.com` 이 공존할 수 있었다.
+ * register 라우트는 toLowerCase 하지만 OAuth 생성 경로는 provider 원문을 그대로 저장했기 때문에,
+ * next-auth 의 AccountNotLinked 방어(getUserByEmail = 대소문자 구분 정확 일치)는 케이스만 바꿔도
+ * 우회됐다. 반면 결제 주문 매칭은 대소문자를 무시하므로, 이 비대칭이 그대로 결제 탈취 경로의
+ * 증폭기가 된다.
+ *
+ * getUserByEmail 은 소문자로 먼저 찾고, 못 찾으면 원문으로 한 번 더 본다. 이 패치 이전에
+ * 대소문자가 섞인 채 저장된 기존 계정이 중복 생성되지 않도록 하는 하위 호환 경로다.
+ */
+const baseAdapter = PrismaAdapter(prisma);
+
+const normalizedAdapter: Adapter = {
+  ...baseAdapter,
+  createUser: (data: Omit<AdapterUser, 'id'>) =>
+    baseAdapter.createUser!({ ...data, email: normalizeEmail(data.email) as string }),
+  getUserByEmail: async (email) => {
+    const lowered = normalizeEmail(email);
+    const byLower = lowered ? await baseAdapter.getUserByEmail!(lowered) : null;
+    if (byLower || lowered === email) return byLower;
+    return baseAdapter.getUserByEmail!(email);
+  },
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: normalizedAdapter,
   providers: [
     // [SECURITY / H-2] provider 가 "검증했다"고 명시한 이메일만 User.email 에 저장한다.
     //
@@ -75,8 +121,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required');
         }
 
+        // [SECURITY / M-1] register 는 소문자로 저장한다 → 조회도 소문자로 맞춘다.
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizeEmail(credentials.email) ?? credentials.email },
         });
 
         if (!user || !user.password) {
@@ -135,10 +182,15 @@ export const authOptions: NextAuthOptions = {
           //
           // id 를 지우면 session 콜백이 session.user.id 를 '' 로 만들고, 모든 라우트의
           // `session?.user?.id` 가드가 401 로 떨어진다(getAdminSessionOrThrow 포함).
-          delete token.id;
-          delete token.role;
-          delete token.tier;
-          token.sub = undefined;
+          //
+          // [SECURITY / M-3] email 도 반드시 함께 지운다.
+          //
+          // 예전에는 id/role/tier/sub 만 지웠다. 그러면 다음 요청에서 userId 가 falsy 라
+          // 아래 `else if (token.email)` 분기로 내려가 **이메일로 사용자를 다시 조회**한다.
+          // 삭제된 계정과 같은 이메일로 누군가 새로 가입하면(register 는 이메일 미검증,
+          // OAuth 도 가능) 탈퇴자의 낡은 JWT 가 신규 계정의 userId/role 로 되살아나
+          // 계정 탈취가 성립했다. 토큰에서 식별자를 전부 걷어내야 무효화가 완결된다.
+          invalidateToken(token);
         }
       } else if (token.email) {
         const dbUser = await prisma.user.findUnique({
@@ -155,10 +207,7 @@ export const authOptions: NextAuthOptions = {
           token.tier = expired ? 'FREE' : dbUser.tier;
         } else {
           // [SECURITY / H-8] 이메일로도 사용자를 못 찾으면 탈퇴한 계정이다 → 토큰 무효화.
-          delete token.id;
-          delete token.role;
-          delete token.tier;
-          token.sub = undefined;
+          invalidateToken(token);
         }
       }
       return token;

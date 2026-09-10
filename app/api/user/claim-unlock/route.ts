@@ -244,37 +244,41 @@ export async function POST(req: NextRequest) {
       return failAndClearCookie("이미 다른 계정에 연동된 결제 권한입니다.", 409);
     }
 
-    // 4. 계정 연동 업데이트 (Unlock, Order, Compatibility)
-    await prisma.$transaction(async (tx) => {
-      // Unlock에 userId 할당
-      if (unlock && !unlock.userId) {
-        await tx.unlock.update({
-          where: { id: unlock.id },
-          data: { userId: session.user.id },
-        });
-      }
-
+    // 4. 계정 연동 업데이트 (Order, Unlock, Compatibility)
+    //
+    // [SECURITY / M-2] orderToClaim 은 트랜잭션 **밖에서** 읽은 스냅샷이다. 예전에는
+    // `update({ where: { id } })` 로 조건 없이 덮어썼기 때문에, 서로 다른 두 사용자가 같은
+    // 주문에 동시에 들어오면 양쪽 다 위의 409 검사를 통과한 뒤 나중 쓰기가 이겼다.
+    // `updateMany({ where: { id, userId: null } })` 로 바꿔 DB 가 승자를 결정하게 하고,
+    // 진 쪽은 아무것도 쓰지 않은 채 409 로 떨어진다(Order 귀속이 이 트랜잭션의 관문이므로
+    // Unlock·Compatibility 보다 먼저 판정한다).
+    const conflict = await prisma.$transaction(async (tx) => {
       // Order에 userId 할당
       if (!orderToClaim.userId) {
-        if (orderToClaim.isCookieClaim) {
-          // 쿠키 경로: [SECURITY / L-6] 1회용 claim 토큰 소각
-          await tx.order.update({
-            where: { id: orderToClaim.id },
-            data: {
-              userId: session.user.id,
-              claimToken: null,
-              claimTokenExpiresAt: null,
-            },
-          });
-        } else {
-          // 이메일 경로: claimToken 소각 대상 아님(쿠키 아님) — Order.userId만 세팅
-          await tx.order.update({
-            where: { id: orderToClaim.id },
-            data: {
-              userId: session.user.id,
-            },
-          });
-        }
+        const claimed = await tx.order.updateMany({
+          where: { id: orderToClaim.id, userId: null },
+          data: orderToClaim.isCookieClaim
+            ? {
+                userId: session.user.id,
+                // 쿠키 경로: [SECURITY / L-6] 1회용 claim 토큰 소각
+                claimToken: null,
+                claimTokenExpiresAt: null,
+              }
+            : {
+                // 이메일 경로: claimToken 소각 대상 아님(쿠키 아님) — Order.userId만 세팅
+                userId: session.user.id,
+              },
+        });
+
+        if (claimed.count === 0) return true; // 경쟁에서 졌다 → 아무것도 쓰지 않고 409
+      }
+
+      // Unlock에 userId 할당
+      if (unlock && !unlock.userId) {
+        await tx.unlock.updateMany({
+          where: { id: unlock.id, userId: null },
+          data: { userId: session.user.id },
+        });
       }
 
       // Compatibility 최초 결제 주문인 경우에만 원작성자로 귀속
@@ -297,7 +301,13 @@ export async function POST(req: NextRequest) {
           });
         }
       }
+
+      return false;
     });
+
+    if (conflict) {
+      return failAndClearCookie("이미 다른 계정에 연동된 주문입니다.", 409);
+    }
 
     // 5. 연동 완료 응답 생성 및 쿠키 삭제
     const response = NextResponse.json({
