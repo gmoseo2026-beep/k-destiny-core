@@ -160,7 +160,15 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     fetch(`/api/user/claim-unlock?compatId=${encodeURIComponent(data.id)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((result) => {
-        if (isMounted && result?.claimable) setClaimAvailable(true);
+        // [L-2] 이 페이지의 궁합에 해당하는 결제일 때만 배너를 띄운다.
+        //
+        // 서버의 1차(쿠키) 경로는 claimToken 으로만 주문을 찾기 때문에 요청의 compatId 와
+        // 무관한 주문이 claimable 로 돌아올 수 있다. 그대로 배너를 띄우면 궁합 B 화면에서
+        // 눌렀는데 실제로는 궁합 A 가 연동되고, 토스트는 "이 궁합이 연동됐다"고 말한다.
+        // 궁합 페이지에서는 일치할 때만 노출하고, 나머지는 대시보드 배너가 받는다.
+        if (isMounted && result?.claimable && result?.compatId === data.id) {
+          setClaimAvailable(true);
+        }
       })
       .catch(() => {});
 

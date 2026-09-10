@@ -174,7 +174,6 @@ export async function POST(req: NextRequest) {
       userId: string | null;
       compatId: string | null;
       status: string;
-      isCookieClaim: boolean;
     } | null = null;
 
     // ----------------------------------------------------
@@ -195,7 +194,6 @@ export async function POST(req: NextRequest) {
           userId: cookieOrder.userId,
           compatId: cookieOrder.compatId,
           status: cookieOrder.status,
-          isCookieClaim: true,
         };
       }
     }
@@ -217,7 +215,6 @@ export async function POST(req: NextRequest) {
             userId: emailOrder.userId,
             compatId: emailOrder.compatId,
             status: emailOrder.status,
-            isCookieClaim: false,
           };
         }
       }
@@ -257,17 +254,18 @@ export async function POST(req: NextRequest) {
       if (!orderToClaim.userId) {
         const claimed = await tx.order.updateMany({
           where: { id: orderToClaim.id, userId: null },
-          data: orderToClaim.isCookieClaim
-            ? {
-                userId: session.user.id,
-                // 쿠키 경로: [SECURITY / L-6] 1회용 claim 토큰 소각
-                claimToken: null,
-                claimTokenExpiresAt: null,
-              }
-            : {
-                // 이메일 경로: claimToken 소각 대상 아님(쿠키 아님) — Order.userId만 세팅
-                userId: session.user.id,
-              },
+          data: {
+            userId: session.user.id,
+            // [SECURITY / L-6, L-1] 어느 경로로 연동했든 1회용 claim 토큰을 소각한다.
+            //
+            // 예전에는 쿠키 경로에서만 소각했다. 이메일 경로로 연동하면 주문에 주인이 생긴 뒤에도
+            // claimToken 이 최대 7일 살아 있어서, "연동된 주문에는 살아 있는 베어러 토큰이 없다"는
+            // L-6 불변식이 깨졌다(예: 게스트가 PC방에서 결제 → 휴대폰에서 이메일 경로로 연동 →
+            // PC방 브라우저에는 유효한 kd_claim 쿠키가 그대로 남는다). 지금은 409 가 막아주지만,
+            // 토큰 자체를 남기지 않는 편이 방어 계층이 하나 더 두껍다.
+            claimToken: null,
+            claimTokenExpiresAt: null,
+          },
         });
 
         if (claimed.count === 0) return true; // 경쟁에서 졌다 → 아무것도 쓰지 않고 409
