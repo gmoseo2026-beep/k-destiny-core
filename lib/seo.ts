@@ -159,6 +159,10 @@ export function buildPageMetadata(path: string, locale: string): Metadata {
     alternates: {
       canonical: canonicalUrl,
     },
+    // 네이버 서치어드바이저 사이트 소유확인용 메타. 공개 검증 토큰이라 하드코딩 안전.
+    verification: {
+      other: { 'naver-site-verification': 'adb48681bd4421372c1c3d7306629630e6281a6f' },
+    },
     openGraph: {
       title: meta.title,
       description: meta.description,
