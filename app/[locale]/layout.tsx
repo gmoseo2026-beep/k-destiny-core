@@ -75,6 +75,14 @@ const jsonLd = {
       "description": "두 사람의 생년월일로 보는 사주 궁합 서비스",
       "publisher": { "@id": `${BASE_URL}/#organization` },
       "inLanguage": ["ko"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${BASE_URL}/ko/compat/new`,
+        },
+        "query-input": "required name=search_term_string",
+      },
     },
     {
       "@type": "Organization",
