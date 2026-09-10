@@ -15,6 +15,78 @@ function failAndClearCookie(message: string, status: number) {
   return res;
 }
 
+/** 이메일 2차 경로를 허용할 소셜 provider. */
+const TRUSTED_OAUTH_PROVIDERS = ["google", "naver", "kakao"] as const;
+
+/**
+ * 이메일 비교는 반드시 이 함수를 거친다(양쪽 모두 정규화 후 정확 일치).
+ *
+ * [SECURITY / H-1] 이전에는 `email: { equals: userEmail, mode: "insensitive" }` 였다.
+ * Prisma 의 insensitive 모드는 `=` 가 아니라 **`ILIKE` 로 컴파일되고 LIKE 메타문자를
+ * 이스케이프하지 않는다**(생성 SQL 로 확인: `"Order"."email" ILIKE $3`).
+ * 즉 세션 이메일에 `%` 가 들어 있으면 `WHERE email ILIKE '%@gmail.com'` 이 되어
+ * 그 궁합의 미연동 PAID 주문을 통째로 매칭한다. `_` 는 한 글자 와일드카드라
+ * 공격자가 없어도 `kim_su@` 가 `kim-su@` 주문을 가져가는 오연동이 성립한다.
+ * 이메일 일치는 이 경로의 유일한 소유권 증명이므로 와일드카드 여지를 남기지 않는다.
+ */
+function normalizeEmail(value?: string | null): string {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+/**
+ * [SECURITY / H-1] provider 가 준 값이라도 형식을 한 번 더 좁힌다.
+ * `%` `_` `'` `"` 등 비교를 왜곡할 수 있는 문자를 가진 세션 이메일은 아예 경로에 들이지 않는다.
+ */
+const EMAIL_PATTERN = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
+
+/**
+ * 이메일 2차 경로 자격 판정.
+ *
+ * [보안 가드 1-강화] "비밀번호가 없는 순수 OAuth 계정"에게만 허용한다. credentials 가입자는
+ * 이메일 미검증이라, 남의 이메일을 선점해 그 이메일 게스트 주문을 탈취할 수 있다.
+ * password == null ⟹ OAuth 가입이고, [SECURITY / H-2] 이후로는 provider 가 검증 플래그를
+ * 내려준 이메일만 User.email 에 저장되므로 세션 이메일 = 검증된 이메일이 성립한다.
+ */
+async function isEmailPathEligible(userId: string): Promise<boolean> {
+  const [dbUser, oauthAcct] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { password: true },
+    }),
+    prisma.account.findFirst({
+      where: { userId, provider: { in: [...TRUSTED_OAUTH_PROVIDERS] } },
+      select: { id: true },
+    }),
+  ]);
+  return !!oauthAcct && dbUser != null && dbUser.password == null;
+}
+
+/**
+ * 해당 궁합의 미연동 PAID 주문 중 세션 이메일과 정확히 일치하는 가장 오래된 주문.
+ *
+ * compatId 에는 인덱스가 있고(schema.prisma `@@index([compatId])`) 궁합당 주문 수는 소수이므로
+ * 후보를 좁혀서 가져온 뒤 애플리케이션에서 정확 비교한다(H-1 참조).
+ */
+async function findClaimableOrderByEmail(compatId: string, sessionEmail: string) {
+  const wanted = normalizeEmail(sessionEmail);
+  if (!EMAIL_PATTERN.test(wanted)) return null;
+
+  const candidates = await prisma.order.findMany({
+    where: { compatId, status: "PAID", userId: null },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      orderId: true,
+      userId: true,
+      compatId: true,
+      status: true,
+      email: true,
+    },
+  });
+
+  return candidates.find((order) => normalizeEmail(order.email) === wanted) ?? null;
+}
+
 /**
  * GET — 연동 가능한 결제가 있는지만 확인한다(상태 변경 없음).
  *
@@ -58,34 +130,9 @@ export async function GET(req: NextRequest) {
     const userEmail = session.user.email?.trim();
 
     if (compatId && userEmail) {
-      // [보안 가드 1-강화] 이메일 2차 경로는 "비밀번호가 없는 순수 OAuth 계정"에게만 허용한다.
-      // credentials 가입자는 이메일 미검증이라, 남의 이메일을 선점해 그 이메일 게스트 주문을
-      // 탈취할 수 있다. password == null ⟹ OAuth 가입 ⟹ 세션 이메일은 provider 검증 이메일.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { password: true },
-      });
-      const oauthAcct = await prisma.account.findFirst({
-        where: {
-          userId: session.user.id,
-          provider: { in: ["google", "naver", "kakao"] },
-        },
-        select: { id: true },
-      });
-      const emailPathEligible = !!oauthAcct && dbUser != null && dbUser.password == null;
-
-      if (emailPathEligible) {
-        // [보안 가드 2, 3] 대소문자 무시 + PAID + 미연동(userId=null) 주문만 조회
-        const emailOrder = await prisma.order.findFirst({
-          where: {
-            compatId,
-            status: "PAID",
-            userId: null,
-            email: { equals: userEmail, mode: "insensitive" },
-          },
-          select: { compatId: true },
-          orderBy: { createdAt: "asc" },
-        });
+      if (await isEmailPathEligible(session.user.id)) {
+        // [보안 가드 2, 3] 이메일 정확 일치 + PAID + 미연동(userId=null) 주문만 조회
+        const emailOrder = await findClaimableOrderByEmail(compatId, userEmail);
 
         if (emailOrder) {
           return NextResponse.json(
@@ -159,33 +206,9 @@ export async function POST(req: NextRequest) {
     if (!orderToClaim && bodyCompatId && session.user.email) {
       const userEmail = session.user.email.trim();
 
-      // [보안 가드 1-강화] 이메일 2차 경로는 "비밀번호가 없는 순수 OAuth 계정"에게만 허용한다.
-      // credentials 가입자는 이메일 미검증이라, 남의 이메일을 선점해 그 이메일 게스트 주문을
-      // 탈취할 수 있다. password == null ⟹ OAuth 가입 ⟹ 세션 이메일은 provider 검증 이메일.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { password: true },
-      });
-      const oauthAcct = await prisma.account.findFirst({
-        where: {
-          userId: session.user.id,
-          provider: { in: ["google", "naver", "kakao"] },
-        },
-        select: { id: true },
-      });
-      const emailPathEligible = !!oauthAcct && dbUser != null && dbUser.password == null;
-
-      if (emailPathEligible) {
-        // [보안 가드 2, 3, 4] 대소문자 무시 + PAID + 미연동(userId=null) 주문 매칭
-        const emailOrder = await prisma.order.findFirst({
-          where: {
-            compatId: bodyCompatId,
-            status: "PAID",
-            userId: null,
-            email: { equals: userEmail, mode: "insensitive" },
-          },
-          orderBy: { createdAt: "asc" },
-        });
+      if (await isEmailPathEligible(session.user.id)) {
+        // [보안 가드 2, 3, 4] 이메일 정확 일치 + PAID + 미연동(userId=null) 주문 매칭
+        const emailOrder = await findClaimableOrderByEmail(bodyCompatId, userEmail);
 
         if (emailOrder) {
           orderToClaim = {

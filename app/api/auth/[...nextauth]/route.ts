@@ -10,18 +10,37 @@ import bcrypt from 'bcryptjs';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    // [SECURITY / H-2] provider 가 "검증했다"고 명시한 이메일만 User.email 에 저장한다.
+    //
+    // /api/user/claim-unlock 의 이메일 2차 경로는 "세션 이메일 = provider 가 검증한 이메일"을
+    // 전제로 게스트 결제를 계정에 귀속시킨다. 그런데 기존 profile 콜백은 검증 플래그를 보지 않고
+    // provider 가 준 문자열을 그대로 받아 썼다. 미인증 이메일을 그대로 신뢰하면, 공격자가
+    // 피해자의 이메일을 자기 소셜 계정에 등록하는 것만으로 그 이메일로 결제한 게스트 주문을
+    // 가져갈 수 있다(피해자는 게스트라 콩닥에 계정이 없어 AccountNotLinked 방어도 걸리지 않는다).
+    //
+    // 검증되지 않았으면 email 을 null 로 떨어뜨린다. 로그인 자체는 계속 되고, 이메일 2차 경로만
+    // 비활성화된다(1차 kd_claim 쿠키 경로는 그대로 동작) — 의도한 fail-closed 다.
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID || '',
       clientSecret: process.env.KAKAO_CLIENT_SECRET || '',
       profile(profile) {
+        const account = profile.kakao_account;
+        // 카카오는 미인증·무효 이메일을 내려줄 수 있다고 문서가 명시한다 → 두 플래그를 모두 본다.
+        const verifiedEmail =
+          account?.is_email_verified === true && account?.is_email_valid !== false
+            ? account.email ?? null
+            : null;
+
         return {
           id: profile.id.toString(),
           name: profile.kakao_account?.profile?.nickname,
-          email: profile.kakao_account?.email,
+          email: verifiedEmail,
           image: profile.kakao_account?.profile?.profile_image_url?.replace('http://', 'https://'),
         };
       },
     }),
+    // 네이버는 이메일 인증 여부를 나타내는 플래그를 응답에 포함하지 않는다(네이버 계정 이메일은
+    // 계정 소유 이메일 자체다). 플래그가 생기면 여기서도 동일하게 검사할 것.
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID || '',
       clientSecret: process.env.NAVER_CLIENT_SECRET || '',
@@ -33,6 +52,16 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "consent",
         },
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          // OIDC email_verified 클레임. 구글 계정은 Gmail 이 아닌 외부 주소로도 만들 수 있고,
+          // 그 경우 false 가 내려올 수 있다.
+          email: profile.email_verified ? profile.email : null,
+          image: profile.picture,
+        };
       },
     }),
     CredentialsProvider({
