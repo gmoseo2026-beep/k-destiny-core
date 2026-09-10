@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -26,6 +26,14 @@ const itemVariants = {
   },
 };
 
+// 홈(page.tsx)이 이 컴포넌트를 서버에서 렌더하므로, 브라우저에만 있는 알림 권한을
+// useState 초기값으로 읽으면 서버 HTML("default")과 첫 렌더가 어긋나 하이드레이션이 깨진다.
+// 서버·하이드레이션 중에는 "default" 로 두고, 하이드레이션 직후 실제 값으로 다시 읽는다.
+const noopSubscribe = () => () => {};
+const readNotifPermission = (): string =>
+  "Notification" in window ? Notification.permission : "default";
+const serverNotifPermission = (): string => "default";
+
 interface CompatItem {
   id: string;
   shareToken: string;
@@ -42,11 +50,13 @@ export default function DashboardView() {
   const { data: session } = useSession();
   const [historyItems, setHistoryItems] = useState<CompatItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<string>(() =>
-    typeof window !== "undefined" && "Notification" in window
-      ? Notification.permission
-      : "default"
+  const notifPermission = useSyncExternalStore(
+    noopSubscribe,
+    readNotifPermission,
+    serverNotifPermission
   );
+  // 권한은 구독 이벤트가 없으므로, 요청 후 리렌더를 일으켜 위 스냅샷을 다시 읽게 한다.
+  const [, refreshNotifPermission] = useReducer((n: number) => n + 1, 0);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -58,9 +68,7 @@ export default function DashboardView() {
 
   const handleEnableNotif = async () => {
     const res = await subscribeToPush();
-    if (res.success && typeof window !== "undefined" && "Notification" in window) {
-      setNotifPermission(Notification.permission);
-    }
+    if (res.success) refreshNotifPermission();
   };
 
   const [claimToast, setClaimToast] = useState<string | null>(null);

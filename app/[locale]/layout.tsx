@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel, Noto_Sans_KR, Noto_Sans_JP } from "next/font/google";
-import { NextIntlClientProvider } from 'next-intl';
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { notFound } from "next/navigation";
+import { routing } from "@/i18n/routing";
 import "../globals.css";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
@@ -48,6 +50,7 @@ const notoSansJP = Noto_Sans_JP({
 // them.
 export async function generateMetadata({ params }: { params: Promise<{locale: string}> }): Promise<Metadata> {
   const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || BASE_URL;
 
   return {
@@ -135,6 +138,9 @@ export default async function RootLayout({
   params: Promise<{locale: string}>;
 }>) {
   const { locale } = await params;
+  // middleware matcher 가 점(.) 포함 경로를 건너뛰므로 /llms.txt 같은 요청이 여기로
+  // 바로 떨어진다. 검증이 없으면 locale="llms.txt" 로 홈을 200 렌더(soft-404)한다.
+  if (!hasLocale(routing.locales, locale)) notFound();
   const messages = await getMessages();
 
   return (
