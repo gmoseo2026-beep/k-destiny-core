@@ -21,6 +21,7 @@ const PUBLIC_ROUTES: { path: string; changeFrequency: 'always' | 'hourly' | 'dai
   { path: '',            changeFrequency: 'weekly',  priority: 1.0 },
   { path: '/compat/new', changeFrequency: 'monthly', priority: 0.9 },
   { path: '/guide',      changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/pricing',    changeFrequency: 'monthly', priority: 0.7 },
   { path: '/terms',      changeFrequency: 'yearly',  priority: 0.3 },
   { path: '/privacy',    changeFrequency: 'yearly',  priority: 0.3 },
 ];

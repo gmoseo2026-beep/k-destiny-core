@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       metadataBase: new URL(siteUrl),
       title: "콩닥 — 우리, 얼마나 잘 맞을까?",
       description: "사주로 보는 우리 사이의 진짜 케미",
+      robots: { index: false, follow: true },
     };
   }
 
@@ -49,6 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     metadataBase: new URL(siteUrl),
     title: `${nameA} ❤️ ${nameB} 궁합 점수: ${compat.score}점 — 콩닥`,
     description: `우리의 케미 키워드: ${keywordText} | 사주로 보는 우리 사이`,
+    robots: { index: false, follow: true },
     alternates: {
       // canonical 은 유입 파라미터(?ref=)를 제외한 정규 URL 이어야 한다.
       // 공유 링크의 ref 는 클라이언트에서 그대로 유지되므로 K 추적에는 영향이 없다.

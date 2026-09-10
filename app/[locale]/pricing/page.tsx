@@ -1,16 +1,14 @@
-import { getTranslations } from "next-intl/server";
 import PricingClient from "@/components/PricingClient";
+import { createPageMetadata } from "@/lib/seo";
 
-export async function generateMetadata({ params: { locale } }: { params: { locale: string } }) {
-  const t = await getTranslations({ locale, namespace: "Pricing" });
+export const generateMetadata = createPageMetadata('/pricing');
 
-  return {
-    title: `${t("title")} | 콩닥 (kongdak)`,
-    description: t("subtitle"),
-  };
-}
-
-export default function PricingPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function PricingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   return (
     <div className="min-h-screen bg-[#FFF6F1] pt-24 pb-12">
       <PricingClient locale={locale} />

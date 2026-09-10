@@ -38,7 +38,7 @@ const nextConfig: NextConfig = {
         // 않도록 캐시 가능해야 하고, no-store 는 색인에 도움이 되지 않는다.
         // (api/og 는 카카오 공유 스크랩마다 PNG 를 재렌더링하면 스크랩이 타임아웃되므로
         //  라우트 핸들러가 직접 설정한 Cache-Control 을 살려둔다)
-        source: "/((?!_next/static|_next/image|favicon|sitemap.xml|robots.txt|og-image|api/og).*)",
+        source: "/((?!_next/static|_next/image|favicon|sitemap.xml|robots.txt|og-image|api/og|mascot|icons).*)",
         headers: [
           {
             key: "Cache-Control",
@@ -81,6 +81,18 @@ const nextConfig: NextConfig = {
               "frame-ancestors 'none'",
             ].join("; "),
           },
+        ],
+      },
+      {
+        source: "/mascot/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/icons/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
       {

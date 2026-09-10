@@ -81,6 +81,19 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
     },
   },
 
+  '/pricing': {
+    ko: {
+      title: '요금 안내 — 심층 궁합 리포트 | 콩닥',
+      description:
+        '콩닥 심층 궁합 리포트 가격 안내. 단건 결제와 기간 이용권으로 관계의 갈등 포인트와 연애 조언까지 확인하세요.',
+    },
+    en: {
+      title: 'Pricing — Deep Compatibility Report | Kongdak',
+      description:
+        'Pricing for Kongdak deep compatibility reports. Learn about single purchase and pass options for relationship advice.',
+    },
+  },
+
   '/terms': {
     ko: {
       title: '이용약관 | 콩닥',
