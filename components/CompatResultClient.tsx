@@ -157,7 +157,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     }
 
     let isMounted = true;
-    fetch("/api/user/claim-unlock")
+    fetch(`/api/user/claim-unlock?compatId=${encodeURIComponent(data.id)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((result) => {
         if (isMounted && result?.claimable) setClaimAvailable(true);

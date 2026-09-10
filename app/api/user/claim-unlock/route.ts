@@ -18,10 +18,8 @@ function failAndClearCookie(message: string, status: number) {
 /**
  * GET — 연동 가능한 결제가 있는지만 확인한다(상태 변경 없음).
  *
- * [SECURITY / M-8] 대시보드가 진입 즉시 자동으로 귀속시키던 동작을 대체한다.
- * 공용 PC(PC방 등)에서 게스트가 결제만 하고 로그인하지 않은 채 자리를 뜨면,
- * 같은 브라우저에서 다음으로 로그인한 사람에게 결제가 조용히 넘어갔다.
- * 이제 화면이 이 결과로 배너를 띄우고, 사용자가 직접 누를 때만 POST 가 나간다.
+ * 1차: httpOnly kd_claim 쿠키로 확인 (1순위)
+ * 2차: 쿠키가 없거나 유효하지 않은 경우 query ?compatId= 및 OAuth 검증 이메일 일치로 확인
  */
 export async function GET(req: NextRequest) {
   const notClaimable = NextResponse.json(
@@ -33,23 +31,72 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return notClaimable;
 
+    // 1차 경로: 쿠키 확인 (1순위)
     const claimToken = req.cookies.get("kd_claim")?.value;
-    if (!claimToken) return notClaimable;
+    if (claimToken) {
+      const order = await prisma.order.findUnique({
+        where: { claimToken },
+        select: { userId: true, status: true, compatId: true, claimTokenExpiresAt: true },
+      });
 
-    const order = await prisma.order.findUnique({
-      where: { claimToken },
-      select: { userId: true, status: true, compatId: true, claimTokenExpiresAt: true },
-    });
+      if (
+        order &&
+        !order.userId &&
+        order.status === "PAID" &&
+        (!order.claimTokenExpiresAt || order.claimTokenExpiresAt >= new Date())
+      ) {
+        return NextResponse.json(
+          { claimable: true, compatId: order.compatId },
+          { headers: { "Cache-Control": "no-store" } }
+        );
+      }
+    }
 
-    if (!order) return notClaimable;
-    if (order.userId) return notClaimable; // 이미 귀속된 주문
-    if (order.status !== "PAID") return notClaimable;
-    if (order.claimTokenExpiresAt && order.claimTokenExpiresAt < new Date()) return notClaimable;
+    // 2차 경로: query ?compatId= 와 OAuth 검증 이메일 일치 확인 (A안)
+    const { searchParams } = new URL(req.url);
+    const compatId = searchParams.get("compatId")?.trim();
+    const userEmail = session.user.email?.trim();
 
-    return NextResponse.json(
-      { claimable: true, compatId: order.compatId },
-      { headers: { "Cache-Control": "no-store" } }
-    );
+    if (compatId && userEmail) {
+      // [보안 가드 1-강화] 이메일 2차 경로는 "비밀번호가 없는 순수 OAuth 계정"에게만 허용한다.
+      // credentials 가입자는 이메일 미검증이라, 남의 이메일을 선점해 그 이메일 게스트 주문을
+      // 탈취할 수 있다. password == null ⟹ OAuth 가입 ⟹ 세션 이메일은 provider 검증 이메일.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { password: true },
+      });
+      const oauthAcct = await prisma.account.findFirst({
+        where: {
+          userId: session.user.id,
+          provider: { in: ["google", "naver", "kakao"] },
+        },
+        select: { id: true },
+      });
+      const emailPathEligible = !!oauthAcct && dbUser != null && dbUser.password == null;
+
+      if (emailPathEligible) {
+        // [보안 가드 2, 3] 대소문자 무시 + PAID + 미연동(userId=null) 주문만 조회
+        const emailOrder = await prisma.order.findFirst({
+          where: {
+            compatId,
+            status: "PAID",
+            userId: null,
+            email: { equals: userEmail, mode: "insensitive" },
+          },
+          select: { compatId: true },
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (emailOrder) {
+          return NextResponse.json(
+            { claimable: true, compatId: emailOrder.compatId },
+            { headers: { "Cache-Control": "no-store" } }
+          );
+        }
+      }
+    }
+
+    return notClaimable;
   } catch (error) {
     console.error("[claim-unlock GET] Error:", error);
     return notClaimable;
@@ -63,62 +110,111 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    // [SECURITY / H-7] 요청 본문은 더 이상 읽지 않는다.
-    // 귀속 대상은 전적으로 쿠키가 가리키는 주문(order.compatId)이 정한다.
-    // 클라이언트가 보내던 compatId 는 M-7 의 firstPaidOrder 대조가 이미 무력화하고 있었지만,
-    // 보안 판정 경로에서 공격자 제어 입력을 아예 없애는 편이 낫다.
-
-    // [SECURITY / M-9] claimToken 은 httpOnly 쿠키에서만 읽는다.
-    // body 로도 받으면 "쿠키를 못 읽어도 토큰 값만 알면 귀속 가능"이 되어
-    // httpOnly 로 얻으려던 방어(XSS·악성 확장·로깅 프록시)가 그대로 무너진다.
-    const claimToken = req.cookies.get("kd_claim")?.value;
-
-    // [SECURITY / H-7] orderId 기반 하위호환 폴백을 제거했다.
-    //
-    // 그 경로에는 claimToken·만료·소유 증명이 하나도 없어서, 로그인만 되어 있으면
-    // body 의 orderId 문자열만으로 타인의 미연동(userId=null) 게스트 주문을 선점할 수 있었다.
-    // 결과는 "기록 귀속" 수준이 아니다:
-    //   - 정당 구매자는 아래 409 에 영구히 걸려 자가 복구가 불가능해진다(전부 CS 수동 처리)
-    //   - Compatibility 까지 넘어가 /api/compat 목록에 두 사람의 이름·성별이 영구 노출된다
-    //   - Unlock.expiresAt 90일과 무관하게 userId 귀속은 만료 뒤에도 남는다
-    // orderId 는 결제 리다이렉트 URL 에 실려 GA4 page_location·브라우저 히스토리로 새어 나가므로
-    // "추측 불가하니 안전하다"는 전제도 성립하지 않는다.
-    if (!claimToken) {
-      return NextResponse.json(
-        { error: "연동할 결제 주문을 찾을 수 없습니다." },
-        { status: 404 }
-      );
+    // 클라이언트 본문에서 compatId 추출 (2차 이메일 연동 경로용)
+    let bodyCompatId: string | null = null;
+    try {
+      const body = await req.json();
+      if (typeof body?.compatId === "string" && body.compatId.trim().length > 0) {
+        bodyCompatId = body.compatId.trim();
+      }
+    } catch {
+      // body가 없거나 JSON이 아닐 수 있음 (정상적인 쿠키 단독 요청 등)
     }
 
-    const order = await prisma.order.findUnique({ where: { claimToken } });
+    let orderToClaim: {
+      id: string;
+      orderId: string;
+      userId: string | null;
+      compatId: string | null;
+      status: string;
+      isCookieClaim: boolean;
+    } | null = null;
 
-    if (!order) {
+    // ----------------------------------------------------
+    // 1차 경로: httpOnly kd_claim 쿠키 기반 조회 (1순위)
+    // ----------------------------------------------------
+    const claimToken = req.cookies.get("kd_claim")?.value;
+    if (claimToken) {
+      const cookieOrder = await prisma.order.findUnique({ where: { claimToken } });
+      if (
+        cookieOrder &&
+        cookieOrder.status === "PAID" &&
+        (!cookieOrder.claimTokenExpiresAt || cookieOrder.claimTokenExpiresAt >= new Date()) &&
+        (!cookieOrder.userId || cookieOrder.userId === session.user.id)
+      ) {
+        orderToClaim = {
+          id: cookieOrder.id,
+          orderId: cookieOrder.orderId,
+          userId: cookieOrder.userId,
+          compatId: cookieOrder.compatId,
+          status: cookieOrder.status,
+          isCookieClaim: true,
+        };
+      }
+    }
+
+    // ----------------------------------------------------
+    // 2차 경로: 쿠키로 주문을 못 찾았을 때만 OAuth 검증 이메일 일치 확인 (A안)
+    // ----------------------------------------------------
+    if (!orderToClaim && bodyCompatId && session.user.email) {
+      const userEmail = session.user.email.trim();
+
+      // [보안 가드 1-강화] 이메일 2차 경로는 "비밀번호가 없는 순수 OAuth 계정"에게만 허용한다.
+      // credentials 가입자는 이메일 미검증이라, 남의 이메일을 선점해 그 이메일 게스트 주문을
+      // 탈취할 수 있다. password == null ⟹ OAuth 가입 ⟹ 세션 이메일은 provider 검증 이메일.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { password: true },
+      });
+      const oauthAcct = await prisma.account.findFirst({
+        where: {
+          userId: session.user.id,
+          provider: { in: ["google", "naver", "kakao"] },
+        },
+        select: { id: true },
+      });
+      const emailPathEligible = !!oauthAcct && dbUser != null && dbUser.password == null;
+
+      if (emailPathEligible) {
+        // [보안 가드 2, 3, 4] 대소문자 무시 + PAID + 미연동(userId=null) 주문 매칭
+        const emailOrder = await prisma.order.findFirst({
+          where: {
+            compatId: bodyCompatId,
+            status: "PAID",
+            userId: null,
+            email: { equals: userEmail, mode: "insensitive" },
+          },
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (emailOrder) {
+          orderToClaim = {
+            id: emailOrder.id,
+            orderId: emailOrder.orderId,
+            userId: emailOrder.userId,
+            compatId: emailOrder.compatId,
+            status: emailOrder.status,
+            isCookieClaim: false,
+          };
+        }
+      }
+    }
+
+    // 쿠키로도, 이메일로도 연동할 주문을 못 찾은 경우 최종 실패 응답 및 쿠키 삭제
+    if (!orderToClaim) {
       return failAndClearCookie("연동할 결제 주문을 찾을 수 없습니다.", 404);
     }
 
-    if (order.claimTokenExpiresAt && order.claimTokenExpiresAt < new Date()) {
-      return failAndClearCookie("만료된 연동 토큰입니다.", 400);
-    }
-
-    // claim 토큰은 결제 검증 통과 후에만 발급되므로, PAID 가 아니라면 환불된 주문이다.
-    if (order.status !== "PAID") {
-      return failAndClearCookie("결제가 완료되지 않은 주문입니다.", 400);
-    }
-
-    const targetCompatId = order.compatId;
-
     // 이미 다른 회원에게 연동된 경우 선점 방지
-    if (order.userId && order.userId !== session.user.id) {
+    if (orderToClaim.userId && orderToClaim.userId !== session.user.id) {
       return failAndClearCookie("이미 다른 계정에 연동된 주문입니다.", 409);
     }
 
-    // [OAuth 연동 권장안 A]
-    // 기존의 order.email === session.user.email 403 차단 조건은 완전히 제거.
-    // 카카오(이메일 미제공) 및 네이버/구글(이메일 불일치) 회원도 주문/토큰 소유권으로 안전하게 연동됨.
+    const targetCompatId = orderToClaim.compatId;
 
     // 3. Unlock 레코드 확인 (Order.id 연결)
     const unlock = await prisma.unlock.findFirst({
-      where: { orderId: order.id },
+      where: { orderId: orderToClaim.id },
     });
 
     if (unlock && unlock.userId && unlock.userId !== session.user.id) {
@@ -135,17 +231,27 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Order에 userId 할당 + [SECURITY / L-6] 1회용 claim 토큰 소각.
-      // 주석이 말하는 "1회성"을 DB 에서도 실제로 보장한다(이전엔 쿠키만 지웠다).
-      if (!order.userId) {
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            userId: session.user.id,
-            claimToken: null,
-            claimTokenExpiresAt: null,
-          },
-        });
+      // Order에 userId 할당
+      if (!orderToClaim.userId) {
+        if (orderToClaim.isCookieClaim) {
+          // 쿠키 경로: [SECURITY / L-6] 1회용 claim 토큰 소각
+          await tx.order.update({
+            where: { id: orderToClaim.id },
+            data: {
+              userId: session.user.id,
+              claimToken: null,
+              claimTokenExpiresAt: null,
+            },
+          });
+        } else {
+          // 이메일 경로: claimToken 소각 대상 아님(쿠키 아님) — Order.userId만 세팅
+          await tx.order.update({
+            where: { id: orderToClaim.id },
+            data: {
+              userId: session.user.id,
+            },
+          });
+        }
       }
 
       // Compatibility 최초 결제 주문인 경우에만 원작성자로 귀속
@@ -156,7 +262,7 @@ export async function POST(req: NextRequest) {
           select: { id: true },
         });
 
-        if (firstPaidOrder?.id === order.id) {
+        if (firstPaidOrder?.id === orderToClaim.id) {
           await tx.compatibility.updateMany({
             where: {
               id: targetCompatId,
@@ -170,12 +276,12 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // 5. 연동 완료 응답 생성 및 1회성 claimToken 쿠키 삭제
+    // 5. 연동 완료 응답 생성 및 쿠키 삭제
     const response = NextResponse.json({
       success: true,
-      message: "궁합 결과가 계정에 성공적으로 연동되었습니다.",
+      message: "구매하신 궁합 결과가 내 계정에 안전하게 연동되었습니다.",
       compatId: targetCompatId,
-      orderId: order.orderId,
+      orderId: orderToClaim.orderId,
     });
 
     response.cookies.delete("kd_claim");
