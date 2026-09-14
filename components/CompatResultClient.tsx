@@ -142,6 +142,15 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     getReadyKakao();
   }, [refToken, data.shareToken]);
 
+  // 미결제 paywall 렌더 시 1회 측정
+  const hasTrackedLockedOffer = React.useRef(false);
+  useEffect(() => {
+    if (!isPremium && !unlockToken && !deepReport && data?.id && !hasTrackedLockedOffer.current) {
+      hasTrackedLockedOffer.current = true;
+      trackEvent("view_locked_offer", { compatId: data.id, score: data.score });
+    }
+  }, [isPremium, unlockToken, deepReport, data?.id, data?.score]);
+
   // [CLAIM UNLOCK] 로그인 상태에서 연동 가능한 결제가 있으면 배너로 안내한다.
   //
   // [SECURITY / M-8] 예전에는 진입 즉시 자동으로 귀속시켰다. 공용 PC(PC방 등)에서 게스트가
@@ -502,38 +511,6 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="w-full flex flex-col gap-3 mt-6">
-        {/* Kakao Share Button */}
-        <button
-          onClick={handleKakaoShare}
-          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.99] text-black py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
-        >
-          <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
-            <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
-          </svg>
-          <span>카카오톡으로 결과 공유하기</span>
-        </button>
-
-        {/* Share Link Button */}
-        <button
-          onClick={handleShareLink}
-          className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:opacity-95 active:scale-[0.99] text-white py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
-        >
-          <span>🔗</span>
-          <span>링크 복사하기</span>
-        </button>
-
-        {/* Download Story Card Button */}
-        <button
-          onClick={handleDownloadCard}
-          className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] active:scale-[0.99] py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-        >
-          <span>📸</span>
-          <span>인스타 스토리 카드 다운로드 (1080×1350)</span>
-        </button>
-      </div>
-
       {/* Premium Section */}
       {deepReport ? (
         <div className="w-full mt-8 flex flex-col gap-6">
@@ -648,17 +625,48 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="bg-[#FFF6F1]/80 text-[#6A2C70] font-bold p-3 rounded-lg text-sm mb-2 border border-[#FFD9E0]">
-                🔒 이 커플의 갈등 포인트 3개와 관계 조언이 준비됐어요
+              {/* 잠긴 심층 리포트 미리보기 — 실제 항목을 자물쇠+블러로 보여줘 궁금증 유발 (내용은 고정 문구) */}
+              <div className="w-full bg-white rounded-2xl p-5 shadow-sm border border-[#FFD9E0]/60 text-left mb-3">
+                <p className="text-xs font-bold text-[#6A2C70] mb-3">
+                  🔒 {data.personA.name} × {data.personB.name} 심층 궁합 리포트에 담긴 내용
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    { icon: "🔮", label: "관계의 핵심 에너지", teaser: "두 사람이 서로에게 끌리는 진짜 이유" },
+                    { icon: "🔥", label: "갈등 포인트 3가지 & 대처법", teaser: "언제·왜 부딪히는지, 어떻게 풀어야 하는지" },
+                    { icon: "💡", label: "현실 연애 조언 & 이번 달 애정운", teaser: "지금 무엇을 해야 관계가 깊어질까" },
+                    { icon: "💘", label: "나와 찰떡인 이상형 사주 기운", teaser: "다음 인연을 위한 사주 힌트" },
+                  ].map((row, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="text-base shrink-0">{row.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-bold text-[#2B2430]">{row.label}</span>
+                          <span className="text-[10px]">🔒</span>
+                        </div>
+                        <div className="text-xs text-[#8A8291] blur-[3px] select-none" aria-hidden="true">{row.teaser}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
+              <p className="text-xs font-bold text-[#6A2C70] mb-1">
+                심층 6개 항목 · 갈등 포인트 3가지 · 이상형 사주까지
+              </p>
               <button
                 onClick={() => {
+                  trackEvent("click_unlock_single", { compatId: data.id });
                   setCheckoutType("SINGLE");
                   setCheckoutModalOpen(true);
                 }}
-                className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] py-4 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-[0.98]"
+                className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] py-3.5 px-4 rounded-xl font-bold text-sm shadow-sm transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-0.5"
               >
-                잠금 해제 · 2,900원(첫 결제 1,900원)
+                <span className="text-sm sm:text-base font-extrabold text-[#FF5C77]">
+                  ✨ 지금 잠금 해제 · 첫 결제 1,900원
+                </span>
+                <span className="text-[11px] font-medium text-[#8A8291]">
+                  (이후 2,900원)
+                </span>
               </button>
               
               <div className="bg-white rounded-xl p-4 shadow-sm border border-[#FFD9E0]/50 flex flex-col gap-3 mt-2">
@@ -675,6 +683,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </div>
                 <button
                   onClick={() => {
+                    trackEvent("click_unlock_pass", { plan: selectedPlan });
                     if (!session?.user?.id) {
                       alert("패스권 구매는 로그인이 필요합니다.");
                       window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
@@ -693,6 +702,38 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           )}
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="w-full flex flex-col gap-3 mt-8">
+        {/* Kakao Share Button */}
+        <button
+          onClick={handleKakaoShare}
+          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.99] text-black py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
+        >
+          <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
+            <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
+          </svg>
+          <span>카카오톡으로 결과 공유하기</span>
+        </button>
+
+        {/* Share Link Button */}
+        <button
+          onClick={handleShareLink}
+          className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:opacity-95 active:scale-[0.99] text-white py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
+        >
+          <span>🔗</span>
+          <span>링크 복사하기</span>
+        </button>
+
+        {/* Download Story Card Button */}
+        <button
+          onClick={handleDownloadCard}
+          className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] active:scale-[0.99] py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+        >
+          <span>📸</span>
+          <span>인스타 스토리 카드 다운로드 (1080×1350)</span>
+        </button>
+      </div>
 
       {/* Guest & Pass Checkout Modal */}
       <GuestCheckoutModal
