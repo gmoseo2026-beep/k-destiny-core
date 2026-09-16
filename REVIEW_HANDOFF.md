@@ -1,7 +1,7 @@
 # REVIEW_HANDOFF.md — Opus5 검수 인계 문서
 
 > 작성일: 2026-09-16
-> 커밋: `c8ddb6e feat(fortune): 2026 총운 비회원 무료 맛보기(점수+연애운 1개) 및 서버 리댁션 추가`
+> 커밋: `0beb274 fix(payments): /pay/complete 리턴 페이지 2차 오탐 방지 및 2026 총운 라우팅 연동`
 > 배포 상태: **Deploy VERIFIED ✅ (Contabo 운영 서버 실배포 및 실측 스모크 완료)**
 
 ---
@@ -10,6 +10,8 @@
 
 | 파일 경로 | 변경 목적 |
 | :--- | :--- |
+| `app/[locale]/pay/complete/page.tsx` | ① `useRef` 가드로 마운트 시 1회만 결제 확인 실행 (URL 정리 후 Next.js 재렌더로 인한 2차 오탐 에러 원천 차단)<br>② `paidProductType === "ANNUAL"` 일 때 "2026 총운 보러 가기" 버튼 노출 및 `/fortune/annual` 라우팅 연동 |
+| `app/api/payments/complete/route.ts` | 성공 응답 본문에 `productType`, `productKey` 추가 (결제 검증/grant/entitlement 100% 무변경 보존, additive) |
 | `app/[locale]/fortune/annual/page.tsx` | 비로그인 및 프로필 미등록 시 로그인/온보딩으로 튕기던 강제 리다이렉트(`redirect`) 제거. 게스트 진입 지원 |
 | `app/api/fortune/annual/route.ts` | ① 비회원 요청(`!userId`) 경로 신설: IP 기반 Rate Limit, 생년월일 유효성 검증<br>② **엔진 재사용**: `lib/saju.ts`의 `calculateFourPillars`로 1인 사주 명식 인메모리 계산 (새 명리 로직 없음)<br>③ **엄격한 서버 리댁션**: 비회원에게 `yearScore`, `headline`, `summary`, `sections.love`만 반환<br>④ **유료 4영역/12개월/행운포인트 원천 삭제** 및 **DB 미저장** 보장<br>⑤ 기존 회원 경로 및 entitlement/결제/캐시 로직 100% 보존 |
 | `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | ① 비회원 및 프로필 미등록자를 위한 간결한 1인 사주 입력 폼(생년월일·성별·시간·개인정보 미저장 안심 배지) 제공<br>② `sessionStorage` 자동 복원 연동<br>③ 무료 맛보기 결과 노출 및 잠금 영역 블러 티저 유지<br>④ 유료 결제 CTA 클릭 시 친절한 로그인 안내 및 `callbackUrl` 보존<br>⑤ "🔄 다른 생년월일로 다시 보기" 원클릭 버튼 추가 |
@@ -19,7 +21,7 @@
 
 ## 2. 결정론 로직 및 사주 엔진 보존
 - `lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts` 사주 계산 로직: **100% 미수정 보존**.
-- 비회원 총운 계산 시에도 기존 궁합에서 검증된 `calculateFourPillars` 함수를 그대로 호출하여 일간, 사주원국, 오행 점수를 산출.
+- 결제 검증, grant, entitlement 핵심 로직: **100% 미수정 보존**.
 
 ---
 
