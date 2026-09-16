@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
-import { isInAppBrowser } from "@/lib/inAppBrowser";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
+import InAppBrowserModal from "@/components/InAppBrowserModal";
 import KongdakMascot from "@/components/KongdakMascot";
 
 export default function LoginPage() {
@@ -17,14 +18,17 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [showInAppModal, setShowInAppModal] = useState(false);
   const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
+
+  const handleEscape = () => {
+    const ok = openInExternalBrowser();
+    if (!ok) setShowInAppModal(true); // iOS 기타 → 복사+안내
+  };
 
   const handleGoogleLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko' 
-        ? "인앱 브라우저에서는 구글 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Google login is not available in this in-app browser. Please use the email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -40,10 +44,7 @@ export default function LoginPage() {
 
   const handleKakaoLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko' 
-        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Social login is not available in this in-app browser. Please use the email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -59,10 +60,7 @@ export default function LoginPage() {
 
   const handleNaverLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko' 
-        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Social login is not available in this in-app browser. Please use the email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -194,17 +192,40 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
 
+          {/* In-App Browser Breakout Banner & Button */}
+          {inApp && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={handleEscape}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] text-white font-bold text-sm shadow-md active:scale-[0.97] transition-all"
+              >
+                {locale === 'ko' ? '🔓 크롬/사파리로 열고 로그인하기' : '🔓 Open in Chrome/Safari to Login'}
+              </button>
+              <p className="mt-2 text-center text-[11px] text-[#8A8291] font-semibold leading-relaxed">
+                {locale === 'ko' ? (
+                  <>
+                    카카오·구글·네이버 로그인은 보안상 앱 안 브라우저에서 막혀 있어요.<br/>
+                    위 버튼을 누르면 기본 브라우저로 열려요.
+                  </>
+                ) : (
+                  <>
+                    Social login is blocked inside app webviews for security.<br/>
+                    Tap above to open in your default browser.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+
           {/* Social Logins */}
           <div className="space-y-2.5">
             <motion.button
+              type="button"
               onClick={handleKakaoLogin}
-              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
-                inApp
-                  ? 'bg-[#FEE500]/50 opacity-50 cursor-not-allowed text-black/50'
-                  : 'bg-[#FEE500] hover:bg-[#FEE500]/90 text-black'
-              }`}
+              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm bg-[#FEE500] hover:bg-[#FEE500]/90 text-black"
             >
               <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
                 <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
@@ -215,14 +236,11 @@ export default function LoginPage() {
             </motion.button>
 
             <motion.button
+              type="button"
               onClick={handleNaverLogin}
-              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
-                inApp
-                  ? 'bg-[#03C75A]/50 opacity-50 cursor-not-allowed text-white/50'
-                  : 'bg-[#03C75A] hover:bg-[#03C75A]/90 text-white'
-              }`}
+              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm bg-[#03C75A] hover:bg-[#03C75A]/90 text-white"
             >
               <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
                 <path d="M19.689 9.878L12.01 20.31h-4.33V9.878h4.332v10.432l7.678-10.432h4.33v10.432h-4.331V9.878z" />
@@ -233,14 +251,11 @@ export default function LoginPage() {
             </motion.button>
 
             <motion.button
+              type="button"
               onClick={handleGoogleLogin}
-              whileHover={{ scale: inApp ? 1 : 1.01 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className={`w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm ${
-                inApp
-                  ? 'bg-gray-100 border border-gray-200 opacity-50 cursor-not-allowed text-gray-400'
-                  : 'bg-white hover:bg-gray-50 border border-[#E5E0DC] text-[#2B2430]'
-              }`}
+              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm bg-white hover:bg-gray-50 border border-[#E5E0DC] text-[#2B2430]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
                 <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -253,19 +268,6 @@ export default function LoginPage() {
               </span>
             </motion.button>
           </div>
-
-          {/* In-App Browser hint */}
-          {inApp && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-center text-xs font-semibold"
-            >
-              {locale === 'ko' 
-                ? '⚠️ 인앱 브라우저 감지 — 아래 이메일 로그인을 이용해 주세요' 
-                : '⚠️ In-app browser detected — use email login below'}
-            </motion.div>
-          )}
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
@@ -346,6 +348,7 @@ export default function LoginPage() {
           </button>
         </motion.div>
       </div>
+      <InAppBrowserModal isOpen={showInAppModal} onClose={() => setShowInAppModal(false)} />
     </main>
   );
 }
