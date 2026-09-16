@@ -329,3 +329,15 @@ model AdminAuditLog {
   @@index([createdAt])
 }
 
+// 15. 2026 연간 총운 리포트 캐시 (개인 2026년 총운)
+model AnnualFortune {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  content   Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, year])
+  @@index([userId])
+}
+

@@ -203,6 +203,52 @@ export default function DashboardView() {
           </Link>
         </motion.div>
 
+        {/* Quick Fortune Cards (2026 총운 & 이번 주 운세) */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+          <Link href="/fortune/annual" className="block group">
+            <div className="rounded-2xl bg-white border-2 border-[#FF8AA1] p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-lg shadow-xs">
+                  🔮
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
+                      2026 나의 총운
+                    </h3>
+                    <span className="text-[10px] font-black text-white bg-[#FF5C77] px-1.5 py-0.5 rounded-md">
+                      NEW
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8A8291] font-medium mt-0.5">
+                    병오년 1년 운세 & 5대 영역 리포트
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#FF5C77] group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+
+          <Link href="/fortune/weekly" className="block group">
+            <div className="rounded-2xl bg-white border border-[#FFD9E0] p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-xs">
+                  ✨
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#6A2C70] transition-colors">
+                    이번 주 종합 운세
+                  </h3>
+                  <p className="text-xs text-[#8A8291] font-medium mt-0.5">
+                    매주 월요일 업데이트되는 주간 흐름
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#6A2C70] group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+        </motion.div>
+
         {/* Notification card if not granted */}
         {notifPermission === "default" && (
           <motion.div variants={itemVariants} className="mt-4">

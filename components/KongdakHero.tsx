@@ -75,6 +75,14 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
           <p className="text-xs text-gray-500 font-semibold">
             회원가입 없이 30초면 바로 확인 가능해요
           </p>
+          <Link
+            href={`/${locale}/fortune/annual`}
+            className="w-full bg-white hover:bg-[#FFF6F1] border-2 border-[#FF8AA1] active:scale-[0.98] text-[#FF5C77] py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-sm transition-all flex items-center justify-center gap-2 group"
+          >
+            <span>🔮</span>
+            <span>2026 나의 총운 미리보기</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
         </motion.div>
       </div>
 

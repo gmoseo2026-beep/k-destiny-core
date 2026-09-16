@@ -223,3 +223,62 @@ Give practical, realistic advice rather than vague mystical statements.
 Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.
 Output ONLY the JSON block. Do NOT include markdown code fences (like \`\`\`json). Return raw valid JSON.`;
 }
+
+export interface AnnualFortuneContent {
+  yearScore: number;                   // 0~100 올해 총운 점수
+  headline: string;                    // 한 줄 요약 (두근이 톤)
+  summary: string;                     // 총평 2~3문장 (무료 공개용)
+  sections: {
+    love: { score: number; text: string };          // 연애운
+    money: { score: number; text: string };         // 재물운
+    career: { score: number; text: string };        // 직업/학업운
+    health: { score: number; text: string };        // 건강운
+    relationship: { score: number; text: string };  // 인간관계운
+  };
+  monthlyHighlights: Array<{ month: number; note: string }>; // 12개월 하이라이트 (1~12월)
+  luckyPoints: { color: string; item: string; month: number }; // 행운 포인트
+}
+
+export function buildAnnualFortunePrompt(contextBlock: string, year: number, toneGuide: string): string {
+  return `${STYLE_GUIDE}
+
+${STRICT_NO_HANJA_RULE}
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+Write a deeply insightful, warm, and engaging annual fortune reading for the entire year of ${year}.
+You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+interface AnnualFortuneContent {
+  yearScore: number;                   // 0~100 overall score for the year ${year}
+  headline: string;                    // One-line punchy summary in warm Kongdak mascot tone (두근이 톤)
+  summary: string;                     // General overview of the year (2~3 sentences, friendly and grounded)
+  sections: {
+    love: { score: number; text: string };          // Love / Romance luck (0~100 score, detailed paragraph)
+    money: { score: number; text: string };         // Wealth / Financial luck (0~100 score, detailed paragraph)
+    career: { score: number; text: string };        // Career / Study / Work luck (0~100 score, detailed paragraph)
+    health: { score: number; text: string };        // Health / Vitality luck (0~100 score, detailed paragraph)
+    relationship: { score: number; text: string };  // Interpersonal / Social luck (0~100 score, detailed paragraph)
+  };
+  monthlyHighlights: Array<{
+    month: number;                     // 1 to 12
+    note: string;                      // 1~2 sentence highlight or key opportunity/caution for this month
+  }>;                                  // Exactly 12 items (month 1 through 12)
+  luckyPoints: {
+    color: string;                     // Lucky color name in Korean (e.g. 따뜻한 코랄, 싱그러운 올리브 그린 등)
+    item: string;                      // Lucky item or accessory
+    month: number;                     // Most fortunate month (1~12)
+  };
+}
+\`\`\`
+
+Requirements:
+1. Make it sound deeply personal, warm, encouraging, and insightful like a wise, empathetic mentor.
+2. Give practical, grounded advice rather than deterministic doom or absolute guarantees (entertaining and reflective purpose).
+3. Ensure monthlyHighlights covers all 12 months (from month 1 to month 12).
+4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
+5. Output ONLY the raw JSON object. Do NOT include markdown code fences (like \`\`\`json).`;
+}
