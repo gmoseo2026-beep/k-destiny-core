@@ -13,8 +13,9 @@ export async function isEntitled(params: {
   compatId?: string | null;
   email?: string | null; // For legacy/compatibility
   orderId?: string | null; // For guest users
+  productKey?: string | null; // For specific products (e.g. "ANNUAL:2026")
 }): Promise<EntitlementResult> {
-  const { userId, role, tier, compatId, email, orderId } = params;
+  const { userId, role, tier, compatId, email, orderId, productKey } = params;
 
   // 1. ADMIN is always entitled to everything (testing/bypass)
   if (role === 'ADMIN') {
@@ -46,6 +47,23 @@ export async function isEntitled(params: {
     });
     if (activeSub) {
       return { entitled: true, reason: 'SUBSCRIPTION' };
+    }
+  }
+
+  // 2-1. Single unlock check for a specific productKey (e.g., "ANNUAL:2026", 유효기간: 90일)
+  if (productKey && userId) {
+    const [pType, pKey] = productKey.includes(':') ? productKey.split(':') : ['ANNUAL', productKey];
+    const now = new Date();
+    const unlock = await prisma.unlock.findFirst({
+      where: {
+        userId,
+        productType: pType,
+        productKey: pKey,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+    });
+    if (unlock) {
+      return { entitled: true, reason: 'UNLOCK' };
     }
   }
 

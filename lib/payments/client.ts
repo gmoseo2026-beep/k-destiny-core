@@ -10,6 +10,7 @@ export interface PayOptions {
   type: "SINGLE" | "PERIOD_PASS";
   planId?: "1_MONTH" | "3_MONTHS";
   compatId?: string;
+  product?: "ANNUAL_2026";
   buyer: BuyerInfo;
   locale?: string;
 }
@@ -84,6 +85,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<boolean> 
       type: opts.type,
       planId: opts.planId,
       compatId: opts.compatId,
+      product: opts.product,
       email: opts.buyer.email,
     }),
   });
@@ -105,12 +107,18 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<boolean> 
   const locale = opts.locale || "ko";
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
 
+  const orderName = opts.product === "ANNUAL_2026"
+    ? "콩닥 2026 신년 총운 리포트"
+    : opts.type === "SINGLE"
+    ? "콩닥 심층 궁합 리포트"
+    : "콩닥 플러스 이용권";
+
   // 2) PortOne v2 결제창 호출 (KG이니시스)
   const res = await PortOne.requestPayment({
     storeId,
     channelKey,
     paymentId: order.orderId,
-    orderName: opts.type === "SINGLE" ? "콩닥 심층 궁합 리포트" : "콩닥 플러스 이용권",
+    orderName,
     totalAmount: order.amount,
     currency: "CURRENCY_KRW",
     payMethod: "CARD",

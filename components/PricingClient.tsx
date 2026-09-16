@@ -7,6 +7,7 @@ import KongdakMascot from "./KongdakMascot";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -48,7 +49,7 @@ export default function PricingClient({ locale }: { locale: string }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16 pt-3">
         
         {/* Card 1: Single Report */}
-        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md border border-[#FFD9E0]/60 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1">
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-md border border-[#FFD9E0]/60 flex flex-col items-center text-center transition-all duration-150 hover:-translate-y-0.5">
           {/* Tag Area */}
           <div className="h-7 mb-2 flex items-center justify-center">
             <span className="text-[11px] font-bold text-[#8A8291] bg-gray-100 px-3 py-1 rounded-full">
@@ -88,16 +89,16 @@ export default function PricingClient({ locale }: { locale: string }) {
           {/* Action Button */}
           <button
             onClick={() => router.push(`/${locale}/compat/new`)}
-            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#FF5C77] border border-[#FFD9E0] py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 mt-auto shadow-2xs"
+            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#FF5C77] border border-[#FFD9E0] py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] mt-auto shadow-2xs"
           >
             {t("product_single_btn")}
           </button>
         </div>
 
         {/* Card 2: 1 Month Pass (Featured) */}
-        <div className="bg-gradient-to-b from-[#FFF6F1] via-white to-[#FFF6F1]/30 rounded-3xl p-6 sm:p-7 shadow-lg border-2 border-[#FF8AA1] flex flex-col items-center text-center relative transition-all duration-200 hover:-translate-y-1">
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-md border-2 border-[#FF5C77] flex flex-col items-center text-center relative transition-all duration-150 hover:-translate-y-0.5">
           {/* Top Floating Badge */}
-          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white text-[11px] font-black px-4 py-1 rounded-full shadow-md whitespace-nowrap z-10 flex items-center">
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#FF5C77] text-white text-[11px] font-black px-4 py-1 rounded-full shadow-xs whitespace-nowrap z-10 flex items-center">
             가장 많은 선택
           </div>
 
@@ -141,14 +142,14 @@ export default function PricingClient({ locale }: { locale: string }) {
           <button
             onClick={() => handlePeriodPassCheckout("1_MONTH")}
             disabled={isProcessingPayment}
-            className="w-full bg-[#FF5C77] hover:bg-[#ff4765] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-auto"
+            className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white py-3.5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto"
           >
             {isProcessingPayment && selectedPlan === "1_MONTH" ? "결제창 연결 중..." : t("product_1m_btn")}
           </button>
         </div>
 
         {/* Card 3: 3 Months Pass */}
-        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md border border-[#FFD9E0]/60 flex flex-col items-center text-center transition-all duration-200 hover:-translate-y-1">
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-md border border-[#FFD9E0]/60 flex flex-col items-center text-center transition-all duration-150 hover:-translate-y-0.5">
           {/* Tag Area */}
           <div className="h-7 mb-2 flex items-center justify-center">
             <span className="text-[11px] font-bold text-[#6A2C70] bg-[#6A2C70]/10 px-3 py-1 rounded-full">
@@ -189,12 +190,50 @@ export default function PricingClient({ locale }: { locale: string }) {
           <button
             onClick={() => handlePeriodPassCheckout("3_MONTHS")}
             disabled={isProcessingPayment}
-            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#6A2C70] border border-[#FF8AA1]/40 py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50 mt-auto shadow-2xs"
+            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#6A2C70] border border-[#FF8AA1]/40 py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto shadow-2xs"
           >
             {isProcessingPayment && selectedPlan === "3_MONTHS" ? "결제창 연결 중..." : t("product_3m_btn")}
           </button>
         </div>
 
+      </div>
+
+      {/* 2026 Annual Fortune Single Product Banner Card */}
+      <div className="bg-gradient-to-r from-[#FFF6F1] to-white border border-[#FF8AA1]/60 rounded-3xl p-6 sm:p-7 mb-14 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4 text-left">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-1.5 bg-[#FF5C77] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-1">
+              <span>단건 열람</span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-black text-[#2B2430]">
+              2026 신년 총운 리포트 (단건)
+            </h3>
+            <p className="text-xs sm:text-sm text-[#8A8291] mt-0.5">
+              5대 영역 심층 분석 · 12개월 타임라인 · 행운 포인트를 90일간 언제든 열람
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end shrink-0">
+          <div className="text-right">
+            <span className="text-[11px] font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2 py-0.5 rounded-full">
+              첫 결제 1,900원
+            </span>
+            <div className="text-xl sm:text-2xl font-black text-[#2B2430]">
+              2,900<span className="text-sm font-normal text-[#8A8291]">원</span>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push(`/${locale}/fortune/annual`)}
+            className="bg-[#FF5C77] hover:bg-[#ff4766] text-white px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-xs transition-all duration-150 active:scale-[0.97] whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>총운 확인하기</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Info Section */}

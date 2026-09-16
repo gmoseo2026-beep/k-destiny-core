@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import {
@@ -14,23 +13,6 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { BASE_URL } from "@/lib/seo";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 25 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" as const },
-  },
-};
 
 const steps = [
   { icon: Heart, tint: "bg-coral/10", iconColor: "text-coral" },
@@ -205,14 +187,9 @@ export default function GuidePage() {
       />
 
       <div className="relative z-10 w-full max-w-2xl mx-auto">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-8"
-        >
+        <div className="space-y-8">
           {/* Header */}
-          <motion.div variants={itemVariants} className="text-center">
+          <div className="text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[#FFD9E0] shadow-sm mb-5">
               <Sparkles className="w-4 h-4 text-coral" />
               <span className="text-xs font-extrabold text-plum tracking-wide">
@@ -225,7 +202,7 @@ export default function GuidePage() {
             <p className="text-sm sm:text-base text-gray-500 font-medium max-w-lg mx-auto leading-relaxed">
               {t("subtitle")}
             </p>
-          </motion.div>
+          </div>
 
           {/* Steps */}
           <div className="space-y-4">
@@ -234,15 +211,14 @@ export default function GuidePage() {
               const stepNum = idx + 1;
 
               return (
-                <motion.div
+                <div
                   key={stepNum}
-                  variants={itemVariants}
-                  className="relative bg-white border border-[#FFD9E0]/60 rounded-3xl p-5 sm:p-7 shadow-sm hover:border-coral/40 transition-colors group"
+                  className="relative bg-white border border-[#FFD9E0]/60 rounded-3xl p-5 sm:p-7 shadow-xs hover:border-coral/40 transition-colors duration-150 group"
                 >
                   <div className="flex items-start gap-4 sm:gap-5">
                     <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
                       <div
-                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${step.tint} flex items-center justify-center group-hover:scale-105 transition-transform`}
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${step.tint} flex items-center justify-center group-hover:scale-105 transition-transform duration-150`}
                       >
                         <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${step.iconColor}`} />
                       </div>
@@ -260,16 +236,13 @@ export default function GuidePage() {
                       </p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
 
           {/* Tip */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-gold/10 border border-gold/40 rounded-3xl p-5 sm:p-7"
-          >
+          <div className="bg-gold/10 border border-gold/40 rounded-3xl p-5 sm:p-7">
             <div className="flex items-start gap-4">
               <div className="p-2.5 rounded-xl bg-gold/20 flex-shrink-0">
                 <Lightbulb className="w-5 h-5 text-[#C98A0E]" />
@@ -279,10 +252,10 @@ export default function GuidePage() {
                 <p className="text-sm text-gray-600 leading-relaxed">{t("tip_desc")}</p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* FAQ Section */}
-          <motion.div variants={itemVariants} className="space-y-4 pt-4">
+          <div className="space-y-4 pt-4">
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coral/10 text-coral text-xs font-bold mb-2">
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -300,7 +273,7 @@ export default function GuidePage() {
               {faqs.map((faq, idx) => (
                 <div
                   key={idx}
-                  className="bg-white border border-[#FFD9E0]/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm hover:border-coral/40 transition-colors"
+                  className="bg-white border border-[#FFD9E0]/60 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xs hover:border-coral/40 transition-colors duration-150"
                 >
                   <h3 className="text-base sm:text-lg font-black text-ink mb-2 flex items-start gap-2.5">
                     <span className="text-coral font-black flex-shrink-0">{faq.num}.</span>
@@ -312,36 +285,30 @@ export default function GuidePage() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
           {/* Disclaimer */}
-          <motion.p
-            variants={itemVariants}
-            className="text-center text-xs text-gray-500 leading-relaxed px-4"
-          >
+          <p className="text-center text-xs text-gray-500 leading-relaxed px-4">
             {t("disclaimer")}
-          </motion.p>
+          </p>
 
           {/* Actions */}
-          <motion.div
-            variants={itemVariants}
-            className="flex flex-col sm:flex-row justify-center gap-3 pt-2"
-          >
+          <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
             <Link href="/" className="block">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-[#2B2430]/10 bg-white text-gray-600 hover:text-ink hover:border-coral/40 transition-all text-sm font-semibold group">
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-[#2B2430]/10 bg-white text-gray-600 hover:text-ink hover:border-coral/40 transition-all duration-150 text-sm font-semibold group active:scale-[0.97]">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-150" />
                 {t("btn_back")}
               </button>
             </Link>
             <Link href="/compat/new" className="block">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white bg-gradient-to-r from-coral-light via-coral to-plum font-bold text-base shadow-lg shadow-coral/30 hover:opacity-95 active:scale-[0.98] transition-all group">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white bg-[#FF5C77] hover:bg-[#ff4766] font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] active:scale-[0.97] transition-all duration-150 group">
                 <Heart className="w-5 h-5 fill-white" />
                 <span>{t("btn_start")}</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-150" />
               </button>
             </Link>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </main>
   );

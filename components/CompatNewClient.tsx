@@ -396,7 +396,7 @@ export default function CompatNewClient({ locale, refToken, initialProfile }: Co
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] hover:opacity-95 active:scale-[0.99] text-white py-4 rounded-xl font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <div className="flex items-center gap-2">

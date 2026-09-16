@@ -128,6 +128,39 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   // Period Pass Selection State
   const [selectedPlan, setSelectedPlan] = useState<string>("1_MONTH");
 
+  // Score Count-Up Animation (0 -> data.score in 0.8s ease-out + pop + haptic)
+  const [displayScore, setDisplayScore] = useState(0);
+  const [isScoreComplete, setIsScoreComplete] = useState(false);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    let animationFrameId: number;
+    const duration = 800; // 0.8s
+    const target = data.score;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const val = Math.round(easeOut * target);
+      setDisplayScore(val);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(step);
+      } else {
+        setIsScoreComplete(true);
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate?.(10);
+          } catch {}
+        }
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [data.score]);
+
   // 1. 유입 및 paywall 노출 GA4 이벤트 발사 + 주소창 ref 자동 동기화
   useEffect(() => {
     // ref 가 붙어 있는 진입 = 공유 링크를 통한 유입.
@@ -458,12 +491,25 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         <div className="flex items-center justify-center gap-3 my-2">
           <KongdakMascot size={64} score={data.score} animate="heartbeat" />
           <div className="flex items-baseline gap-1">
-            <span className="text-6xl sm:text-7xl font-black tracking-tight drop-shadow-md">
-              {data.score}
+            <span
+              className={`text-6xl sm:text-7xl font-black tracking-tight drop-shadow-md transition-transform duration-150 ${
+                isScoreComplete ? "animate-score-pop" : "scale-[0.98]"
+              }`}
+            >
+              {displayScore}
             </span>
             <span className="text-2xl sm:text-3xl font-bold text-[#FFC24B]">점</span>
           </div>
         </div>
+
+        {/* High Score (>=90) Celebratory Reaction (1-time) */}
+        {data.score >= 90 && isScoreComplete && (
+          <div className="flex items-center justify-center gap-1 text-xs font-bold text-[#FFC24B] animate-pulse my-1">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>최고의 찰떡 인연 발견!</span>
+            <Sparkles className="w-3.5 h-3.5" />
+          </div>
+        )}
 
         {/* Score Reaction Mood Badge */}
         <div className="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-[#FFF6F1] px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-white/20 my-2 shadow-sm">
@@ -681,17 +727,17 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   setCheckoutType("SINGLE");
                   setCheckoutModalOpen(true);
                 }}
-                className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] py-3.5 px-4 rounded-xl font-bold text-sm shadow-xs transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-0.5"
+                className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] flex flex-col items-center justify-center gap-0.5"
               >
-                <span className="text-sm sm:text-base font-extrabold text-[#FF5C77]">
-                  심층 리포트 잠금 해제 · 첫 결제 1,900원
+                <span className="text-sm sm:text-base font-extrabold text-white">
+                  우리 갈등 포인트 & 심층 리포트 열기 · 첫 결제 1,900원
                 </span>
-                <span className="text-[11px] font-medium text-[#8A8291]">
-                  (이후 2,900원)
+                <span className="text-[11px] font-medium text-white/80">
+                  (이후 2,900원 · 결제 후 90일간 즉시 열람)
                 </span>
               </button>
               
-              <div className="bg-white rounded-xl p-4 shadow-xs border border-[#FFD9E0]/50 flex flex-col gap-3 mt-2">
+              <div className="bg-white rounded-2xl p-4 shadow-2xs border border-[#FFD9E0]/60 flex flex-col gap-3 mt-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-[#2B2430]">콩닥 플러스 패스 (무제한 열람)</span>
                   <select 
@@ -714,7 +760,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     setCheckoutType("PERIOD_PASS");
                     setCheckoutModalOpen(true);
                   }}
-                  className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white py-3.5 rounded-xl font-bold text-sm shadow-xs transition-all active:scale-[0.98]"
+                  className="w-full bg-white hover:bg-[#FFF6F1] border border-[#FF8AA1]/60 text-[#6A2C70] py-3.5 rounded-xl font-bold text-sm shadow-2xs transition-all duration-150 active:scale-[0.97]"
                 >
                   패스권 결제하기
                 </button>
@@ -730,7 +776,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         {/* Kakao Share Button */}
         <button
           onClick={handleKakaoShare}
-          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.99] text-black py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
+          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.97] text-black py-4 rounded-2xl font-bold text-base shadow-sm transition-all duration-150 flex items-center justify-center gap-2"
         >
           <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
             <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
@@ -741,16 +787,16 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         {/* Share Link Button */}
         <button
           onClick={handleShareLink}
-          className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:opacity-95 active:scale-[0.99] text-white py-4 rounded-xl font-bold text-base shadow-md transition-all flex items-center justify-center gap-2"
+          className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
         >
-          <span>🔗</span>
+          <Link2 className="w-5 h-5 text-white" />
           <span>링크 복사하기</span>
         </button>
 
         {/* Download Story Card Button */}
         <button
           onClick={handleDownloadCard}
-          className="w-full bg-white border-2 border-[#FF5C77] text-[#FF5C77] hover:bg-[#FFF6F1] active:scale-[0.99] py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+          className="w-full bg-white border border-[#FF8AA1]/70 text-[#FF5C77] hover:bg-[#FFF6F1] active:scale-[0.97] py-3.5 rounded-2xl font-bold text-sm shadow-2xs transition-all duration-150 flex items-center justify-center gap-2"
         >
           <span>📸</span>
           <span>인스타 스토리 카드 다운로드 (1080×1350)</span>

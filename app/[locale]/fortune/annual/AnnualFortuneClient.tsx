@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import KongdakMascot from "@/components/KongdakMascot";
 import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-import { motion, useReducedMotion } from "framer-motion";
 import {
   Lock,
   Heart,
@@ -58,7 +58,7 @@ const SECTION_CONFIG = [
 
 export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps) {
   const { data: session } = useSession();
-  const shouldReduceMotion = useReducedMotion();
+  const router = useRouter();
 
   const [data, setData] = useState<AnnualFortuneData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,19 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
 
   // Payment modal state
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [checkoutProduct, setCheckoutProduct] = useState<"SINGLE" | "PERIOD_PASS">("SINGLE");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const handleOpenCheckout = (product: "SINGLE" | "PERIOD_PASS") => {
+    if (!session?.user?.id) {
+      alert("2026 총운 결제는 로그인이 필요합니다.");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/annual`;
+      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+    setCheckoutProduct(product);
+    setCheckoutModalOpen(true);
+  };
 
   const fetchFortune = useCallback(async () => {
     try {
@@ -136,19 +148,10 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
 
   const scoreRating = getScoreRating(data.yearScore);
 
-  const transitionConfig = shouldReduceMotion
-    ? { duration: 0 }
-    : { duration: 0.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
-
   return (
     <div className="w-full max-w-md md:max-w-2xl flex flex-col gap-6 pb-16 pt-2">
       {/* 1. Header & Free Teaser Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={transitionConfig}
-        className="relative bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white shadow-[0_8px_24px_rgba(181,71,96,0.15)] overflow-hidden"
-      >
+      <div className="relative bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white shadow-[0_8px_24px_rgba(181,71,96,0.15)] overflow-hidden">
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-xs font-bold text-white mb-3 border border-white/25 shadow-xs">
             <span>2026 병오년(丙午年) 붉은 말의 해</span>
@@ -189,7 +192,7 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* 2. 5 Key Life Sections (3-A: 샘플 1개 완전 공개 + 나머지 4개 잠금) */}
       <section className="flex flex-col gap-3.5">
@@ -301,11 +304,18 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
                 </p>
                 <button
                   type="button"
-                  onClick={() => setCheckoutModalOpen(true)}
-                  className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white font-bold py-3 px-5 rounded-xl active:scale-[0.98] transition-all shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5"
+                  onClick={() => handleOpenCheckout("SINGLE")}
+                  className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white font-bold py-3 px-5 rounded-xl active:scale-[0.97] transition-all duration-150 shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5"
                 >
-                  <span>콩닥 플러스로 전체 열기</span>
+                  <span>2026 총운 열기 · 첫 결제 1,900원</span>
                   <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenCheckout("PERIOD_PASS")}
+                  className="w-full mt-2 text-[11px] font-semibold text-white/80 hover:text-white py-1 transition-colors"
+                >
+                  또는 30일 무제한 패스 (9,900원) →
                 </button>
               </div>
             </div>
@@ -404,7 +414,7 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
       {isLocked && (
         <div className="bg-white border-2 border-[#FF8AA1] rounded-3xl p-6 sm:p-7 shadow-md text-center mt-3">
           <div className="inline-flex items-center gap-1.5 bg-[#FF5C77]/10 text-[#FF5C77] px-3 py-0.5 rounded-full text-xs font-bold mb-3">
-            <span>콩닥 플러스 무제한 이용권</span>
+            <span>2026 신년 총운 전체 열람</span>
           </div>
 
           <h3 className="text-xl font-black text-[#2B2430] mb-2">
@@ -413,7 +423,7 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
 
           <p className="text-xs sm:text-sm text-[#6A5E72] leading-relaxed mb-4">
             심층 5영역 · 12개월 타임라인 · 행운 포인트<br />
-            <strong>30일간 총운과 모든 심층 궁합 리포트를 무제한</strong>으로 열람하세요.
+            <strong>결제일로부터 90일간 언제든 다시 열람</strong>하세요.
           </p>
 
           {/* Trust elements */}
@@ -428,20 +438,31 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
             <span>자동 결제 없음</span>
           </div>
 
-          <div className="flex flex-col gap-2 max-w-sm mx-auto">
+          <div className="flex flex-col gap-2.5 max-w-sm mx-auto">
+            {/* Primary: 2026 Annual Fortune Single Purchase */}
             <button
               type="button"
-              onClick={() => setCheckoutModalOpen(true)}
+              onClick={() => handleOpenCheckout("SINGLE")}
               disabled={isProcessingPayment}
-              className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.98] text-white py-4 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
-              <span>30일 무제한 패스로 전체 열기 (9,900원)</span>
+              <span>2026 총운 전체 열기 · 첫 결제 1,900원</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {/* Secondary: 1 Month Unlimited Pass */}
+            <button
+              type="button"
+              onClick={() => handleOpenCheckout("PERIOD_PASS")}
+              disabled={isProcessingPayment}
+              className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 active:scale-[0.97] text-[#6A2C70] border border-[#FFD9E0] py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-1.5"
+            >
+              <span>30일 무제한 패스로 모든 궁합까지 열기 (9,900원)</span>
             </button>
 
             <Link
               href={`/${locale}/pricing`}
-              className="text-xs font-semibold text-[#8A8291] hover:text-[#2B2430] py-2 transition-colors"
+              className="text-xs font-semibold text-[#8A8291] hover:text-[#2B2430] py-1.5 transition-colors"
             >
               다른 요금제 알아보기 →
             </Link>
@@ -460,9 +481,9 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
       <GuestCheckoutModal
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title="콩닥 플러스 무제한 이용권"
-        orderName="콩닥 플러스 1개월 이용권"
-        priceLabel="9,900원 (30일 무제한)"
+        title={checkoutProduct === "SINGLE" ? "2026 총운 리포트 열람" : "콩닥 플러스 무제한 이용권"}
+        orderName={checkoutProduct === "SINGLE" ? "콩닥 2026 신년 총운 리포트" : "콩닥 플러스 1개월 이용권"}
+        priceLabel={checkoutProduct === "SINGLE" ? "첫 결제 1,900원 (이후 2,900원) · 90일 열람" : "9,900원 (30일 무제한)"}
         initialName={session?.user?.name || ""}
         initialEmail={session?.user?.email || ""}
         initialPhone=""
@@ -470,13 +491,22 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
         onSubmit={async (buyer: BuyerInfo) => {
           try {
             setIsProcessingPayment(true);
-            await requestPortOnePayment({
-              type: "PERIOD_PASS",
-              planId: "1_MONTH",
-              compatId: undefined,
-              buyer,
-              locale,
-            });
+            if (checkoutProduct === "SINGLE") {
+              await requestPortOnePayment({
+                type: "SINGLE",
+                product: "ANNUAL_2026",
+                buyer,
+                locale,
+              });
+            } else {
+              await requestPortOnePayment({
+                type: "PERIOD_PASS",
+                planId: "1_MONTH",
+                compatId: undefined,
+                buyer,
+                locale,
+              });
+            }
           } catch (e: any) {
             alert(e?.message || "결제 진행 중 오류가 발생했습니다.");
           } finally {

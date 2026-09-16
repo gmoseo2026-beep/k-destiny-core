@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
-    const { type, compatId, email, planId } = body;
+    const { type, compatId, email, planId, product } = body;
     
     let amount = 2900;
     
@@ -22,13 +22,52 @@ export async function POST(req: NextRequest) {
       else return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
     } else if (type === 'SINGLE') {
+      if (product === 'ANNUAL_2026') {
+        if (!session?.user?.id) {
+          return NextResponse.json({ error: "총운 구매는 로그인이 필요합니다." }, { status: 401 });
+        }
+        const pastAnnualOrders = await prisma.order.findFirst({
+          where: {
+            userId: session.user.id,
+            status: 'PAID',
+            productType: 'ANNUAL',
+            provider: { not: 'admin_manual' },
+            amount: { gt: 0 },
+          }
+        });
+        amount = pastAnnualOrders ? 2900 : 1900;
+
+        const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
+        const order = await prisma.order.create({
+          data: {
+            orderId,
+            userId: session.user.id,
+            email: session.user.email || null,
+            compatId: null,
+            productType: "ANNUAL",
+            productKey: "2026",
+            type: "SINGLE",
+            amount,
+            status: "PENDING",
+            provider: process.env.PG_PROVIDER || "portone",
+          }
+        });
+
+        return NextResponse.json(
+          { orderId: order.orderId, amount: order.amount, type: order.type },
+          { status: 200 }
+        );
+      }
+
       // Check for first purchase for SINGLE (admin_manual 및 0원 수동 보상 주문은 첫구매 할인 자격을 소진시키지 않음)
+      // 궁합 이력만 기준으로 판정 (총운 이력과 독립)
       if (session?.user?.id) {
         const pastOrders = await prisma.order.findFirst({
           where: {
             userId: session.user.id,
             status: 'PAID',
             type: 'SINGLE',
+            productType: { not: 'ANNUAL' },
             provider: { not: 'admin_manual' },
             amount: { gt: 0 },
           }
@@ -40,6 +79,7 @@ export async function POST(req: NextRequest) {
             email,
             status: 'PAID',
             type: 'SINGLE',
+            productType: { not: 'ANNUAL' },
             provider: { not: 'admin_manual' },
             amount: { gt: 0 },
           }

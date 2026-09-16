@@ -45,11 +45,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Check entitlement (콩닥 플러스 패스: SUBSCRIPTION / ADMIN)
+    // 2. Check entitlement (콩닥 플러스 패스: SUBSCRIPTION / ADMIN, 또는 2026 총운 단건 Unlock)
     const entitlement = await isEntitled({
       userId,
       role: session.user.role,
       tier: session.user.tier,
+      productKey: "ANNUAL:2026",
     });
     const isUnlocked = entitlement.entitled;
 

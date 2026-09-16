@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 
 interface MeClientProps {
   locale: string;
@@ -25,12 +26,12 @@ export default function MeClient({ locale }: MeClientProps) {
         </p>
       </div>
 
-      {/* Trait Chips */}
+      {/* Traits Grid */}
       <div className="w-full grid grid-cols-2 gap-3 mb-8">
         <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/30 text-center">
-          <span className="text-2xl mb-1 block">🎯</span>
-          <p className="text-xs font-bold text-[#2B2430]">깊은 통찰력</p>
-          <p className="text-[11px] text-[#8A8291] mt-0.5">상황의 본질을 꿰뚫는 눈</p>
+          <span className="text-2xl mb-1 block">✨</span>
+          <p className="text-xs font-bold text-[#2B2430]">자신감과 추진력</p>
+          <p className="text-[11px] text-[#8A8291] mt-0.5">스스로 길을 개척하는 리더</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/30 text-center">
           <span className="text-2xl mb-1 block">🤝</span>
@@ -40,12 +41,12 @@ export default function MeClient({ locale }: MeClientProps) {
       </div>
 
       {/* CTA Button */}
-      <a
+      <Link
         href={`/${locale}/compat/new`}
-        className="w-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] hover:opacity-95 active:scale-[0.99] text-white text-center py-4 rounded-xl font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2"
+        className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white text-center py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
       >
         <span>우리, 얼마나 잘 맞을까? 궁합 보러가기 💖</span>
-      </a>
+      </Link>
     </div>
   );
 }

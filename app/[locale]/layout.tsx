@@ -1,6 +1,29 @@
 import type { Metadata } from "next";
 import { Inter, Cinzel, Noto_Sans_KR, Noto_Sans_JP } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
+
+const pretendard = localFont({
+  src: [
+    {
+      path: "../../public/fonts/Pretendard-Regular.subset.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Pretendard-SemiBold.subset.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Pretendard-Bold.subset.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-pretendard",
+  display: "swap",
+});
 import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
@@ -158,7 +181,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body
-        className={`${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
+        className={`${pretendard.variable} ${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
       >
         <Analytics />
         <NextIntlClientProvider messages={messages}>

@@ -1,30 +1,12 @@
 "use client";
 
 import { useEffect, useReducer, useState, useSyncExternalStore } from "react";
-import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Link } from "@/i18n/routing";
 import { Heart, ArrowRight, Sparkles, Bell, BookOpen } from "lucide-react";
 import KongdakMascot from "@/components/KongdakMascot";
 import { subscribeToPush } from "@/lib/push";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: "easeOut" as const },
-  },
-};
 
 // 홈(page.tsx)이 이 컴포넌트를 서버에서 렌더하므로, 브라우저에만 있는 알림 권한을
 // useState 초기값으로 읽으면 서버 HTML("default")과 첫 렌더가 어긋나 하이드레이션이 깨진다.
@@ -163,14 +145,9 @@ export default function DashboardView() {
           </button>
         </div>
       )}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="max-w-3xl mx-auto"
-      >
+      <div className="max-w-3xl mx-auto">
         {/* Greeting */}
-        <motion.div variants={itemVariants} className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-4 mb-8">
           <KongdakMascot size={56} animate="none" />
           <div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-ink">
@@ -178,12 +155,12 @@ export default function DashboardView() {
             </h1>
             <p className="text-sm text-gray-500 font-medium mt-1">{t("subtitle")}</p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Primary action — new compatibility reading */}
-        <motion.div variants={itemVariants}>
+        <div>
           <Link href="/compat/new" className="block group">
-            <div className="rounded-3xl bg-gradient-to-br from-coral-light via-coral to-plum p-6 sm:p-8 text-white shadow-lg shadow-coral/25 border border-white/30">
+            <div className="rounded-3xl bg-[#FF5C77] p-6 sm:p-8 text-white shadow-lg shadow-coral/20 border border-white/30 transition-all duration-150 active:scale-[0.97]">
               <div className="flex items-center gap-2 text-white/90 text-xs font-bold mb-3">
                 <Sparkles className="w-4 h-4" />
                 <span>{t("cta_badge")}</span>
@@ -197,23 +174,23 @@ export default function DashboardView() {
               <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm font-bold border border-white/25">
                 <Heart className="w-4 h-4 fill-white" />
                 {t("cta_button")}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-150" />
               </span>
             </div>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Quick Fortune Cards (2026 총운 & 이번 주 운세) */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
           <Link href="/fortune/annual" className="block group">
-            <div className="rounded-2xl bg-white border-2 border-[#FF8AA1] p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+            <div className="rounded-2xl bg-white border border-[#FF8AA1]/60 p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-lg shadow-xs">
+                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#FF5C77] text-lg shadow-2xs">
                   🔮
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
+                    <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#FF5C77] transition-colors duration-150">
                       2026 나의 총운
                     </h3>
                     <span className="text-[10px] font-black text-white bg-[#FF5C77] px-1.5 py-0.5 rounded-md">
@@ -225,18 +202,18 @@ export default function DashboardView() {
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#FF5C77] group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-[#FF5C77] group-hover:translate-x-1 transition-transform duration-150" />
             </div>
           </Link>
 
           <Link href="/fortune/weekly" className="block group">
-            <div className="rounded-2xl bg-white border border-[#FFD9E0] p-4 sm:p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+            <div className="rounded-2xl bg-white border border-[#FFD9E0] p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-xs">
+                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-2xs">
                   ✨
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#6A2C70] transition-colors">
+                  <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#6A2C70] transition-colors duration-150">
                     이번 주 종합 운세
                   </h3>
                   <p className="text-xs text-[#8A8291] font-medium mt-0.5">
@@ -244,15 +221,15 @@ export default function DashboardView() {
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#6A2C70] group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 text-[#6A2C70] group-hover:translate-x-1 transition-transform duration-150" />
             </div>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Notification card if not granted */}
         {notifPermission === "default" && (
-          <motion.div variants={itemVariants} className="mt-4">
-            <div className="flex items-center justify-between rounded-2xl bg-white border border-[#FF8AA1]/30 p-4 shadow-sm">
+          <div className="mt-4">
+            <div className="flex items-center justify-between rounded-2xl bg-white border border-[#FF8AA1]/30 p-4 shadow-2xs">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#FFF6F1] flex items-center justify-center text-[#FF5C77] flex-shrink-0">
                   <Bell className="w-5 h-5" />
@@ -264,18 +241,17 @@ export default function DashboardView() {
               </div>
               <button
                 onClick={handleEnableNotif}
-                className="bg-[#FF5C77] text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform flex-shrink-0"
+                className="bg-[#FF5C77] text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-[0.97] transition-transform duration-150 flex-shrink-0"
               >
                 알림 켜기
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* History section */}
-        <motion.div
-          variants={itemVariants}
-          className="mt-6 rounded-3xl bg-white border border-[#FFD9E0]/50 p-6 sm:p-8 shadow-sm"
+        <div
+          className="mt-6 rounded-3xl bg-white border border-[#FFD9E0]/50 p-6 sm:p-8 shadow-xs"
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-base font-bold text-ink">{t("history_title")}</h3>
@@ -294,14 +270,14 @@ export default function DashboardView() {
                 <Link
                   key={item.id}
                   href={`/compat/${item.shareToken}`}
-                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#FFF6F1]/60 border border-[#FFD9E0]/40 hover:bg-[#FFF6F1] hover:border-coral/40 transition-all group"
+                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#FFF6F1]/60 border border-[#FFD9E0]/40 hover:bg-[#FFF6F1] hover:border-coral/40 transition-all duration-150 active:scale-[0.97] group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-coral-light to-coral flex items-center justify-center text-white font-black text-sm shadow-sm flex-shrink-0">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FF5C77] flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
                       {item.score}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-ink group-hover:text-coral transition-colors flex items-center gap-1.5">
+                      <div className="text-sm font-bold text-ink group-hover:text-coral transition-colors duration-150 flex items-center gap-1.5">
                         <span>{item.personA.name}</span>
                         <span className="text-coral text-xs">❤️</span>
                         <span>{item.personB.name}</span>
@@ -313,29 +289,29 @@ export default function DashboardView() {
                       </div>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all flex-shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all duration-150 flex-shrink-0" />
                 </Link>
               ))}
             </div>
           ) : (
             <p className="text-sm text-gray-500 leading-relaxed">{t("history_desc")}</p>
           )}
-        </motion.div>
+        </div>
 
         {/* Guide link */}
-        <motion.div variants={itemVariants} className="mt-6">
+        <div className="mt-6">
           <Link
             href="/guide"
-            className="flex items-center justify-between rounded-2xl bg-white border border-[#2B2430]/8 px-5 py-4 shadow-sm hover:border-coral/40 hover:bg-coral/[0.03] transition-colors group"
+            className="flex items-center justify-between rounded-2xl bg-white border border-[#2B2430]/8 px-5 py-4 shadow-2xs hover:border-coral/40 hover:bg-coral/[0.03] transition-colors duration-150 active:scale-[0.97] group"
           >
             <span className="flex items-center gap-3">
               <BookOpen className="w-4 h-4 text-coral" />
               <span className="text-sm font-semibold text-ink">{t("guide_link")}</span>
             </span>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all" />
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all duration-150" />
           </Link>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </main>
   );
 }

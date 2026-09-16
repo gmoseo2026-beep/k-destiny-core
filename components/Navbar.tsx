@@ -23,12 +23,12 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-2.5 sm:pt-3 pointer-events-none transition-all duration-200">
+    <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-2.5 sm:pt-3 pointer-events-none transition-all duration-150">
       <nav
-        className={`max-w-screen-md mx-auto pointer-events-auto rounded-[20px] transition-all duration-200 px-3.5 sm:px-5 py-2.5 flex items-center justify-between ${
+        className={`max-w-screen-md mx-auto pointer-events-auto rounded-[20px] transition-all duration-150 px-3.5 sm:px-5 py-2.5 flex items-center justify-between ${
           isScrolled
-            ? "bg-[#FFF6F1]/85 backdrop-blur-[16px] border border-white/60 shadow-[0_8px_24px_rgba(181,71,96,0.12)]"
-            : "bg-[#FFF6F1]/65 backdrop-blur-[16px] border border-white/55 shadow-[0_4px_20px_rgba(181,71,96,0.07)]"
+            ? "bg-white/90 backdrop-blur-[16px] border border-[#FFD9E0]/60 shadow-[0_4px_20px_rgba(43,36,48,0.06)]"
+            : "bg-white/80 backdrop-blur-[16px] border border-white/60 shadow-[0_2px_12px_rgba(43,36,48,0.04)]"
         }`}
         style={{
           backdropFilter: "blur(16px) saturate(140%)",
@@ -38,7 +38,7 @@ export default function Navbar() {
         {/* Left: Brand Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 group transition-transform active:scale-[0.98]"
+          className="flex items-center gap-2 group transition-transform duration-150 active:scale-[0.97]"
         >
           <div className="w-7 h-7 sm:w-8 sm:h-8 relative flex items-center justify-center">
             <KongdakMascot size={32} animate="none" priority={true} />
@@ -55,7 +55,7 @@ export default function Navbar() {
           {/* 2026 Annual Fortune Link */}
           <Link
             href="/fortune/annual"
-            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold text-[#FF5C77] hover:bg-[#FFD9E0]/40 transition-colors whitespace-nowrap active:scale-[0.98]"
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold text-[#FF5C77] hover:bg-[#FFD9E0]/40 transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
           >
             2026 총운
           </Link>
@@ -63,7 +63,7 @@ export default function Navbar() {
           {/* Weekly Fortune Link (Desktop / Tablet visible) */}
           <Link
             href="/fortune/weekly"
-            className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A2C70] hover:bg-[#FFF6F1] hover:text-[#FF5C77] transition-colors whitespace-nowrap active:scale-[0.98]"
+            className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A2C70] hover:bg-[#FFF6F1] hover:text-[#FF5C77] transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
           >
             이번 주 운세
           </Link>
@@ -71,7 +71,7 @@ export default function Navbar() {
           {/* Pricing Link */}
           <Link
             href="/pricing"
-            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A5E72] hover:text-[#2B2430] hover:bg-white/50 transition-colors whitespace-nowrap active:scale-[0.98]"
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A5E72] hover:text-[#2B2430] hover:bg-white/50 transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
           >
             요금안내
           </Link>
@@ -80,7 +80,7 @@ export default function Navbar() {
           {session && (session.user as any)?.role === "ADMIN" && (
             <Link
               href="/admin"
-              className="px-2.5 py-1.5 rounded-full text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1 whitespace-nowrap active:scale-[0.98]"
+              className="px-2.5 py-1.5 rounded-full text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors duration-150 flex items-center gap-1 whitespace-nowrap active:scale-[0.97]"
             >
               <Shield className="w-3 h-3 text-red-500" />
               <span className="hidden md:inline">관리자</span>

@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
       })),
       unlocks: unlocks.map((u) => ({
         ...u,
-        compatInfo: compatMap.get(u.compatId) || null,
+        compatInfo: u.compatId ? compatMap.get(u.compatId) || null : null,
       })),
     });
   } catch (error: any) {

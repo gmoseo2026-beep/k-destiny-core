@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Eye } from "lucide-react";
@@ -29,31 +28,21 @@ export default function PrivacyPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-3xl mx-auto space-y-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-coral transition-colors text-sm font-sans">
+        <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-coral transition-colors duration-150 text-sm font-sans">
           <ArrowLeft className="w-4 h-4" />
           {t("back_home")}
         </Link>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center space-y-3"
-        >
+        <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Eye className="w-5 h-5 text-coral" />
             <span className="text-xs font-sans tracking-widest text-coral/80 uppercase">{t("badge")}</span>
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-ink">{t("privacy_title")}</h1>
           <p className="text-gray-500 text-sm font-sans">{t("last_updated")}</p>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="space-y-6"
-        >
+        <div className="space-y-6">
           {/* 머리말 */}
           <div className="bg-white border border-[#2B2430]/8 rounded-2xl p-5 shadow-sm">
             <p className="font-sans text-ink text-sm leading-relaxed">{t("privacy_intro")}</p>
@@ -187,7 +176,7 @@ export default function PrivacyPage() {
             <p className="font-sans text-ink leading-relaxed text-sm mb-3">{t("privacy_s11_body")}</p>
             <p className="font-sans text-xs text-coral/80 font-semibold">{t("privacy_effective_date")}</p>
           </div>
-        </motion.div>
+        </div>
 
         <div className="h-8" />
       </div>

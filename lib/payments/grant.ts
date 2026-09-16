@@ -33,6 +33,28 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
           },
         });
       }
+    } else if (order.type === "SINGLE" && order.productType === "ANNUAL" && order.userId) {
+      const exist = await tx.unlock.findFirst({
+        where: {
+          orderId: order.id,
+          userId: order.userId,
+          productType: "ANNUAL",
+          productKey: order.productKey ?? "2026",
+        },
+      });
+      if (!exist) {
+        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
+        await tx.unlock.create({
+          data: {
+            orderId: order.id,
+            userId: order.userId,
+            email: order.email,
+            productType: "ANNUAL",
+            productKey: order.productKey ?? "2026",
+            expiresAt,
+          },
+        });
+      }
     } else if (order.type === "PERIOD_PASS" && order.userId) {
       const months = order.planId === "1_MONTH" ? 1 : order.planId === "3_MONTHS" ? 3 : 0;
       if (months > 0) {

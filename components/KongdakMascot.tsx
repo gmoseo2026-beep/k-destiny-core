@@ -2,7 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
 
 export type MascotExpression =
   | "canon"
@@ -54,48 +53,25 @@ export default function KongdakMascot({
   priority = false,
   alt = "콩닥이",
 }: KongdakMascotProps) {
-  const shouldReduceMotion = useReducedMotion();
-
   // expression 지정 우선, score 가 있으면 점수대별 자동 매핑, 없으면 canon
   const resolvedExpr: MascotExpression =
     expression ?? (typeof score === "number" ? getExpressionByScore(score) : "canon");
 
   const src = EXPRESSION_SRC_MAP[resolvedExpr] || EXPRESSION_SRC_MAP.canon;
 
-  // 애니메이션 변형 설정 (부드럽고 절제된 효과)
-  const getAnimationProps = () => {
-    if (shouldReduceMotion || animate === "none") {
-      return {};
-    }
-
-    if (animate === "heartbeat") {
-      return {
-        animate: { scale: [1, 1.04, 1] },
-        transition: { duration: 1.4, ease: "easeInOut" as const, repeat: Infinity },
-      };
-    }
-
-    if (animate === "bounce") {
-      return {
-        animate: { y: [0, -6, 0] },
-        transition: { duration: 0.9, ease: "easeInOut" as const, repeat: Infinity },
-      };
-    }
-
-    if (animate === "pulse") {
-      return {
-        animate: { opacity: [0.9, 1, 0.9] },
-        transition: { duration: 1.2, ease: "easeInOut" as const, repeat: Infinity },
-      };
-    }
-
-    return {};
-  };
+  // Pure CSS 애니메이션 클래스 매핑 (framer-motion 제거, GPU 가속)
+  const animClass =
+    animate === "heartbeat"
+      ? "animate-heartbeat"
+      : animate === "bounce"
+      ? "animate-mascot-bounce"
+      : animate === "pulse"
+      ? "animate-pulse"
+      : "";
 
   return (
-    <motion.div
-      {...getAnimationProps()}
-      className={`inline-flex items-center justify-center select-none pointer-events-none ${className}`}
+    <div
+      className={`inline-flex items-center justify-center select-none pointer-events-none ${animClass} ${className}`}
       style={{ width: size, height: size }}
     >
       <Image
@@ -107,6 +83,6 @@ export default function KongdakMascot({
         priority={priority}
         className="w-full h-full object-contain drop-shadow-xs"
       />
-    </motion.div>
+    </div>
   );
 }
