@@ -25,6 +25,8 @@ import Link from "next/link";
 
 interface AnnualFortuneClientProps {
   locale: string;
+  initialHasProfile?: boolean;
+  isLoggedIn?: boolean;
 }
 
 interface SectionItem {
@@ -46,6 +48,7 @@ interface AnnualFortuneData {
   monthlyHighlights?: Array<{ month: number; note: string }>;
   luckyPoints?: { color: string; item: string; month: number };
   locked: boolean;
+  isGuest?: boolean;
 }
 
 const SECTION_CONFIG = [
@@ -56,13 +59,59 @@ const SECTION_CONFIG = [
   { key: "relationship", title: "인간관계 & 사교운", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
 ] as const;
 
-export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps) {
+export default function AnnualFortuneClient({
+  locale,
+  initialHasProfile = false,
+  isLoggedIn = false,
+}: AnnualFortuneClientProps) {
   const { data: session } = useSession();
   const router = useRouter();
 
   const [data, setData] = useState<AnnualFortuneData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialHasProfile);
   const [error, setError] = useState<string | null>(null);
+
+  // Input form state (for guests or users without profile)
+  const [showInputForm, setShowInputForm] = useState(!initialHasProfile);
+  const [name, setName] = useState("");
+  const [year, setYear] = useState("");
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
+  const [gender, setGender] = useState<"F" | "M">("F");
+  const [ampm, setAmpm] = useState("");
+  const [hour, setHour] = useState("1");
+  const [min, setMin] = useState("0");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const getDaysInMonth = (y: string, m: string) => {
+    if (!y || !m) return 31;
+    return new Date(parseInt(y), parseInt(m), 0).getDate();
+  };
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  // Restore guest input from sessionStorage if available
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("kongdak_guest_fortune_input");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.name) setName(parsed.name);
+        if (parsed.birthYear) setYear(String(parsed.birthYear));
+        if (parsed.birthMonth) setMonth(String(parsed.birthMonth));
+        if (parsed.birthDay) setDay(String(parsed.birthDay));
+        if (parsed.gender) setGender(parsed.gender);
+        if (parsed.ampm) setAmpm(parsed.ampm);
+        if (parsed.hour) setHour(String(parsed.hour));
+        if (parsed.min) setMin(String(parsed.min));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Payment modal state
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -71,7 +120,24 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
 
   const handleOpenCheckout = (product: "SINGLE" | "PERIOD_PASS") => {
     if (!session?.user?.id) {
-      alert("2026 총운 결제는 로그인이 필요합니다.");
+      // Save current input to sessionStorage so user doesn't lose it upon returning
+      try {
+        const guestInput = {
+          name,
+          birthYear: year,
+          birthMonth: month,
+          birthDay: day,
+          gender,
+          ampm,
+          hour,
+          min,
+        };
+        sessionStorage.setItem("kongdak_guest_fortune_input", JSON.stringify(guestInput));
+      } catch {
+        // ignore
+      }
+
+      alert("2026 총운 전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.");
       const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/annual`;
       router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
@@ -96,6 +162,7 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
       }
 
       setData(json.data);
+      setShowInputForm(false);
     } catch (err: any) {
       setError(err?.message || "2026 총운을 불러오는데 실패했습니다.");
     } finally {
@@ -104,8 +171,79 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
   }, [locale]);
 
   useEffect(() => {
-    fetchFortune();
-  }, [fetchFortune]);
+    if (initialHasProfile) {
+      fetchFortune();
+    }
+  }, [initialHasProfile, fetchFortune]);
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!year || !month || !day) {
+      setFormError("생년월일을 모두 선택해주세요.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      let finalTime: string | null = null;
+      if (ampm) {
+        let h = parseInt(hour, 10);
+        if (ampm === "PM" && h !== 12) h += 12;
+        if (ampm === "AM" && h === 12) h = 0;
+        finalTime = `${h.toString().padStart(2, "0")}:${min.padStart(2, "0")}`;
+      }
+
+      // Save input in sessionStorage for convenience
+      try {
+        sessionStorage.setItem("kongdak_guest_fortune_input", JSON.stringify({
+          name: name.trim(),
+          birthYear: year,
+          birthMonth: month,
+          birthDay: day,
+          gender,
+          ampm,
+          hour,
+          min,
+          dob,
+          time: finalTime,
+        }));
+      } catch {
+        // ignore
+      }
+
+      const res = await fetch("/api/fortune/annual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dob,
+          birthYear: parseInt(year, 10),
+          birthMonth: parseInt(month, 10),
+          birthDay: parseInt(day, 10),
+          time: finalTime,
+          gender,
+          name: name.trim() || "나",
+          locale,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "2026 총운을 분석하지 못했습니다.");
+      }
+
+      setData(json.data);
+      setShowInputForm(false);
+    } catch (err: any) {
+      setFormError(err?.message || "2026 총운을 분석하는 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -121,16 +259,177 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
     );
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="w-full max-w-md md:max-w-2xl bg-white p-7 rounded-3xl shadow-sm border border-red-200 text-center">
         <p className="text-red-500 font-bold mb-4">{error}</p>
         <button
-          onClick={() => fetchFortune()}
+          onClick={() => {
+            setError(null);
+            if (initialHasProfile) {
+              fetchFortune();
+            } else {
+              setShowInputForm(true);
+            }
+          }}
           className="px-5 py-2.5 bg-[#FF5C77] text-white rounded-xl font-bold text-sm shadow-xs active:scale-95 transition-all"
         >
           다시 시도하기
         </button>
+      </div>
+    );
+  }
+
+  if (showInputForm && !data) {
+    return (
+      <div className="w-full max-w-md md:max-w-xl flex flex-col items-center">
+        {/* Intro banner */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-1.5 bg-[#FF5C77]/10 text-[#FF5C77] px-3.5 py-1 rounded-full text-xs font-bold mb-3">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>2026 병오년(붉은 말의 해) 특별 운세</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#2B2430] tracking-tight">
+            2026 나의 총운 무료 맛보기
+          </h1>
+          <p className="text-xs sm:text-sm text-[#6A5E72] mt-2 leading-relaxed">
+            생년월일만 입력하면 나의 <strong>올해 총운 점수와 연애운</strong>을<br className="hidden sm:inline" />
+            즉시 무료로 분석해 드려요.
+          </p>
+        </div>
+
+        {/* Input Card */}
+        <div className="w-full bg-white p-6 sm:p-7 rounded-3xl shadow-sm border border-[#FFD9E0]/60">
+          <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+            {formError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold">
+                {formError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+                이름 또는 닉네임 (선택)
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="예: 김콩닥"
+                maxLength={20}
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+                생년월일 (양력) <span className="text-[#FF5C77]">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  required
+                >
+                  <option value="">년도</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>{y}년</option>
+                  ))}
+                </select>
+                <select
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  required
+                >
+                  <option value="">월</option>
+                  {months.map((m) => (
+                    <option key={m} value={m}>{m}월</option>
+                  ))}
+                </select>
+                <select
+                  value={day}
+                  onChange={(e) => setDay(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  required
+                >
+                  <option value="">일</option>
+                  {Array.from({ length: getDaysInMonth(year, month) }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}일</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+                  성별 <span className="text-[#FF5C77]">*</span>
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as "F" | "M")}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 font-medium"
+                >
+                  <option value="F">여성</option>
+                  <option value="M">남성</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+                  태어난 시간 (선택)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <select
+                    value={ampm}
+                    onChange={(e) => setAmpm(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  >
+                    <option value="">시간 모름</option>
+                    <option value="AM">오전</option>
+                    <option value="PM">오후</option>
+                  </select>
+                  <select
+                    value={hour}
+                    onChange={(e) => setHour(e.target.value)}
+                    disabled={!ampm}
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
+                  >
+                    {hours.map((h) => (
+                      <option key={h} value={h}>{h}시</option>
+                    ))}
+                  </select>
+                  <select
+                    value={min}
+                    onChange={(e) => setMin(e.target.value)}
+                    disabled={!ampm}
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
+                  >
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>{m}분</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy note */}
+            <div className="p-3 bg-[#FFF6F1] rounded-xl border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] flex items-center gap-1.5 mt-1">
+              <ShieldCheck className="w-4 h-4 text-[#FF5C77] shrink-0" />
+              <span>비회원 입력 정보는 계산에만 사용되며 절대 서버에 저장되지 않습니다.</span>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full mt-2 bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+            >
+              <span>2026 총운 무료로 맛보기</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
@@ -470,8 +769,22 @@ export default function AnnualFortuneClient({ locale }: AnnualFortuneClientProps
         </div>
       )}
 
+      {/* Re-calculate with another birth date */}
+      <div className="flex justify-center mt-4">
+        <button
+          type="button"
+          onClick={() => {
+            setData(null);
+            setShowInputForm(true);
+          }}
+          className="text-xs text-[#8A8291] hover:text-[#6A2C70] font-bold flex items-center gap-1.5 py-2 px-4 rounded-full bg-white/80 hover:bg-white border border-[#FFD9E0]/60 transition-all shadow-2xs active:scale-95"
+        >
+          <span>🔄 다른 생년월일로 다시 보기</span>
+        </button>
+      </div>
+
       {/* 6. Friendly Disclaimer */}
-      <footer className="text-center mt-4 px-4">
+      <footer className="text-center mt-3 px-4">
         <p className="text-[11px] text-[#8A8291] leading-relaxed">
           ※ 콩닥의 2026 총운 리포트는 정통 사주 데이터를 바탕으로 오락 및 자기이해를 위해 다정하게 제공되는 참고 정보이며, 단정적 미래를 보장하지 않습니다.
         </p>

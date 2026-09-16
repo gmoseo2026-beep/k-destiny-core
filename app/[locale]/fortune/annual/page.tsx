@@ -22,17 +22,13 @@ export default async function AnnualFortunePage({
   const { locale } = await params;
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/fortune/annual`);
-  }
-
-  // Check if user has completed saju profile onboarding
-  const profile = await prisma.userSajuProfile.findUnique({
-    where: { userId: session.user.id }
-  });
-
-  if (!profile) {
-    redirect(`/${locale}/onboarding?callbackUrl=/${locale}/fortune/annual`);
+  let hasProfile = false;
+  if (session?.user?.id) {
+    const profile = await prisma.userSajuProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+    hasProfile = Boolean(profile);
   }
 
   return (
@@ -56,7 +52,11 @@ export default async function AnnualFortunePage({
         <div className="w-12" /> {/* Balanced spacer */}
       </header>
 
-      <AnnualFortuneClient locale={locale} />
+      <AnnualFortuneClient
+        locale={locale}
+        initialHasProfile={hasProfile}
+        isLoggedIn={Boolean(session?.user?.id)}
+      />
     </main>
   );
 }
