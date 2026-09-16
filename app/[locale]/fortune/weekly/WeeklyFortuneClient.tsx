@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import KongdakMascot from "@/components/KongdakMascot";
+import FortuneLoading from "@/components/FortuneLoading";
 import { useSession } from "next-auth/react";
 
 interface WeeklyFortuneClientProps {
@@ -42,10 +43,16 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
 
   if (loading) {
     return (
-      <div className="w-full max-w-md flex flex-col items-center justify-center py-20">
-        <KongdakMascot size={80} animate="bounce" />
-        <p className="mt-4 text-sm font-bold text-[#6A2C70] animate-pulse">콩닥콩닥... 이번 주 운세를 불러오고 있어요!</p>
-      </div>
+      <FortuneLoading
+        steps={[
+          "이번 주 기운을 읽는 중…",
+          "요일별 흐름을 계산하는 중…",
+          "정리하는 중…",
+        ]}
+        durationSec={8}
+        subMessage="이번 주 맞춤 운세 흐름을 분석하고 있어요"
+        skeletonVariant="weekly"
+      />
     );
   }
 

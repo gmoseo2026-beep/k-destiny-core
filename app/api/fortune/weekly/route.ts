@@ -47,6 +47,7 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
+      console.log(`[weekly-timing] cache=hit genMs=0 dbMs=0 model=cache`);
       return NextResponse.json({ success: true, data: existing.content });
     }
 
@@ -74,11 +75,6 @@ export async function POST(req: Request) {
 
       const pA = compat.personA as any;
       const pB = compat.personB as any;
-      // We need their elementsScore. The compat model has it in `personA` JSON.
-      // Wait, let's verify if `personA` in Compatibility has elementsScore and dayMaster.
-      // If it doesn't have it directly, we might need to recalculate or parse it.
-      // Actually `compat.personA` should contain elementsScore if it was saved that way.
-      // Assuming it does:
       
       const compatResult = {
         score: compat.score,
@@ -120,15 +116,17 @@ export async function POST(req: Request) {
     contextBlock += `\nCURRENT WEEK: ${weekStartDate} (Monday) ~ +6 days\n`;
 
     // 4. Generate with Gemini
+    const t0 = Date.now();
     const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
     const prompt = buildWeeklyFortunePrompt(contextBlock, isCouple, toneGuide);
 
     const model = genAI.getGenerativeModel({ model: PREMIUM_MODELS[0] });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, topP: 0.9, topK: 40 }
+      generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 2048 }
     });
 
+    const tGen = Date.now();
     const text = result.response.text();
     const jsonResult = repairJSON(text);
 
@@ -137,6 +135,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Save to DB
+    const tDb0 = Date.now();
     const weeklyFortune = await prisma.weeklyFortune.create({
       data: {
         userId,
@@ -145,10 +144,15 @@ export async function POST(req: Request) {
         content: jsonResult as any
       }
     });
+    const tDone = Date.now();
+    console.log(`[weekly-timing] cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${PREMIUM_MODELS[0]}`);
 
     return NextResponse.json({ success: true, data: weeklyFortune.content });
   } catch (error: any) {
     console.error("Weekly Fortune API Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "이번주 운세를 불러오지 못했습니다. 잠시 후 다시 시도해주세요." },
+      { status: 500 }
+    );
   }
 }

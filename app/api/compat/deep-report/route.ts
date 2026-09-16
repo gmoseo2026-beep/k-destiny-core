@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingReport) {
+      console.log(`[deep-report-timing] cache=hit genMs=0 dbMs=0 model=cache`);
       return NextResponse.json(existingReport.content, { status: 200 });
     }
 
@@ -66,19 +67,27 @@ export async function POST(req: NextRequest) {
     const prompt = buildCompatPrompt(true, contextBlock, toneGuide);
 
     // Call Gemini
+    const t0 = Date.now();
     let modelName = PREMIUM_MODELS[0];
     let resultText = "";
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
-      resultText = await result.response.text();
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 }
+      });
+      resultText = result.response.text();
     } catch (e) {
       console.error(`Failed with ${modelName}, trying fallback`, e);
       modelName = PREMIUM_MODELS[1] || PREMIUM_MODELS[0];
       const fallbackModel = genAI.getGenerativeModel({ model: modelName });
-      const fallbackResult = await fallbackModel.generateContent(prompt);
-      resultText = await fallbackResult.response.text();
+      const fallbackResult = await fallbackModel.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 }
+      });
+      resultText = fallbackResult.response.text();
     }
+    const tGen = Date.now();
 
     // Repair and Parse JSON
     const parsedJson = repairJSON(resultText);
@@ -88,12 +97,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Save to DeepReport cache
+    const tDb0 = Date.now();
     await prisma.deepReport.create({
       data: {
         compatId,
         content: parsedJson as any
       }
     });
+    const tDone = Date.now();
+    console.log(`[deep-report-timing] cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${modelName}`);
 
     return NextResponse.json(parsedJson, { status: 200 });
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
+import FortuneLoading from "@/components/FortuneLoading";
 import { DeepReportContent } from "@/lib/destinyGen";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -662,16 +663,30 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           </p>
           
           {isPremium || unlockToken ? (
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleGenerateDeepReport}
-                disabled={isLoadingDeepReport}
-                className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
-              >
-                {isLoadingDeepReport ? "리포트 생성 중..." : "콩닥 플러스: 심층 리포트 즉시 열람"}
-              </button>
-              {deepReportError && <p className="text-xs text-red-500 mt-1">{deepReportError}</p>}
-            </div>
+            isLoadingDeepReport ? (
+              <FortuneLoading
+                steps={[
+                  "두 사람의 사주를 대조하는 중…",
+                  "관계 흐름을 해석하는 중…",
+                  "심층 리포트를 정리하는 중…",
+                ]}
+                durationSec={15}
+                subMessage="두 사람의 기운과 궁합을 심층 분석하고 있어요"
+                skeletonVariant="deep-report"
+                className="py-2"
+              />
+            ) : (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleGenerateDeepReport}
+                  disabled={isLoadingDeepReport}
+                  className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
+                >
+                  콩닥 플러스: 심층 리포트 즉시 열람
+                </button>
+                {deepReportError && <p className="text-xs text-red-500 mt-1">{deepReportError}</p>}
+              </div>
+            )
           ) : (
             <div className="flex flex-col gap-3">
               {/* 잠긴 심층 리포트 미리보기 — 3-A 패턴: 갈등 포인트 1개 맛보기 공개 + 나머지 잠금 */}
