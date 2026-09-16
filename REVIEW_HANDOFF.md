@@ -1,8 +1,8 @@
 # REVIEW_HANDOFF.md — Opus5 검수 인계 문서
 
 > 작성일: 2026-09-16
-> 최신 커밋: `80e8432 fix(fortune): 총운 자동 온보딩 UserSajuProfile 생년월일 필드 String 타입 교정 및 에러 응답 정제`
-> 배포 상태: **배포 대기 (Cowork 프리체크 요청 중 — safe_deploy 미실행)**
+> 최신 커밋: `d59afdd docs: 총운 자동 온보딩 Prisma 타입 버그 수정 REVIEW_HANDOFF 업데이트` (코드 커밋: `80e8432`)
+> 배포 상태: **Deploy VERIFIED ✅ (Contabo 운영 서버 실배포 및 실측 스모크 완료)**
 
 ---
 
