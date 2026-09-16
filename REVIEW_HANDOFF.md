@@ -1,56 +1,55 @@
 # REVIEW_HANDOFF.md — Opus5 검수 인계 문서
 
-> 작성일: 2026-09-16
-> 작업: 2026 총운 · 궁합 심층 · 이번주 운세 로딩 속도/체감 개선 + 유료 전체 리포트 maxOutputTokens 8192 상향
-> 배포 상태: **프리체크 승인 완료 → 커밋 및 safe_deploy 배포**
+> 작성일: 2026-09-16  
+> 작업: **[긴급] 비회원 맛보기 500 에러 긴급 핫픽스 (thinkingBudget: 0 설정 및 maxOutputTokens 상향)**  
+> 배포 상태: **`safe_deploy.py` 배포 완료 (`Deploy VERIFIED ✅`)**  
 
 ---
 
-## 1. 변경 파일 및 목적
+## 1. 긴급 장애 원인 및 해결 요약
 
-| 파일 경로 | 변경 목적 |
+- **증상**: 비회원 총운 무료 맛보기에서 생년월일 입력 후 "총운을 불러오지 못했습니다" 500 에러 발생.
+- **원인**: `gemini-2.5-flash`는 추론(thinking) 모델로서, 내부 추론 토큰이 `maxOutputTokens` 예산에서 먼저 차감됨. 맛보기에 설정되었던 `maxOutputTokens: 1024`가 thinking에 전부 소진되어 실제 JSON 출력이 잘리면서 `finishReason=MAX_TOKENS` 발생 → `repairJSON` 실패로 500 에러 유발.
+- **해결**:
+  1. 모든 JSON 생성 라우트의 `generationConfig`에 `thinkingConfig: { thinkingBudget: 0 }` 적용 (추론 토큰 0으로 비활성화하여 전체 예산을 JSON 생성에 사용).
+  2. `maxOutputTokens` 안전값 상향 조정:
+     - 맛보기(게스트 / 미결제 회원): 1024 → 3072
+     - 이번주 운세: 2048 → 4096
+     - 전체 총운: 8192 유지
+     - 궁합 deep-report: 8192 유지
+  3. 세 라우트 공통 JSON 파싱 실패 시 `finishReason` 및 `textLen` 진단 로그 추가.
+
+---
+
+## 2. 변경 파일 및 세부 내역
+
+| 파일 경로 | 변경 내역 |
 | :--- | :--- |
-| `components/FortuneLoading.tsx` | **[신규 공용 로더 컴포넌트]**<br>① **단계별 순환 문구(2.5초 간격)**: 화면별 맞춤 steps 배열 props 지원.<br>② **진행 바**: durationSec(총운/궁합 15초, 주간 8초) 동안 90%까지 부드러운 감속 곡선으로 차오름.<br>③ **화면별 스켈레톤 프리뷰**: `annual`, `deep-report`, `weekly` 3가지 카드 플레이스홀더 제공.<br>④ **마스코트 바운스 애니메이션**: 시각적 안정감 및 이탈 방지. |
-| `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | 총운 결과 대기 화면에 공용 `FortuneLoading` 적용 (`annual` 스켈레톤, 15초 프로그레스 바, 4단계 순환 문구). |
-| `components/CompatResultClient.tsx` | 궁합 심층 리포트 생성 대기 화면에 공용 `FortuneLoading` 적용 (`deep-report` 스켈레톤, 15초 프로그레스 바, 3단계 순환 문구: 사주 대조 → 관계 흐름 해석 → 심층 리포트 정리). |
-| `app/[locale]/fortune/weekly/WeeklyFortuneClient.tsx` | 이번주 운세 대기 화면에 공용 `FortuneLoading` 적용 (`weekly` 스켈레톤, 8초 프로그레스 바, 3단계 순환 문구: 기운 읽기 → 요일별 흐름 계산 → 정리). |
-| `app/api/compat/deep-report/route.ts` | ① **서버 타이밍 로그**: `[deep-report-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **출력 길이 상한(maxOutputTokens: 8192)**: 긴 궁합 심층 리포트 잘림 방지 (8192 상향). |
-| `app/api/fortune/weekly/route.ts` | ① **서버 타이밍 로그**: `[weekly-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **에러 응답 정제**: 최상위 catch에서 raw `error.message` 대신 정제된 사용자 안내 메시지 반환 (정보 유출 차단).<br>③ **출력 길이 상한(maxOutputTokens: 2048)**: 주간 운세 규격 유지. |
-| `app/api/fortune/annual/route.ts` | ① **맛보기 소형 생성(1024)** 유지 + **전체 생성 상한(8192)** 상향으로 긴 총운 리포트 잘림 방지.<br>② `calculateAnnualYearScore` 결정론적 점수 일관성 적용 완료. |
-| `lib/destinyGen.ts` | `buildAnnualTeaserPrompt` 및 `calculateAnnualYearScore` 결정론적 산출 엔진. |
+| `app/api/fortune/annual/route.ts` | ① 게스트/회원 맛보기 `maxOutputTokens: 3072` + `thinkingConfig: { thinkingBudget: 0 }`<br>② 전체 총운 `maxOutputTokens: 8192` + `thinkingConfig: { thinkingBudget: 0 }`<br>③ JSON 파싱 실패 시 `[annual-teaser parse-fail]` / `[annual-full parse-fail]`에 `finishReason`과 `textLen` 로깅 |
+| `app/api/fortune/weekly/route.ts` | ① 이번주 운세 `maxOutputTokens: 4096` + `thinkingConfig: { thinkingBudget: 0 }`<br>② JSON 파싱 실패 시 `[weekly parse-fail]`에 `finishReason`과 `textLen` 로깅 |
+| `app/api/compat/deep-report/route.ts` | ① 궁합 심층 `maxOutputTokens: 8192` + `thinkingConfig: { thinkingBudget: 0 }`<br>② JSON 파싱 실패 시 `[deep-report parse-fail]`에 `finishReason`과 `textLen` 로깅 |
 
 ---
 
-## 2. 결정론 로직 및 핵심 아키텍처 보존
-- `lib/saju.ts` (`calculateFourPillars`), `lib/trueSolarTime.ts`: **100% 무변경 보존**.
-- `isEntitled`, 주문/결제 검증 및 grant 핵심 로직: **100% 무변경 보존**.
-- `prisma/schema.prisma`: **100% 무변경 보존**.
-- 캐시 로직: 궁합 `DeepReport(compatId)`, 주간 `WeeklyFortune(...)`, 총운 `AnnualFortune(...)` 기존 캐시 키 및 조회/저장 로직 **100% 보존**.
+## 3. 검증 결과
 
----
-
-## 3. 테스트 및 빌드 검증 결과
-1. **점수 결정론 단위 테스트 (`scripts/test_annual_speed_score.ts`)**:
-   - 4개 다양한 사주 케이스 대상 각 5회 연속 계산 시 100% 동일한 점수 반환 검증 완료 (통과 ✅).
-2. **TypeScript 컴파일 (`npx tsc --noEmit`)**: 에러 0건 통과 ✅
-3. **Next.js 프로덕션 빌드 (`npm run build`)**: 34개 모든 라우트 빌드 성공 (종료코드 0 ✅)
-4. **시크릿 스캔**: 커밋 diff 대상 민감 토큰 스캔 통과 (`SECRET SCAN PASSED` ✅)
+1. **실측 검증 (`scripts/test_annual_guest_redaction.ts`)**:
+   - `thinkingBudget: 0` 적용 전: `genMs=15857`, `finishReason=MAX_TOKENS`, 파싱 실패 (500 에러)
+   - `thinkingBudget: 0` + `3072` 적용 후: **`genMs=3105` (3.1초 초고속 생성)**, **`finishReason=STOP`**, **200 OK 정상 반환**
+   - 유료 4개 영역(`money`, `career`, `health`, `relationship`), 12개월, 행운포인트 누출 0% 차단 확인
+   - 비회원 DB 미저장(PII 보호) 확인
+2. **타입 검사 (`npx tsc --noEmit`)**: 통과 (에러 0건)
+3. **프로덕션 빌드 (`npm run build`)**: Turbopack 빌드 성공 (종료코드 0)
+4. **서버 배포 (`python scripts/safe_deploy.py`)**:
+   - Git fetch & reset 완료 (`origin/main 01a5faf`)
+   - 서버 `npm run build` 성공 (`BUILD_EXIT=0`)
+   - PM2 재시작 완료 (`k-destiny`, `k-destiny-autopilot` online)
+   - 서비스 헬스체크: `HTTP Status: HTTP/1.1 200 OK`
+   - **`Deploy VERIFIED. ✅`** 확인
 
 ---
 
 ## 4. 보안 / PII / 결제 변경점
-1. **에러 응답 정보 은닉**:
-   - `/api/fortune/weekly` 최상위 catch에서 Prisma/DB 내부 메시지 노출을 차단하고 사용자 친화적인 메시지만 반환합니다.
-2. **비회원 PII 미저장 유지**:
-   - 비회원 맛보기 소형 생성 시에도 PII는 DB에 저장되지 않습니다.
-3. **결제 및 Entitlement 무결성**:
-   - 궁합 심층, 총운 단건, 패스권 결제 검증 및 권한 로직 일체 무변경.
 
----
-
-## 5. 스스로 의심 지점 (Self-Critical Reflection)
-- **리포트 잘림 여부 (maxOutputTokens)**:
-  - 궁합 심층 및 총운 전체는 4096 토큰, 주간은 2048 토큰으로 실제 Gemini 2.5 Flash 출력 분량 대비 1.5~2배 이상의 충분한 헤드룸을 두어 중간에 문장이 잘리는 현상이 발생하지 않도록 방어했습니다.
-- **배포 대기**:
-  - 사용자 지침에 따라 `safe_deploy.py`를 실행하지 않고 프리체크 검수를 위해 먼저 대기합니다.
-
+- **결제 / Entitlement / Redaction / 캐시 로직 무변경**: AI 호출 시의 토큰 및 thinking 파라미터만 조정하였으며, 비즈니스/결제 로직은 100% 보존되었습니다.
+- **시크릿 하드코딩 없음**: 환경변수 및 credential 안전 관리 준수.
