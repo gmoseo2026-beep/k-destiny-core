@@ -5,6 +5,8 @@ import { genAI, PREMIUM_MODELS, LOCALE_CONFIG, compatContextBlock, buildCompatPr
 import { isEntitled } from "@/lib/entitlement";
 import prisma from "@/lib/prisma";
 
+type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -70,12 +72,14 @@ export async function POST(req: NextRequest) {
     const t0 = Date.now();
     let modelName = PREMIUM_MODELS[0];
     let resultText = "";
+    let lastResult: GenResult | null = null;
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
       });
+      lastResult = result;
       resultText = result.response.text();
     } catch (e) {
       console.error(`Failed with ${modelName}, trying fallback`, e);
@@ -83,8 +87,9 @@ export async function POST(req: NextRequest) {
       const fallbackModel = genAI.getGenerativeModel({ model: modelName });
       const fallbackResult = await fallbackModel.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
       });
+      lastResult = fallbackResult;
       resultText = fallbackResult.response.text();
     }
     const tGen = Date.now();
@@ -92,6 +97,8 @@ export async function POST(req: NextRequest) {
     // Repair and Parse JSON
     const parsedJson = repairJSON(resultText);
     if (!parsedJson) {
+      const fr = lastResult?.response?.candidates?.[0]?.finishReason;
+      console.error(`[deep-report parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
       console.error("Failed to parse JSON from AI response:", resultText);
       return NextResponse.json({ error: "Failed to generate valid deep report JSON" }, { status: 500 });
     }

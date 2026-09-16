@@ -20,6 +20,8 @@ function getCurrentMondayStr() {
   return date.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
+type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -120,17 +122,21 @@ export async function POST(req: Request) {
     const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
     const prompt = buildWeeklyFortunePrompt(contextBlock, isCouple, toneGuide);
 
+    let lastResult: GenResult | null = null;
     const model = genAI.getGenerativeModel({ model: PREMIUM_MODELS[0] });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 2048 }
+      generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096, thinkingConfig: { thinkingBudget: 0 } } as any
     });
+    lastResult = result;
 
     const tGen = Date.now();
     const text = result.response.text();
     const jsonResult = repairJSON(text);
 
     if (!jsonResult) {
+      const fr = lastResult?.response?.candidates?.[0]?.finishReason;
+      console.error(`[weekly parse-fail] finishReason=${fr} textLen=${text?.length ?? 0}`);
       throw new Error("Failed to parse AI response as JSON");
     }
 

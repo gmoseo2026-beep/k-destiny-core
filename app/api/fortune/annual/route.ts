@@ -17,6 +17,8 @@ import { isEntitled } from "@/lib/entitlement";
 import { calculateFourPillars } from "@/lib/saju";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 
+type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
+
 // 생년월일(YYYY-MM-DD) 유효성 및 미래 날짜 검증
 function isValidDateString(dob: unknown): boolean {
   if (typeof dob !== "string") return false;
@@ -154,12 +156,14 @@ export async function POST(req: Request) {
 
       let modelName = PREMIUM_MODELS[0];
       let resultText = "";
+      let lastResult: GenResult | null = null;
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any,
         });
+        lastResult = result;
         resultText = result.response.text();
       } catch (primaryErr) {
         console.warn(`[annual-fortune guest] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
@@ -167,8 +171,9 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 },
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any,
         });
+        lastResult = result;
         resultText = result.response.text();
       }
 
@@ -177,6 +182,8 @@ export async function POST(req: Request) {
 
       const jsonResult = repairJSON(resultText) as any;
       if (!jsonResult) {
+        const fr = lastResult?.response?.candidates?.[0]?.finishReason;
+        console.error(`[annual-teaser parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
         throw new Error("Failed to parse AI response as valid AnnualFortuneTeaser JSON");
       }
 
@@ -338,12 +345,14 @@ export async function POST(req: Request) {
       const teaserPrompt = buildAnnualTeaserPrompt(contextBlock, year, toneGuide);
       let modelName = PREMIUM_MODELS[0];
       let resultText = "";
+      let lastResult: GenResult | null = null;
       try {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 }
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any
         });
+        lastResult = result;
         resultText = result.response.text();
       } catch (primaryErr) {
         console.warn(`[annual-fortune teaser] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
@@ -351,8 +360,9 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 }
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any
         });
+        lastResult = result;
         resultText = result.response.text();
       }
 
@@ -361,6 +371,8 @@ export async function POST(req: Request) {
 
       const jsonResult = repairJSON(resultText) as any;
       if (!jsonResult) {
+        const fr = lastResult?.response?.candidates?.[0]?.finishReason;
+        console.error(`[annual-teaser parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
         throw new Error("Failed to parse AI response as valid AnnualFortuneTeaser JSON");
       }
 
@@ -385,12 +397,14 @@ export async function POST(req: Request) {
 
     let modelName = PREMIUM_MODELS[0];
     let resultText = "";
+    let lastResult: GenResult | null = null;
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
       });
+      lastResult = result;
       resultText = result.response.text();
     } catch (primaryErr) {
       console.warn(`[annual-fortune full] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
@@ -398,14 +412,17 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
       });
+      lastResult = result;
       resultText = result.response.text();
     }
 
     const tGen = Date.now();
     const jsonResult = repairJSON(resultText) as AnnualFortuneContent | null;
     if (!jsonResult || typeof jsonResult.yearScore !== "number") {
+      const fr = lastResult?.response?.candidates?.[0]?.finishReason;
+      console.error(`[annual-full parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
       throw new Error("Failed to parse AI response as valid AnnualFortuneContent JSON");
     }
 
