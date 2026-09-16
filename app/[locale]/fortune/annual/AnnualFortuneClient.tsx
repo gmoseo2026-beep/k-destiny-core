@@ -59,6 +59,14 @@ const SECTION_CONFIG = [
   { key: "relationship", title: "인간관계 & 사교운", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
 ] as const;
 
+// 로딩 중 단계별 순환 안내 문구 (2.5초 간격)
+const LOADING_STEPS = [
+  "사주 여덟 글자를 세우는 중…",
+  "2026 병오년(붉은 말의 해) 기운과 대조하는 중…",
+  "올해 12개월 흐름을 계산하는 중…",
+  "리포트를 정리하는 중…",
+];
+
 export default function AnnualFortuneClient({
   locale,
   initialHasProfile = false,
@@ -70,6 +78,38 @@ export default function AnnualFortuneClient({
   const [data, setData] = useState<AnnualFortuneData | null>(null);
   const [loading, setLoading] = useState(initialHasProfile);
   const [error, setError] = useState<string | null>(null);
+
+  // 로딩 체감 향상 state (단계 문구 순환 + 15초 90% 프로그레스 바)
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [progress, setProgress] = useState(12);
+
+  useEffect(() => {
+    if (!loading) {
+      setProgress(12);
+      setLoadingStepIndex(0);
+      return;
+    }
+
+    // 2.5초 간격으로 단계 문구 순환
+    const stepInterval = setInterval(() => {
+      setLoadingStepIndex((prev) => (prev + 1) % LOADING_STEPS.length);
+    }, 2500);
+
+    // 약 15초에 걸쳐 90%까지 서서히 차오르는 프로그레스 바
+    const startTime = Date.now();
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const ratio = Math.min(1, elapsed / 15000);
+      // 부드러운 감속 곡선으로 12%에서 90%까지 도달
+      const targetProgress = 12 + (90 - 12) * Math.sin((ratio * Math.PI) / 2);
+      setProgress(targetProgress);
+    }, 200);
+
+    return () => {
+      clearInterval(stepInterval);
+      clearInterval(progressInterval);
+    };
+  }, [loading]);
 
   // Input form state (for guests or users without profile)
   const [showInputForm, setShowInputForm] = useState(!initialHasProfile);
@@ -247,14 +287,59 @@ export default function AnnualFortuneClient({
 
   if (loading) {
     return (
-      <div className="w-full max-w-md md:max-w-2xl flex flex-col items-center justify-center py-20">
-        <KongdakMascot size={80} animate="bounce" />
-        <p className="mt-5 text-sm font-bold text-[#6A2C70]">
-          2026년 운세 흐름을 분석하고 있어요
-        </p>
-        <p className="text-xs text-[#8A8291] mt-1 font-medium">
-          병오년 당신의 사주 기운을 조합하는 중입니다
-        </p>
+      <div className="w-full max-w-md md:max-w-2xl flex flex-col items-center justify-center py-6 sm:py-10 gap-6">
+        {/* Mascot & Cycling Step Message */}
+        <div className="flex flex-col items-center text-center px-4">
+          <KongdakMascot size={76} animate="bounce" />
+          <h2 className="mt-4 text-base sm:text-lg font-black text-[#2B2430] min-h-[28px] flex items-center justify-center transition-all duration-300">
+            {LOADING_STEPS[loadingStepIndex]}
+          </h2>
+          <p className="text-xs text-[#8A8291] mt-1 font-medium">
+            2026년 병오년 당신의 사주 기운을 심층 분석하고 있어요
+          </p>
+
+          {/* Smooth Progress Bar (15s -> 90%) */}
+          <div className="w-64 sm:w-80 mt-4">
+            <div className="w-full bg-[#FFF6F1] border border-[#FFD9E0] h-2.5 rounded-full overflow-hidden p-0.5 shadow-inner">
+              <div
+                className="h-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${Math.round(progress)}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-[#8A8291] mt-1.5 font-bold px-0.5">
+              <span>운세 리포트 분석 중</span>
+              <span className="text-[#FF5C77] font-extrabold">{Math.round(progress)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Preview Cards Placeholder */}
+        <div className="w-full flex flex-col gap-4 animate-pulse pointer-events-none mt-1 px-1">
+          {/* Skeleton Hero Card */}
+          <div className="relative bg-gradient-to-br from-[#FFD9E0]/40 via-[#FFF6F1] to-[#EAD4ED]/30 rounded-3xl p-6 sm:p-8 border border-[#FFD9E0]/60 flex flex-col items-center gap-3 shadow-xs">
+            <div className="w-36 h-5 bg-gray-200/80 rounded-full" />
+            <div className="w-52 h-7 bg-gray-200/90 rounded-xl mt-1" />
+            <div className="w-28 h-16 bg-gray-200 rounded-2xl my-2" />
+            <div className="w-40 h-6 bg-gray-200/70 rounded-full" />
+            <div className="w-full h-16 bg-gray-200/60 rounded-2xl mt-2" />
+          </div>
+
+          {/* Skeleton Section Cards */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-32 h-5 bg-gray-200/80 rounded-lg" />
+              <div className="w-16 h-5 bg-gray-200/60 rounded-full" />
+            </div>
+            <div className="w-full h-12 bg-gray-100 rounded-xl" />
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-32 h-5 bg-gray-200/80 rounded-lg" />
+              <div className="w-16 h-5 bg-gray-200/60 rounded-full" />
+            </div>
+            <div className="w-full h-12 bg-gray-100 rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }

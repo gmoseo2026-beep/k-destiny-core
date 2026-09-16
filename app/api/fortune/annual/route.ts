@@ -8,6 +8,8 @@ import {
   LOCALE_CONFIG,
   sajuContextBlock,
   buildAnnualFortunePrompt,
+  buildAnnualTeaserPrompt,
+  calculateAnnualYearScore,
   repairJSON,
   AnnualFortuneContent
 } from "@/lib/destinyGen";
@@ -145,9 +147,10 @@ export async function POST(req: Request) {
       });
       contextBlock += `\nTARGET YEAR: ${year} (2026년 병오년 - 붉은 말의 해)\n`;
 
-      // 4) Gemini 모델 생성
+      // 4) Gemini 소형 맛보기 생성 (출력 토큰 대폭 축소로 2~3초대 초고속 응답)
+      const t0 = Date.now();
       const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
-      const prompt = buildAnnualFortunePrompt(contextBlock, year, toneGuide);
+      const prompt = buildAnnualTeaserPrompt(contextBlock, year, toneGuide);
 
       let modelName = PREMIUM_MODELS[0];
       let resultText = "";
@@ -155,7 +158,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40 },
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 },
         });
         resultText = result.response.text();
       } catch (primaryErr) {
@@ -164,15 +167,26 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40 },
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 },
         });
         resultText = result.response.text();
       }
 
-      const jsonResult = repairJSON(resultText) as AnnualFortuneContent | null;
-      if (!jsonResult || typeof jsonResult.yearScore !== "number") {
-        throw new Error("Failed to parse AI response as valid AnnualFortuneContent JSON");
+      const tGen = Date.now();
+      console.log(`[annual-timing] mode=guest-teaser cache=miss genMs=${tGen - t0} model=${modelName}`);
+
+      const jsonResult = repairJSON(resultText) as any;
+      if (!jsonResult) {
+        throw new Error("Failed to parse AI response as valid AnnualFortuneTeaser JSON");
       }
+
+      // 결정론적 총운 점수 산출 (미리보기 점수와 결제 후 전체 리포트 점수의 100% 일치 보장)
+      const fixedScore = calculateAnnualYearScore({
+        dayMaster: saju.dayMasterSignKey,
+        fourPillars: saju.fourPillars as any,
+        elementsScore: saju.elementsScore as any,
+        year,
+      });
 
       // 5) 엄격한 서버 리댁션 (맛보기: yearScore, headline, summary, sections.love 만 반환)
       //    나머지 4개 영역(money, career, health, relationship), 12개월, 행운포인트 원천 미포함
@@ -180,9 +194,9 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         data: {
-          yearScore: jsonResult.yearScore,
-          headline: jsonResult.headline,
-          summary: jsonResult.summary,
+          yearScore: fixedScore,
+          headline: jsonResult.headline || "새로운 기운과 도약의 해",
+          summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
           sections: jsonResult.sections?.love
             ? { love: jsonResult.sections.love }
             : undefined,
@@ -262,6 +276,7 @@ export async function POST(req: Request) {
 
     if (existing) {
       const fullContent = existing.content as unknown as AnnualFortuneContent;
+      console.log(`[annual-timing] mode=${isUnlocked ? "full" : "teaser"} cache=hit genMs=0 model=cache`);
       if (isUnlocked) {
         return NextResponse.json({
           success: true,
@@ -307,8 +322,65 @@ export async function POST(req: Request) {
     });
     contextBlock += `\nTARGET YEAR: ${year} (2026년 병오년 - 붉은 말의 해)\n`;
 
-    // 5. Generate with Gemini
+    // 결정론적 총운 점수 산출 (미리보기 점수 == 결제 후 전체 리포트 점수 100% 일치 보장)
+    const fixedScore = calculateAnnualYearScore({
+      dayMaster: userProfile.dayMaster,
+      fourPillars: userProfile.fourPillars as any,
+      elementsScore: userProfile.elementsScore as any,
+      year,
+    });
+
     const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
+
+    // 5. 미결제 회원: 소형 맛보기만 생성 (빠른 응답, annualFortune DB 미저장)
+    if (!isUnlocked) {
+      const t0 = Date.now();
+      const teaserPrompt = buildAnnualTeaserPrompt(contextBlock, year, toneGuide);
+      let modelName = PREMIUM_MODELS[0];
+      let resultText = "";
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 }
+        });
+        resultText = result.response.text();
+      } catch (primaryErr) {
+        console.warn(`[annual-fortune teaser] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
+        modelName = PREMIUM_MODELS[1];
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1024 }
+        });
+        resultText = result.response.text();
+      }
+
+      const tGen = Date.now();
+      console.log(`[annual-timing] mode=teaser cache=miss genMs=${tGen - t0} model=${modelName}`);
+
+      const jsonResult = repairJSON(resultText) as any;
+      if (!jsonResult) {
+        throw new Error("Failed to parse AI response as valid AnnualFortuneTeaser JSON");
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          yearScore: fixedScore,
+          headline: jsonResult.headline || "새로운 기운과 도약의 해",
+          summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+          sections: jsonResult.sections?.love
+            ? { love: jsonResult.sections.love }
+            : undefined,
+          locked: true,
+        },
+        locked: true,
+      });
+    }
+
+    // 6. 결제 완료 회원: 전체 리포트 생성 및 DB 캐시 저장
+    const t0 = Date.now();
     const prompt = buildAnnualFortunePrompt(contextBlock, year, toneGuide);
 
     let modelName = PREMIUM_MODELS[0];
@@ -317,26 +389,31 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 2500 }
       });
       resultText = result.response.text();
     } catch (primaryErr) {
-      console.warn(`[annual-fortune] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
+      console.warn(`[annual-fortune full] Primary model ${modelName} failed, falling back to ${PREMIUM_MODELS[1]}:`, primaryErr);
       modelName = PREMIUM_MODELS[1];
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 2500 }
       });
       resultText = result.response.text();
     }
 
+    const tGen = Date.now();
     const jsonResult = repairJSON(resultText) as AnnualFortuneContent | null;
     if (!jsonResult || typeof jsonResult.yearScore !== "number") {
       throw new Error("Failed to parse AI response as valid AnnualFortuneContent JSON");
     }
 
-    // 6. Save to DB (Full content cached)
+    // 결정론적 점수 주입 (일관성 보장)
+    jsonResult.yearScore = fixedScore;
+
+    // DB에 전체 콘텐츠 캐시 저장
+    const tDb0 = Date.now();
     const annualFortune = await prisma.annualFortune.create({
       data: {
         userId,
@@ -344,31 +421,17 @@ export async function POST(req: Request) {
         content: jsonResult as any,
       }
     });
+    const tDone = Date.now();
+    console.log(`[annual-timing] mode=full cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${modelName}`);
 
     const savedContent = annualFortune.content as unknown as AnnualFortuneContent;
 
-    // 7. Return according to entitlement
-    if (isUnlocked) {
-      return NextResponse.json({
-        success: true,
-        data: { ...savedContent, locked: false },
-        locked: false,
-      });
-    } else {
-      return NextResponse.json({
-        success: true,
-        data: {
-          yearScore: savedContent.yearScore,
-          headline: savedContent.headline,
-          summary: savedContent.summary,
-          sections: savedContent.sections?.love
-            ? { love: savedContent.sections.love }
-            : undefined,
-          locked: true,
-        },
-        locked: true,
-      });
-    }
+    // 7. Return full content to entitled user
+    return NextResponse.json({
+      success: true,
+      data: { ...savedContent, locked: false },
+      locked: false,
+    });
   } catch (error: any) {
     console.error("[annual-fortune POST] Error:", error);
     return NextResponse.json(

@@ -282,3 +282,97 @@ Requirements:
 4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
 5. Output ONLY the raw JSON object. Do NOT include markdown code fences (like \`\`\`json).`;
 }
+
+export function buildAnnualTeaserPrompt(contextBlock: string, year: number, toneGuide: string): string {
+  return `${STYLE_GUIDE}
+
+${STRICT_NO_HANJA_RULE}
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+Write an engaging, warm teaser preview for the annual fortune reading for the year ${year}.
+You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+interface AnnualFortuneTeaser {
+  yearScore: number;                   // 0~100 overall score for the year ${year}
+  headline: string;                    // One-line punchy summary in warm Kongdak mascot tone (두근이 톤)
+  summary: string;                     // General overview of the year (2~3 sentences, friendly and grounded)
+  sections: {
+    love: { score: number; text: string }; // Love / Romance luck (0~100 score, detailed paragraph)
+  };
+}
+\`\`\`
+
+Requirements:
+1. Make it sound deeply personal, warm, encouraging, and insightful like a wise, empathetic mentor.
+2. Give practical, grounded advice rather than deterministic doom or absolute guarantees (entertaining and reflective purpose).
+3. Generate ONLY the 'love' section inside 'sections'. Do NOT generate money, career, health, or relationship. Do NOT generate monthlyHighlights or luckyPoints.
+4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
+5. Output ONLY the raw JSON object. Do NOT include markdown code fences (like \`\`\`json).`;
+}
+
+export interface AnnualScoreParams {
+  dayMaster?: string | null;
+  fourPillars?: { year?: string; month?: string; day?: string; time?: string | null } | null;
+  elementsScore?: { wood?: number; fire?: number; earth?: number; metal?: number; water?: number } | null;
+  year?: number;
+}
+
+/**
+ * 2026 병오년(붉은 말의 해 - 丙午) 대상 결정론적 총운 점수 산출
+ * 동일 사주 입력에 대해 항상 100% 동일한 점수(68~95점)를 보장하여,
+ * 맛보기(미리보기) 때의 점수와 결제 후 전체 리포트 점수의 일관성을 유지합니다.
+ */
+export function calculateAnnualYearScore(params: AnnualScoreParams): number {
+  const el = params.elementsScore || { wood: 20, fire: 20, earth: 20, metal: 20, water: 20 };
+  const wood = Number(el.wood || 0);
+  const fire = Number(el.fire || 0);
+  const earth = Number(el.earth || 0);
+  const metal = Number(el.metal || 0);
+  const water = Number(el.water || 0);
+
+  // 기본 기준 점수 (72점)
+  let score = 72;
+
+  // 1) 2026 병오년(화) 기운과의 조화
+  if (fire <= 10) score += 9; // 화 부족 시 2026년 화 기운이 길조
+  else if (fire <= 25) score += 6;
+  else if (fire >= 45) score -= 4; // 화 과다 시 조급함 주의
+
+  // 목생화 (목 기운이 화를 지원): 활력과 성장
+  if (wood >= 25) score += 6;
+  else if (wood >= 15) score += 3;
+
+  // 화생토 (토 기운이 화를 수렴): 결실과 안정
+  if (earth >= 25) score += 6;
+  else if (earth >= 15) score += 3;
+
+  // 수화기제 (수와 화의 조화): 지혜와 감정 균형
+  if (water >= 20 && fire <= 30) score += 5;
+
+  // 화련진금 (금 기운이 화에 단련됨): 결단과 돌파력
+  if (metal >= 20) score += 4;
+
+  // 2) 일간 에너지 유형 가산
+  const dm = (params.dayMaster || "").toUpperCase();
+  if (dm.includes("WOOD")) score += 4;
+  else if (dm.includes("FIRE")) score += 3;
+  else if (dm.includes("EARTH")) score += 6;
+  else if (dm.includes("METAL")) score += 5;
+  else if (dm.includes("WATER")) score += 4;
+
+  // 3) 일주(Day pillar) 기반 결정론적 해시 미세 조정 (-4 ~ +4)
+  const dayPillar = params.fourPillars?.day || "";
+  let hash = 0;
+  for (let i = 0; i < dayPillar.length; i++) {
+    hash = (hash * 31 + dayPillar.charCodeAt(i)) & 0xffff;
+  }
+  const variance = (hash % 9) - 4; // -4 ~ +4
+  score += variance;
+
+  // 68 ~ 95점 사이로 클램프 (희망적이며 현실적인 점수 대역)
+  return Math.min(95, Math.max(68, score));
+}
