@@ -69,10 +69,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
   };
 
   const handleKakaoLogin = async () => {
-    if (isInAppBrowser()) {
-      handleEscape();
-      return;
-    }
     setIsLoading(true);
     setMessage(null);
     try {
@@ -84,10 +80,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
   };
 
   const handleNaverLogin = async () => {
-    if (isInAppBrowser()) {
-      handleEscape();
-      return;
-    }
     setIsLoading(true);
     setMessage(null);
     try {
@@ -232,24 +224,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
               )}
             </AnimatePresence>
 
-            {/* In-App Browser Breakout Banner & Button */}
-            {inApp && (
-              <div className="mb-3">
-                <button
-                  type="button"
-                  onClick={handleEscape}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] text-white font-bold text-sm shadow-md active:scale-[0.97] transition-all"
-                >
-                  {locale === 'ko' ? '🔓 크롬/사파리로 열고 로그인하기' : '🔓 Open in Chrome/Safari to Login'}
-                </button>
-                <p className="mt-2 text-center text-[11px] text-[#8A8291] font-semibold leading-relaxed">
-                  {locale === 'ko'
-                    ? '카카오·구글·네이버 로그인은 앱 안 브라우저에서 막혀 있어요. 위 버튼을 눌러 주세요.'
-                    : 'Social login is blocked inside app webviews. Tap above to open your browser.'}
-                </p>
-              </div>
-            )}
-
             {/* Social Logins */}
             <div className="space-y-3">
               <motion.button
@@ -297,6 +271,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                 </svg>
                 <span className="font-sans font-medium text-[#2B2430] tracking-wide">{t("btn_google")}</span>
               </motion.button>
+
+              {inApp && (
+                <p className="mt-1.5 text-center text-[11px] text-[#8A8291] font-medium leading-relaxed">
+                  {locale === 'ko'
+                    ? '구글 로그인은 브라우저에서만 돼요. 위 카카오로 로그인하거나, 구글은 눌러서 브라우저로 열어 주세요.'
+                    : 'Google login is only available in external browsers. Please use Kakao above, or tap Google to open your browser.'}
+                </p>
+              )}
             </div>
 
             {/* Divider */}
