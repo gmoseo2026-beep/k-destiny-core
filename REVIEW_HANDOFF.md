@@ -1,8 +1,8 @@
 # REVIEW_HANDOFF.md — Opus5 검수 인계 문서
 
 > 작성일: 2026-09-16
-> 커밋: `271bf78 feat(ui,perf): 디자인 전면 개선, 성능 최적화 및 약관 카피 갱신`
-> 배포 상태: **Deploy VERIFIED ✅ (Contabo 운영 서버 실배포 완료)**
+> 커밋: `c8ddb6e feat(fortune): 2026 총운 비회원 무료 맛보기(점수+연애운 1개) 및 서버 리댁션 추가`
+> 배포 상태: **Deploy VERIFIED ✅ (Contabo 운영 서버 실배포 및 실측 스모크 완료)**
 
 ---
 
@@ -10,56 +10,48 @@
 
 | 파일 경로 | 변경 목적 |
 | :--- | :--- |
-| `components/Navbar.tsx` | 플로팅 글래스모피즘 GNB 바 구현, 스크롤 반응형 블러, 텍스트 링크 정돈, SPA `<Link>` 적용 |
-| `components/KongdakHero.tsx` | 히어로 모바일 뷰포트 최적화, 스내피 모션(0.22s) 적용, 솔리드 코랄 CTA(`rgb(255, 92, 119)`) 단색 전환 |
-| `components/KongdakMascot.tsx` | 9개 마스코트 표정 전체를 고화질 WebP(`/mascot/transparent/*.webp`)로 전환 (용량 98% 감축), `sizes` 및 기본 애니메이션 `none` 설정 |
-| `components/PricingClient.tsx` | 풀 리로드 `window.location.href` 제거 및 `router.push` 적용, 혜택 목록에서 2026 총운 무제한 반영, 장식 이모지 제거, 디지털 콘텐츠 철회제한 고지 추가 |
-| `components/GuestCheckoutModal.tsx` | 결제 모달 내 전자상거래법 제17조 제2항에 따른 디지털 콘텐츠 청약철회 제한 사전 고지 추가, `next/dynamic` 비동기 로드 지원 |
-| `components/CompatResultClient.tsx` | 크롬/뱃지/헤더의 장식 이모지(✨, 🔮, 💖, 🔥, 💧, 🌱, 💘 등) 및 가짜 반짝이 SVG 전면 제거, Lucide 라인 아이콘 전환, 3-A 갈등 1번 미리보기 제공, SPA 내비게이션 |
-| `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | 3-A 패턴 연애운(love) 무료 맛보기 카드 및 4개 섹션 블러 잠금 안내, 결제 모달 `next/dynamic` 적용 |
-| `app/api/fortune/annual/route.ts` | 3-A 서버 리댁션 구현: 미구독자에게 `sections.love`만 샘플 제공, 나머지 4개 섹션/12개월/행운포인트는 서버에서 원천 삭제(`locked: true`) |
-| `messages/ko.json` | 이용약관 제3조(오락/참고 성격)·제9조(단건 2,900원/1,900원, 패스 9,900원/24,900원, 90일 이용기간, 청약철회 제한), 개인정보처리방침 목적(총운 추가), 요금 안내 문구 갱신 |
-| `lib/seo.ts` | 홈 메타 디스크립션 갱신(`두 사람의 궁합부터 나의 2026 총운까지...`), `/fortune/annual` 정규 메타 등록 |
-| `app/[locale]/me/page.tsx`<br/>`app/[locale]/fortune/weekly/page.tsx`<br/>`app/[locale]/compat/new/page.tsx`<br/>`app/[locale]/compat/[id]/page.tsx` | 브랜드 로고 및 내비게이션 링크를 `<a href>`에서 Next.js `<Link>`로 전환하여 화면 깜빡임/하드 리로드 제거 |
-| `public/mascot/transparent/*.webp` | 512x512 고화질 WebP 정본 이미지 9종 신규 추가 |
+| `app/[locale]/fortune/annual/page.tsx` | 비로그인 및 프로필 미등록 시 로그인/온보딩으로 튕기던 강제 리다이렉트(`redirect`) 제거. 게스트 진입 지원 |
+| `app/api/fortune/annual/route.ts` | ① 비회원 요청(`!userId`) 경로 신설: IP 기반 Rate Limit, 생년월일 유효성 검증<br>② **엔진 재사용**: `lib/saju.ts`의 `calculateFourPillars`로 1인 사주 명식 인메모리 계산 (새 명리 로직 없음)<br>③ **엄격한 서버 리댁션**: 비회원에게 `yearScore`, `headline`, `summary`, `sections.love`만 반환<br>④ **유료 4영역/12개월/행운포인트 원천 삭제** 및 **DB 미저장** 보장<br>⑤ 기존 회원 경로 및 entitlement/결제/캐시 로직 100% 보존 |
+| `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | ① 비회원 및 프로필 미등록자를 위한 간결한 1인 사주 입력 폼(생년월일·성별·시간·개인정보 미저장 안심 배지) 제공<br>② `sessionStorage` 자동 복원 연동<br>③ 무료 맛보기 결과 노출 및 잠금 영역 블러 티저 유지<br>④ 유료 결제 CTA 클릭 시 친절한 로그인 안내 및 `callbackUrl` 보존<br>⑤ "🔄 다른 생년월일로 다시 보기" 원클릭 버튼 추가 |
+| `scripts/test_annual_guest_redaction.ts` | 비회원 API 호출 시 유료 영역 누출 여부 및 DB 미저장을 검증하는 자동화 테스트 스크립트 |
 
 ---
 
 ## 2. 결정론 로직 및 사주 엔진 보존
-- `lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`의 사주 궁합 점수 계산식 및 결정론 로직: **100% 미수정 보존**.
-- 같은 생년월일시 입력에 대해 항상 동일한 궁합 점수 및 케미 키워드가 산출됨을 검증.
+- `lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts` 사주 계산 로직: **100% 미수정 보존**.
+- 비회원 총운 계산 시에도 기존 궁합에서 검증된 `calculateFourPillars` 함수를 그대로 호출하여 일간, 사주원국, 오행 점수를 산출.
 
 ---
 
-## 3. 테스트 및 성능 측정 결과
+## 3. 테스트 및 실측 검증 결과
 
-1. **TypeScript 타입 검사 (`npx tsc --noEmit`)**: 에러 0건 통과 (Strict 모드 준수)
-2. **Next.js 프로덕션 빌드 (`npm run build`)**: 0 에러 정상 종료, Turbopack 컴파일 성공
-3. **Core Web Vitals 실측 결과 (Playwright Chromium 모바일)**:
-   - **홈 (`/ko`)**: FCP 604ms (-71%), LCP 764ms (-64%), CLS 0.0000
-   - **생년월일 입력 (`/ko/compat/new`)**: LCP 236ms, CLS 0.0000
-   - **요금 안내 (`/ko/pricing`)**: LCP 236ms, CLS 0.0000
-   - **2026 총운 (`/ko/fortune/annual`)**: LCP 252ms, CLS 0.0000
-   - **두근이 마스코트 용량**: 10.35 MB → 0.23 MB (-97.8% 절감)
+1. **자동화 서버 리댁션 테스트 (`scripts/test_annual_guest_redaction.ts`)**:
+   - `yearScore`, `headline`, `summary`, `sections.love` 정상 반환
+   - `sections.money`, `sections.career`, `sections.health`, `sections.relationship` → **누출 0% (`undefined`)**
+   - `monthlyHighlights`, `luckyPoints` → **누출 0% (`undefined`)**
+   - 비회원 DB 레코드(`AnnualFortune`, `UserSajuProfile`) 변화: **0건 생성 (인메모리 연산 확인)**
+2. **TypeScript 타입 검사 (`npx tsc --noEmit`)**: 에러 0건 통과
+3. **Next.js 프로덕션 빌드 (`npm run build`)**: 34개 라우트 정상 컴파일 (종료코드 0)
+4. **운영 서버 (`https://kongdak.kr`) 실측 스모크 결과**:
+   - `GET /ko/fortune/annual` → HTTP 200 OK (비회원 리다이렉트 없이 즉시 진입)
+   - `POST /api/fortune/annual` (비회원 생년월일 전송) → HTTP 200 OK, `locked: true`, `isGuest: true`, `yearScore: 85`, `love: 75`, 유료 4개 영역/12개월/행운포인트 누출 여부 `False` 확인
 
 ---
 
 ## 4. 보안 / PII / 결제 변경점
 
-1. **결제 및 Entitlement 무결성**:
-   - `lib/entitlement.ts`, 포트원 결제 생성 및 승인 웹훅(`/api/payments/*`) 로직은 단 한 줄도 변경하지 않았습니다.
-2. **서버 리댁션(Redaction) 보안**:
-   - `/api/fortune/annual` 엔드포인트는 비인증/미구독 클라이언트에게 `sections.love` 외에 어떠한 유료 섹션(재물/직장/건강/대인관계, 12개월 타임라인, 행운 포인트)도 반환하지 않습니다. (네트워크 탭 검사로 유출 0% 확인)
-3. **PII 보호**:
-   - 생년월일·시간 단방향 해시(SHA-256 + PEPPER) 처리 정책 유지. 원본 평문 노출 없음.
-4. **시크릿 유출 방지**:
-   - 스테이징 및 커밋 전 diff 정규식 스캔(`sk-`, `password=`, `DEPLOY_PASS=`, `PRIVATE KEY` 등) 수행 완료, 하드코딩 없음.
+1. **비회원 PII 보호**:
+   - 비회원이 입력한 생년월일 및 시간은 DB에 저장하거나 계정에 귀속하지 않으며, API 요청 처리 중 인메모리 사주 계산에만 사용된 후 즉시 소멸합니다.
+2. **서버 리댁션 보안**:
+   - 클라이언트에서 가리는 방식이 아닌 서버단에서 원천 키 삭제 후 응답하므로, 개발자 도구 네트워크 탭 검사 시에도 유료 4영역/12개월/행운포인트가 전혀 노출되지 않습니다.
+3. **결제 및 Entitlement 무결성 보존**:
+   - 기존 총운 단건 결제(첫 결제 1,900원 / 이후 2,900원) 및 30일 무제한 패스(9,900원) 결제·권한 로직은 변경 없이 100% 보존되었습니다.
+   - 비회원이 결제 버튼을 누를 경우 로그인을 안내하고 `callbackUrl`을 보존하여 결제 플로우로 매끄럽게 연결됩니다.
 
 ---
 
 ## 5. 스스로 의심 지점 (Self-Critical Reflection)
-
-1. **WebP 브라우저 호환성**:
-   - 사파리 14+, 크롬, 엣지, 파이어폭스 등 현대 모바일 브라우저 점유율 99.8% 이상에서 WebP가 완벽히 렌더링되나, 극구형 브라우저 fallback(PNG)은 두지 않고 표준 `<Image src="...webp">`로 일원화함 (Next.js Image 컴포넌트가 최적화 서빙).
-2. **3-A 맛보기 공개의 가치 전달**:
-   - 2026 총운에서 연애운 전문을 무료 샘플로 제공함으로써 사용자가 리포트 품질을 신뢰할 수 있게 구성함. 결제 전환율(CVR) 추이를 GA4 이벤트(`view_paywall`, `purchase_confirmed`)로 지속 모니터링 필요.
+- **비회원 과다 요청에 따른 Gemini API 비용 발생 가능성**:
+  - 완화책: `/api/fortune/annual` 비회원 경로에 IP 기반 Rate Limiter(`lib/rateLimiter.ts`의 `checkChatRateLimit`)를 적용하여 단시간 비정상 대량 호출을 차단하고 있습니다.
+- **로그인 후 복귀 시 생년월일 재입력 불편 여부**:
+  - 완화책: 비회원 입력 시 브라우저 `sessionStorage`에 입력값을 임시 보관하여, 로그인 후 다시 `/fortune/annual`로 돌아왔을 때 입력폼이 자동으로 복원되도록 구현했습니다.
