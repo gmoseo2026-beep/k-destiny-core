@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
@@ -16,19 +16,26 @@ function PayCompleteContent() {
   const [msg, setMsg] = useState("결제 상태를 확인하고 있습니다...");
   // [SECURITY / H-2] 결제한 궁합으로 곧장 돌려보내기 위한 값(서버 응답에서만 받는다).
   const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
+  const [paidProductType, setPaidProductType] = useState<string | null>(null);
+
+  const ranRef = useRef(false);
 
   useEffect(() => {
-    const paymentId = sp.get("paymentId");
-    const code = sp.get("code"); // 실패 시 PortOne이 code 부여
-    const message = sp.get("message");
+    if (ranRef.current) return; // 재실행(특히 URL 정리 후) 방지
+    ranRef.current = true;
+
+    // sp 대신 마운트 시점의 실제 주소에서 읽는다(정리 전에 확정)
+    const url = new URL(window.location.href);
+    const paymentId = url.searchParams.get("paymentId");
+    const code = url.searchParams.get("code"); // 실패 시 PortOne이 code 부여
+    const message = url.searchParams.get("message");
 
     // [SECURITY / M-10] paymentId(=orderId)는 lib/entitlement.ts 에서 게스트 열람 베어러
     // 토큰으로 쓰이는 값이다. PortOne 리다이렉트가 이 값을 쿼리로 실어 오므로, 값을 읽은 즉시
     // 주소창에서 지워 브라우저 히스토리·이후 SPA page_view 에 남지 않게 한다.
-    // (GA4 최초 page_view 쪽은 components/Analytics.tsx 의 page_location 정제가 함께 막는다)
     if (typeof window !== "undefined" && window.location.search) {
       const cleaned = new URL(window.location.href);
-      ["paymentId", "orderId", "claimToken", "token"].forEach((k) =>
+      ["paymentId", "orderId", "claimToken", "token", "code", "message"].forEach((k) =>
         cleaned.searchParams.delete(k)
       );
       window.history.replaceState({}, "", cleaned.pathname + cleaned.search + cleaned.hash);
@@ -60,19 +67,22 @@ function PayCompleteContent() {
             rememberUnlockToken(result.compatId, result.orderId);
             setPaidCompatId(result.compatId);
           }
+          if (result?.productType === "ANNUAL") {
+            setPaidProductType("ANNUAL");
+          }
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
         } else {
-          const e = await r.json();
+          const e = await r.json().catch(() => ({}));
           setStatus("error");
           setMsg(e.error || "결제 확인에 실패했습니다. 고객센터로 문의해주세요.");
         }
       })
-      .catch((err) => {
+      .catch(() => {
         setStatus("error");
         setMsg("서버 통신 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       });
-  }, [sp]);
+  }, []);
 
   const [copied, setCopied] = useState(false);
 
@@ -176,8 +186,9 @@ function PayCompleteContent() {
           {status === "success" && (
             <button
               onClick={() => {
-                // 결제한 궁합 결과로 직접 이동한다.
-                if (paidCompatId) {
+                if (paidProductType === "ANNUAL") {
+                  router.replace(`/${locale}/fortune/annual`);
+                } else if (paidCompatId) {
                   router.replace(`/${locale}/compat/${paidCompatId}`);
                 } else if (window.history.length > 2) {
                   router.back();
@@ -187,7 +198,7 @@ function PayCompleteContent() {
               }}
               className="w-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all active:scale-95"
             >
-              리포트 확인하러 가기
+              {paidProductType === "ANNUAL" ? "2026 총운 보러 가기" : "리포트 확인하러 가기"}
             </button>
           )}
 

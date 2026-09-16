@@ -79,6 +79,8 @@ export async function POST(req: NextRequest) {
         orderId: order.orderId,
         type: order.type,
         compatId: order.compatId,
+        productType: order.productType ?? null,
+        productKey: order.productKey ?? null,
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
