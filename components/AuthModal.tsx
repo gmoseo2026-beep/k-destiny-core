@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, X, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn } from "next-auth/react";
-import { isInAppBrowser } from "@/lib/inAppBrowser";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
+import InAppBrowserModal from "@/components/InAppBrowserModal";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [showInAppModal, setShowInAppModal] = useState(false);
   const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
 
   // Portal target is only available on the client.
@@ -46,12 +48,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
     }
   }, [isOpen]);
 
+  const handleEscape = () => {
+    const ok = openInExternalBrowser();
+    if (!ok) setShowInAppModal(true);
+  };
+
   const handleGoogleLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko'
-        ? "인앱 브라우저에서는 구글 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Google login is not available in this in-app browser. Please use email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -66,10 +70,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
 
   const handleKakaoLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko'
-        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Social login is not available in this in-app browser. Please use email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -84,10 +85,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
 
   const handleNaverLogin = async () => {
     if (isInAppBrowser()) {
-      setMessage({ type: "error", text: locale === 'ko'
-        ? "인앱 브라우저에서는 소셜 로그인을 사용할 수 없습니다. 아래 이메일 로그인을 이용해 주세요."
-        : "Social login is not available in this in-app browser. Please use email login below."
-      });
+      handleEscape();
       return;
     }
     setIsLoading(true);
@@ -156,7 +154,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
   if (!isOpen || !mounted) return null;
 
   const modal = (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
@@ -233,17 +232,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
               )}
             </AnimatePresence>
 
+            {/* In-App Browser Breakout Banner & Button */}
+            {inApp && (
+              <div className="mb-3">
+                <button
+                  type="button"
+                  onClick={handleEscape}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#FF8AA1] to-[#6A2C70] text-white font-bold text-sm shadow-md active:scale-[0.97] transition-all"
+                >
+                  {locale === 'ko' ? '🔓 크롬/사파리로 열고 로그인하기' : '🔓 Open in Chrome/Safari to Login'}
+                </button>
+                <p className="mt-2 text-center text-[11px] text-[#8A8291] font-semibold leading-relaxed">
+                  {locale === 'ko'
+                    ? '카카오·구글·네이버 로그인은 앱 안 브라우저에서 막혀 있어요. 위 버튼을 눌러 주세요.'
+                    : 'Social login is blocked inside app webviews. Tap above to open your browser.'}
+                </p>
+              </div>
+            )}
+
             {/* Social Logins */}
             <div className="space-y-3">
               <motion.button
+                type="button"
                 onClick={handleKakaoLogin}
-                whileHover={{ scale: inApp ? 1 : 1.02 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors ${
-                  inApp
-                    ? 'bg-[#FEE500]/50 border-[#FEE500]/10 opacity-50 cursor-not-allowed text-black/50'
-                    : 'bg-[#FEE500] hover:bg-[#FEE500]/90 border-transparent text-black'
-                }`}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-transparent transition-colors bg-[#FEE500] hover:bg-[#FEE500]/90 text-black"
               >
                 <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
                   <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
@@ -254,14 +268,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
               </motion.button>
 
               <motion.button
+                type="button"
                 onClick={handleNaverLogin}
-                whileHover={{ scale: inApp ? 1 : 1.02 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors ${
-                  inApp
-                    ? 'bg-[#03C75A]/50 border-[#03C75A]/10 opacity-50 cursor-not-allowed text-white/50'
-                    : 'bg-[#03C75A] hover:bg-[#03C75A]/90 border-transparent text-white'
-                }`}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-transparent transition-colors bg-[#03C75A] hover:bg-[#03C75A]/90 text-white"
               >
                 <svg viewBox="0 0 32 32" className="w-6 h-6 fill-current">
                   <path d="M19.689 9.878L12.01 20.31h-4.33V9.878h4.332v10.432l7.678-10.432h4.33v10.432h-4.331V9.878z" />
@@ -272,14 +283,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
               </motion.button>
 
               <motion.button
+                type="button"
                 onClick={handleGoogleLogin}
-                whileHover={{ scale: inApp ? 1 : 1.02 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border transition-colors ${
-                  inApp
-                    ? 'bg-[#FFF6F1] border-[#2B2430]/8 opacity-50 cursor-not-allowed'
-                    : 'bg-white border-[#2B2430]/15 hover:bg-[#FFF6F1]'
-                }`}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-[#2B2430]/15 transition-colors bg-white hover:bg-[#FFF6F1]"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
                   <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -290,15 +298,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                 <span className="font-sans font-medium text-[#2B2430] tracking-wide">{t("btn_google")}</span>
               </motion.button>
             </div>
-
-            {/* In-app browser hint */}
-            {inApp && (
-              <p className="mt-2 text-center text-xs text-amber-600 font-sans">
-                {locale === 'ko'
-                  ? '⚠️ 인앱 브라우저 감지 — 아래 이메일 로그인을 이용해 주세요'
-                  : '⚠️ In-app browser detected — use email login below'}
-              </p>
-            )}
 
             {/* Divider */}
             <div className="flex items-center gap-4 my-6">
@@ -382,6 +381,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
         </motion.div>
       </div>
     </AnimatePresence>
+    <InAppBrowserModal isOpen={showInAppModal} onClose={() => setShowInAppModal(false)} />
+  </>
   );
 
   return createPortal(modal, document.body);
