@@ -212,16 +212,17 @@ export async function POST(req: Request) {
       const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 20) : "사용자";
 
       if (isValidDateString(dob) && (gender === "M" || gender === "F") && isValidTimeString(time)) {
-        const [bY, bM, bD] = dob.split("-").map(Number);
+        // dob = "YYYY-MM-DD" (isValidDateString 통과). schema의 birth* 는 String? 이므로 문자열 유지.
+        const [pY, pM, pD] = dob.split("-");
         const sajuResult = calculateFourPillars(dob, time, gender, "Seoul, KR");
         userProfile = await prisma.userSajuProfile.create({
           data: {
             userId,
             name,
             gender,
-            birthYear: bY,
-            birthMonth: bM,
-            birthDay: bD,
+            birthYear: body.birthYear != null ? String(body.birthYear) : pY,
+            birthMonth: body.birthMonth != null ? String(body.birthMonth) : pM,
+            birthDay: body.birthDay != null ? String(body.birthDay) : pD,
             birthTime: time,
             unknownTime: !time,
             country: "Korea",
@@ -371,7 +372,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("[annual-fortune POST] Error:", error);
     return NextResponse.json(
-      { error: error?.message || "2026년 총운을 생성하는 중 문제가 발생했습니다." },
+      { error: "총운을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
     );
   }
