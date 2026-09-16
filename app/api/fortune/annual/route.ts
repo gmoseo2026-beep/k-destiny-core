@@ -389,7 +389,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
       });
       resultText = result.response.text();
     } catch (primaryErr) {
@@ -398,7 +398,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 4096 }
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192 }
       });
       resultText = result.response.text();
     }

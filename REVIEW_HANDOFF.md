@@ -1,8 +1,8 @@
 # REVIEW_HANDOFF.md — Opus5 검수 인계 문서
 
 > 작성일: 2026-09-16
-> 작업: 2026 총운 · 궁합 심층 · 이번주 운세 로딩 속도/체감 개선 (공용 FortuneLoading 컴포넌트 재사용 + 타이밍 로그 + 주간 에러 정제)
-> 배포 상태: **배포 대기 (Cowork 프리체크 요청 중 — safe_deploy 미실행)**
+> 작업: 2026 총운 · 궁합 심층 · 이번주 운세 로딩 속도/체감 개선 + 유료 전체 리포트 maxOutputTokens 8192 상향
+> 배포 상태: **프리체크 승인 완료 → 커밋 및 safe_deploy 배포**
 
 ---
 
@@ -14,9 +14,9 @@
 | `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | 총운 결과 대기 화면에 공용 `FortuneLoading` 적용 (`annual` 스켈레톤, 15초 프로그레스 바, 4단계 순환 문구). |
 | `components/CompatResultClient.tsx` | 궁합 심층 리포트 생성 대기 화면에 공용 `FortuneLoading` 적용 (`deep-report` 스켈레톤, 15초 프로그레스 바, 3단계 순환 문구: 사주 대조 → 관계 흐름 해석 → 심층 리포트 정리). |
 | `app/[locale]/fortune/weekly/WeeklyFortuneClient.tsx` | 이번주 운세 대기 화면에 공용 `FortuneLoading` 적용 (`weekly` 스켈레톤, 8초 프로그레스 바, 3단계 순환 문구: 기운 읽기 → 요일별 흐름 계산 → 정리). |
-| `app/api/compat/deep-report/route.ts` | ① **서버 타이밍 로그**: `[deep-report-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **출력 길이 상한(maxOutputTokens: 4096)**: 과도한 레이턴시 방지 및 리포트 잘림 없는 안전 상한 설정. |
-| `app/api/fortune/weekly/route.ts` | ① **서버 타이밍 로그**: `[weekly-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **에러 응답 정제**: 최상위 catch에서 raw `error.message` 대신 정제된 사용자 안내 메시지 반환 (정보 유출 차단).<br>③ **출력 길이 상한(maxOutputTokens: 2048)**: 주간 운세 규격에 맞춘 안전 상한 설정. |
-| `app/api/fortune/annual/route.ts` | 맛보기 소형 생성(1024) + 전체 생성 상한(4096) 및 `calculateAnnualYearScore` 결정론적 점수 일관성 적용 완료. |
+| `app/api/compat/deep-report/route.ts` | ① **서버 타이밍 로그**: `[deep-report-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **출력 길이 상한(maxOutputTokens: 8192)**: 긴 궁합 심층 리포트 잘림 방지 (8192 상향). |
+| `app/api/fortune/weekly/route.ts` | ① **서버 타이밍 로그**: `[weekly-timing] cache=... genMs=... dbMs=... model=...` 추가.<br>② **에러 응답 정제**: 최상위 catch에서 raw `error.message` 대신 정제된 사용자 안내 메시지 반환 (정보 유출 차단).<br>③ **출력 길이 상한(maxOutputTokens: 2048)**: 주간 운세 규격 유지. |
+| `app/api/fortune/annual/route.ts` | ① **맛보기 소형 생성(1024)** 유지 + **전체 생성 상한(8192)** 상향으로 긴 총운 리포트 잘림 방지.<br>② `calculateAnnualYearScore` 결정론적 점수 일관성 적용 완료. |
 | `lib/destinyGen.ts` | `buildAnnualTeaserPrompt` 및 `calculateAnnualYearScore` 결정론적 산출 엔진. |
 
 ---
