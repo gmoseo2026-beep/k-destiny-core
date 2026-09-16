@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import KongdakMascot from "./KongdakMascot";
 import { useSession } from "next-auth/react";
-import GuestCheckoutModal from "@/components/GuestCheckoutModal";
+import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+
+const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
 export default function PricingClient({ locale }: { locale: string }) {
   const t = useTranslations("Pricing");
@@ -19,7 +21,8 @@ export default function PricingClient({ locale }: { locale: string }) {
   const handlePeriodPassCheckout = (planId: "1_MONTH" | "3_MONTHS") => {
     if (!session?.user?.id) {
       alert("패스권 구매는 로그인이 필요합니다.");
-      window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.href)}`;
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/pricing`;
+      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
     }
     setSelectedPlan(planId);
@@ -31,7 +34,7 @@ export default function PricingClient({ locale }: { locale: string }) {
       {/* Header */}
       <div className="text-center mb-10 sm:mb-14">
         <div className="flex justify-center mb-4">
-          <KongdakMascot size={64} animate="bounce" expression="flutter" />
+          <KongdakMascot size={64} animate="none" expression="flutter" />
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-[#2B2430] tracking-tight mb-3">
           {t("title")}
@@ -78,7 +81,7 @@ export default function PricingClient({ locale }: { locale: string }) {
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span>결제일로부터 90일간 언제든 다시 열람 (이후 만료)</span>
+              <span>결제일로부터 90일간 언제든 다시 열람</span>
             </li>
           </ul>
 
@@ -94,8 +97,8 @@ export default function PricingClient({ locale }: { locale: string }) {
         {/* Card 2: 1 Month Pass (Featured) */}
         <div className="bg-gradient-to-b from-[#FFF6F1] via-white to-[#FFF6F1]/30 rounded-3xl p-6 sm:p-7 shadow-lg border-2 border-[#FF8AA1] flex flex-col items-center text-center relative transition-all duration-200 hover:-translate-y-1">
           {/* Top Floating Badge */}
-          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white text-[11px] font-black px-4 py-1 rounded-full shadow-md whitespace-nowrap z-10 flex items-center gap-1">
-            <span>✨</span> 가장 많은 선택
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white text-[11px] font-black px-4 py-1 rounded-full shadow-md whitespace-nowrap z-10 flex items-center">
+            가장 많은 선택
           </div>
 
           {/* Tag Area */}
@@ -122,7 +125,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">모든 심층 궁합 리포트 무제한</span>
+              <span className="font-bold text-[#2B2430]">심층 리포트 · 2026 총운 무제한</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
@@ -138,7 +141,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <button
             onClick={() => handlePeriodPassCheckout("1_MONTH")}
             disabled={isProcessingPayment}
-            className="w-full bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:opacity-95 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-auto"
+            className="w-full bg-[#FF5C77] hover:bg-[#ff4765] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 mt-auto"
           >
             {isProcessingPayment && selectedPlan === "1_MONTH" ? "결제창 연결 중..." : t("product_1m_btn")}
           </button>
@@ -170,7 +173,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">90일간 모든 심층 리포트 무제한</span>
+              <span className="font-bold text-[#2B2430]">90일간 심층 리포트 · 2026 총운 무제한</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
@@ -202,7 +205,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           </span>
           {t("info_title")}
         </h3>
-        <ul className="space-y-2.5 text-xs sm:text-[13px] text-[#6A5E72] font-medium leading-relaxed">
+        <ul className="space-y-2.5 text-xs sm:text-[13px] text-[#6A5E72] font-medium leading-relaxed mb-4">
           <li className="flex items-start gap-2.5">
             <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
             <span>{t("info_type")}</span>
@@ -224,6 +227,9 @@ export default function PricingClient({ locale }: { locale: string }) {
             <span>{t("info_sub")}</span>
           </li>
         </ul>
+        <div className="p-3 bg-[#FFF6F1]/80 rounded-2xl border border-[#FFD9E0]/40 text-xs text-[#8A8291] leading-relaxed">
+          {t("info_disclaimer")}
+        </div>
       </div>
 
       {/* Pass Checkout Modal */}

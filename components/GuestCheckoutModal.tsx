@@ -92,7 +92,7 @@ export default function GuestCheckoutModal({
 
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-4">
-          <KongdakMascot size={42} animate="bounce" expression="flutter" />
+          <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
             <h3 className="text-lg font-black text-[#2B2430]">{title}</h3>
             <p className="text-xs text-[#8A8291]">KG이니시스 카드 결제 정보 입력</p>
@@ -156,6 +156,10 @@ export default function GuestCheckoutModal({
             <span className="text-[11px] text-[#8A8291] mt-1 block">
               결제 내역 및 추후 리포트 다시보기 시 본인 확인용으로 사용됩니다.
             </span>
+          </div>
+
+          <div className="bg-[#FFF6F1]/80 rounded-xl p-2.5 border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] leading-relaxed">
+            ※ 본 상품은 디지털 콘텐츠로서 열람(제공 개시) 후에는 전자상거래법 제17조 제2항에 따라 청약철회가 제한될 수 있습니다.
           </div>
 
           {errorMsg && (

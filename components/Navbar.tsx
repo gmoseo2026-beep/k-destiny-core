@@ -1,96 +1,98 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import LoginButton from "./LoginButton";
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
 import KongdakMascot from "./KongdakMascot";
 
-// 로케일 선택 UI 는 두지 않는다. 콩닥 Phase A 는 국내 전용이고
-// en/ja/es/de/fr 은 동면(비노출) 상태라 전환 진입점을 노출하지 않는다.
 export default function Navbar() {
   const t = useTranslations("Dashboard");
   const { data: session } = useSession();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 8);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-[#FFF6F1]/80 backdrop-blur-md border-b border-[#2B2430]/8">
-      <div className="flex items-center justify-between p-3 sm:p-4 max-w-7xl mx-auto">
-        
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 transition-transform hover:scale-105 active:scale-95">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 relative">
-            <KongdakMascot size={36} animate="none" />
+    <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-2.5 sm:pt-3 pointer-events-none transition-all duration-200">
+      <nav
+        className={`max-w-screen-md mx-auto pointer-events-auto rounded-[20px] transition-all duration-200 px-3.5 sm:px-5 py-2.5 flex items-center justify-between ${
+          isScrolled
+            ? "bg-[#FFF6F1]/85 backdrop-blur-[16px] border border-white/60 shadow-[0_8px_24px_rgba(181,71,96,0.12)]"
+            : "bg-[#FFF6F1]/65 backdrop-blur-[16px] border border-white/55 shadow-[0_4px_20px_rgba(181,71,96,0.07)]"
+        }`}
+        style={{
+          backdropFilter: "blur(16px) saturate(140%)",
+          WebkitBackdropFilter: "blur(16px) saturate(140%)",
+        }}
+      >
+        {/* Left: Brand Logo */}
+        <Link
+          href="/"
+          className="flex items-center gap-2 group transition-transform active:scale-[0.98]"
+        >
+          <div className="w-7 h-7 sm:w-8 sm:h-8 relative flex items-center justify-center">
+            <KongdakMascot size={32} animate="none" priority={true} />
           </div>
           <div className="flex flex-col justify-center">
-            <span className="font-serif font-bold text-lg sm:text-xl text-ink leading-none">콩닥</span>
-            <span className="font-sans font-bold text-[9px] sm:text-[10px] text-coral tracking-widest uppercase mt-0.5">kongdak</span>
+            <span className="font-serif font-bold text-base sm:text-lg text-[#2B2430] leading-none tracking-tight">
+              콩닥
+            </span>
           </div>
         </Link>
 
-        {/* Right side actions */}
-        <div className="flex items-center justify-end gap-2 sm:gap-3">
-
-
-
-        {/* 2026 Annual Fortune Link */}
-        <Link href="/fortune/annual">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-gradient-to-r from-[#FF8AA1]/15 to-[#FF5C77]/15 border border-[#FF8AA1] hover:border-[#FF5C77] shadow-xs active:scale-95 transition-all duration-150"
+        {/* Right: Clean Text Navigation */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* 2026 Annual Fortune Link */}
+          <Link
+            href="/fortune/annual"
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold text-[#FF5C77] hover:bg-[#FFD9E0]/40 transition-colors whitespace-nowrap active:scale-[0.98]"
           >
-            <span className="text-sm">🔮</span>
-            <span className="font-sans text-xs font-black text-[#FF5C77] whitespace-nowrap">
-              2026 총운
-            </span>
-          </motion.button>
-        </Link>
-
-        {/* Fortune Dashboard Link */}
-        <Link href="/fortune/weekly">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#FFF6F1] border border-[#FFD9E0] hover:border-[#FF8AA1] shadow-sm active:scale-95 transition-all duration-150"
-          >
-            <span className="text-sm">✨</span>
-            <span className="font-sans text-xs font-bold text-[#6A2C70] whitespace-nowrap">
-              이번 주 운세
-            </span>
-          </motion.button>
-        </Link>
-
-        {/* Pricing Link */}
-        <Link href="/pricing">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-[#FFD9E0] hover:border-[#FF8AA1] shadow-sm active:scale-95 transition-all duration-150"
-          >
-            <span className="font-sans text-xs font-bold text-[#FF5C77] whitespace-nowrap">
-              요금안내
-            </span>
-          </motion.button>
-        </Link>
-
-        {/* Admin Dashboard — strictly visible to ADMIN role only */}
-        {session && (session.user as any)?.role === 'ADMIN' && (
-          <Link href="/admin">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-red-50 border border-red-200 hover:border-red-300 hover:bg-red-100 shadow-sm group active:scale-95 transition-all duration-150 ease-in-out transform-gpu"
-            >
-              <Shield className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
-              <span className="hidden sm:block font-sans text-xs font-medium text-red-600 group-hover:text-red-700 tracking-wide">
-                관리자
-              </span>
-            </motion.button>
+            2026 총운
           </Link>
-        )}
 
-        {/* NextAuth Login Button */}
-        <LoginButton />
+          {/* Weekly Fortune Link (Desktop / Tablet visible) */}
+          <Link
+            href="/fortune/weekly"
+            className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A2C70] hover:bg-[#FFF6F1] hover:text-[#FF5C77] transition-colors whitespace-nowrap active:scale-[0.98]"
+          >
+            이번 주 운세
+          </Link>
+
+          {/* Pricing Link */}
+          <Link
+            href="/pricing"
+            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-[#6A5E72] hover:text-[#2B2430] hover:bg-white/50 transition-colors whitespace-nowrap active:scale-[0.98]"
+          >
+            요금안내
+          </Link>
+
+          {/* Admin Link — strictly visible to ADMIN */}
+          {session && (session.user as any)?.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              className="px-2.5 py-1.5 rounded-full text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors flex items-center gap-1 whitespace-nowrap active:scale-[0.98]"
+            >
+              <Shield className="w-3 h-3 text-red-500" />
+              <span className="hidden md:inline">관리자</span>
+            </Link>
+          )}
+
+          {/* Login / Profile Button */}
+          <div className="ml-1 sm:ml-1.5">
+            <LoginButton />
+          </div>
         </div>
-      </div>
-    </div>
+      </nav>
+    </header>
   );
 }

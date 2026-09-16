@@ -72,13 +72,16 @@ export async function POST(req: Request) {
           locked: false,
         });
       } else {
-        // Redact paid sections on server to prevent content leakage
+        // Redact paid sections on server: reveal love section as high-converting quality sample (3-A pattern)
         return NextResponse.json({
           success: true,
           data: {
             yearScore: fullContent.yearScore,
             headline: fullContent.headline,
             summary: fullContent.summary,
+            sections: fullContent.sections?.love
+              ? { love: fullContent.sections.love }
+              : undefined,
             locked: true,
           },
           locked: true,
@@ -161,6 +164,9 @@ export async function POST(req: Request) {
           yearScore: savedContent.yearScore,
           headline: savedContent.headline,
           summary: savedContent.summary,
+          sections: savedContent.sections?.love
+            ? { love: savedContent.sections.love }
+            : undefined,
           locked: true,
         },
         locked: true,

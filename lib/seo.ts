@@ -46,7 +46,7 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
     ko: {
       title: '콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합',
       description:
-        '두 사람의 생년월일만 넣으면 30초 만에 나오는 진짜 사주 궁합. 어려운 한자 없이 다정한 말로 풀어주는 궁합 점수와 케미 키워드, 카카오톡 공유 카드까지 무료로 받아보세요.',
+        '두 사람의 궁합부터 나의 2026 총운까지 — 생년월일로 30초, 다정하게 풀어내는 사주 콩닥.',
     },
     en: {
       title: 'Kongdak — How Well Do We Match? Saju Compatibility',
@@ -68,6 +68,19 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
     },
   },
 
+  '/fortune/annual': {
+    ko: {
+      title: '2026 병오년 신년 총운 | 콩닥',
+      description:
+        '나의 2026년 총운과 12개월 월별 운세, 애정운, 재물운, 커리어운을 사주로 다정하게 풀어냅니다.',
+    },
+    en: {
+      title: '2026 Annual Fortune Reading | Kongdak',
+      description:
+        'Discover your 2026 comprehensive annual fortune and monthly outlook powered by Saju.',
+    },
+  },
+
   '/guide': {
     ko: {
       title: '콩닥 이용 방법 — 사주 궁합 보는 법 | 콩닥',
@@ -83,14 +96,14 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
 
   '/pricing': {
     ko: {
-      title: '요금 안내 — 심층 궁합 리포트 | 콩닥',
+      title: '콩닥 플러스 — 요금 안내 | 콩닥',
       description:
-        '콩닥 심층 궁합 리포트 가격 안내. 단건 결제와 기간 이용권으로 관계의 갈등 포인트와 연애 조언까지 확인하세요.',
+        '심층 궁합 리포트와 2026 총운까지, 더 깊게 보고 싶을 때. 콩닥 플러스 단건 결제와 기간 이용권 안내.',
     },
     en: {
-      title: 'Pricing — Deep Compatibility Report | Kongdak',
+      title: 'Pricing — Kongdak Plus Pass & Single Report | Kongdak',
       description:
-        'Pricing for Kongdak deep compatibility reports. Learn about single purchase and pass options for relationship advice.',
+        'Pricing for Kongdak deep compatibility reports and 2026 annual fortune. Single purchases and period pass options.',
     },
   },
 

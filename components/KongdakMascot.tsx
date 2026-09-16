@@ -34,22 +34,22 @@ export function getExpressionByScore(score: number): MascotExpression {
 }
 
 const EXPRESSION_SRC_MAP: Record<MascotExpression, string> = {
-  canon: "/mascot/transparent/doogeun_cat_canon.png",
-  simkoong: "/mascot/transparent/expr_1_simkoong.png",
-  flame: "/mascot/transparent/expr_2_flame.png",
-  flutter: "/mascot/transparent/expr_3_flutter.png",
-  cringe: "/mascot/transparent/expr_4_cringe.png",
-  hyunta: "/mascot/transparent/expr_5_hyunta.png",
-  factattack: "/mascot/transparent/expr_6_factattack.png",
-  couple: "/mascot/transparent/couple_red_thread.png",
-  canon_white: "/mascot/transparent/doogeun_cat_canon_white.png",
+  canon: "/mascot/transparent/doogeun_cat_canon.webp",
+  simkoong: "/mascot/transparent/expr_1_simkoong.webp",
+  flame: "/mascot/transparent/expr_2_flame.webp",
+  flutter: "/mascot/transparent/expr_3_flutter.webp",
+  cringe: "/mascot/transparent/expr_4_cringe.webp",
+  hyunta: "/mascot/transparent/expr_5_hyunta.webp",
+  factattack: "/mascot/transparent/expr_6_factattack.webp",
+  couple: "/mascot/transparent/couple_red_thread.webp",
+  canon_white: "/mascot/transparent/doogeun_cat_canon_white.webp",
 };
 
 export default function KongdakMascot({
   size = 96,
   expression,
   score,
-  animate = "heartbeat",
+  animate = "none",
   className = "",
   priority = false,
   alt = "콩닥이",
@@ -60,9 +60,9 @@ export default function KongdakMascot({
   const resolvedExpr: MascotExpression =
     expression ?? (typeof score === "number" ? getExpressionByScore(score) : "canon");
 
-  const src = EXPRESSION_SRC_MAP[resolvedExpr];
+  const src = EXPRESSION_SRC_MAP[resolvedExpr] || EXPRESSION_SRC_MAP.canon;
 
-  // 애니메이션 변형 설정
+  // 애니메이션 변형 설정 (부드럽고 절제된 효과)
   const getAnimationProps = () => {
     if (shouldReduceMotion || animate === "none") {
       return {};
@@ -70,41 +70,22 @@ export default function KongdakMascot({
 
     if (animate === "heartbeat") {
       return {
-        animate: {
-          scale: [1, 1.06, 1],
-        },
-        transition: {
-          duration: 1.2,
-          ease: "easeInOut" as const,
-          repeat: Infinity,
-        },
+        animate: { scale: [1, 1.04, 1] },
+        transition: { duration: 1.4, ease: "easeInOut" as const, repeat: Infinity },
       };
     }
 
     if (animate === "bounce") {
       return {
-        animate: {
-          y: [0, -8, 0],
-        },
-        transition: {
-          duration: 1.0,
-          ease: "easeInOut" as const,
-          repeat: Infinity,
-        },
+        animate: { y: [0, -6, 0] },
+        transition: { duration: 0.9, ease: "easeInOut" as const, repeat: Infinity },
       };
     }
 
     if (animate === "pulse") {
       return {
-        animate: {
-          scale: [1, 1.04, 1],
-          opacity: [0.95, 1, 0.95],
-        },
-        transition: {
-          duration: 1.5,
-          ease: "easeInOut" as const,
-          repeat: Infinity,
-        },
+        animate: { opacity: [0.9, 1, 0.9] },
+        transition: { duration: 1.2, ease: "easeInOut" as const, repeat: Infinity },
       };
     }
 
@@ -122,8 +103,9 @@ export default function KongdakMascot({
         alt={alt}
         width={size}
         height={size}
+        sizes={`${size}px`}
         priority={priority}
-        className="w-full h-full object-contain drop-shadow-md"
+        className="w-full h-full object-contain drop-shadow-xs"
       />
     </motion.div>
   );

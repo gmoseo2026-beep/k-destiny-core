@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import CompatNewClient from "@/components/CompatNewClient";
 import { canonicalUrlFor } from "@/lib/seo";
 import { getServerSession } from "next-auth";
@@ -49,14 +50,14 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
     <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 flex flex-col items-center">
       {/* Top Header */}
       <header className="w-full max-w-md flex items-center justify-between mb-6">
-        <a href={`/${locale}`} className="flex items-center gap-2 group">
+        <Link href={`/${locale}`} className="flex items-center gap-2 group">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
             콩닥 <span className="text-xs font-semibold text-[#8A8291]">kongdak</span>
           </span>
-        </a>
+        </Link>
       </header>
 
       {/* Hero Title */}
