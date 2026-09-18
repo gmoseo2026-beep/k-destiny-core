@@ -126,15 +126,19 @@ export default function PricingClient({ locale }: { locale: string }) {
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">심층 리포트 · 2026 총운 무제한</span>
+              <span className="font-bold text-[#2B2430]">매일 데일리 코치 + 실전 행동 조언</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span>매주 월요일 주간 애정/데이트 운세</span>
+              <span>매주 월~일 흐름 & 데이트 길일 배달</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#FF5C77] text-sm">✓</span>
-              <span>1회성 결제 (자동연장·구독 없음)</span>
+              <span className="font-bold text-[#6A2C70]">2026 총운 · 모든 심층 궁합 30일 무제한</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span>1회 결제 (자동결제 없음 · 30일 패스)</span>
             </li>
           </ul>
 
@@ -174,15 +178,19 @@ export default function PricingClient({ locale }: { locale: string }) {
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">90일간 심층 리포트 · 2026 총운 무제한</span>
+              <span className="font-bold text-[#2B2430]">90일간 매일 데일리 코치 + 행동 조언</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
-              <span>매주 월요일 주간 애정/데이트 운세</span>
+              <span>매주 월~일 흐름 & 데이트 길일 배달</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
-              <span>1회성 결제 (자동연장·구독 없음)</span>
+              <span className="font-bold text-[#6A2C70]">2026 총운 · 모든 심층 궁합 90일 무제한</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[#6A2C70] text-sm">✓</span>
+              <span>1회 결제 (자동결제 없음 · 90일 패스)</span>
             </li>
           </ul>
 

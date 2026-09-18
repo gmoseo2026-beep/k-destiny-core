@@ -11,7 +11,8 @@ import {
   buildAnnualTeaserPrompt,
   calculateAnnualYearScore,
   repairJSON,
-  AnnualFortuneContent
+  AnnualFortuneContent,
+  AnnualTeaser
 } from "@/lib/destinyGen";
 import { isEntitled } from "@/lib/entitlement";
 import { calculateFourPillars } from "@/lib/saju";
@@ -161,7 +162,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -171,7 +172,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -195,20 +196,31 @@ export async function POST(req: Request) {
         year,
       });
 
-      // 5) 엄격한 서버 리댁션 (맛보기: yearScore, headline, summary, sections.love 만 반환)
-      //    나머지 4개 영역(money, career, health, relationship), 12개월, 행운포인트 원천 미포함
+      // 5) 엄격한 서버 리댁션 (맛보기: yearScore, headline, summary, 5영역 한 줄 훅, 달 티저만 반환)
+      //    유료 본문(전체 문단·12개월 타임라인·행운포인트) 서버 원천 배제 (0 byte 유출)
       //    DB 저장 일체 없음 (비회원 PII 미저장)
+      const teaserData: AnnualTeaser & { locked: boolean; isGuest: boolean } = {
+        yearScore: fixedScore,
+        headline: jsonResult.headline || "새로운 기운과 도약의 해",
+        summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        hooks: {
+          love: jsonResult.hooks?.love || "2026년, 당신에게 운명 같은 인연이 다가오는 결정적 시기가 정해져 있어요 —",
+          money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
+          career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
+          health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",
+          relationship: jsonResult.hooks?.relationship || "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —",
+        },
+        teasers: {
+          bestMonth: jsonResult.teasers?.bestMonth || "올해 가장 눈부시게 빛나는 달은 ●월",
+          cautionMonth: jsonResult.teasers?.cautionMonth || "딱 한 달, 감정과 선택을 조심하면 좋은 시기가 있어요",
+        },
+        locked: true,
+        isGuest: true,
+      };
+
       return NextResponse.json({
         success: true,
-        data: {
-          yearScore: fixedScore,
-          headline: jsonResult.headline || "새로운 기운과 도약의 해",
-          summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
-          sections: jsonResult.sections?.love
-            ? { love: jsonResult.sections.love }
-            : undefined,
-          locked: true,
-        },
+        data: teaserData,
         locked: true,
         isGuest: true,
       });
@@ -283,29 +295,15 @@ export async function POST(req: Request) {
 
     if (existing) {
       const fullContent = existing.content as unknown as AnnualFortuneContent;
-      console.log(`[annual-timing] mode=${isUnlocked ? "full" : "teaser"} cache=hit genMs=0 model=cache`);
       if (isUnlocked) {
+        console.log(`[annual-timing] mode=full cache=hit genMs=0 model=cache`);
         return NextResponse.json({
           success: true,
           data: { ...fullContent, locked: false },
           locked: false,
         });
-      } else {
-        // Redact paid sections on server: reveal love section as high-converting quality sample (3-A pattern)
-        return NextResponse.json({
-          success: true,
-          data: {
-            yearScore: fullContent.yearScore,
-            headline: fullContent.headline,
-            summary: fullContent.summary,
-            sections: fullContent.sections?.love
-              ? { love: fullContent.sections.love }
-              : undefined,
-            locked: true,
-          },
-          locked: true,
-        });
       }
+      // 미결제 회원 엣지: 전체 캐시 본문은 절대 전송하지 않고(유출 0), 아래 티저 생성(5번)으로 진행
     }
 
     // 4. Build Context Block
@@ -339,7 +337,7 @@ export async function POST(req: Request) {
 
     const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
 
-    // 5. 미결제 회원: 소형 맛보기만 생성 (빠른 응답, annualFortune DB 미저장)
+    // 5. 미결제 회원: 소형 맛보기(궁금증-갭 훅 티저)만 생성 (빠른 응답, annualFortune DB 미저장)
     if (!isUnlocked) {
       const t0 = Date.now();
       const teaserPrompt = buildAnnualTeaserPrompt(contextBlock, year, toneGuide);
@@ -350,7 +348,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any
         });
         lastResult = result;
         resultText = result.response.text();
@@ -360,7 +358,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, thinkingConfig: { thinkingBudget: 0 } } as any
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any
         });
         lastResult = result;
         resultText = result.response.text();
@@ -376,17 +374,27 @@ export async function POST(req: Request) {
         throw new Error("Failed to parse AI response as valid AnnualFortuneTeaser JSON");
       }
 
+      const teaserData: AnnualTeaser & { locked: boolean } = {
+        yearScore: fixedScore,
+        headline: jsonResult.headline || "새로운 기운과 도약의 해",
+        summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        hooks: {
+          love: jsonResult.hooks?.love || "2026년, 당신에게 운명 같은 인연이 다가오는 결정적 시기가 정해져 있어요 —",
+          money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
+          career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
+          health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",
+          relationship: jsonResult.hooks?.relationship || "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —",
+        },
+        teasers: {
+          bestMonth: jsonResult.teasers?.bestMonth || "올해 가장 눈부시게 빛나는 달은 ●월",
+          cautionMonth: jsonResult.teasers?.cautionMonth || "딱 한 달, 감정과 선택을 조심하면 좋은 시기가 있어요",
+        },
+        locked: true,
+      };
+
       return NextResponse.json({
         success: true,
-        data: {
-          yearScore: fixedScore,
-          headline: jsonResult.headline || "새로운 기운과 도약의 해",
-          summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
-          sections: jsonResult.sections?.love
-            ? { love: jsonResult.sections.love }
-            : undefined,
-          locked: true,
-        },
+        data: teaserData,
         locked: true,
       });
     }

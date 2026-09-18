@@ -39,6 +39,17 @@ interface AnnualFortuneData {
   yearScore: number;
   headline: string;
   summary: string;
+  hooks?: {
+    love?: string;
+    money?: string;
+    career?: string;
+    health?: string;
+    relationship?: string;
+  };
+  teasers?: {
+    bestMonth?: string;
+    cautionMonth?: string;
+  };
   sections?: {
     love?: SectionItem;
     money?: SectionItem;
@@ -499,49 +510,65 @@ export default function AnnualFortuneClient({
         </div>
       </div>
 
-      {/* 2. 5 Key Life Sections (3-A: 샘플 1개 완전 공개 + 나머지 4개 잠금) */}
+      {/* 2. 5 Key Life Sections (궁금증-갭 미리보기: 각 영역 한 줄 훅 + 블러 실루엣 + 자물쇠) */}
       <section className="flex flex-col gap-3.5">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base sm:text-lg font-black text-[#2B2430] flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-[#FF5C77]" />
-            <span>5대 영역별 상세 운세</span>
+            <span>5대 영역별 운세 분석</span>
           </h2>
           {isLocked && (
-            <span className="text-xs font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-xs font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
               <Lock className="w-3 h-3" />
-              <span>일부 잠김</span>
+              <span>미리보기</span>
             </span>
           )}
         </div>
 
-        {/* 3-A Pattern: Love Section as FREE SAMPLE */}
-        {data.sections?.love && (
-          <div className="bg-white rounded-2xl p-5 sm:p-6 border-2 border-[#FF8AA1] shadow-xs flex flex-col gap-3 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-[#FF5C77] text-white text-[10px] font-bold px-3 py-0.5 rounded-bl-xl shadow-xs">
-              무료 맛보기 공개
-            </div>
-            <div className="flex items-center justify-between pr-24">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77]">
-                  <Heart className="w-5 h-5" />
+        {/* 미결제 상태: 5개 영역 각각 선명한 1줄 훅(cliffhanger) + CSS 블러 더미 텍스트 + 자물쇠 */}
+        {isLocked && (
+          <div className="flex flex-col gap-3.5">
+            {SECTION_CONFIG.map(({ key, title, icon: Icon, color, bg }) => {
+              const hookText = (data.hooks && (data.hooks as any)[key]) || "2026년 이 영역에서 당신에게 결정적인 순간이 찾아옵니다 —";
+              return (
+                <div
+                  key={key}
+                  className="bg-white rounded-2xl p-5 sm:p-6 border border-[#FFD9E0]/70 shadow-xs flex flex-col gap-3 relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center ${color}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="font-extrabold text-sm sm:text-base text-[#2B2430]">{title}</span>
+                    </div>
+                    <div className="flex items-center gap-1 bg-[#FFF6F1] px-2.5 py-0.5 rounded-xl border border-[#FFD9E0]/50 text-xs font-bold text-[#8A8291]">
+                      <Lock className="w-3 h-3 text-[#FF5C77]" />
+                      <span>심층 분석</span>
+                    </div>
+                  </div>
+
+                  {/* 선명한 한 줄 훅 (결론 직전 끊기) */}
+                  <div className="bg-[#FFF6F1]/80 rounded-xl p-3 border border-[#FFD9E0]/50 text-xs sm:text-sm font-bold text-[#2B2430] leading-snug">
+                    &ldquo;{hookText}&rdquo;
+                  </div>
+
+                  {/* CSS 블러 처리된 더미/실루엣 텍스트 (서버에서 유료 본문 미전송 = 유출 0) */}
+                  <div className="relative">
+                    <p className="text-xs text-[#8A8291] leading-relaxed blur-[4px] select-none pointer-events-none opacity-40">
+                      2026년 이 영역에서 펼쳐지는 구체적 기회의 시기와 피해야 할 함정, 그리고 사주 기운이 가리키는 실전 행동 조언이 상세 리포트에 모두 담겨 있습니다.
+                    </p>
+                  </div>
                 </div>
-                <span className="font-extrabold text-sm sm:text-base text-[#2B2430]">연애 & 애정운</span>
-              </div>
-              <div className="flex items-center gap-1 bg-[#FFF6F1] px-2.5 py-0.5 rounded-xl border border-[#FFD9E0]/50">
-                <span className="text-xs font-semibold text-[#8A8291]">운세 지수</span>
-                <span className="text-sm font-black text-[#FF5C77]">{data.sections.love.score}점</span>
-              </div>
-            </div>
-            <p className="text-xs sm:text-sm text-[#2B2430] leading-relaxed">
-              {data.sections.love.text}
-            </p>
+              );
+            })}
           </div>
         )}
 
-        {/* Remaining Unlocked Sections (When fully entitled) */}
+        {/* 결제 완료 시: 5대 영역 상세 본문 전체 정상 노출 */}
         {!isLocked && data.sections && (
           <div className="grid grid-cols-1 gap-3.5">
-            {SECTION_CONFIG.filter((s) => s.key !== "love").map(({ key, title, icon: Icon, color, bg }) => {
+            {SECTION_CONFIG.map(({ key, title, icon: Icon, color, bg }) => {
               const sec = data.sections![key as keyof typeof data.sections];
               if (!sec) return null;
               return (
@@ -569,66 +596,9 @@ export default function AnnualFortuneClient({
             })}
           </div>
         )}
-
-        {/* Locked Remaining 4 Sections with Blur Preview */}
-        {isLocked && (
-          <div className="relative flex flex-col gap-3">
-            <div className="grid grid-cols-1 gap-3 blur-[5px] select-none pointer-events-none opacity-45">
-              {SECTION_CONFIG.filter((s) => s.key !== "love").map(({ key, title, icon: Icon, color, bg }, index) => (
-                <div
-                  key={key}
-                  className="bg-white rounded-2xl p-5 border border-[#FFD9E0]/40 shadow-xs flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-xl ${bg} flex items-center justify-center ${color}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span className="font-bold text-sm text-[#2B2430]">{title}</span>
-                    </div>
-                    <span className="text-xs font-bold text-[#FF5C77]">{82 + index * 3}점</span>
-                  </div>
-                  <p className="text-xs text-[#8A8291] line-clamp-2">
-                    2026년 이 영역에서 당신에게 다가오는 기회와 중요한 인연의 타이밍, 조심해야 할 순간을 구체적으로 알려드립니다...
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* In-place Lock Prompt */}
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4">
-              <div className="bg-[#2B2430]/95 backdrop-blur-md text-white p-6 sm:p-7 rounded-3xl text-center shadow-xl border border-white/10 max-w-sm w-full">
-                <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 text-[#FFC24B]">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h3 className="font-black text-base sm:text-lg text-white mb-1.5">
-                  나머지 4대 영역 상세 리포트
-                </h3>
-                <p className="text-xs text-[#C5BFC9] mb-4 leading-relaxed">
-                  재물·직업·건강·인간관계의 구체적 기회와<br />주의할 시기를 모두 잠금 해제하세요.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheckout("SINGLE")}
-                  className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white font-bold py-3 px-5 rounded-xl active:scale-[0.97] transition-all duration-150 shadow-sm text-xs sm:text-sm flex items-center justify-center gap-1.5"
-                >
-                  <span>2026 총운 열기 · 첫 결제 1,900원</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheckout("PERIOD_PASS")}
-                  className="w-full mt-2 text-[11px] font-semibold text-white/80 hover:text-white py-1 transition-colors"
-                >
-                  또는 30일 무제한 패스 (9,900원) →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* 3. 12 Months Highlights (월별 운세 타임라인) */}
+      {/* 3. 12 Months Highlights (월별 운세 타임라인 + 가장 좋은 달/조심할 달 티저) */}
       <section className="flex flex-col gap-3.5 mt-2">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base sm:text-lg font-black text-[#2B2430] flex items-center gap-2">
@@ -643,7 +613,39 @@ export default function AnnualFortuneClient({
           )}
         </div>
 
-        {!isLocked && data.monthlyHighlights ? (
+        {/* 미결제 시: 올해 가장 좋은 달 · 조심할 달 티저 pill + 12개월 타임라인 실루엣 */}
+        {isLocked && (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9E0]/70 flex items-center justify-between shadow-2xs">
+                <span className="text-xs font-bold text-[#6A5E72]">올해 가장 빛나는 달</span>
+                <span className="text-xs font-black text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-1 rounded-xl flex items-center gap-1">
+                  <span>{data.teasers?.bestMonth || "올해 가장 빛나는 달은 ●월"}</span>
+                  <Lock className="w-3 h-3 text-[#FF5C77]" />
+                </span>
+              </div>
+              <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9E0]/70 flex items-center justify-between shadow-2xs">
+                <span className="text-xs font-bold text-[#6A5E72]">조심하면 좋은 달</span>
+                <span className="text-xs font-black text-[#6A2C70] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-1 rounded-xl flex items-center gap-1">
+                  <span>{data.teasers?.cautionMonth || "딱 한 달, 감정·선택 조심"}</span>
+                  <Lock className="w-3 h-3 text-[#6A2C70]" />
+                </span>
+              </div>
+            </div>
+
+            {/* 12개월 타임라인 실루엣 (CSS 블러 더미) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 blur-[4px] select-none pointer-events-none opacity-40">
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <div key={m} className="bg-white p-3 rounded-xl border border-[#FFD9E0]/40 shadow-xs">
+                  <span className="text-xs font-bold text-[#FF5C77]">{m}월</span>
+                  <p className="text-[11px] text-[#8A8291] mt-0.5 line-clamp-1">기회의 달...</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isLocked && data.monthlyHighlights && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {data.monthlyHighlights.map(({ month, note }) => (
               <div
@@ -660,17 +662,6 @@ export default function AnnualFortuneClient({
                 </p>
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 blur-[5px] select-none pointer-events-none opacity-40">
-              {[1, 2, 3, 4, 5, 6].map((m) => (
-                <div key={m} className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/40 shadow-xs">
-                  <span className="text-xs font-bold text-[#FF5C77]">{m}월</span>
-                  <p className="text-xs text-[#8A8291] mt-1">이 달에는 새로운 흐름과 기회가 찾아옵니다...</p>
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </section>
@@ -732,7 +723,7 @@ export default function AnnualFortuneClient({
           </p>
 
           {/* Trust elements */}
-          <div className="flex items-center justify-center gap-4 text-[11px] text-[#8A8291] mb-5">
+          <div className="flex items-center justify-center gap-4 text-[11px] text-[#8A8291] mb-4">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               <span>PortOne 안전결제</span>
@@ -743,6 +734,20 @@ export default function AnnualFortuneClient({
             <span>자동 결제 없음</span>
           </div>
 
+          {/* 정직한 가치 비교 카드 */}
+          <div className="grid grid-cols-2 gap-2.5 mb-5 text-left max-w-sm mx-auto">
+            <div className="bg-[#FFF6F1] p-3 rounded-2xl border border-[#FFD9E0]/60">
+              <span className="text-[10px] font-extrabold text-[#FF5C77] block mb-0.5">단건 리포트</span>
+              <span className="text-xs font-black text-[#2B2430] block">2026 총운 1회</span>
+              <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">첫 결제가 1,900원 (재구매가 2,900원) · 90일 보관</span>
+            </div>
+            <div className="bg-[#6A2C70]/5 p-3 rounded-2xl border border-[#6A2C70]/20">
+              <span className="text-[10px] font-extrabold text-[#6A2C70] block mb-0.5">30일 패스</span>
+              <span className="text-xs font-black text-[#6A2C70] block">매일 코치 + 무제한</span>
+              <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">매일 데일리 운세 + 모든 궁합/총운 무제한 (9,900원)</span>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2.5 max-w-sm mx-auto">
             {/* Primary: 2026 Annual Fortune Single Purchase */}
             <button
@@ -751,7 +756,7 @@ export default function AnnualFortuneClient({
               disabled={isProcessingPayment}
               className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
-              <span>2026 총운 전체 열기 · 첫 결제 1,900원</span>
+              <span>2026 총운 전체 열기 · 첫 결제가 1,900원</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -760,16 +765,16 @@ export default function AnnualFortuneClient({
               type="button"
               onClick={() => handleOpenCheckout("PERIOD_PASS")}
               disabled={isProcessingPayment}
-              className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 active:scale-[0.97] text-[#6A2C70] border border-[#FFD9E0] py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-1.5"
+              className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 active:scale-[0.97] text-[#6A2C70] border border-[#FFD9E0] py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-1.5"
             >
-              <span>30일 무제한 패스로 모든 궁합까지 열기 (9,900원)</span>
+              <span>30일 패스 (매일 코치 + 무제한 9,900원) →</span>
             </button>
 
             <Link
               href={`/${locale}/pricing`}
               className="text-xs font-semibold text-[#8A8291] hover:text-[#2B2430] py-1.5 transition-colors"
             >
-              다른 요금제 알아보기 →
+              요금제 자세히 비교하기 →
             </Link>
           </div>
         </div>

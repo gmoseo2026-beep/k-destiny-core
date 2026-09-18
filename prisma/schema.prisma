@@ -89,6 +89,7 @@ model User {
   orders          Order[]
   subscriptions   Subscription?
   weeklyFortunes  WeeklyFortune[]
+  userDailyFortunes UserDailyFortune[]
 }
 
 model Account {
@@ -343,6 +344,20 @@ model AnnualFortune {
   createdAt DateTime @default(now())
 
   @@unique([userId, year])
+  @@index([userId])
+}
+
+// 16. 유저 데일리 운세 코치 (패스 회원 전용 매일 코치 캐시)
+model UserDailyFortune {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String   // "YYYY-MM-DD" 포맷
+  content   Json     // DailyFortuneContent
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
   @@index([userId])
 }
 

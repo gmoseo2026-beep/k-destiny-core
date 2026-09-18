@@ -283,6 +283,23 @@ Requirements:
 5. Output ONLY the raw JSON object. Do NOT include markdown code fences (like \`\`\`json).`;
 }
 
+export interface AnnualTeaser {
+  yearScore: number;
+  headline: string;
+  summary: string;
+  hooks: {
+    love: string;
+    money: string;
+    career: string;
+    health: string;
+    relationship: string;
+  };
+  teasers: {
+    bestMonth: string;
+    cautionMonth: string;
+  };
+}
+
 export function buildAnnualTeaserPrompt(contextBlock: string, year: number, toneGuide: string): string {
   return `${STYLE_GUIDE}
 
@@ -292,26 +309,37 @@ TONE: ${toneGuide}
 
 ${contextBlock}
 
-Write an engaging, warm teaser preview for the annual fortune reading for the year ${year}.
+Write an irresistible, curiosity-inducing teaser preview for the annual fortune reading for the year ${year}.
+CRITICAL GOAL: Spark intense curiosity and a desire to read the full report. 
+Do NOT give away the complete answers or conclusions. Instead, write punchy cliffhanger "hooks" that stop right before the revelation.
+
 You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
 \`\`\`typescript
-interface AnnualFortuneTeaser {
+interface AnnualTeaser {
   yearScore: number;                   // 0~100 overall score for the year ${year}
-  headline: string;                    // One-line punchy summary in warm Kongdak mascot tone (두근이 톤)
-  summary: string;                     // General overview of the year (2~3 sentences, friendly and grounded)
-  sections: {
-    love: { score: number; text: string }; // Love / Romance luck (0~100 score, detailed paragraph)
+  headline: string;                    // One-line punchy mascot headline (두근이 톤)
+  summary: string;                     // 2~3 sentences warm general overview
+  hooks: {                             // Exactly 1 sentence per area. Must cut off right before the conclusion (cliffhanger).
+    love: string;                      // e.g. "2026년, 당신에게 운명 같은 인연이 찾아오는 결정적 시기가 정해져 있어요 —"
+    money: string;                     // e.g. "큰 재물이 움직일 뜻밖의 타이밍이 올해 숨어 있어요 —"
+    career: string;                    // e.g. "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —"
+    health: string;                    // e.g. "올해 특별히 에너지를 충전하고 지켜야 할 중요한 순간이 있어요 —"
+    relationship: string;              // e.g. "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —"
+  };
+  teasers: {
+    bestMonth: string;                 // e.g. "올해 가장 눈부시게 빛나는 달은 ●월" (Cover specific month number with '●')
+    cautionMonth: string;              // e.g. "딱 한 달, 감정이나 선택을 조심하면 좋은 시기가 있어요"
   };
 }
 \`\`\`
 
 Requirements:
-1. Make it sound deeply personal, warm, encouraging, and insightful like a wise, empathetic mentor.
-2. Give practical, grounded advice rather than deterministic doom or absolute guarantees (entertaining and reflective purpose).
-3. Generate ONLY the 'love' section inside 'sections'. Do NOT generate money, career, health, or relationship. Do NOT generate monthlyHighlights or luckyPoints.
+1. Each hook MUST be an intriguing 1-sentence cliffhanger that stops right before the answer (결론 직전 끊기).
+2. NEVER give full conclusions or detailed action solutions in the hooks (those are reserved for the full paid report).
+3. In teasers.bestMonth, always hide the actual number with '●' (e.g. "●월" or "올해 가장 운이 트이는 달은 ●월").
 4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
-5. Output ONLY the raw JSON object. Do NOT include markdown code fences (like \`\`\`json).`;
+5. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;
 }
 
 export interface AnnualScoreParams {
@@ -376,3 +404,101 @@ export function calculateAnnualYearScore(params: AnnualScoreParams): number {
   // 68 ~ 95점 사이로 클램프 (희망적이며 현실적인 점수 대역)
   return Math.min(95, Math.max(68, score));
 }
+
+export interface DailyFortuneContent {
+  dayScore: number;
+  oneLine: string;   // 오늘의 한 줄 총평
+  action: string;    // "오늘 뭘 하면 좋은지" 행동 조언 1~2문장 (그날의 연애/돈/일/관계 중 포인트)
+  focus: "love" | "money" | "career" | "relationship"; // 오늘의 포커스 영역
+  goodTiming: string; // "오늘 오후, 연락하기 좋은 시간" 등
+}
+
+export function buildDailyFortunePrompt(contextBlock: string, dateStr: string, toneGuide: string): string {
+  return `${STYLE_GUIDE}
+
+${STRICT_NO_HANJA_RULE}
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+TARGET DATE: ${dateStr}
+
+You are Kongdak's warm and caring daily fortune coach (두근이).
+Write a practical, encouraging, and actionable daily fortune reading for today (${dateStr}).
+
+You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+interface DailyFortuneContent {
+  dayScore: number;                                    // 0~100 overall score for today
+  oneLine: string;                                     // A heartwarming, punchy 1-line mascot summary for today
+  action: string;                                      // 1~2 sentences practical advice on "what to do today" (clear daily action item)
+  focus: "love" | "money" | "career" | "relationship"; // The single most prominent focus area for today
+  goodTiming: string;                                  // e.g. "오늘 오후 3시~5시, 연락하기 좋은 시간" or "점심 직후, 중요한 대화 나누기 좋은 타이밍"
+}
+\`\`\`
+
+Requirements:
+1. Keep it grounded, warm, and highly actionable. Give realistic, daily behavioral guidance.
+2. Focus on making the user smile and feel empowered for their day.
+3. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
+4. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;
+}
+
+/**
+ * 특정 날짜(YYYY-MM-DD)와 사주 정보를 기반으로 한 결정론적 데일리 점수 산출
+ * 동일 유저가 동일 날짜에 조회하면 100% 동일한 점수(65~96점) 반환
+ */
+export function calculateDailyScore(params: {
+  date: string;
+  dayMaster?: string | null;
+  elementsScore?: Record<string, number> | null;
+}): number {
+  const { date, dayMaster = "", elementsScore } = params;
+  const el = elementsScore || { wood: 20, fire: 20, earth: 20, metal: 20, water: 20 };
+
+  // 기준 베이스 점수 (74점)
+  let score = 74;
+
+  // 1) 날짜 기반 해시 (년월일 숫자 합산)
+  const cleanDate = date.replace(/\D/g, "");
+  let dateHash = 0;
+  for (let i = 0; i < cleanDate.length; i++) {
+    dateHash = (dateHash * 13 + parseInt(cleanDate[i], 10)) % 10007;
+  }
+
+  // 2) 요일 오행 연동
+  const dayOfWeek = new Date(date).getDay(); // 0(일) ~ 6(토)
+  const dayEnergyMap: Record<number, keyof typeof el> = {
+    0: "fire",  // 일요일 (태양/화)
+    1: "water", // 월요일 (달/수)
+    2: "fire",  // 화요일 (화)
+    3: "water", // 수요일 (수)
+    4: "wood",  // 목요일 (목)
+    5: "metal", // 금요일 (금)
+    6: "earth", // 토요일 (토)
+  };
+  const todayElement = dayEnergyMap[dayOfWeek] || "earth";
+  const elValue = Number(el[todayElement] || 20);
+
+  if (elValue >= 25) score += 6;
+  else if (elValue >= 15) score += 3;
+  else score += 1;
+
+  // 3) 일간과 날짜 해시의 조합 분산 (-7 ~ +8)
+  const dm = (dayMaster || "").toUpperCase();
+  let dmOffset = 0;
+  if (dm.includes("FIRE")) dmOffset = 2;
+  else if (dm.includes("WOOD")) dmOffset = 3;
+  else if (dm.includes("EARTH")) dmOffset = 4;
+  else if (dm.includes("METAL")) dmOffset = 1;
+  else if (dm.includes("WATER")) dmOffset = 2;
+
+  const variance = ((dateHash + dmOffset * 17) % 16) - 7; // -7 ~ +8
+  score += variance;
+
+  // 65~96점 사이 클램프
+  return Math.min(96, Math.max(65, score));
+}
+

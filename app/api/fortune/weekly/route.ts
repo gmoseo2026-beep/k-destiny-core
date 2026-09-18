@@ -12,6 +12,8 @@ import {
   repairJSON 
 } from "@/lib/destinyGen";
 
+import { isEntitled } from "@/lib/entitlement";
+
 function getCurrentMondayStr() {
   const date = new Date();
   const day = date.getDay();
@@ -26,13 +28,19 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized", locked: true }, { status: 401 });
     }
     const userId = session.user.id;
 
-    // Check entitlement (using PREMIUM or active subscription bypass for MVP)
-    // We will bypass entitlement check strictly for Admin, or assume they have access 
-    // since we're in the MVP testing phase. We could check isEntitled here.
+    // Check entitlement (콩닥 플러스 패스: ADMIN 또는 SUBSCRIPTION 필수)
+    const entitlement = await isEntitled({
+      userId,
+      role: session.user.role,
+      tier: session.user.tier,
+    });
+    const isPassMember =
+      entitlement.entitled &&
+      (entitlement.reason === "ADMIN" || entitlement.reason === "SUBSCRIPTION");
 
     const body = await req.json();
     const { targetCompatId, locale = "ko" } = body;
@@ -49,8 +57,19 @@ export async function POST(req: Request) {
     });
 
     if (existing) {
-      console.log(`[weekly-timing] cache=hit genMs=0 dbMs=0 model=cache`);
-      return NextResponse.json({ success: true, data: existing.content });
+      console.log(`[weekly-timing] cache=hit genMs=0 dbMs=0 model=cache isPassMember=${isPassMember}`);
+      const content = existing.content as any;
+      if (!isPassMember) {
+        // Redaction: 패스 미가입 회원에게는 요약만 전송, 상세 운세 서버 미전송
+        return NextResponse.json({
+          success: true,
+          data: {
+            summary: content?.summary || "이번 주 당신을 기다리는 특별한 흐름이 준비되어 있어요.",
+          },
+          locked: true,
+        });
+      }
+      return NextResponse.json({ success: true, data: content, locked: false });
     }
 
     // 2. Fetch User Profile
@@ -153,7 +172,17 @@ export async function POST(req: Request) {
     const tDone = Date.now();
     console.log(`[weekly-timing] cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${PREMIUM_MODELS[0]}`);
 
-    return NextResponse.json({ success: true, data: weeklyFortune.content });
+    if (!isPassMember) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          summary: (weeklyFortune.content as any)?.summary || "이번 주 당신을 기다리는 특별한 흐름이 준비되어 있어요.",
+        },
+        locked: true,
+      });
+    }
+
+    return NextResponse.json({ success: true, data: weeklyFortune.content, locked: false });
   } catch (error: any) {
     console.error("Weekly Fortune API Error:", error);
     return NextResponse.json(
