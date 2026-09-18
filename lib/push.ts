@@ -63,3 +63,16 @@ export async function subscribeToPush(): Promise<{ success: boolean; error?: str
     return { success: false, error: error?.message || 'Unknown error' };
   }
 }
+
+export async function isPushSubscribed(): Promise<boolean> {
+  try {
+    if (typeof window === 'undefined') return false;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
+    if (Notification.permission !== 'granted') return false;
+    const registration = await navigator.serviceWorker.ready;
+    const sub = await registration.pushManager.getSubscription();
+    return !!sub;
+  } catch {
+    return false;
+  }
+}

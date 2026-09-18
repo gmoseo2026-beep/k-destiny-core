@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Sparkles, Calendar, Heart, Coins, ArrowRight, Lock, Bell, CheckCircle2 } from "lucide-react";
-import { subscribeToPush } from "@/lib/push";
+import { subscribeToPush, isPushSubscribed } from "@/lib/push";
 import { requestPortOnePayment } from "@/lib/payments/client";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
@@ -43,6 +43,11 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
   // Pass Checkout Modal
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // 마운트 시 실제 브라우저 푸시 구독 상태 복원
+  useEffect(() => {
+    isPushSubscribed().then(setPushSubscribed).catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function loadFortunes() {
