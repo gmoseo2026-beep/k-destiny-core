@@ -172,13 +172,18 @@ Make it sound like a very expensive, deeply personal reading by a wise mentor. N
   } else {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
     
-Write a captivating, highly shareable "free preview" compatibility reading.
-Must be exactly 3 short paragraphs.
-- Paragraph 1: The Hook. Start with a bold statement about their dynamic based on the Core Keywords.
-- Paragraph 2: The Why. Briefly explain how their energies mix in plain words (e.g., warmth meets steady ground).
-- Paragraph 3: The Teaser. End on a slightly suspenseful or deeply resonant note that makes them curious about their deeper dynamic.
+Write a brief, highly intriguing "free preview" compatibility teaser.
+CRITICAL PRINCIPLE:
+- FREE = Score + Atmosphere / Emotion + Curiosity Hook ONLY.
+- PAID = Saju root cause (five elements), specific synergy, conflict trigger / solutions, actionable advice.
 
-Do NOT give away the full relationship advice. Keep it punchy and viral. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms.`;
+RULES:
+1. Length: MUST be exactly ONE short paragraph (2~3 sentences, about 3~4 lines total). Keep it concise!
+2. Focus ONLY on the overall vibe and emotional chemistry of the relationship (e.g., "두 사람이 마주했을 때 느껴지는 따뜻한 온기와 은근한 설렘").
+3. DO NOT explain the why or root causes (NO mentioning metal/wood/fire/water/earth combinations, NO element names).
+4. DO NOT provide relationship advice, conflict solutions, or future timing (these are strictly locked in the paid deep report).
+5. The very last sentence MUST end with an irresistible cliffhanger hook that sparks intense curiosity about what is hidden (e.g., "하지만 두 사람 사이에 숨겨진 진짜 변수와 관계를 지켜낼 결정적인 열쇠는 아직 남아있답니다.").
+6. Absolutely NO Chinese characters (한자) and NO saju technical terms.`;
   }
 }
 
@@ -313,13 +318,17 @@ Write an irresistible, curiosity-inducing teaser preview for the annual fortune 
 CRITICAL GOAL: Spark intense curiosity and a desire to read the full report. 
 Do NOT give away the complete answers or conclusions. Instead, write punchy cliffhanger "hooks" that stop right before the revelation.
 
+CRITICAL PRINCIPLE:
+- FREE = Score + Atmosphere / Emotion + Cliffhanger Hooks ONLY.
+- PAID = Saju root cause (five elements), specific timing, conflict solutions, actionable advice, 12 months full breakdown, lucky points.
+
 You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
 \`\`\`typescript
 interface AnnualTeaser {
   yearScore: number;                   // 0~100 overall score for the year ${year}
   headline: string;                    // One-line punchy mascot headline (두근이 톤)
-  summary: string;                     // 2~3 sentences warm general overview
+  summary: string;                     // 2~3 sentences overview of the year's vibe and emotion only. NO concrete conclusions (NO specific timing or solutions). Leave deep curiosity.
   hooks: {                             // Exactly 1 sentence per area. Must cut off right before the conclusion (cliffhanger).
     love: string;                      // e.g. "2026년, 당신에게 운명 같은 인연이 찾아오는 결정적 시기가 정해져 있어요 —"
     money: string;                     // e.g. "큰 재물이 움직일 뜻밖의 타이밍이 올해 숨어 있어요 —"
@@ -336,7 +345,7 @@ interface AnnualTeaser {
 
 Requirements:
 1. Each hook MUST be an intriguing 1-sentence cliffhanger that stops right before the answer (결론 직전 끊기).
-2. NEVER give full conclusions or detailed action solutions in the hooks (those are reserved for the full paid report).
+2. NEVER give full conclusions, definitive dates, or detailed action solutions in summary or hooks (those are strictly reserved for the full paid report).
 3. In teasers.bestMonth, always hide the actual number with '●' (e.g. "●월" or "올해 가장 운이 트이는 달은 ●월").
 4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
 5. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;
