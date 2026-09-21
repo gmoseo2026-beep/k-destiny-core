@@ -103,6 +103,11 @@ export default function AnnualFortuneClient({
   const [min, setMin] = useState("0");
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Optional input toggle states (collapsed by default for ultra-compact first impression)
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [showTimeInput, setShowTimeInput] = useState(false);
+  const yearSelectRef = React.useRef<HTMLSelectElement>(null);
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -119,12 +124,18 @@ export default function AnnualFortuneClient({
       const stored = sessionStorage.getItem("kongdak_guest_fortune_input");
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed.name) setName(parsed.name);
+        if (parsed.name) {
+          setName(parsed.name);
+          setShowNameInput(true);
+        }
         if (parsed.birthYear) setYear(String(parsed.birthYear));
         if (parsed.birthMonth) setMonth(String(parsed.birthMonth));
         if (parsed.birthDay) setDay(String(parsed.birthDay));
         if (parsed.gender) setGender(parsed.gender);
-        if (parsed.ampm) setAmpm(parsed.ampm);
+        if (parsed.ampm) {
+          setAmpm(parsed.ampm);
+          setShowTimeInput(true);
+        }
         if (parsed.hour) setHour(String(parsed.hour));
         if (parsed.min) setMin(String(parsed.min));
       }
@@ -132,6 +143,16 @@ export default function AnnualFortuneClient({
       // ignore
     }
   }, []);
+
+  // Autofocus year select on mount for instant interaction
+  useEffect(() => {
+    if (showInputForm && !data) {
+      const timer = setTimeout(() => {
+        yearSelectRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showInputForm, data]);
 
   // Payment modal state
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -300,50 +321,38 @@ export default function AnnualFortuneClient({
   if (showInputForm && !data) {
     return (
       <div className="w-full max-w-md md:max-w-xl flex flex-col items-center">
-        {/* Intro banner */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 bg-[#FF5C77]/10 text-[#FF5C77] px-3.5 py-1 rounded-full text-xs font-bold mb-3">
+        {/* Intro banner - Compact for zero scroll */}
+        <div className="text-center mb-4 sm:mb-5">
+          <div className="inline-flex items-center gap-1.5 bg-[#FF5C77]/10 text-[#FF5C77] px-3.5 py-1 rounded-full text-xs font-bold mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             <span>2026 병오년(붉은 말의 해) 특별 운세</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#2B2430] tracking-tight">
             2026 나의 총운 무료 맛보기
           </h1>
-          <p className="text-xs sm:text-sm text-[#6A5E72] mt-2 leading-relaxed">
-            생년월일만 입력하면 나의 <strong>올해 총운 점수와 연애운</strong>을<br className="hidden sm:inline" />
-            즉시 무료로 분석해 드려요.
+          <p className="text-xs sm:text-sm text-[#6A5E72] mt-1.5 leading-relaxed font-medium">
+            생년월일만 넣으면 3초 만에 무료로 총운 점수와 연애운 확인
           </p>
         </div>
 
         {/* Input Card */}
-        <div className="w-full bg-white p-6 sm:p-7 rounded-3xl shadow-sm border border-[#FFD9E0]/60">
-          <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+        <div className="w-full bg-white p-5 sm:p-7 rounded-3xl shadow-sm border border-[#FFD9E0]/60">
+          <form onSubmit={handleFormSubmit} className="flex flex-col gap-3.5">
             {formError && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold">
                 {formError}
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
-                이름 또는 닉네임 (선택)
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="예: 김콩닥"
-                maxLength={20}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
-              />
-            </div>
-
+            {/* 1. 생년월일 (맨 위 기본 노출) */}
             <div>
               <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
                 생년월일 (양력) <span className="text-[#FF5C77]">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <select
+                  ref={yearSelectRef}
+                  autoFocus
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
@@ -379,72 +388,151 @@ export default function AnnualFortuneClient({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
-                  성별 <span className="text-[#FF5C77]">*</span>
-                </label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value as "F" | "M")}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 font-medium"
+            {/* 2. 성별 (원터치 2버튼 토글) */}
+            <div>
+              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+                성별 <span className="text-[#FF5C77]">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGender("F")}
+                  className={`py-2.5 sm:py-3 rounded-xl text-sm font-bold border transition-all active:scale-[0.96] ${
+                    gender === "F"
+                      ? "bg-[#FF5C77] text-white border-[#FF5C77] shadow-xs"
+                      : "bg-[#FFF6F1]/40 text-[#6A5E72] border-gray-200 hover:border-[#FF5C77]/40"
+                  }`}
                 >
-                  <option value="F">여성</option>
-                  <option value="M">남성</option>
-                </select>
+                  여성
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGender("M")}
+                  className={`py-2.5 sm:py-3 rounded-xl text-sm font-bold border transition-all active:scale-[0.96] ${
+                    gender === "M"
+                      ? "bg-[#FF5C77] text-white border-[#FF5C77] shadow-xs"
+                      : "bg-[#FFF6F1]/40 text-[#6A5E72] border-gray-200 hover:border-[#FF5C77]/40"
+                  }`}
+                >
+                  남성
+                </button>
               </div>
+            </div>
 
-              <div className="sm:col-span-3">
-                <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
-                  태어난 시간 (선택)
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <select
-                    value={ampm}
-                    onChange={(e) => setAmpm(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
-                  >
-                    <option value="">시간 모름</option>
-                    <option value="AM">오전</option>
-                    <option value="PM">오후</option>
-                  </select>
-                  <select
-                    value={hour}
-                    onChange={(e) => setHour(e.target.value)}
-                    disabled={!ampm}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
-                  >
-                    {hours.map((h) => (
-                      <option key={h} value={h}>{h}시</option>
-                    ))}
-                  </select>
-                  <select
-                    value={min}
-                    onChange={(e) => setMin(e.target.value)}
-                    disabled={!ampm}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
-                  >
-                    {minutes.map((m) => (
-                      <option key={m} value={m}>{m}분</option>
-                    ))}
-                  </select>
+            {/* 3. 선택 항목 접기/펼치기 (이름 & 태어난 시간) */}
+            <div className="pt-1 flex flex-col gap-2 border-t border-gray-100">
+              {/* 이름 필드 토글 */}
+              {!showNameInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowNameInput(true)}
+                  className="self-start text-xs font-semibold text-[#8A8291] hover:text-[#FF5C77] transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
+                >
+                  <span>+ 이름 넣기 (선택)</span>
+                </button>
+              ) : (
+                <div className="space-y-1 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-[#6A2C70]">
+                      이름 또는 닉네임 (선택)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNameInput(false);
+                        setName("");
+                      }}
+                      className="text-[11px] text-[#8A8291] hover:text-[#FF5C77]"
+                    >
+                      접기
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="예: 김콩닥 (미입력 시 '나')"
+                    maxLength={20}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  />
                 </div>
-              </div>
+              )}
+
+              {/* 태어난 시간 필드 토글 */}
+              {!showTimeInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTimeInput(true)}
+                  className="self-start text-xs font-semibold text-[#8A8291] hover:text-[#FF5C77] transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
+                >
+                  <span>+ 태어난 시간 넣기 (선택, 더 정밀한 사주)</span>
+                </button>
+              ) : (
+                <div className="space-y-1 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-[#6A2C70]">
+                      태어난 시간 (선택)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowTimeInput(false);
+                        setAmpm("");
+                      }}
+                      className="text-[11px] text-[#8A8291] hover:text-[#FF5C77]"
+                    >
+                      접기
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      value={ampm}
+                      onChange={(e) => setAmpm(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                    >
+                      <option value="">시간 모름</option>
+                      <option value="AM">오전</option>
+                      <option value="PM">오후</option>
+                    </select>
+                    <select
+                      value={hour}
+                      onChange={(e) => setHour(e.target.value)}
+                      disabled={!ampm}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
+                    >
+                      {hours.map((h) => (
+                        <option key={h} value={h}>{h}시</option>
+                      ))}
+                    </select>
+                    <select
+                      value={min}
+                      onChange={(e) => setMin(e.target.value)}
+                      disabled={!ampm}
+                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-40"
+                    >
+                      {minutes.map((m) => (
+                        <option key={m} value={m}>{m}분</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Privacy note */}
-            <div className="p-3 bg-[#FFF6F1] rounded-xl border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] flex items-center gap-1.5 mt-1">
-              <ShieldCheck className="w-4 h-4 text-[#FF5C77] shrink-0" />
-              <span>비회원 입력 정보는 계산에만 사용되며 절대 서버에 저장되지 않습니다.</span>
-            </div>
-
+            {/* 4. CTA 버튼 (행동형 문구, 전역 active scale 애니메이션) */}
             <button
               type="submit"
-              className="w-full mt-2 bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+              className="w-full mt-2 bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.96] text-white py-3.5 sm:py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
-              <span>2026 총운 무료로 맛보기</span>
+              <span>무료로 내 2026 총운 보기</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+
+            {/* 5. 개인정보 안내 (버튼 아래로 이동하여 폼을 컴팩트하게 유지) */}
+            <div className="p-2.5 bg-[#FFF6F1] rounded-xl border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] flex items-center justify-center gap-1.5 mt-0.5 text-center">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#FF5C77] shrink-0" />
+              <span>비회원 입력 정보는 계산에만 사용되며 저장되지 않습니다.</span>
+            </div>
           </form>
         </div>
       </div>
