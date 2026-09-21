@@ -9,6 +9,8 @@ import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import {
   Lock,
   Heart,
@@ -159,7 +161,16 @@ export default function AnnualFortuneClient({
   const [checkoutProduct, setCheckoutProduct] = useState<"SINGLE" | "PERIOD_PASS">("SINGLE");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // In-app Browser Guard & Notice State
+  const [inAppOpen, setInAppOpen] = useState(false);
+  const [isInApp, setIsInApp] = useState(false);
+
+  useEffect(() => {
+    setIsInApp(isInAppBrowser());
+  }, []);
+
   const handleOpenCheckout = (product: "SINGLE" | "PERIOD_PASS") => {
+    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
     if (!session?.user?.id) {
       // Save current input to sessionStorage so user doesn't lose it upon returning
       try {
@@ -600,33 +611,50 @@ export default function AnnualFortuneClient({
 
       {/* 2-B. Top Primary CTA Banner (미결제 시 점수 직후 노출) */}
       {isLocked && (
-        <button
-          type="button"
-          onClick={() => handleOpenCheckout("SINGLE")}
-          className="w-full bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
-              <Lock className="w-4 h-4" />
-            </span>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs sm:text-sm font-black text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
-                  결정적인 건 잠겨 있어요 — 전체 리포트 열기
-                </span>
-                <span className="text-[10px] font-black text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
-                  첫 결제 1,900원
+        <>
+          <button
+            type="button"
+            onClick={() => handleOpenCheckout("SINGLE")}
+            className="w-full bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-8 h-8 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
+                <Lock className="w-4 h-4" />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs sm:text-sm font-black text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
+                    결정적인 건 잠겨 있어요 — 전체 리포트 열기
+                  </span>
+                  <span className="text-[10px] font-black text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
+                    첫 결제 1,900원
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#8A8291] truncate">
+                  5대 영역 심층 분석 & 12개월 타임라인 즉시 확인
                 </span>
               </div>
-              <span className="text-[11px] text-[#8A8291] truncate">
-                5대 영역 심층 분석 & 12개월 타임라인 즉시 확인
+            </div>
+            <span className="text-xs font-bold text-[#FF5C77] shrink-0 flex items-center gap-0.5 bg-[#FFF6F1] px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-[#FF5C77] group-hover:text-white transition-all">
+              열기 <ArrowRight className="w-3 h-3" />
+            </span>
+          </button>
+
+          {/* In-app Browser Notice Banner (인앱 결제 오류 사전 탈출 유도) */}
+          {isInApp && (
+            <div
+              onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
+              className="w-full bg-[#FF5C77]/10 hover:bg-[#FF5C77]/15 border border-[#FF5C77]/30 rounded-2xl p-3 text-xs text-[#6A2C70] flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
+            >
+              <span className="font-semibold text-left">
+                🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
+              </span>
+              <span className="text-[11px] font-bold text-[#FF5C77] shrink-0 underline whitespace-nowrap">
+                외부 브라우저 열기
               </span>
             </div>
-          </div>
-          <span className="text-xs font-bold text-[#FF5C77] shrink-0 flex items-center gap-0.5 bg-[#FFF6F1] px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-[#FF5C77] group-hover:text-white transition-all">
-            열기 <ArrowRight className="w-3 h-3" />
-          </span>
-        </button>
+          )}
+        </>
       )}
 
       {/* 2. 5 Key Life Sections (궁금증-갭 미리보기: 각 영역 한 줄 훅 + 블러 실루엣 + 자물쇠) */}
@@ -988,6 +1016,8 @@ export default function AnnualFortuneClient({
           }
         }}
       />
+      {/* InApp Browser Manual Escape Modal */}
+      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
     </div>
   );
 }

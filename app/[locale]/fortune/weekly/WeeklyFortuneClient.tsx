@@ -12,6 +12,9 @@ import { subscribeToPush, isPushSubscribed } from "@/lib/push";
 import { requestPortOnePayment } from "@/lib/payments/client";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
+
 
 interface WeeklyFortuneClientProps {
   locale: string;
@@ -43,6 +46,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
   // Pass Checkout Modal
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [inAppOpen, setInAppOpen] = useState(false);
 
   // 마운트 시 실제 브라우저 푸시 구독 상태 복원
   useEffect(() => {
@@ -112,6 +116,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
   };
 
   const handleOpenPassCheckout = () => {
+    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
     if (!session?.user?.id) {
       alert("패스권 구매는 로그인이 필요합니다.");
       const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/weekly`;
@@ -457,6 +462,8 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           }
         }}
       />
+      {/* InApp Browser Manual Escape Modal */}
+      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
     </div>
   );
 }

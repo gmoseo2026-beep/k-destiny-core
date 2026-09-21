@@ -12,6 +12,8 @@ import dynamic from "next/dynamic";
 import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight } from "lucide-react";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import {
   requestPortOnePayment,
   recallUnlockToken,
@@ -128,6 +130,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
   // Period Pass Selection State
   const [selectedPlan, setSelectedPlan] = useState<string>("1_MONTH");
+
+  // In-app Browser Guard & Notice State
+  const [inAppOpen, setInAppOpen] = useState(false);
+  const [isInApp, setIsInApp] = useState(false);
+
+  useEffect(() => {
+    setIsInApp(isInAppBrowser());
+  }, []);
 
   // Score Count-Up Animation (0 -> data.score in 0.8s ease-out + pop + haptic)
   const [displayScore, setDisplayScore] = useState(0);
@@ -536,37 +546,55 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
       {/* 2-B. Top Primary CTA Banner (미결제 시 점수 직후 노출) */}
       {!isPremium && !unlockToken && !deepReport && (
-        <button
-          type="button"
-          onClick={() => {
-            trackEvent("click_top_cta", { compatId: data.id });
-            setCheckoutType("SINGLE");
-            setCheckoutModalOpen(true);
-          }}
-          className="w-full mt-4 bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-8 h-8 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
-              <Lock className="w-4 h-4" />
-            </span>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs sm:text-sm font-black text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
-                  결정적인 건 잠겨 있어요 — 전체 리포트 열기
-                </span>
-                <span className="text-[10px] font-black text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
-                  첫 결제 1,900원
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+              trackEvent("click_top_cta", { compatId: data.id });
+              setCheckoutType("SINGLE");
+              setCheckoutModalOpen(true);
+            }}
+            className="w-full mt-4 bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-8 h-8 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
+                <Lock className="w-4 h-4" />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs sm:text-sm font-black text-[#2B2430] group-hover:text-[#FF5C77] transition-colors">
+                    결정적인 건 잠겨 있어요 — 전체 리포트 열기
+                  </span>
+                  <span className="text-[10px] font-black text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
+                    첫 결제 1,900원
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#8A8291] truncate">
+                  갈등 유발 포인트 3가지 & 극복법 · 현실 연애 조언
                 </span>
               </div>
-              <span className="text-[11px] text-[#8A8291] truncate">
-                갈등 유발 포인트 3가지 & 극복법 · 현실 연애 조언
+            </div>
+            <span className="text-xs font-bold text-[#FF5C77] shrink-0 flex items-center gap-0.5 bg-[#FFF6F1] px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-[#FF5C77] group-hover:text-white transition-all">
+              열기 <ArrowRight className="w-3 h-3" />
+            </span>
+          </button>
+
+          {/* In-app Browser Notice Banner (인앱 결제 오류 사전 탈출 유도) */}
+          {isInApp && (
+            <div
+              onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
+              className="w-full mt-2.5 bg-[#FF5C77]/10 hover:bg-[#FF5C77]/15 border border-[#FF5C77]/30 rounded-2xl p-3 text-xs text-[#6A2C70] flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
+            >
+              <span className="font-semibold text-left">
+                🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
+              </span>
+              <span className="text-[11px] font-bold text-[#FF5C77] shrink-0 underline whitespace-nowrap">
+                외부 브라우저 열기
               </span>
             </div>
-          </div>
-          <span className="text-xs font-bold text-[#FF5C77] shrink-0 flex items-center gap-0.5 bg-[#FFF6F1] px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-[#FF5C77] group-hover:text-white transition-all">
-            열기 <ArrowRight className="w-3 h-3" />
-          </span>
-        </button>
+          )}
+        </>
       )}
 
       {/* AI Free Summary Section */}
@@ -831,6 +859,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
               <button
                 onClick={() => {
+                  if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
                   trackEvent("click_unlock_single", { compatId: data.id });
                   setCheckoutType("SINGLE");
                   setCheckoutModalOpen(true);
@@ -855,6 +884,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </div>
                 <button
                   onClick={() => {
+                    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
                     trackEvent("click_unlock_pass", { plan: "1_MONTH" });
                     if (!session?.user?.id) {
                       alert("패스권 구매는 로그인이 필요합니다.");
@@ -969,6 +999,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <button
               type="button"
               onClick={() => {
+                if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
                 trackEvent("click_sticky_cta", { compatId: data.id });
                 setCheckoutType("SINGLE");
                 setCheckoutModalOpen(true);
@@ -981,6 +1012,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           </div>
         </div>
       )}
+
+      {/* InApp Browser Manual Escape Modal */}
+      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
 
       {/* New Test CTA */}
       <div className="mt-8 text-center">

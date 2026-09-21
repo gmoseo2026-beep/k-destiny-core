@@ -10,6 +10,9 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { Sparkles, ArrowRight } from "lucide-react";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
+
 
 export default function PricingClient({ locale }: { locale: string }) {
   const t = useTranslations("Pricing");
@@ -18,8 +21,10 @@ export default function PricingClient({ locale }: { locale: string }) {
   const [selectedPlan, setSelectedPlan] = useState<"1_MONTH" | "3_MONTHS">("1_MONTH");
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [inAppOpen, setInAppOpen] = useState(false);
 
   const handlePeriodPassCheckout = (planId: "1_MONTH" | "3_MONTHS") => {
+    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
     if (!session?.user?.id) {
       alert("패스권 구매는 로그인이 필요합니다.");
       const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/pricing`;
@@ -308,6 +313,8 @@ export default function PricingClient({ locale }: { locale: string }) {
           }
         }}
       />
+      {/* InApp Browser Manual Escape Modal */}
+      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
     </div>
   );
 }

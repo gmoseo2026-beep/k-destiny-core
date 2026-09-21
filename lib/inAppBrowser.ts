@@ -128,3 +128,15 @@ export function openInExternalBrowser(targetUrl?: string): boolean {
   return false;
 }
 
+/**
+ * 결제 시작 전 인앱 브라우저 가드.
+ * @returns true = 인앱이라 결제를 막았음(호출부는 여기서 return). false = 정상 브라우저(결제 진행).
+ * @param onNeedManual 안드/카카오/라인처럼 자동 탈출이 안 되는 iOS 인앱일 때 호출(호출부가 InAppBrowserModal 오픈).
+ */
+export function blockPaymentIfInApp(onNeedManual: () => void): boolean {
+  if (!isInAppBrowser()) return false;      // 정상 브라우저 → 결제 진행
+  const escaped = openInExternalBrowser(window.location.href); // 카카오/라인/안드 → 크롬/사파리로 튕김
+  if (!escaped) onNeedManual();             // iOS 인스타/스레드 등 → 복사 안내 모달
+  return true;                              // 인앱 → 결제 중단
+}
+
