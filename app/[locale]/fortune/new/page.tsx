@@ -1,42 +1,38 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import CompatNewClient from "@/components/CompatNewClient";
+import FortuneNewClient from "@/components/FortuneNewClient";
 import { canonicalUrlFor } from "@/lib/seo";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 
-const TITLE = "상대방 정보 입력 — 콩닥 궁합";
-const DESCRIPTION = "두 사람의 생년월일시로 알아보는 진짜 사주 궁합과 타고난 에너지 케미";
+const TITLE = "내 사주 정보 입력 — 콩닥";
+const DESCRIPTION = "사주 정보를 입력하고 정확한 분석 결과를 확인하세요.";
 
-// canonical 을 직접 선언한다. 선언하지 않으면 레이아웃의 canonical(로케일 홈)을
-// 상속해 이 페이지가 "홈의 중복"으로 색인에서 제외된다. ?ref= 등 유입 파라미터는 canonical 에 넣지 않는다.
-// 로케일과 무관하게 ko URL 로 통합한다 — 근거는 lib/seo.ts 의 canonicalUrlFor 주석 참조.
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   await params;
-  const canonical = canonicalUrlFor('/compat/new');
+  const canonical = canonicalUrlFor('/fortune/new');
 
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical },
     openGraph: { title: TITLE, description: DESCRIPTION, url: canonical },
-    twitter: { title: TITLE, description: DESCRIPTION },
   };
 }
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ ref?: string; productId?: string }>;
+  searchParams: Promise<{ productId?: string }>;
 }
 
-export default async function CompatNewPage({ params, searchParams }: PageProps) {
+export default async function FortuneNewPage({ params, searchParams }: PageProps) {
   const { locale } = await params;
-  const { ref, productId } = await searchParams;
+  const { productId } = await searchParams;
 
   const session = await getServerSession(authOptions);
   let profile = null;
@@ -63,15 +59,15 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
       {/* Hero Title */}
       <div className="w-full max-w-md text-center mb-6">
         <h1 className="text-2xl font-black text-[#2B2430] tracking-tight">
-          우리, 얼마나 잘 맞을까?
+          내 사주 정보 입력
         </h1>
         <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
-          두 사람의 생년월일만 넣으면 30초 만에 분석 완료 🔮
+          가장 정확한 사주 풀이를 위해 생년월일을 입력해주세요 ✨
         </p>
       </div>
 
       {/* Form Component */}
-      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} />
+      <FortuneNewClient locale={locale} productId={productId} initialProfile={profile} />
     </main>
   );
 }

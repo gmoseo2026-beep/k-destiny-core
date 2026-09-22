@@ -203,8 +203,13 @@ export async function POST(req: Request) {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
         summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        freeSection: jsonResult.freeSection || {
+          type: "love",
+          score: 85,
+          text: "올해 연애운은 전반적으로 매우 긍정적인 흐름을 보입니다. 새로운 인연을 만나거나 기존의 관계가 한층 깊어질 수 있는 기회가 찾아올 것입니다."
+        },
         hooks: {
-          love: jsonResult.hooks?.love || "2026년, 당신에게 운명 같은 인연이 다가오는 결정적 시기가 정해져 있어요 —",
+          love: jsonResult.hooks?.love,
           money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
           career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
           health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",
@@ -378,8 +383,13 @@ export async function POST(req: Request) {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
         summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        freeSection: jsonResult.freeSection || {
+          type: "love",
+          score: 85,
+          text: "올해 연애운은 전반적으로 매우 긍정적인 흐름을 보입니다. 새로운 인연을 만나거나 기존의 관계가 한층 깊어질 수 있는 기회가 찾아올 것입니다."
+        },
         hooks: {
-          love: jsonResult.hooks?.love || "2026년, 당신에게 운명 같은 인연이 다가오는 결정적 시기가 정해져 있어요 —",
+          love: jsonResult.hooks?.love,
           money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
           career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
           health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",

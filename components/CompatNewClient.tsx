@@ -8,10 +8,11 @@ import KongdakMascot from "@/components/KongdakMascot";
 interface CompatNewClientProps {
   locale: string;
   refToken?: string;
+  productId?: string;
   initialProfile?: any;
 }
 
-export default function CompatNewClient({ locale, refToken, initialProfile }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, productId, initialProfile }: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -138,7 +139,11 @@ export default function CompatNewClient({ locale, refToken, initialProfile }: Co
       // 붙이면 본인이 share_visit(유입)으로 잡히고, 이어서 만드는 궁합이
       // compat_created{has_ref:true} + sourceCompatId=본인 으로 기록되어 K 가 자기참조로 부풀려진다.
       // 주소창 복사용 ref 는 결과 화면이 replaceState 로 따로 붙인다.
-      router.push(`/${locale}/compat/${json.shareToken}`);
+      if (productId) {
+        router.push(`/${locale}/compat/${json.shareToken}?productId=${productId}`);
+      } else {
+        router.push(`/${locale}/compat/${json.shareToken}`);
+      }
     } catch (err) {
       console.error("궁합 생성 실패:", err);
       setErrorMsg(err instanceof Error ? err.message : "궁합 계산 중 오류가 발생했습니다.");

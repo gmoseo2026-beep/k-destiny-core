@@ -292,12 +292,17 @@ export interface AnnualTeaser {
   yearScore: number;
   headline: string;
   summary: string;
+  freeSection: {
+    type: "love" | "money" | "career" | "health" | "relationship";
+    score: number;
+    text: string;
+  };
   hooks: {
-    love: string;
-    money: string;
-    career: string;
-    health: string;
-    relationship: string;
+    love?: string;
+    money?: string;
+    career?: string;
+    health?: string;
+    relationship?: string;
   };
   teasers: {
     bestMonth: string;
@@ -330,11 +335,16 @@ interface AnnualTeaser {
   headline: string;                    // One-line punchy mascot headline (두근이 톤)
   summary: string;                     // 2~3 sentences overview of the year's vibe and emotion only. NO concrete conclusions (NO specific timing or solutions). Leave deep curiosity.
   hooks: {                             // Exactly 1 sentence per area. Must cut off right before the conclusion (cliffhanger).
-    love: string;                      // e.g. "2026년, 당신에게 운명 같은 인연이 찾아오는 결정적 시기가 정해져 있어요 —"
-    money: string;                     // e.g. "큰 재물이 움직일 뜻밖의 타이밍이 올해 숨어 있어요 —"
-    career: string;                    // e.g. "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —"
-    health: string;                    // e.g. "올해 특별히 에너지를 충전하고 지켜야 할 중요한 순간이 있어요 —"
-    relationship: string;              // e.g. "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —"
+    love?: string;                      // e.g. "2026년, 당신에게 운명 같은 인연이 찾아오는 결정적 시기가 정해져 있어요 —"
+    money?: string;                     // e.g. "큰 재물이 움직일 뜻밖의 타이밍이 올해 숨어 있어요 —"
+    career?: string;                    // e.g. "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —"
+    health?: string;                    // e.g. "올해 특별히 에너지를 충전하고 지켜야 할 중요한 순간이 있어요 —"
+    relationship?: string;              // e.g. "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —"
+  };
+  freeSection: {                       // Write ONE FULL detailed section for free preview (e.g., love or money)
+    type: "love" | "money" | "career" | "health" | "relationship";
+    score: number;                     // 0~100 score for this specific area
+    text: string;                      // Detailed 1-2 paragraphs of actual fortune reading for this specific area
   };
   teasers: {
     bestMonth: string;                 // e.g. "올해 가장 눈부시게 빛나는 달은 ●월" (Cover specific month number with '●')
@@ -344,8 +354,9 @@ interface AnnualTeaser {
 \`\`\`
 
 Requirements:
-1. Each hook MUST be an intriguing 1-sentence cliffhanger that stops right before the answer (결론 직전 끊기).
-2. NEVER give full conclusions, definitive dates, or detailed action solutions in summary or hooks (those are strictly reserved for the full paid report).
+1. Generate ONE full section in \`freeSection\` with full details (no cliffhangers).
+2. For the OTHER 4 sections, write an intriguing 1-sentence cliffhanger in \`hooks\` that stops right before the answer. Do not write a hook for the section you chose for \`freeSection\`.
+3. NEVER give full conclusions, definitive dates, or detailed action solutions in summary or hooks (except the \`freeSection\`).
 3. In teasers.bestMonth, always hide the actual number with '●' (e.g. "●월" or "올해 가장 운이 트이는 달은 ●월").
 4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
 5. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;

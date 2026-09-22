@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import KongdakHero from "@/components/KongdakHero";
 import DashboardView from "@/components/DashboardView";
+import { getAllProducts } from "@/lib/catalog";
+import Link from "next/link";
+import { LucideIcon, Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합",
@@ -13,18 +16,104 @@ interface PageProps {
   params: Promise<{ locale: string }>;
 }
 
-// 로그인 여부를 서버에서 판별해 분기한다. 예전에는 클라이언트 useSession() 이
-// 서버 렌더 시 항상 "loading" 이라 스피너만 HTML 에 실렸고, 크롤러(특히 JS 렌더가
-// 제한적인 네이버 Yeti)는 홈을 빈 페이지로 수집했다. 비로그인 방문자·크롤러는
-// 이제 히어로(제목·설명·CTA)를 서버 HTML 로 바로 받는다.
-// 가드는 user.id 로 본다 — 탈퇴자 토큰은 무효화돼도 session.user 가 남고 id 만 '' 가 된다.
+const iconMap: Record<string, LucideIcon> = {
+  Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star
+};
+
 export default async function Home({ params }: PageProps) {
   const { locale } = await params;
   const session = await getServerSession(authOptions);
+  
+  const products = getAllProducts();
+  const individualProducts = products.filter(p => p.target === "individual" && p.type !== "SET");
+  const coupleProducts = products.filter(p => p.target === "couple" && p.type !== "SET");
+  const sets = products.filter(p => p.type === "SET");
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] flex flex-col items-center justify-center">
+    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430]">
       {session?.user?.id ? <DashboardView /> : <KongdakHero locale={locale} />}
+      
+      <div className="max-w-5xl mx-auto px-4 py-16">
+        <section className="mb-16">
+          <div className="flex items-center gap-2 mb-8">
+            <h2 className="text-2xl font-bold">인기 세트</h2>
+            <span className="bg-[#FF3E6C] text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Best</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sets.map((product) => {
+              const Icon = iconMap[product.icon] || Star;
+              return (
+                <Link key={product.id} href={`/${locale}/products/${product.id}`} className="group block">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow border border-[#6A2C70]/10 h-full flex flex-col relative overflow-hidden">
+                    {product.isPopular && <div className="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">BEST</div>}
+                    {product.isNew && <div className="absolute top-4 right-4 bg-[#6A2C70] text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
+                    
+                    <div className="w-12 h-12 bg-[#FFF6F1] rounded-2xl flex items-center justify-center mb-4 text-[#FF3E6C] group-hover:scale-110 transition-transform">
+                      <Icon size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{product.name}</h3>
+                    <p className="text-gray-500 text-sm mb-6 flex-1">{product.description}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-[#FF3E6C]">{product.price.toLocaleString()}원</span>
+                      {product.originalPrice > product.price && (
+                        <span className="text-sm text-gray-400 line-through">{product.originalPrice.toLocaleString()}원</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold mb-8">우리 사이 궁합 (커플)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {coupleProducts.map((product) => {
+              const Icon = iconMap[product.icon] || Heart;
+              return (
+                <Link key={product.id} href={`/${locale}/products/${product.id}`} className="group block">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow border border-[#6A2C70]/10 h-full flex flex-col relative overflow-hidden">
+                    {product.isPopular && <div className="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">BEST</div>}
+                    {product.isNew && <div className="absolute top-4 right-4 bg-[#6A2C70] text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
+                    
+                    <div className="w-12 h-12 bg-[#FFF6F1] rounded-2xl flex items-center justify-center mb-4 text-[#FF3E6C] group-hover:scale-110 transition-transform">
+                      <Icon size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">{product.name}</h3>
+                    <p className="text-gray-500 text-sm mb-6 flex-1">{product.description}</p>
+                    <div className="text-lg font-bold text-[#FF3E6C]">{product.isFree ? "무료" : `${product.price.toLocaleString()}원`}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold mb-8">나의 운세 (개인)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {individualProducts.map((product) => {
+              const Icon = iconMap[product.icon] || User;
+              return (
+                <Link key={product.id} href={`/${locale}/products/${product.id}`} className="group block">
+                  <div className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow border border-[#6A2C70]/10 h-full flex flex-col relative overflow-hidden">
+                    {product.isPopular && <div className="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">BEST</div>}
+                    {product.isNew && <div className="absolute top-4 right-4 bg-[#6A2C70] text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
+                    
+                    <div className="w-12 h-12 bg-[#FFF6F1] rounded-2xl flex items-center justify-center mb-4 text-[#FF3E6C] group-hover:scale-110 transition-transform">
+                      <Icon size={24} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">{product.name}</h3>
+                    <p className="text-gray-500 text-sm mb-6 flex-1">{product.description}</p>
+                    <div className="text-lg font-bold text-[#FF3E6C]">{product.isFree ? "무료" : `${product.price.toLocaleString()}원`}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
