@@ -3,6 +3,14 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import KongdakMascot from "@/components/KongdakMascot";
+import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
+import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+
+const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+
 
 interface FortuneNewClientProps {
   locale: string;
@@ -54,6 +62,35 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resultData, setResultData] = useState<any | null>(null);
 
+  const { data: session } = useSession();
+  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [inAppOpen, setInAppOpen] = useState(false);
+  const [isInApp, setIsInApp] = useState(false);
+
+  React.useEffect(() => {
+    setIsInApp(isInAppBrowser());
+  }, []);
+
+  const handleOpenCheckout = () => {
+    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+    
+    if ((productId === "annual_2026" || !productId) && !session?.user?.id) {
+      try {
+        const guestInput = {
+          name, birthYear: year, birthMonth: month, birthDay: day, gender, ampm, hour, min
+        };
+        sessionStorage.setItem("kongdak_guest_fortune_input", JSON.stringify(guestInput));
+      } catch {}
+
+      alert("2026 총운 전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.");
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/new`;
+      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
+
+    setCheckoutModalOpen(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,22 +158,66 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
       <div className="w-full max-w-md mx-auto text-center">
         <h2 className="text-2xl font-bold mb-4">내 사주 분석 결과</h2>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#FFD9E0]/40 text-left">
-          <div className="text-4xl font-black text-[#FF5C77] text-center mb-4">{resultData.yearScore}점</div>
-          <h3 className="font-bold text-lg mb-2 text-[#2B2430]">"{resultData.headline}"</h3>
+          <div className="text-4xl font-black text-coral text-center mb-4">{resultData.yearScore}점</div>
+          <h3 className="font-bold text-lg mb-2 text-ink">"{resultData.headline}"</h3>
           <p className="text-sm text-gray-600 mb-4">{resultData.summary}</p>
           
-          <div className="bg-[#FFF6F1] p-4 rounded-xl border border-[#FFD9E0]/50 mt-4">
-            <h4 className="font-bold text-[#FF5C77] text-sm mb-2">무료 맛보기</h4>
+          <div className="bg-cream p-4 rounded-xl border border-[#FFD9E0]/50 mt-4">
+            <h4 className="font-bold text-coral text-sm mb-2">무료 맛보기</h4>
             <p className="text-sm">{resultData.freeSection?.text}</p>
           </div>
 
           <button
-            onClick={() => alert("로그인 및 결제 후 전체 리포트를 볼 수 있습니다.")}
-            className="w-full mt-6 bg-[#2B2430] text-white py-3 rounded-xl font-bold"
+            onClick={handleOpenCheckout}
+            className="w-full mt-6 bg-ink text-white py-3 rounded-xl font-bold active:scale-[0.98] transition-transform"
           >
             전체 리포트 열람하기
           </button>
+
+          {/* In-app Browser Notice Banner */}
+          {isInApp && (
+            <div
+              onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
+              className="w-full mt-3 bg-coral/10 hover:bg-coral/15 border border-coral/30 rounded-xl p-3 text-xs text-plum flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
+            >
+              <span className="font-semibold text-left">
+                🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
+              </span>
+              <span className="text-[11px] font-bold text-coral shrink-0 underline whitespace-nowrap">
+                외부 브라우저 열기
+              </span>
+            </div>
+          )}
         </div>
+
+        <GuestCheckoutModal
+          isOpen={checkoutModalOpen}
+          onClose={() => setCheckoutModalOpen(false)}
+          title="사주 리포트 열람"
+          orderName="콩닥 사주 리포트"
+          priceLabel="첫 결제 1,900원"
+          initialName={session?.user?.name || ""}
+          initialEmail={session?.user?.email || ""}
+          initialPhone=""
+          isLoading={isProcessingPayment}
+          onSubmit={async (buyer: BuyerInfo) => {
+            try {
+              setIsProcessingPayment(true);
+              await requestPortOnePayment({
+                type: "SINGLE",
+                product: productId === "annual_2026" ? "ANNUAL_2026" : undefined, // depending on your API
+                buyer,
+                locale,
+              });
+            } catch (e: any) {
+              alert(e?.message || "결제 진행 중 오류가 발생했습니다.");
+            } finally {
+              setIsProcessingPayment(false);
+              setCheckoutModalOpen(false);
+            }
+          }}
+        />
+        <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
       </div>
     );
   }
@@ -149,19 +230,19 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
       </div>
 
       {errorMsg && (
-        <div className="bg-[#FF5C77]/10 border border-[#FF5C77] text-[#FF5C77] p-3.5 rounded-xl text-sm font-semibold text-center">
+        <div className="bg-coral/10 border border-coral text-coral p-3.5 rounded-xl text-sm font-semibold text-center">
           {errorMsg}
         </div>
       )}
 
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 w-full">
-        <div className="flex items-center justify-between border-b border-[#FFF6F1] pb-2">
+        <div className="flex items-center justify-between border-b border-cream pb-2">
           <div className="flex items-center gap-2">
             <span className="text-base">👤</span>
-            <h3 className="font-bold text-sm text-[#2B2430]">내 정보</h3>
+            <h3 className="font-bold text-sm text-ink">내 정보</h3>
           </div>
           {initialProfile && (
-            <span className="text-[10px] bg-[#FF5C77]/10 text-[#FF5C77] px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-coral/10 text-coral px-2 py-0.5 rounded-full font-bold">
               저장된 프로필 불러옴
             </span>
           )}
@@ -174,20 +255,20 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="예: 김콩닥"
-            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
           />
         </div>
 
         <div className="flex flex-col gap-3">
           <div>
             <label className="block text-xs font-semibold text-[#8A8291] mb-1">
-              생년월일 <span className="text-[#FF5C77]">*</span>
+              생년월일 <span className="text-coral">*</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
               <select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
               >
                 <option value="">년도</option>
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -195,7 +276,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
               <select
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
               >
                 <option value="">월</option>
                 {months.map(m => <option key={m} value={m}>{m}</option>)}
@@ -203,7 +284,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
               <select
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
               >
                 <option value="">일</option>
                 {Array.from({ length: getDaysInMonth(year, month) }, (_, i) => i + 1).map(d => (
@@ -219,7 +300,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value as "F" | "M")}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
               >
                 <option value="F">여성</option>
                 <option value="M">남성</option>
@@ -231,7 +312,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
                 <select
                   value={ampm}
                   onChange={(e) => setAmpm(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">모름</option>
                   <option value="AM">오전</option>
@@ -241,7 +322,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
                   value={hour}
                   onChange={(e) => setHour(e.target.value)}
                   disabled={!ampm}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                 >
                   {hours.map(h => <option key={h} value={h}>{h}시</option>)}
                 </select>
@@ -249,7 +330,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
                   value={min}
                   onChange={(e) => setMin(e.target.value)}
                   disabled={!ampm}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                 >
                   {minutes.map(m => <option key={m} value={m}>{m}분</option>)}
                 </select>
@@ -263,7 +344,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <div className="flex items-center gap-2">

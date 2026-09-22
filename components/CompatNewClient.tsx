@@ -159,7 +159,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       </div>
 
       {errorMsg && (
-        <div className="bg-[#FF5C77]/10 border border-[#FF5C77] text-[#FF5C77] p-3.5 rounded-xl text-sm font-semibold text-center">
+        <div className="bg-coral/10 border border-coral text-coral p-3.5 rounded-xl text-sm font-semibold text-center">
           {errorMsg}
         </div>
       )}
@@ -179,8 +179,8 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               onClick={() => setRelation(item.key as "love" | "crush" | "friend")}
               className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border ${
                 relation === item.key
-                  ? "bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] text-white border-transparent shadow-sm"
-                  : "bg-[#FFF6F1] text-[#2B2430] border-[#FFD9E0]/50 hover:bg-[#FFD9E0]/30"
+                  ? "bg-gradient-to-br from-[#FF8AA1] to-coral text-white border-transparent shadow-sm"
+                  : "bg-cream text-ink border-[#FFD9E0]/50 hover:bg-[#FFD9E0]/30"
               }`}
             >
               <span>{item.icon}</span>
@@ -193,13 +193,13 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {/* Person A (Me) */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center justify-between border-b border-[#FFF6F1] pb-2">
+          <div className="flex items-center justify-between border-b border-cream pb-2">
             <div className="flex items-center gap-2">
               <span className="text-base">👤</span>
-              <h3 className="font-bold text-sm text-[#2B2430]">내 정보</h3>
+              <h3 className="font-bold text-sm text-ink">내 정보</h3>
             </div>
             {initialProfile && (
-              <span className="text-[10px] bg-[#FF5C77]/10 text-[#FF5C77] px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-coral/10 text-coral px-2 py-0.5 rounded-full font-bold">
                 저장된 프로필 불러옴
               </span>
             )}
@@ -212,20 +212,20 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               value={nameA}
               onChange={(e) => setNameA(e.target.value)}
               placeholder="예: 김콩닥"
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
             />
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs font-semibold text-[#8A8291] mb-1">
-                생년월일 <span className="text-[#FF5C77]">*</span>
+                생년월일 <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearA}
                   onChange={(e) => setYearA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">년도</option>
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -233,7 +233,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={monthA}
                   onChange={(e) => setMonthA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">월</option>
                   {months.map(m => <option key={m} value={m}>{m}</option>)}
@@ -241,7 +241,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={dayA}
                   onChange={(e) => setDayA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">일</option>
                   {Array.from({ length: getDaysInMonth(yearA, monthA) }, (_, i) => i + 1).map(d => (
@@ -257,7 +257,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={genderA}
                   onChange={(e) => setGenderA(e.target.value as "F" | "M")}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="F">여성</option>
                   <option value="M">남성</option>
@@ -269,7 +269,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                   <select
                     value={ampmA}
                     onChange={(e) => setAmpmA(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -279,7 +279,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={hourA}
                     onChange={(e) => setHourA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                   >
                     {hours.map(h => <option key={h} value={h}>{h}시</option>)}
                   </select>
@@ -287,7 +287,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={minA}
                     onChange={(e) => setMinA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                   >
                     {minutes.map(m => <option key={m} value={m}>{m}분</option>)}
                   </select>
@@ -299,9 +299,9 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
         {/* Person B (Partner) */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center gap-2 border-b border-[#FFF6F1] pb-2">
+          <div className="flex items-center gap-2 border-b border-cream pb-2">
             <span className="text-base">💖</span>
-            <h3 className="font-bold text-sm text-[#2B2430]">상대방 정보</h3>
+            <h3 className="font-bold text-sm text-ink">상대방 정보</h3>
           </div>
 
           <div>
@@ -311,20 +311,20 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               value={nameB}
               onChange={(e) => setNameB(e.target.value)}
               placeholder="예: 이설렘"
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
             />
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
               <label className="block text-xs font-semibold text-[#8A8291] mb-1">
-                생년월일 <span className="text-[#FF5C77]">*</span>
+                생년월일 <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearB}
                   onChange={(e) => setYearB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">년도</option>
                   {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -332,7 +332,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={monthB}
                   onChange={(e) => setMonthB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">월</option>
                   {months.map(m => <option key={m} value={m}>{m}</option>)}
@@ -340,7 +340,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={dayB}
                   onChange={(e) => setDayB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="">일</option>
                   {Array.from({ length: getDaysInMonth(yearB, monthB) }, (_, i) => i + 1).map(d => (
@@ -356,7 +356,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 <select
                   value={genderB}
                   onChange={(e) => setGenderB(e.target.value as "M" | "F")}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                 >
                   <option value="M">남성</option>
                   <option value="F">여성</option>
@@ -368,7 +368,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                   <select
                     value={ampmB}
                     onChange={(e) => setAmpmB(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -378,7 +378,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={hourB}
                     onChange={(e) => setHourB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                   >
                     {hours.map(h => <option key={h} value={h}>{h}시</option>)}
                   </select>
@@ -386,7 +386,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={minB}
                     onChange={(e) => setMinB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-[#FF5C77] bg-[#FFF6F1]/40 disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
                   >
                     {minutes.map(m => <option key={m} value={m}>{m}분</option>)}
                   </select>
@@ -401,7 +401,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
+        className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <div className="flex items-center gap-2">

@@ -21,6 +21,7 @@ export interface CatalogItem {
   isNew?: boolean;
   isPopular?: boolean;
   isFree?: boolean;
+  isHidden?: boolean;
   items?: string[]; // for SETs
 }
 
@@ -64,6 +65,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Sparkles",
     promptKey: "annual_2027",
     isNew: true,
+    isHidden: true,
   },
   {
     id: "wealth",
@@ -77,6 +79,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Coins",
     promptKey: "wealth_analysis",
     isPopular: true,
+    isHidden: true,
   },
   {
     id: "career",
@@ -89,6 +92,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Briefcase",
     promptKey: "career_analysis",
+    isHidden: true,
   },
   {
     id: "love_single",
@@ -101,6 +105,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Heart",
     promptKey: "love_single_analysis",
+    isHidden: true,
   },
   {
     id: "charm",
@@ -113,6 +118,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Sparkle",
     promptKey: "charm_analysis",
+    isHidden: true,
   },
   {
     id: "health",
@@ -125,6 +131,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Activity",
     promptKey: "health_analysis",
+    isHidden: true,
   },
   {
     id: "spicy_annual",
@@ -138,6 +145,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Flame",
     promptKey: "spicy_annual",
     isNew: true,
+    isHidden: true,
   },
 
   // --- RELATIONSHIP (관계/궁합) ---
@@ -165,6 +173,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "MessageCircleHeart",
     promptKey: "inner_mind",
+    isHidden: true,
   },
   {
     id: "reunion",
@@ -178,6 +187,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Undo2",
     promptKey: "reunion",
     isPopular: true,
+    isHidden: true,
   },
   {
     id: "cheating",
@@ -190,6 +200,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Eye",
     promptKey: "cheating_tendency",
+    isHidden: true,
   },
   {
     id: "marriage",
@@ -202,6 +213,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Gem",
     promptKey: "marriage_compat",
+    isHidden: true,
   },
   {
     id: "conflict",
@@ -214,6 +226,7 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 15000,
     icon: "Swords",
     promptKey: "conflict_resolution",
+    isHidden: true,
   },
   {
     id: "secret_love",
@@ -227,6 +240,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Moon",
     promptKey: "secret_love",
     isNew: true,
+    isHidden: true,
   },
 
   // --- SETS (세트 상품) ---
@@ -243,6 +257,7 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "SET",
     items: ["compat_basic", "inner_mind", "marriage"],
     isPopular: true,
+    isHidden: true,
   },
   {
     id: "set_reunion",
@@ -256,6 +271,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "HeartCrack",
     promptKey: "SET",
     items: ["reunion", "inner_mind", "conflict"],
+    isHidden: true,
   },
   {
     id: "set_love",
@@ -269,6 +285,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "HeartHandshake",
     promptKey: "SET",
     items: ["love_single", "charm"],
+    isHidden: true,
   },
   {
     id: "set_me",
@@ -282,6 +299,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Star",
     promptKey: "SET",
     items: ["annual_2026", "wealth", "career", "health"],
+    isHidden: true,
   },
   {
     id: "set_career",
@@ -295,6 +313,7 @@ export const CATALOG: CatalogItem[] = [
     icon: "Briefcase",
     promptKey: "SET",
     items: ["career", "annual_2026"],
+    isHidden: true,
   },
   {
     id: "set_2027",
@@ -309,6 +328,7 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "SET",
     items: ["annual_2027", "wealth", "career"],
     isNew: true,
+    isHidden: true,
   },
 ];
 
@@ -317,13 +337,13 @@ export function getProduct(id: string): CatalogItem | undefined {
 }
 
 export function getProductsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.target === target && p.type !== "SET");
+  return CATALOG.filter((p) => p.target === target && p.type !== "SET" && !p.isHidden);
 }
 
 export function getSetsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.target === target && p.type === "SET");
+  return CATALOG.filter((p) => p.target === target && p.type === "SET" && !p.isHidden);
 }
 
 export function getAllProducts(): CatalogItem[] {
-  return CATALOG;
+  return CATALOG.filter((p) => !p.isHidden);
 }

@@ -46,21 +46,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
     : [];
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430]">
+    <main className="min-h-screen bg-cream text-ink">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-md border-b border-[#6A2C70]/10 z-50 flex items-center px-4">
-        <Link href={`/${locale}`} className="p-2 -ml-2 text-gray-600 hover:text-[#2B2430] transition-colors">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-md border-b border-plum/10 z-50 flex items-center px-4">
+        <Link href={`/${locale}`} className="p-2 -ml-2 text-gray-600 hover:text-ink transition-colors">
           <ChevronLeft size={24} />
         </Link>
         <h1 className="font-bold text-lg mx-auto pr-8">{product.name}</h1>
       </header>
 
       <div className="pt-20 pb-32 max-w-md mx-auto px-4">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[#6A2C70]/10 text-center mb-8 relative overflow-hidden">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-plum/10 text-center mb-8 relative overflow-hidden">
           {product.isPopular && <div className="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">BEST</div>}
-          {product.isNew && <div className="absolute top-4 right-4 bg-[#6A2C70] text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
+          {product.isNew && <div className="absolute top-4 right-4 bg-plum text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
           
-          <div className="w-20 h-20 bg-[#FFF6F1] rounded-3xl flex items-center justify-center mx-auto mb-6 text-[#FF3E6C]">
+          <div className="w-20 h-20 bg-cream rounded-3xl flex items-center justify-center mx-auto mb-6 text-coral">
             <Icon size={40} />
           </div>
           <h2 className="text-2xl font-bold mb-3">{product.name}</h2>
@@ -68,10 +68,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
           
           <div className="flex items-center justify-center gap-3">
             {product.isFree ? (
-              <span className="text-2xl font-bold text-[#FF3E6C]">무료</span>
+              <span className="text-2xl font-bold text-coral">무료</span>
             ) : (
               <>
-                <span className="text-2xl font-bold text-[#FF3E6C]">{product.price.toLocaleString()}원</span>
+                <span className="text-2xl font-bold text-coral">{product.price.toLocaleString()}원</span>
                 {product.originalPrice > product.price && (
                   <span className="text-lg text-gray-400 line-through">{product.originalPrice.toLocaleString()}원</span>
                 )}
@@ -84,13 +84,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
         {product.type === "SET" && setProducts.length > 0 && (
           <div className="mb-8">
             <h3 className="font-bold text-lg mb-4 pl-2">세트 구성</h3>
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#6A2C70]/10 flex flex-col gap-4">
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 flex flex-col gap-4">
               {setProducts.map((item, idx) => {
                 if (!item) return null;
                 const ItemIcon = iconMap[item.icon] || Star;
                 return (
-                  <div key={idx} className="flex items-center gap-4 p-3 rounded-2xl bg-[#FFF6F1]/50 border border-[#FFF6F1]">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF3E6C] shadow-sm">
+                  <div key={idx} className="flex items-center gap-4 p-3 rounded-2xl bg-cream/50 border border-cream">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-coral shadow-sm">
                       <ItemIcon size={20} />
                     </div>
                     <div className="flex-1">
@@ -106,17 +106,17 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
         <div className="mb-8">
           <h3 className="font-bold text-lg mb-4 pl-2">무엇을 알 수 있나요?</h3>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-[#6A2C70]/10 flex flex-col gap-4">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 flex flex-col gap-4">
             <div className="flex gap-3">
-              <div className="mt-0.5 text-[#FF3E6C]"><Check size={20} /></div>
+              <div className="mt-0.5 text-coral"><Check size={20} /></div>
               <p className="text-sm text-gray-700 leading-relaxed">타고난 명식과 오행 분석을 바탕으로 한 심층 리포트 제공</p>
             </div>
             <div className="flex gap-3">
-              <div className="mt-0.5 text-[#FF3E6C]"><Check size={20} /></div>
+              <div className="mt-0.5 text-coral"><Check size={20} /></div>
               <p className="text-sm text-gray-700 leading-relaxed">어려운 사주 용어 없이 누구나 이해할 수 있는 다정한 설명</p>
             </div>
             <div className="flex gap-3">
-              <div className="mt-0.5 text-[#FF3E6C]"><Check size={20} /></div>
+              <div className="mt-0.5 text-coral"><Check size={20} /></div>
               <p className="text-sm text-gray-700 leading-relaxed">어떻게 행동해야 할지 알려주는 구체적인 솔루션과 조언</p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       </div>
 
       {/* Fixed Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-[#6A2C70]/10 z-50">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-plum/10 z-50">
         <div className="max-w-md mx-auto">
           <Link href={nextPath} className="block w-full">
             <Button size="lg" className="w-full text-lg h-14 rounded-2xl">
