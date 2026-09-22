@@ -79,7 +79,15 @@ export async function isEntitled(params: {
       });
       if (order && order.status === 'PAID') {
         const matchingUnlock = order.unlocks?.find((u) => 
-          allowedKeys.some(ak => u.productType === ak.pType && u.productKey === ak.pKey)
+          allowedKeys.some(ak => {
+            if (u.productType !== ak.pType || u.productKey !== ak.pKey) return false;
+            
+            const cItem = CATALOG.find(c => c.id === ak.pKey);
+            const isCouple = ak.pType === 'COMPAT' || (cItem && cItem.target === 'couple');
+            if (isCouple && u.compatId !== compatId) return false;
+            
+            return true;
+          })
         );
         if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
           return { entitled: true, reason: 'UNLOCK' };
@@ -89,14 +97,24 @@ export async function isEntitled(params: {
 
     // Check Member via userId
     if (userId) {
+      const orConditions = allowedKeys.map(ak => {
+        const cItem = CATALOG.find(c => c.id === ak.pKey);
+        const isCouple = ak.pType === 'COMPAT' || (cItem && cItem.target === 'couple');
+        const condition: Prisma.UnlockWhereInput = {
+          productType: ak.pType,
+          productKey: ak.pKey,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
+        };
+        if (isCouple) {
+          condition.compatId = compatId; // Must match exactly
+        }
+        return condition;
+      });
+
       const unlock = await prisma.unlock.findFirst({
         where: {
           userId,
-          OR: allowedKeys.map(ak => ({
-            productType: ak.pType,
-            productKey: ak.pKey,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
-          }))
+          OR: orConditions
         },
       });
       if (unlock) {
@@ -122,7 +140,9 @@ export async function isEntitled(params: {
       });
       if (order && order.status === 'PAID') {
         const matchingUnlock = order.unlocks?.find((u) => {
-           if (u.compatId === compatId && (!u.productType || u.productType === "COMPAT")) return true;
+           if (u.compatId !== compatId) return false;
+           
+           if (!u.productType || u.productType === "COMPAT") return true;
            // Also check if they unlocked a SET that contains compat_basic
            if (u.productType === "SET" && u.productKey && allowedSetKeys.includes(u.productKey)) return true;
            return false;
@@ -157,6 +177,7 @@ export async function isEntitled(params: {
           userId,
           productType: "SET",
           productKey: { in: allowedSetKeys },
+          compatId, // Enforce compatId matching for sets containing compat_basic
           OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
         }
       });

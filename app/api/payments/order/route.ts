@@ -51,8 +51,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid or missing product" }, { status: 400 });
       }
 
-      if (catalogItem.type === "COMPAT" && !compatId) {
-        return NextResponse.json({ error: "compatId is required for COMPAT products" }, { status: 400 });
+      const requiresCompatId = catalogItem.type === "COMPAT" || (catalogItem.type === "SET" && catalogItem.target === "couple");
+      if (requiresCompatId && !compatId) {
+        return NextResponse.json({ error: "compatId is required for this product" }, { status: 400 });
       }
 
       if (!session?.user?.id && !email) {
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
           orderId,
           userId: session?.user?.id || null,
           email: email || session?.user?.email || null,
-          compatId: catalogItem.type === "COMPAT" ? compatId : null,
+          compatId: requiresCompatId ? compatId : null,
           productType: pType,
           productKey: pKey,
           type: "SINGLE",
