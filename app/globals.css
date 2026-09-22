@@ -1,14 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFF6F1;
-  --foreground: #2B2430;
-  --coral: #FF5C77;
+  --background: #FFFFFF;
+  --background-alt: #FAFAFA;
+  --foreground: #191919;
+  --coral: #FF3E6C;
   --coral-light: #FF8AA1;
   --plum: #6A2C70;
   --gold: #FFC24B;
   --cream: #FFF6F1;
-  --ink: #2B2430;
+  --ink: #191919;
+  
+  --cat-fortune: #8B5CF6;
+  --cat-compat: #FF3E6C;
+  --cat-wealth: #F59E0B;
+  --cat-reunion: #EF4444;
+  --cat-career: #3B82F6;
 
   /* Global motion tokens: 0.15s cubic-bezier(0.4, 0, 0.2, 1) */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
@@ -17,6 +24,7 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
   --color-coral: var(--coral);
   --color-coral-light: var(--coral-light);
@@ -24,6 +32,12 @@
   --color-gold: var(--gold);
   --color-cream: var(--cream);
   --color-ink: var(--ink);
+
+  --color-cat-fortune: var(--cat-fortune);
+  --color-cat-compat: var(--cat-compat);
+  --color-cat-wealth: var(--cat-wealth);
+  --color-cat-reunion: var(--cat-reunion);
+  --color-cat-career: var(--cat-career);
 
   --font-sans: var(--font-pretendard), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-serif: var(--font-cinzel);
