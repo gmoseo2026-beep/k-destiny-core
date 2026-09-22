@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { CATALOG } from "@/lib/catalog";
 
 export interface EntitlementResult {
   entitled: boolean;
@@ -13,7 +14,7 @@ export async function isEntitled(params: {
   compatId?: string | null;
   email?: string | null; // For legacy/compatibility
   orderId?: string | null; // For guest users
-  productKey?: string | null; // For specific products (e.g. "ANNUAL:2026")
+  productKey?: string | null; // For specific products (e.g. "ANNUAL:2026" or "annual_2026")
 }): Promise<EntitlementResult> {
   const { userId, role, tier, compatId, email, orderId, productKey } = params;
 
@@ -33,8 +34,6 @@ export async function isEntitled(params: {
       if (!user.premiumEndDate || user.premiumEndDate > now) {
         return { entitled: true, reason: 'SUBSCRIPTION' };
       }
-      // If expired, treat as FREE (we can optionally update tier to FREE here)
-      // We fall through to check UNLOCKs.
     }
     
     // Check for active subscriptions just in case
@@ -50,59 +49,97 @@ export async function isEntitled(params: {
     }
   }
 
-  // 2-1. Single unlock check for a specific productKey (e.g., "ANNUAL:2026", 유효기간: 90일)
-  if (productKey && userId) {
-    const [pType, pKey] = productKey.includes(':') ? productKey.split(':') : ['ANNUAL', productKey];
-    const now = new Date();
-    const unlock = await prisma.unlock.findFirst({
-      where: {
-        userId,
-        productType: pType,
-        productKey: pKey,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      },
-    });
-    if (unlock) {
-      return { entitled: true, reason: 'UNLOCK' };
+  const now = new Date();
+
+  // 2-1. Single unlock check for a specific productKey
+  if (productKey) {
+    // Parse legacy "ANNUAL:2026" or standard catalog IDs like "annual_2026"
+    let pType = "";
+    let pKey = "";
+    if (productKey.includes(':')) {
+      [pType, pKey] = productKey.split(':');
+    } else {
+      pKey = productKey;
+      const catalogItem = CATALOG.find((c) => c.id === pKey);
+      pType = catalogItem ? catalogItem.type : (pKey.startsWith("annual_") ? "ANNUAL" : "FORTUNE");
     }
-  }
+    
+    // Find sets containing this product
+    const setsContainingProduct = CATALOG.filter((c) => c.type === "SET" && c.items?.includes(pKey));
+    const allowedKeys = [{ pType, pKey }];
+    for (const set of setsContainingProduct) {
+      allowedKeys.push({ pType: "SET", pKey: set.id });
+    }
 
-  // 3. Single unlock check for a specific compatId (유효기간: 90일)
-  if (compatId) {
-    const now = new Date();
-
+    // Check Guest via orderId
     if (orderId) {
-      // 게스트 인증: 추측 불가 토큰인 orderId로 소유권 증명
       const order = await prisma.order.findUnique({
         where: { orderId },
         include: { unlocks: true },
       });
-      if (order && order.status === 'PAID' && order.compatId === compatId) {
-        // [SECURITY / M-5] Unlock 행이 없으면 "부여된 적 없음"이다 → 거부.
-        // 이전에는 행이 없을 때 order.createdAt + 90일을 합성해서 부여했는데(fail-open),
-        // 부여 실패·수동 삭제·취소 웹훅 유실 케이스가 전부 무료로 통과했다.
-        // 유효기간 판정의 유일한 출처는 DB 의 Unlock.expiresAt 이다.
-        const matchingUnlock = order.unlocks?.find((u) => u.compatId === compatId);
+      if (order && order.status === 'PAID') {
+        const matchingUnlock = order.unlocks?.find((u) => 
+          allowedKeys.some(ak => u.productType === ak.pType && u.productKey === ak.pKey)
+        );
         if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
           return { entitled: true, reason: 'UNLOCK' };
         }
       }
     }
 
-    // [Vuln 3 Fix] IDOR 방지: 단건 해금 시 반드시 소유권 검증 (userId)
-    // 게스트는 위에서 orderId(주문 소유권 토큰)를 통해 이미 검증됨.
-    const whereClause: Prisma.UnlockWhereInput = { compatId };
+    // Check Member via userId
+    if (userId) {
+      const unlock = await prisma.unlock.findFirst({
+        where: {
+          userId,
+          OR: allowedKeys.map(ak => ({
+            productType: ak.pType,
+            productKey: ak.pKey,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
+          }))
+        },
+      });
+      if (unlock) {
+        return { entitled: true, reason: 'UNLOCK' };
+      }
+    }
+    
+    // If no compatId fallback, return NONE
+    if (!compatId) {
+      return { entitled: false, reason: 'NONE' };
+    }
+  }
 
+  // 3. Single unlock check for a specific compatId
+  if (compatId) {
+    const setsContainingCompat = CATALOG.filter((c) => c.type === "SET" && c.items?.includes("compat_basic"));
+    const allowedSetKeys = setsContainingCompat.map(s => s.id);
+
+    if (orderId) {
+      const order = await prisma.order.findUnique({
+        where: { orderId },
+        include: { unlocks: true },
+      });
+      if (order && order.status === 'PAID') {
+        const matchingUnlock = order.unlocks?.find((u) => {
+           if (u.compatId === compatId && (!u.productType || u.productType === "COMPAT")) return true;
+           // Also check if they unlocked a SET that contains compat_basic
+           if (u.productType === "SET" && u.productKey && allowedSetKeys.includes(u.productKey)) return true;
+           return false;
+        });
+        if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
+          return { entitled: true, reason: 'UNLOCK' };
+        }
+      }
+    }
+
+    const whereClause: Prisma.UnlockWhereInput = { compatId };
     if (userId) {
       whereClause.userId = userId;
     } else {
-      // 증명 수단이 없으면 접근 차단
       return { entitled: false, reason: 'NONE' };
     }
 
-    // [SECURITY / H-2] 같은 궁합을 여러 명이 결제하면 compatId 당 Unlock 이 여러 행이다.
-    // 만료 조건을 WHERE 에 넣어, 어느 행 하나라도 유효하면 통과하도록 판정을 확정한다.
-    // (orderBy 없는 findFirst 는 어떤 행이 잡힐지 비결정적이라 만료된 행에 걸릴 수 있었다)
     const unlock = await prisma.unlock.findFirst({
       where: {
         ...whereClause,
@@ -111,6 +148,19 @@ export async function isEntitled(params: {
     });
     if (unlock) {
       return { entitled: true, reason: 'UNLOCK' };
+    }
+    
+    // Check if user has SET for compat_basic
+    if (userId && allowedSetKeys.length > 0) {
+      const setUnlock = await prisma.unlock.findFirst({
+        where: {
+          userId,
+          productType: "SET",
+          productKey: { in: allowedSetKeys },
+          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+        }
+      });
+      if (setUnlock) return { entitled: true, reason: 'UNLOCK' };
     }
   }
 

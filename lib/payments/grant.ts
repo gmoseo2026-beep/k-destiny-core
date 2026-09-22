@@ -13,47 +13,43 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
     if (res.count === 0) return { ok: true, already: true };
 
     // 이후 Unlock / 패스 연장 진행 (같은 트랜잭션 안에서)
-    if (order.type === "SINGLE" && order.compatId) {
-      // [SECURITY / H-2] 이전에는 compatId 만으로 존재 여부를 봤기 때문에, 같은 궁합을
-      // 두 번째로 결제한 사용자에게는 Unlock 행이 생성되지 않았다(대금만 수령).
-      // 이제 (compatId, orderId) 복합 유니크로 "주문당 1행"을 보장한다.
-      // status 가드(위 updateMany)가 이미 1회 실행을 보장하므로 이 조회는 이중 안전장치다.
-      const exist = await tx.unlock.findUnique({
-        where: { compatId_orderId: { compatId: order.compatId, orderId: order.id } },
-      });
-      if (!exist) {
-        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
-        await tx.unlock.create({
-          data: {
-            compatId: order.compatId,
-            orderId: order.id,
-            userId: order.userId,
-            email: order.email,
-            expiresAt,
-          },
-        });
+    if (order.type === "SINGLE") {
+      const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
+
+      let pType = order.productType;
+      let pKey = order.productKey;
+      let cId = order.compatId;
+
+      // Legacy fallback
+      if (!pType && cId) {
+        pType = "COMPAT";
+        pKey = "compat_basic";
       }
-    } else if (order.type === "SINGLE" && order.productType === "ANNUAL" && order.userId) {
-      const exist = await tx.unlock.findFirst({
-        where: {
-          orderId: order.id,
-          userId: order.userId,
-          productType: "ANNUAL",
-          productKey: order.productKey ?? "2026",
-        },
-      });
-      if (!exist) {
-        const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
-        await tx.unlock.create({
-          data: {
+
+      if (pType && pKey) {
+        // [SECURITY / H-2] status 가드(위 updateMany)가 이미 1회 실행을 보장하므로 조회는 이중 안전장치다.
+        // SET의 경우, 단일 Unlock만 만들고 entitlement에서 참조하도록 합니다.
+        const exist = await tx.unlock.findFirst({
+          where: {
             orderId: order.id,
-            userId: order.userId,
-            email: order.email,
-            productType: "ANNUAL",
-            productKey: order.productKey ?? "2026",
-            expiresAt,
+            productType: pType,
+            productKey: pKey,
+            compatId: cId
           },
         });
+        if (!exist) {
+          await tx.unlock.create({
+            data: {
+              orderId: order.id,
+              userId: order.userId,
+              email: order.email,
+              productType: pType,
+              productKey: pKey,
+              compatId: cId,
+              expiresAt,
+            },
+          });
+        }
       }
     } else if (order.type === "PERIOD_PASS" && order.userId) {
       const months = order.planId === "1_MONTH" ? 1 : order.planId === "3_MONTHS" ? 3 : 0;

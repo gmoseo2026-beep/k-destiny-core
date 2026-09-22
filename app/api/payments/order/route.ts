@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
+import { getProduct } from "@/lib/catalog";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { type, compatId, email, planId, product } = body;
     
-    let amount = 2900;
+    let amount = 0;
     
     if (type === 'PERIOD_PASS') {
       if (!session?.user?.id) {
@@ -21,99 +22,96 @@ export async function POST(req: NextRequest) {
       else if (planId === '3_MONTHS') amount = 24900;
       else return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
-    } else if (type === 'SINGLE') {
-      if (product === 'ANNUAL_2026') {
-        if (!session?.user?.id) {
-          return NextResponse.json({ error: "총운 구매는 로그인이 필요합니다." }, { status: 401 });
+      const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
+      const order = await prisma.order.create({
+        data: {
+          orderId,
+          userId: session.user.id,
+          email: session.user.email || null,
+          compatId: null,
+          type: type,
+          planId: planId,
+          amount,
+          status: "PENDING",
+          provider: process.env.PG_PROVIDER || "portone",
         }
-        const pastAnnualOrders = await prisma.order.findFirst({
-          where: {
-            userId: session.user.id,
-            status: 'PAID',
-            productType: 'ANNUAL',
-            provider: { not: 'admin_manual' },
-            amount: { gt: 0 },
-          }
-        });
-        amount = pastAnnualOrders ? 2900 : 1900;
+      });
+      return NextResponse.json(
+        { orderId: order.orderId, amount: order.amount, type: order.type },
+        { status: 200 }
+      );
 
-        const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
-        const order = await prisma.order.create({
-          data: {
-            orderId,
-            userId: session.user.id,
-            email: session.user.email || null,
-            compatId: null,
-            productType: "ANNUAL",
-            productKey: "2026",
-            type: "SINGLE",
-            amount,
-            status: "PENDING",
-            provider: process.env.PG_PROVIDER || "portone",
-          }
-        });
+    } else if (type === 'SINGLE') {
+      let catalogId = product;
+      if (product === "ANNUAL_2026") catalogId = "annual_2026";
+      else if (!product && compatId) catalogId = "compat_basic";
 
-        return NextResponse.json(
-          { orderId: order.orderId, amount: order.amount, type: order.type },
-          { status: 200 }
-        );
+      const catalogItem = getProduct(catalogId);
+      if (!catalogItem) {
+        return NextResponse.json({ error: "Invalid or missing product" }, { status: 400 });
       }
 
-      // Check for first purchase for SINGLE (admin_manual 및 0원 수동 보상 주문은 첫구매 할인 자격을 소진시키지 않음)
-      // 궁합 이력만 기준으로 판정 (총운 이력과 독립)
-      if (session?.user?.id) {
-        const pastOrders = await prisma.order.findFirst({
-          where: {
-            userId: session.user.id,
-            status: 'PAID',
-            type: 'SINGLE',
-            productType: { not: 'ANNUAL' },
-            provider: { not: 'admin_manual' },
-            amount: { gt: 0 },
-          }
-        });
-        if (!pastOrders) amount = 1900;
-      } else if (email) {
-        const pastOrders = await prisma.order.findFirst({
-          where: {
-            email,
-            status: 'PAID',
-            type: 'SINGLE',
-            productType: { not: 'ANNUAL' },
-            provider: { not: 'admin_manual' },
-            amount: { gt: 0 },
-          }
-        });
-        if (!pastOrders) amount = 1900;
-      } else {
+      if (catalogItem.type === "COMPAT" && !compatId) {
+        return NextResponse.json({ error: "compatId is required for COMPAT products" }, { status: 400 });
+      }
+
+      if (!session?.user?.id && !email) {
         return NextResponse.json({ error: "Email is required for guest checkout" }, { status: 400 });
       }
+
+      // Preserve legacy productType for annual to maintain compatibility, otherwise use catalog type
+      let pType: string = catalogItem.type;
+      let pKey = catalogItem.id;
+      if (catalogItem.id === "annual_2026") {
+        pType = "ANNUAL";
+        pKey = "2026";
+      } else if (catalogItem.id === "annual_2027") {
+        pType = "ANNUAL";
+        pKey = "2027";
+      }
+
+      amount = catalogItem.price;
+
+      // First purchase discount for SINGLE (non-SET). 단품 첫구매 4900원.
+      if (catalogItem.type !== "SET") {
+        const searchUser = session?.user?.id ? { userId: session.user.id } : { email };
+        const pastOrders = await prisma.order.findFirst({
+          where: {
+            ...searchUser,
+            status: 'PAID',
+            type: 'SINGLE',
+            productType: pType,
+            provider: { not: 'admin_manual' },
+            amount: { gt: 0 },
+          }
+        });
+        if (!pastOrders) amount = 4900;
+      }
+
+      const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
+      const order = await prisma.order.create({
+        data: {
+          orderId,
+          userId: session?.user?.id || null,
+          email: email || session?.user?.email || null,
+          compatId: catalogItem.type === "COMPAT" ? compatId : null,
+          productType: pType,
+          productKey: pKey,
+          type: "SINGLE",
+          amount,
+          status: "PENDING",
+          provider: process.env.PG_PROVIDER || "portone",
+        }
+      });
+
+      return NextResponse.json(
+        { orderId: order.orderId, amount: order.amount, type: order.type },
+        { status: 200 }
+      );
     } else {
       return NextResponse.json({ error: "Invalid order type" }, { status: 400 });
     }
 
-    const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
-
-    const order = await prisma.order.create({
-      data: {
-        orderId,
-        userId: session?.user?.id || null,
-        email: email || session?.user?.email || null,
-        compatId: type === 'SINGLE' ? compatId : null,
-        type: type,
-        planId: type === 'PERIOD_PASS' ? planId : null,
-        amount,
-        status: "PENDING",
-        provider: process.env.PG_PROVIDER || "portone",
-      }
-    });
-
-    // [SECURITY / L-7] Order 레코드 전체를 돌려주지 않는다. 생성 시점엔 claimToken 이 null 이라
-    // 지금은 무해하지만, 결제창 호출에 필요한 필드만 화이트리스트로 내보내는 편이 안전하다.
-    return NextResponse.json(
-      { orderId: order.orderId, amount: order.amount, type: order.type },
-      { status: 200 }
-    );
   } catch (e) {
     // [SECURITY / L-4] Prisma 예외 원문은 서버 로그에만 남긴다.
     console.error("[payments/order]", e);
