@@ -315,7 +315,7 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
                   amount: product?.price || 0,
                 });
                 if (currentProductId.startsWith("annual_")) {
-                  router.push(`/${locale}/fortune/annual?year=2026`);
+                  router.push(`/${locale}/fortune/annual?year=${currentProductId.replace("annual_", "")}`);
                 } else {
                   router.push(`/${locale}/report/new?c=${currentProductId}`);
                 }

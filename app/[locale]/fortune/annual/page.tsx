@@ -15,10 +15,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AnnualFortunePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { locale } = await params;
+  const sp = searchParams ? await searchParams : {};
+  const rawYear = typeof sp.year === "string" ? sp.year : Array.isArray(sp.year) ? sp.year[0] : undefined;
+  const year = rawYear === "2027" ? 2027 : 2026;
   const session = await getServerSession(authOptions);
 
   let hasProfile = false;
@@ -45,7 +50,7 @@ export default async function AnnualFortunePage({
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">2026 총운</span>
+            콩닥 <span className="text-xs font-semibold text-[#8A8291]">{year} 총운</span>
           </span>
         </Link>
         <div className="w-12" /> {/* Balanced spacer */}
@@ -53,6 +58,7 @@ export default async function AnnualFortunePage({
 
       <AnnualFortuneClient
         locale={locale}
+        year={year}
         initialHasProfile={hasProfile}
         isLoggedIn={Boolean(session?.user?.id)}
       />

@@ -29,6 +29,7 @@ import Link from "next/link";
 
 interface AnnualFortuneClientProps {
   locale: string;
+  year?: number;
   initialHasProfile?: boolean;
   isLoggedIn?: boolean;
 }
@@ -74,16 +75,9 @@ const SECTION_CONFIG = [
   { key: "relationship", title: "인간관계 & 사교운", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
 ] as const;
 
-// 로딩 중 단계별 순환 안내 문구 (2.5초 간격)
-const LOADING_STEPS = [
-  "사주 여덟 글자를 세우는 중…",
-  "2026 병오년(붉은 말의 해) 기운과 대조하는 중…",
-  "올해 12개월 흐름을 계산하는 중…",
-  "리포트를 정리하는 중…",
-];
-
 export default function AnnualFortuneClient({
   locale,
+  year = 2026,
   initialHasProfile = false,
 }: AnnualFortuneClientProps) {
   const { data: session } = useSession();
@@ -93,13 +87,13 @@ export default function AnnualFortuneClient({
   const [loading, setLoading] = useState(initialHasProfile);
   const [error, setError] = useState<string | null>(null);
 
-  const annualProduct = getProduct("annual_2026");
+  const annualProduct = getProduct(`annual_${year}`);
   const annualPrice = annualProduct ? priceLabel(annualProduct) : "6,900원 · 회원 첫 결제 4,900원";
 
   // Input form state (for guests or users without profile)
   const [showInputForm, setShowInputForm] = useState(!initialHasProfile);
   const [name, setName] = useState("");
-  const [year, setYear] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
   const [gender, setGender] = useState<"F" | "M">("F");
@@ -134,7 +128,7 @@ export default function AnnualFortuneClient({
             setName(parsed.name);
             setShowNameInput(true);
           }
-          if (parsed.birthYear) setYear(String(parsed.birthYear));
+          if (parsed.birthYear) setBirthYear(String(parsed.birthYear));
           if (parsed.birthMonth) setMonth(String(parsed.birthMonth));
           if (parsed.birthDay) setDay(String(parsed.birthDay));
           if (parsed.gender) setGender(parsed.gender);
@@ -181,7 +175,7 @@ export default function AnnualFortuneClient({
       try {
         const guestInput = {
           name,
-          birthYear: year,
+          birthYear,
           birthMonth: month,
           birthDay: day,
           gender,
@@ -194,7 +188,7 @@ export default function AnnualFortuneClient({
         // ignore
       }
 
-      alert("2026 총운 전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.");
+      alert(`${year} 총운 전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.`);
       const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/annual`;
       router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
       return;
@@ -209,22 +203,22 @@ export default function AnnualFortuneClient({
       const res = await fetch("/api/fortune/annual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale }),
+        body: JSON.stringify({ locale, productId: `annual_${year}` }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || "2026 총운을 불러오지 못했습니다.");
+        throw new Error(json.error || `${year} 총운을 불러오지 못했습니다.`);
       }
 
       setData(json.data);
       setShowInputForm(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "2026 총운을 불러오는데 실패했습니다.");
+      setError(err instanceof Error ? err.message : `${year} 총운을 불러오는데 실패했습니다.`);
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, [locale, year]);
 
   useEffect(() => {
     if (initialHasProfile) {
@@ -238,7 +232,7 @@ export default function AnnualFortuneClient({
     e.preventDefault();
     setFormError(null);
 
-    if (!year || !month || !day) {
+    if (!birthYear || !month || !day) {
       setFormError("생년월일을 모두 선택해주세요.");
       return;
     }
@@ -247,7 +241,7 @@ export default function AnnualFortuneClient({
     setError(null);
 
     try {
-      const dob = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      const dob = `${birthYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
       let finalTime: string | null = null;
       if (ampm) {
         let h = parseInt(hour, 10);
@@ -260,7 +254,7 @@ export default function AnnualFortuneClient({
       try {
         sessionStorage.setItem("kongdak_guest_fortune_input", JSON.stringify({
           name: name.trim(),
-          birthYear: year,
+          birthYear,
           birthMonth: month,
           birthDay: day,
           gender,
@@ -279,25 +273,26 @@ export default function AnnualFortuneClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dob,
-          birthYear: parseInt(year, 10),
+          birthYear: parseInt(birthYear, 10),
           birthMonth: parseInt(month, 10),
           birthDay: parseInt(day, 10),
           time: finalTime,
           gender,
           name: name.trim() || "나",
           locale,
+          productId: `annual_${year}`,
         }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || "2026 총운을 분석하지 못했습니다.");
+        throw new Error(json.error || `${year} 총운을 분석하지 못했습니다.`);
       }
 
       setData(json.data);
       setShowInputForm(false);
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : "2026 총운을 분석하는 중 오류가 발생했습니다.");
+      setFormError(err instanceof Error ? err.message : `${year} 총운을 분석하는 중 오류가 발생했습니다.`);
     } finally {
       setLoading(false);
     }
@@ -306,9 +301,14 @@ export default function AnnualFortuneClient({
   if (loading) {
     return (
       <FortuneLoading
-        steps={LOADING_STEPS}
+        steps={[
+          "사주 여덟 글자를 세우는 중…",
+          `${year}년 기운과 대조하는 중…`,
+          "올해 12개월 흐름을 계산하는 중…",
+          "리포트를 정리하는 중…",
+        ]}
         durationSec={15}
-        subMessage="2026년 병오년 당신의 사주 기운을 심층 분석하고 있어요"
+        subMessage={`${year}년 당신의 사주 기운을 심층 분석하고 있어요`}
         skeletonVariant="annual"
       />
     );
@@ -342,10 +342,10 @@ export default function AnnualFortuneClient({
         <div className="text-center mb-4 sm:mb-5">
           <div className="inline-flex items-center gap-1.5 bg-coral/10 text-coral px-3.5 py-1 rounded-full text-xs font-bold mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>2026 병오년(붉은 말의 해) 특별 운세</span>
+            <span>{year}년 특별 운세</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
-            2026 나의 총운 무료 맛보기
+            {year} 나의 총운 무료 맛보기
           </h1>
           <p className="text-xs sm:text-sm text-[#6A5E72] mt-1.5 leading-relaxed font-medium">
             생년월일만 넣으면 3초 만에 무료로 총운 점수와 연애운 확인
@@ -370,8 +370,8 @@ export default function AnnualFortuneClient({
                 <select
                   ref={yearSelectRef}
                   autoFocus
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
+                  value={birthYear}
+                  onChange={(e) => setBirthYear(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
                   required
                 >
@@ -398,7 +398,7 @@ export default function AnnualFortuneClient({
                   required
                 >
                   <option value="">일</option>
-                  {Array.from({ length: getDaysInMonth(year, month) }, (_, i) => i + 1).map((d) => (
+                  {Array.from({ length: getDaysInMonth(birthYear, month) }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>{d}일</option>
                   ))}
                 </select>
@@ -541,7 +541,7 @@ export default function AnnualFortuneClient({
               type="submit"
               className="w-full mt-2 bg-coral hover:bg-[#ff4766] active:scale-[0.96] text-white py-3.5 sm:py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
-              <span>무료로 내 2026 총운 보기</span>
+              <span>무료로 내 {year} 총운 보기</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -575,11 +575,11 @@ export default function AnnualFortuneClient({
       <div className="relative bg-gradient-to-br from-[#FF8AA1] via-coral to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white shadow-[0_8px_24px_rgba(181,71,96,0.15)] overflow-hidden">
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-xs font-bold text-white mb-3 border border-white/25 shadow-xs">
-            <span>2026 병오년(丙午年) 붉은 말의 해</span>
+            <span>{year}년 {year === 2027 ? "정미년(丁未年)" : "병오년(丙午年)"}</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
-            나의 2026년 종합 총운
+            나의 {year}년 종합 총운
           </h1>
 
           {/* Big Score Display */}
@@ -607,7 +607,7 @@ export default function AnnualFortuneClient({
 
           {/* Free Summary Overview */}
           <div className="w-full bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-left border border-white/15">
-            <h3 className="text-xs font-bold text-white/80 mb-1">2026년 총평</h3>
+            <h3 className="text-xs font-bold text-white/80 mb-1">{year}년 총평</h3>
             <p className="text-xs sm:text-sm text-white/95 leading-relaxed">
               {data.summary}
             </p>
@@ -957,7 +957,7 @@ export default function AnnualFortuneClient({
             <div className="flex flex-col text-left">
               <span className="text-[10px] sm:text-xs font-bold text-[#8A8291] flex items-center gap-1">
                 <Lock className="w-3 h-3 text-coral" />
-                2026 총운 전체 열기
+                {year} 총운 전체 열기
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
                 <span className="text-sm sm:text-base font-black text-coral">{annualPrice}</span>
@@ -981,8 +981,8 @@ export default function AnnualFortuneClient({
       <GuestCheckoutModal
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title="2026 총운 리포트 열람"
-        orderName={annualProduct?.name || "콩닥 2026 신년 총운 리포트"}
+        title={`${year} 총운 리포트 열람`}
+        orderName={annualProduct?.name || `콩닥 ${year} 신년 총운 리포트`}
         priceLabel={annualPrice}
         initialName={session?.user?.name || ""}
         initialEmail={session?.user?.email || ""}
@@ -992,7 +992,7 @@ export default function AnnualFortuneClient({
           try {
             setIsProcessingPayment(true);
             const res = await requestPortOnePayment({
-              productId: "annual_2026",
+              productId: `annual_${year}`,
               buyer,
               locale,
             });
