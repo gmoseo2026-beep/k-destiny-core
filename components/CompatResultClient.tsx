@@ -957,6 +957,11 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               locale,
             });
             if (res.ok) {
+              trackEvent("purchase_confirmed", {
+                productId: "compat_basic",
+                tier: compatProduct?.tier || "standard",
+                amount: res.amount,
+              });
               router.refresh();
             }
           } catch (e: unknown) {

@@ -14,7 +14,7 @@ export interface PayOptions {
 }
 
 export type PayResult =
-  | { ok: true; orderId: string; catalogId: string; compatId: string | null }
+  | { ok: true; orderId: string; catalogId: string; compatId: string | null; amount: number }
   | { ok: false; reason: "LOGIN_REQUIRED" | "CANCELLED" | "FAILED" };
 
 /**
@@ -176,13 +176,14 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   }
 
   // 4) 서버 결제 검증
-  return await verifyAndCompletePayment(order.orderId, opts.productId, opts.compatId);
+  return await verifyAndCompletePayment(order.orderId, opts.productId, opts.compatId, order.amount);
 }
 
 export async function verifyAndCompletePayment(
   paymentId: string,
   fallbackCatalogId?: string,
-  fallbackCompatId?: string | null
+  fallbackCompatId?: string | null,
+  fallbackAmount?: number
 ): Promise<PayResult> {
   try {
     const r = await fetch("/api/payments/complete", {
@@ -196,6 +197,7 @@ export async function verifyAndCompletePayment(
       const catalogId = result?.catalogId || fallbackCatalogId || "compat_basic";
       const compatId = result?.compatId ?? fallbackCompatId ?? null;
       const orderId = result?.orderId || paymentId;
+      const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
       rememberOrderToken(catalogId, orderId, compatId);
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.
@@ -204,6 +206,7 @@ export async function verifyAndCompletePayment(
         orderId,
         catalogId,
         compatId,
+        amount,
       };
     } else {
       const e = await r.json().catch(() => ({}));

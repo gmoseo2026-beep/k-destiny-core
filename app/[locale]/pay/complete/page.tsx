@@ -90,7 +90,7 @@ function PayCompleteContent() {
             trackEvent("purchase_confirmed", {
               productId: result.catalogId,
               tier: catItem?.tier || "standard",
-              amount: catItem?.price || 0,
+              amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
             });
           }
         } else {

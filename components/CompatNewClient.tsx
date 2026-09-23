@@ -294,7 +294,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                 trackEvent("purchase_confirmed", {
                   productId: product.id,
                   tier: product.tier,
-                  amount: product.price,
+                  amount: res.amount,
                 });
                 router.push(`/${locale}/report/new?c=${product.id}&compat=${teaserResult.compatId}`);
               }

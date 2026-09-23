@@ -341,7 +341,7 @@ export default function FortuneNewClient({
                 trackEvent("purchase_confirmed", {
                   productId: currentProductId,
                   tier: product?.tier || "standard",
-                  amount: product?.price || 0,
+                  amount: res.amount,
                 });
                 if (currentProductId.startsWith("annual_")) {
                   router.push(`/${locale}/fortune/annual?year=${currentProductId.replace("annual_", "")}`);

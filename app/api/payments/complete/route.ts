@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         success: true,
         orderId: order.orderId,
         type: order.type,
+        amount: order.amount,
         compatId: order.compatId,
         productType: order.productType ?? null,
         productKey: order.productKey ?? null,

@@ -26,6 +26,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/gtag";
 
 interface AnnualFortuneClientProps {
   locale: string;
@@ -997,6 +998,11 @@ export default function AnnualFortuneClient({
               locale,
             });
             if (res.ok) {
+              trackEvent("purchase_confirmed", {
+                productId: `annual_${year}`,
+                tier: annualProduct?.tier || "standard",
+                amount: res.amount,
+              });
               fetchFortune();
             }
           } catch (e: unknown) {
