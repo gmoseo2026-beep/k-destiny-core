@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import KongdakMascot from "./KongdakMascot";
+import { trackEvent } from "@/lib/gtag";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -9,6 +10,8 @@ interface GuestCheckoutModalProps {
   title: string;
   orderName: string;
   priceLabel: string;
+  productId?: string;
+  tier?: string;
   initialName?: string;
   initialEmail?: string;
   initialPhone?: string;
@@ -22,6 +25,8 @@ export default function GuestCheckoutModal({
   title,
   orderName,
   priceLabel,
+  productId,
+  tier = "standard",
   initialName = "",
   initialEmail = "",
   initialPhone = "",
@@ -31,16 +36,25 @@ export default function GuestCheckoutModal({
   const [fullName, setFullName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
   const [phoneNumber, setPhoneNumber] = useState(initialPhone);
+  const [agreedToWithdrawalPolicy, setAgreedToWithdrawalPolicy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setFullName(initialName);
-      setEmail(initialEmail);
-      setPhoneNumber(initialPhone);
-      setErrorMsg(null);
+      queueMicrotask(() => {
+        setFullName(initialName);
+        setEmail(initialEmail);
+        setPhoneNumber(initialPhone);
+        setAgreedToWithdrawalPolicy(false);
+        setErrorMsg(null);
+      });
+      trackEvent("view_paywall", {
+        productId: productId || orderName || "unknown",
+        tier: tier || "standard",
+        amountLabel: priceLabel,
+      });
     }
-  }, [isOpen, initialName, initialEmail, initialPhone]);
+  }, [isOpen, initialName, initialEmail, initialPhone, productId, tier, orderName, priceLabel]);
 
   if (!isOpen) return null;
 
@@ -94,25 +108,25 @@ export default function GuestCheckoutModal({
         <div className="flex items-center gap-3 mb-4">
           <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
-            <h3 className="text-lg font-black text-[#2B2430]">{title}</h3>
+            <h3 className="text-lg font-black text-ink">{title}</h3>
             <p className="text-xs text-[#8A8291]">KG이니시스 카드 결제 정보 입력</p>
           </div>
         </div>
 
         {/* Order Info Card */}
-        <div className="bg-[#FFF6F1] rounded-2xl p-3.5 mb-5 border border-[#FFD9E0]/50 flex justify-between items-center">
+        <div className="bg-cream rounded-2xl p-3.5 mb-5 border border-[#FFD9E0]/50 flex justify-between items-center">
           <div>
             <span className="text-xs font-bold text-[#6A2C70] block">{orderName}</span>
             <span className="text-[11px] text-[#8A8291]">결제 후 즉시 열람 가능</span>
           </div>
-          <span className="text-base font-black text-[#FF5C77]">{priceLabel}</span>
+          <span className="text-base font-black text-coral">{priceLabel}</span>
         </div>
 
         {/* Guest Input Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <div>
-            <label className="block text-xs font-bold text-[#2B2430] mb-1">
-              주문자 이름 <span className="text-[#FF5C77]">*</span>
+            <label className="block text-xs font-bold text-ink mb-1">
+              주문자 이름 <span className="text-coral">*</span>
             </label>
             <input
               type="text"
@@ -121,13 +135,13 @@ export default function GuestCheckoutModal({
               onChange={(e) => setFullName(e.target.value)}
               placeholder="예: 홍길동"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-[#FFF6F1]/30 border border-[#FFD9E0] rounded-xl text-sm text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77] transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#2B2430] mb-1">
-              휴대폰 번호 <span className="text-[#FF5C77]">*</span>
+            <label className="block text-xs font-bold text-ink mb-1">
+              휴대폰 번호 <span className="text-coral">*</span>
             </label>
             <input
               type="tel"
@@ -136,13 +150,13 @@ export default function GuestCheckoutModal({
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="01012345678 (- 없이 입력)"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-[#FFF6F1]/30 border border-[#FFD9E0] rounded-xl text-sm text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77] transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#2B2430] mb-1">
-              이메일 주소 <span className="text-[#FF5C77]">*</span>
+            <label className="block text-xs font-bold text-ink mb-1">
+              이메일 주소 <span className="text-coral">*</span>
             </label>
             <input
               type="email"
@@ -151,16 +165,25 @@ export default function GuestCheckoutModal({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="kongdak@example.com"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-[#FFF6F1]/30 border border-[#FFD9E0] rounded-xl text-sm text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77] transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
             />
             <span className="text-[11px] text-[#8A8291] mt-1 block">
               결제 내역 및 추후 리포트 다시보기 시 본인 확인용으로 사용됩니다.
             </span>
           </div>
 
-          <div className="bg-[#FFF6F1]/80 rounded-xl p-2.5 border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] leading-relaxed">
-            ※ 본 상품은 디지털 콘텐츠로서 열람(제공 개시) 후에는 전자상거래법 제17조 제2항에 따라 청약철회가 제한될 수 있습니다.
-          </div>
+          <label className="flex items-start gap-2.5 cursor-pointer bg-cream/80 rounded-xl p-2.5 border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] leading-relaxed select-none">
+            <input
+              type="checkbox"
+              required
+              checked={agreedToWithdrawalPolicy}
+              onChange={(e) => setAgreedToWithdrawalPolicy(e.target.checked)}
+              className="mt-0.5 rounded text-coral focus:ring-coral"
+            />
+            <span>
+              <strong className="text-ink font-semibold">[필수]</strong> 본 상품은 디지털 콘텐츠로서 열람(제공 개시) 후에는 전자상거래법 제17조 제2항에 따라 청약철회가 제한될 수 있음에 동의합니다.
+            </span>
+          </label>
 
           {errorMsg && (
             <p className="text-xs text-red-500 bg-red-50 py-1.5 px-3 rounded-lg border border-red-200">
@@ -179,8 +202,8 @@ export default function GuestCheckoutModal({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
-              className="flex-2 py-3 bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition-all active:scale-95 disabled:opacity-50"
+              disabled={isLoading || !agreedToWithdrawalPolicy}
+              className="flex-2 py-3 bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition-all active:scale-95 disabled:opacity-50"
             >
               {isLoading ? "결제창 연결 중..." : "결제 진행하기"}
             </button>

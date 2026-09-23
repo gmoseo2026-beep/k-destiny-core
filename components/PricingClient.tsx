@@ -42,7 +42,7 @@ export default function PricingClient({ locale }: { locale: string }) {
         <div className="flex justify-center mb-4">
           <KongdakMascot size={64} animate="none" expression="flutter" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-[#2B2430] tracking-tight mb-3">
+        <h1 className="text-3xl sm:text-4xl font-black text-ink tracking-tight mb-3">
           {t("title")}
         </h1>
         <p className="text-[#8A8291] text-sm sm:text-base font-medium">
@@ -62,31 +62,31 @@ export default function PricingClient({ locale }: { locale: string }) {
             </span>
           </div>
 
-          <h2 className="text-xl font-black text-[#2B2430] mb-2">{t("product_single_title")}</h2>
+          <h2 className="text-xl font-black text-ink mb-2">{t("product_single_title")}</h2>
           <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_single_desc")}</p>
           
           {/* Price Box */}
-          <div className="w-full bg-[#FFF6F1]/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
-            <span className="text-xs font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full mb-1.5 shadow-2xs">
+          <div className="w-full bg-cream/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
+            <span className="text-xs font-bold text-coral bg-cream border border-[#FFD9E0] px-2.5 py-0.5 rounded-full mb-1.5 shadow-2xs">
               {t("product_single_price_first")}
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-black text-[#2B2430] tracking-tight">{t("product_single_price")}</span>
+              <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight">{t("product_single_price")}</span>
             </div>
           </div>
 
           {/* Benefits */}
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span>2인 사주 기반 상세 심층 리포트</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span>관계의 핵심 갈등 요인 & 극복 팁</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span>결제일로부터 90일간 언제든 다시 열람</span>
             </li>
           </ul>
@@ -94,22 +94,22 @@ export default function PricingClient({ locale }: { locale: string }) {
           {/* Action Button */}
           <button
             onClick={() => router.push(`/${locale}/compat/new`)}
-            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#FF5C77] border border-[#FFD9E0] py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] mt-auto shadow-2xs"
+            className="w-full bg-cream hover:bg-[#FFD9E0]/50 text-coral border border-[#FFD9E0] py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] mt-auto shadow-2xs"
           >
             {t("product_single_btn")}
           </button>
         </div>
 
         {/* Card 2: 1 Month Pass (Featured) */}
-        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-md border-2 border-[#FF5C77] flex flex-col items-center text-center relative transition-all duration-150 hover:-translate-y-0.5">
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-md border-2 border-coral flex flex-col items-center text-center relative transition-all duration-150 hover:-translate-y-0.5">
           {/* Top Floating Badge */}
-          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#FF5C77] text-white text-[11px] font-black px-4 py-1 rounded-full shadow-xs whitespace-nowrap z-10 flex items-center">
+          <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-coral text-white text-[11px] font-black px-4 py-1 rounded-full shadow-xs whitespace-nowrap z-10 flex items-center">
             가장 많은 선택
           </div>
 
           {/* Tag Area */}
           <div className="h-7 mb-2 flex items-center justify-center">
-            <span className="text-[11px] font-bold text-[#FF5C77] bg-[#FFD9E0]/50 px-3 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-coral bg-[#FFD9E0]/50 px-3 py-1 rounded-full">
               30일간 무제한
             </span>
           </div>
@@ -118,31 +118,31 @@ export default function PricingClient({ locale }: { locale: string }) {
           <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_1m_desc")}</p>
           
           {/* Price Box */}
-          <div className="w-full bg-[#FFF6F1] border border-[#FF8AA1]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
+          <div className="w-full bg-cream border border-[#FF8AA1]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
             <span className="text-xs font-bold text-[#6A2C70] bg-white border border-[#FFD9E0] px-2.5 py-0.5 rounded-full mb-1.5 shadow-2xs">
               30일 이용권
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-black text-[#2B2430] tracking-tight">{t("product_1m_price")}</span>
+              <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight">{t("product_1m_price")}</span>
             </div>
           </div>
 
           {/* Benefits */}
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">매일 데일리 코치 + 실전 행동 조언</span>
+              <span className="text-coral text-sm">✓</span>
+              <span className="font-bold text-ink">매일 데일리 코치 + 실전 행동 조언</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span>매주 월~일 흐름 & 데이트 길일 배달</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span className="font-bold text-[#6A2C70]">2026 총운 · 모든 심층 궁합 30일 무제한</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77] text-sm">✓</span>
+              <span className="text-coral text-sm">✓</span>
               <span>1회 결제 (자동결제 없음 · 30일 패스)</span>
             </li>
           </ul>
@@ -151,7 +151,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <button
             onClick={() => handlePeriodPassCheckout("1_MONTH")}
             disabled={isProcessingPayment}
-            className="w-full bg-[#FF5C77] hover:bg-[#ff4766] text-white py-3.5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto"
+            className="w-full bg-coral hover:bg-[#ff4766] text-white py-3.5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto"
           >
             {isProcessingPayment && selectedPlan === "1_MONTH" ? "결제창 연결 중..." : t("product_1m_btn")}
           </button>
@@ -170,12 +170,12 @@ export default function PricingClient({ locale }: { locale: string }) {
           <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_3m_desc")}</p>
           
           {/* Price Box */}
-          <div className="w-full bg-[#FFF6F1]/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
-            <span className="text-xs font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full mb-1.5 shadow-2xs">
+          <div className="w-full bg-cream/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
+            <span className="text-xs font-bold text-coral bg-cream border border-[#FFD9E0] px-2.5 py-0.5 rounded-full mb-1.5 shadow-2xs">
               월 8,300원 상당
             </span>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-black text-[#2B2430] tracking-tight">{t("product_3m_price")}</span>
+              <span className="text-3xl sm:text-4xl font-black text-ink tracking-tight">{t("product_3m_price")}</span>
             </div>
           </div>
 
@@ -183,7 +183,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <ul className="w-full text-left space-y-2.5 text-xs text-[#6A5E72] mb-6 px-1">
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
-              <span className="font-bold text-[#2B2430]">90일간 매일 데일리 코치 + 행동 조언</span>
+              <span className="font-bold text-ink">90일간 매일 데일리 코치 + 행동 조언</span>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-[#6A2C70] text-sm">✓</span>
@@ -203,7 +203,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           <button
             onClick={() => handlePeriodPassCheckout("3_MONTHS")}
             disabled={isProcessingPayment}
-            className="w-full bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#6A2C70] border border-[#FF8AA1]/40 py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto shadow-2xs"
+            className="w-full bg-cream hover:bg-[#FFD9E0]/50 text-[#6A2C70] border border-[#FF8AA1]/40 py-3.5 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] disabled:opacity-50 mt-auto shadow-2xs"
           >
             {isProcessingPayment && selectedPlan === "3_MONTHS" ? "결제창 연결 중..." : t("product_3m_btn")}
           </button>
@@ -212,16 +212,16 @@ export default function PricingClient({ locale }: { locale: string }) {
       </div>
 
       {/* 2026 Annual Fortune Single Product Banner Card */}
-      <div className="bg-gradient-to-r from-[#FFF6F1] to-white border border-[#FF8AA1]/60 rounded-3xl p-6 sm:p-7 mb-14 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-cream to-white border border-[#FF8AA1]/60 rounded-3xl p-6 sm:p-7 mb-14 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4 text-left">
-          <div className="w-12 h-12 rounded-2xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-coral/10 flex items-center justify-center text-coral shrink-0">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-[#FF5C77] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-1">
+            <div className="inline-flex items-center gap-1.5 bg-coral text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-1">
               <span>단건 열람</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-[#2B2430]">
+            <h3 className="text-lg sm:text-xl font-black text-ink">
               2026 신년 총운 리포트 (단건)
             </h3>
             <p className="text-xs sm:text-sm text-[#8A8291] mt-0.5">
@@ -232,16 +232,16 @@ export default function PricingClient({ locale }: { locale: string }) {
 
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end shrink-0">
           <div className="text-right">
-            <span className="text-[11px] font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2 py-0.5 rounded-full">
+            <span className="text-[11px] font-bold text-coral bg-cream border border-[#FFD9E0] px-2 py-0.5 rounded-full">
               첫 결제 1,900원
             </span>
-            <div className="text-xl sm:text-2xl font-black text-[#2B2430]">
+            <div className="text-xl sm:text-2xl font-black text-ink">
               2,900<span className="text-sm font-normal text-[#8A8291]">원</span>
             </div>
           </div>
           <button
             onClick={() => router.push(`/${locale}/fortune/annual`)}
-            className="bg-[#FF5C77] hover:bg-[#ff4766] text-white px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-xs transition-all duration-150 active:scale-[0.97] whitespace-nowrap flex items-center gap-1.5"
+            className="bg-coral hover:bg-[#ff4766] text-white px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm shadow-xs transition-all duration-150 active:scale-[0.97] whitespace-nowrap flex items-center gap-1.5"
           >
             <span>총운 확인하기</span>
             <ArrowRight className="w-4 h-4" />
@@ -251,35 +251,35 @@ export default function PricingClient({ locale }: { locale: string }) {
 
       {/* Info Section */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#FFD9E0]/50 text-left mb-12 shadow-sm">
-        <h3 className="text-sm sm:text-base font-bold text-[#2B2430] mb-4 flex items-center gap-2">
-          <span className="bg-[#FFF6F1] text-[#FF5C77] px-2.5 py-0.5 rounded-full text-xs font-bold border border-[#FFD9E0]">
+        <h3 className="text-sm sm:text-base font-bold text-ink mb-4 flex items-center gap-2">
+          <span className="bg-cream text-coral px-2.5 py-0.5 rounded-full text-xs font-bold border border-[#FFD9E0]">
             안내
           </span>
           {t("info_title")}
         </h3>
         <ul className="space-y-2.5 text-xs sm:text-[13px] text-[#6A5E72] font-medium leading-relaxed mb-4">
           <li className="flex items-start gap-2.5">
-            <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
+            <span className="text-coral font-bold mt-0.5">•</span>
             <span>{t("info_type")}</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
+            <span className="text-coral font-bold mt-0.5">•</span>
             <span>{t("info_delivery")}</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
+            <span className="text-coral font-bold mt-0.5">•</span>
             <span>{t("info_method")}</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
+            <span className="text-coral font-bold mt-0.5">•</span>
             <span>{t("info_refund")}</span>
           </li>
           <li className="flex items-start gap-2.5">
-            <span className="text-[#FF5C77] font-bold mt-0.5">•</span>
+            <span className="text-coral font-bold mt-0.5">•</span>
             <span>{t("info_sub")}</span>
           </li>
         </ul>
-        <div className="p-3 bg-[#FFF6F1]/80 rounded-2xl border border-[#FFD9E0]/40 text-xs text-[#8A8291] leading-relaxed">
+        <div className="p-3 bg-cream/80 rounded-2xl border border-[#FFD9E0]/40 text-xs text-[#8A8291] leading-relaxed">
           {t("info_disclaimer")}
         </div>
       </div>
@@ -299,14 +299,13 @@ export default function PricingClient({ locale }: { locale: string }) {
           try {
             setIsProcessingPayment(true);
             await requestPortOnePayment({
-              type: "PERIOD_PASS",
-              planId: selectedPlan,
-              compatId: undefined,
+              productId: "set_me",
               buyer,
               locale,
             });
-          } catch (e: any) {
-            alert(e.message || "결제 진행 중 오류가 발생했습니다.");
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.";
+            alert(msg);
           } finally {
             setIsProcessingPayment(false);
             setCheckoutModalOpen(false);
