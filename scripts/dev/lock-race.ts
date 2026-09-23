@@ -1,4 +1,26 @@
-import { claimGeneration, failGeneration, completeGeneration } from "../../lib/reports/generationLock";
+import { config } from "dotenv";
+import { claimGeneration, completeGeneration } from "../../lib/reports/generationLock";
+
+const read = (path: string) => config({ path, processEnv: {}, quiet: true }).parsed?.DATABASE_URL ?? "";
+const ident = (u: string) => {
+  try {
+    const x = new URL(u);
+    return `${x.username}@${x.host}`;
+  } catch {
+    return "";
+  }
+};
+
+const prod = read(".env");
+const dev = read(".env.development.local");
+if (!dev) {
+  console.error("✖ .env.development.local 에 DATABASE_URL 이 없습니다. 개발 DB를 먼저 준비하세요.");
+  process.exit(1);
+}
+if (ident(dev) === ident(prod)) {
+  console.error("✖ 개발 DB가 운영 DB와 같은 프로젝트입니다. 중단합니다.");
+  process.exit(1);
+}
 
 async function runRace() {
   const cacheKey = `test_lock_${Date.now()}`;
@@ -31,8 +53,10 @@ async function runRace() {
     
     // Cleanup/Complete the owned one
     const owned = res1.state === "OWNED" ? res1 : res2;
-    await completeGeneration((owned as any).reportId, { msg: "done" }, "test-model");
-    console.log(`Completed report ${(owned as any).reportId}`);
+    if ("reportId" in owned) {
+      await completeGeneration(owned.reportId, { msg: "done" }, "test-model");
+      console.log(`Completed report ${owned.reportId}`);
+    }
   } else {
     console.error(`❌ Lock race test FAILED! owned: ${ownedCount}, busy: ${busyCount}`);
     process.exit(1);
