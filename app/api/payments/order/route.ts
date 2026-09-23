@@ -14,46 +14,17 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
-    let { type, productId, product, compatId, email, planId } = body;
-    
-    // Legacy compatibility for field name
-    productId = productId || product;
+    const type = body.type ?? "SINGLE";
+    const productId = body.productId || body.product;
+    const compatId = body.compatId;
+    const email = body.email;
 
-    if (type === 'PERIOD_PASS') {
+    if (type === "PERIOD_PASS") {
       // [D4] PERIOD_PASS 분기는 더 이상 사용되지 않으므로 410 반환
       return NextResponse.json({ error: "기간권 판매가 종료되었습니다." }, { status: 410 });
-      /*
-      if (!session?.user?.id) {
-         return NextResponse.json({ error: "Login required for period pass" }, { status: 401 });
-      }
-      
-      let amount = 0;
-      if (planId === '1_MONTH') amount = 9900;
-      else if (planId === '3_MONTHS') amount = 24900;
-      else return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
-
-      const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
-      const order = await prisma.order.create({
-        data: {
-          orderId,
-          userId: session.user.id,
-          email: session.user.email || null,
-          compatId: null,
-          type: type,
-          planId: planId,
-          amount,
-          status: "PENDING",
-          provider: process.env.PG_PROVIDER || "portone",
-        }
-      });
-      return NextResponse.json(
-        { orderId: order.orderId, amount: order.amount, type: order.type },
-        { status: 200 }
-      );
-      */
     }
 
-    if (type === 'SINGLE') {
+    if (type === "SINGLE") {
       // Legacy compatibility for annual and initial compat
       let catalogId = productId;
       if (productId === "ANNUAL_2026") catalogId = "annual_2026";
@@ -81,7 +52,7 @@ export async function POST(req: NextRequest) {
 
       let parsedEmail = session?.user?.email || null;
       if (!session?.user?.id) {
-        if (!email || typeof email !== 'string') {
+        if (!email || typeof email !== "string") {
           return NextResponse.json({ error: "Email is required for guest checkout" }, { status: 400 });
         }
         parsedEmail = email.trim().toLowerCase();
@@ -91,37 +62,25 @@ export async function POST(req: NextRequest) {
       }
 
       let amount = catalogItem.price;
-
-      // First purchase discount for standard non-SET products.
-      if (catalogItem.tier === "standard" && catalogItem.type !== "SET") {
-        const searchUser = session?.user?.id ? { userId: session.user.id } : { email: parsedEmail };
-        if (searchUser.userId || searchUser.email) {
-          const pastOrders = await prisma.order.findFirst({
-            where: {
-              ...searchUser,
-              status: 'PAID',
-              provider: { not: 'admin_manual' },
-              amount: { gt: 0 },
-            }
-          });
-          if (!pastOrders) {
-            amount = Math.min(amount, FIRST_PURCHASE_PRICE);
-          }
-        }
+      const sessionUserId = session?.user?.id ?? null;
+      if (sessionUserId && catalogItem.tier === "standard" && catalogItem.type !== "SET") {
+        const anyPaid = await prisma.order.findFirst({
+          where: { userId: sessionUserId, status: "PAID", provider: { not: "admin_manual" }, amount: { gt: 0 } },
+          select: { id: true },
+        });
+        if (!anyPaid) amount = Math.min(amount, FIRST_PURCHASE_PRICE);
       }
 
       const { productType, productKey } = toStorageKey(catalogItem.id);
       
       // 세트이면서 궁합(커플) 포함 시 주문에 compatId 저장 (커밋 D1 보완 지시)
-      // D1 지시사항: type === "SET"이면서 구성에 관계상품이 포함된(=target couple) 세트는 compatId를 주문에 저장.
-      // catalogItem.target === "couple" 이면 이미 compatId를 가지고 있음.
       const orderCompatId = requiresCompatId ? compatId : null;
 
-      const orderId = `kd_ord_${uuidv4().replace(/-/g, '')}`;
+      const orderId = `kd_ord_${uuidv4().replace(/-/g, "")}`;
       const order = await prisma.order.create({
         data: {
           orderId,
-          userId: session?.user?.id || null,
+          userId: sessionUserId,
           email: parsedEmail,
           compatId: orderCompatId,
           productType,
@@ -130,7 +89,7 @@ export async function POST(req: NextRequest) {
           amount,
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
-        }
+        },
       });
 
       return NextResponse.json(
@@ -140,8 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: "Invalid order type" }, { status: 400 });
-
-  } catch (e) {
+  } catch (e: unknown) {
     // [SECURITY / L-4] Prisma 예외 원문은 서버 로그에만 남긴다.
     console.error("[payments/order]", e);
     return NextResponse.json({ error: "주문 생성에 실패했습니다." }, { status: 500 });
