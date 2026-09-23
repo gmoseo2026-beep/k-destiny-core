@@ -20,40 +20,7 @@ import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 
 type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
 
-// 생년월일(YYYY-MM-DD) 유효성 및 미래 날짜 검증
-function isValidDateString(dob: unknown): boolean {
-  if (typeof dob !== "string") return false;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) return false;
-  const [yearStr, monthStr, dayStr] = dob.split("-");
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10);
-  const day = parseInt(dayStr, 10);
-  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return false;
-
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return false;
-  }
-
-  const now = new Date();
-  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  if (date > todayUTC) {
-    return false; // 미래 날짜 거부
-  }
-
-  return true;
-}
-
-// 시간(HH:mm) 유효성 검증 (선택값)
-function isValidTimeString(time: unknown): boolean {
-  if (time === null || time === undefined || time === "") return true;
-  if (typeof time !== "string") return false;
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
-}
+import { isValidDateString, isValidTimeString } from "@/lib/validation/inputs";
 
 export async function POST(req: Request) {
   try {
@@ -97,7 +64,7 @@ export async function POST(req: Request) {
         dob = `${String(body.birthYear).padStart(4, "0")}-${String(body.birthMonth).padStart(2, "0")}-${String(body.birthDay).padStart(2, "0")}`;
       }
       const gender = body.gender;
-      const time = body.time || body.birthTime || null;
+      const time = (body.time || body.birthTime || null) as string | null;
       const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 20) : "나";
 
       if (!isValidDateString(dob)) {
@@ -246,7 +213,7 @@ export async function POST(req: Request) {
         dob = `${String(body.birthYear).padStart(4, "0")}-${String(body.birthMonth).padStart(2, "0")}-${String(body.birthDay).padStart(2, "0")}`;
       }
       const gender = body.gender;
-      const time = body.time || body.birthTime || null;
+      const time = (body.time || body.birthTime || null) as string | null;
       const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 20) : "사용자";
 
       if (isValidDateString(dob) && (gender === "M" || gender === "F") && isValidTimeString(time)) {
