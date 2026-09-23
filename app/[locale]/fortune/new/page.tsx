@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Link from "next/link";
 import FortuneNewClient from "@/components/FortuneNewClient";
 import { canonicalUrlFor } from "@/lib/seo";
 import { notFound } from "next/navigation";
@@ -58,17 +57,6 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
           🔒 미리보기 — 미공개 상품
         </div>
       )}
-      {/* Top Header */}
-      <header className="w-full max-w-md flex items-center justify-between mb-6">
-        <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coral-light to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
-            콩
-          </div>
-          <span className="font-extrabold text-lg tracking-tight text-plum">
-            콩닥 <span className="text-xs font-semibold text-muted">kongdak</span>
-          </span>
-        </Link>
-      </header>
 
       {/* Hero Title */}
       <div className="w-full max-w-md text-center mb-6">

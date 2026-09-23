@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { X, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { subscribeToPush } from '@/lib/push';
@@ -20,6 +21,9 @@ export default function InstallPWAButton() {
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const { data: session } = useSession();
+  // 설치·알림 배너는 홈에서만 띄운다. 상세·입력·결과 화면에서는 하단 고정 결제 버튼을 가린다.
+  const pathname = usePathname();
+  const isHome = /^\/(ko|en|ja)?\/?$/.test(pathname ?? "");
 
   // 1. 푸시 토큰 자동 동기화 (권한이 이미 있으면 PWA/일반 웹 무관하게 즉시 DB 동기화)
   useEffect(() => {
@@ -124,6 +128,8 @@ export default function InstallPWAButton() {
       }, 1000);
     }
   };
+
+  if (!isHome) return null;
 
   if (isStandalone) {
     return (
