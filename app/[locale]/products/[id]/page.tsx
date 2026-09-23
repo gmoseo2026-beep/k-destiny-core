@@ -40,6 +40,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  if (product.tier === "premium") {
+    const { PremiumProductDetail } = await import("@/components/premium/PremiumProductDetail");
+    return <PremiumProductDetail product={product} locale={locale} />;
+  }
+
   const Icon = iconMap[product.icon] || Star;
   
   // Determine next path for form input

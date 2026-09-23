@@ -11,6 +11,7 @@ import { recallOrderToken } from "@/lib/payments/client";
 import { loadPendingInput, clearPendingInput, savePendingInput } from "@/lib/reportHandoff";
 import { ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
+import { PremiumGenerating } from "@/components/premium/PremiumGenerating";
 
 interface ReportNewClientProps {
   locale: string;
@@ -192,9 +193,15 @@ export default function ReportNewClient({
 
     // Single Product Flow
     const saved = loadPendingInput(catalogId);
-    if (!saved && product.inputKind === "person") {
-      queueMicrotask(() => setNeedInput(true));
-      return;
+    if (!saved) {
+      if (product.tier === "premium") {
+        router.replace(`/${locale}/premium/${catalogId}/new`);
+        return;
+      }
+      if (product.inputKind === "person") {
+        queueMicrotask(() => setNeedInput(true));
+        return;
+      }
     }
 
     // Begin generation
@@ -411,6 +418,10 @@ export default function ReportNewClient({
           >
             다시 시도하기
           </button>
+        </div>
+      ) : product?.tier === "premium" ? (
+        <div className="w-full max-w-2xl mx-auto py-8">
+          <PremiumGenerating />
         </div>
       ) : (
         <FortuneLoading

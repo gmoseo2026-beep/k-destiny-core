@@ -5,3 +5,5 @@ export * from "./PremiumToc";
 export * from "./PremiumChapter";
 export * from "./PremiumGenerating";
 export * from "./PrintButton";
+export * from "./PremiumProductDetail";
+export * from "./PremiumNewClient";

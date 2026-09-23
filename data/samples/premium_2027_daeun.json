@@ -1,0 +1,519 @@
+{
+  "version": 1,
+  "meta": {
+    "targetName": "김서연 (예시 · 가상 인물)",
+    "isSample": true
+  },
+  "engine": {
+    "strong": true,
+    "cycles": [
+      {
+        "index": 1,
+        "startYear": 2002,
+        "endYear": 2011,
+        "startAge": 8,
+        "ganZhi": "庚辰",
+        "label": "단단한 바위와 용의 10년"
+      },
+      {
+        "index": 2,
+        "startYear": 2012,
+        "endYear": 2021,
+        "startAge": 18,
+        "ganZhi": "辛巳",
+        "label": "빛나는 보석와 뱀의 10년"
+      },
+      {
+        "index": 3,
+        "startYear": 2022,
+        "endYear": 2031,
+        "startAge": 28,
+        "ganZhi": "壬午",
+        "label": "넓은 바다와 말의 10년"
+      },
+      {
+        "index": 4,
+        "startYear": 2032,
+        "endYear": 2041,
+        "startAge": 38,
+        "ganZhi": "癸未",
+        "label": "촉촉한 단비와 양의 10년"
+      },
+      {
+        "index": 5,
+        "startYear": 2042,
+        "endYear": 2051,
+        "startAge": 48,
+        "ganZhi": "甲申",
+        "label": "큰 나무와 원숭이의 10년"
+      },
+      {
+        "index": 6,
+        "startYear": 2052,
+        "endYear": 2061,
+        "startAge": 58,
+        "ganZhi": "乙酉",
+        "label": "들꽃와 닭의 10년"
+      },
+      {
+        "index": 7,
+        "startYear": 2062,
+        "endYear": 2071,
+        "startAge": 68,
+        "ganZhi": "丙戌",
+        "label": "한낮의 태양와 개의 10년"
+      },
+      {
+        "index": 8,
+        "startYear": 2072,
+        "endYear": 2081,
+        "startAge": 78,
+        "ganZhi": "丁亥",
+        "label": "따뜻한 촛불와 돼지의 10년"
+      }
+    ],
+    "current": {
+      "index": 3,
+      "startYear": 2022,
+      "endYear": 2031,
+      "startAge": 28,
+      "ganZhi": "壬午",
+      "label": "넓은 바다와 말의 10년"
+    },
+    "yearScore": 90,
+    "domains": {
+      "love": 86,
+      "money": 91,
+      "career": 96,
+      "relationships": 86,
+      "family": 91,
+      "health": 86
+    },
+    "months": [
+      {
+        "month": 1,
+        "ganZhi": "辛丑",
+        "score": 99
+      },
+      {
+        "month": 2,
+        "ganZhi": "壬寅",
+        "score": 83
+      },
+      {
+        "month": 3,
+        "ganZhi": "癸卯",
+        "score": 86
+      },
+      {
+        "month": 4,
+        "ganZhi": "甲辰",
+        "score": 96
+      },
+      {
+        "month": 5,
+        "ganZhi": "乙巳",
+        "score": 95
+      },
+      {
+        "month": 6,
+        "ganZhi": "丙午",
+        "score": 99
+      },
+      {
+        "month": 7,
+        "ganZhi": "丁未",
+        "score": 99
+      },
+      {
+        "month": 8,
+        "ganZhi": "戊申",
+        "score": 99
+      },
+      {
+        "month": 9,
+        "ganZhi": "己酉",
+        "score": 99
+      },
+      {
+        "month": 10,
+        "ganZhi": "庚戌",
+        "score": 98
+      },
+      {
+        "month": 11,
+        "ganZhi": "辛亥",
+        "score": 84
+      },
+      {
+        "month": 12,
+        "ganZhi": "壬子",
+        "score": 85
+      }
+    ],
+    "monthlyGoodDates": {
+      "1": [
+        {
+          "date": "2027-01-05",
+          "title": "조심히 쌓아 올리는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-01-17",
+          "title": "조심히 쌓아 올리는 날",
+          "score": 74
+        }
+      ],
+      "2": [
+        {
+          "date": "2027-02-09",
+          "title": "붙잡아 지키는 날",
+          "score": 68
+        },
+        {
+          "date": "2027-02-14",
+          "title": "새로 여는 날",
+          "score": 68
+        }
+      ],
+      "3": [
+        {
+          "date": "2027-03-05",
+          "title": "붙잡아 지키는 날",
+          "score": 68
+        },
+        {
+          "date": "2027-03-17",
+          "title": "자리를 정하는 날",
+          "score": 68
+        }
+      ],
+      "4": [
+        {
+          "date": "2027-04-11",
+          "title": "자리를 정하는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-04-23",
+          "title": "자리를 정하는 날",
+          "score": 74
+        }
+      ],
+      "5": [
+        {
+          "date": "2027-05-05",
+          "title": "자리를 정하는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-05-10",
+          "title": "이루는 날",
+          "score": 72
+        }
+      ],
+      "6": [
+        {
+          "date": "2027-06-03",
+          "title": "이루는 날",
+          "score": 72
+        },
+        {
+          "date": "2027-06-15",
+          "title": "조심히 쌓아 올리는 날",
+          "score": 72
+        }
+      ],
+      "7": [
+        {
+          "date": "2027-07-16",
+          "title": "묵은 것을 덜어내는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-07-28",
+          "title": "묵은 것을 덜어내는 날",
+          "score": 74
+        }
+      ],
+      "8": [
+        {
+          "date": "2027-08-14",
+          "title": "붙잡아 지키는 날",
+          "score": 72
+        },
+        {
+          "date": "2027-08-26",
+          "title": "붙잡아 지키는 날",
+          "score": 72
+        }
+      ],
+      "9": [
+        {
+          "date": "2027-09-07",
+          "title": "붙잡아 지키는 날",
+          "score": 72
+        },
+        {
+          "date": "2027-09-06",
+          "title": "자리를 정하는 날",
+          "score": 68
+        }
+      ],
+      "10": [
+        {
+          "date": "2027-10-08",
+          "title": "새로 여는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-10-20",
+          "title": "새로 여는 날",
+          "score": 74
+        }
+      ],
+      "11": [
+        {
+          "date": "2027-11-01",
+          "title": "새로 여는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-11-09",
+          "title": "붙잡아 지키는 날",
+          "score": 68
+        }
+      ],
+      "12": [
+        {
+          "date": "2027-12-07",
+          "title": "이루는 날",
+          "score": 74
+        },
+        {
+          "date": "2027-12-19",
+          "title": "이루는 날",
+          "score": 74
+        }
+      ]
+    }
+  },
+  "sections": {
+    "overview": {
+      "headline": "새로운 10년의 비상, 2027 정미년의 도약",
+      "keywords": [
+        "도약",
+        "안정",
+        "성취"
+      ],
+      "cycleStory": "샘플 준비 중",
+      "position": "샘플 준비 중",
+      "yearSummary": "샘플 준비 중"
+    },
+    "domains": {
+      "domains": [
+        {
+          "key": "love",
+          "body": "샘플 준비 중",
+          "do": [
+            "소통하기",
+            "마음열기"
+          ],
+          "dont": [
+            "서운함쌓기",
+            "비교하기"
+          ]
+        },
+        {
+          "key": "money",
+          "body": "샘플 준비 중",
+          "do": [
+            "자산점검",
+            "기록하기"
+          ],
+          "dont": [
+            "충동지출",
+            "무리한투자"
+          ]
+        },
+        {
+          "key": "career",
+          "body": "샘플 준비 중",
+          "do": [
+            "역량강화",
+            "집중하기"
+          ],
+          "dont": [
+            "조급함",
+            "미루기"
+          ]
+        },
+        {
+          "key": "health",
+          "body": "샘플 준비 중",
+          "do": [
+            "규칙적운동",
+            "수면관리"
+          ],
+          "dont": [
+            "과로",
+            "야식"
+          ]
+        },
+        {
+          "key": "relationships",
+          "body": "샘플 준비 중",
+          "do": [
+            "경청하기",
+            "존중하기"
+          ],
+          "dont": [
+            "일방적주장",
+            "비판"
+          ]
+        },
+        {
+          "key": "family",
+          "body": "샘플 준비 중",
+          "do": [
+            "안부묻기",
+            "배려하기"
+          ],
+          "dont": [
+            "무관심",
+            "짜증내기"
+          ]
+        }
+      ]
+    },
+    "months": {
+      "months": [
+        {
+          "month": 1,
+          "theme": "1월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 2,
+          "theme": "2월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 3,
+          "theme": "3월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 4,
+          "theme": "4월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 5,
+          "theme": "5월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 6,
+          "theme": "6월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 7,
+          "theme": "7월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 8,
+          "theme": "8월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 9,
+          "theme": "9월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 10,
+          "theme": "10월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 11,
+          "theme": "11월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        },
+        {
+          "month": 12,
+          "theme": "12월 테마",
+          "body": "샘플 준비 중",
+          "do": "추천 행동",
+          "dont": "주의 행동"
+        }
+      ]
+    },
+    "closing": {
+      "quarterPlan": [
+        {
+          "quarter": 1,
+          "focus": "1분기 기초 다지기",
+          "actions": [
+            "목표 세우기",
+            "체력 관리",
+            "정리정돈"
+          ]
+        },
+        {
+          "quarter": 2,
+          "focus": "2분기 기운 확장",
+          "actions": [
+            "새로운 시도",
+            "관계 넓히기",
+            "성장 투자"
+          ]
+        },
+        {
+          "quarter": 3,
+          "focus": "3분기 결실 준비",
+          "actions": [
+            "내실 다지기",
+            "점검하기",
+            "안정화"
+          ]
+        },
+        {
+          "quarter": 4,
+          "focus": "4분기 감사와 수렴",
+          "actions": [
+            "한 해 마무리",
+            "나눔 실천",
+            "새해 구상"
+          ]
+        }
+      ],
+      "letter": "샘플 준비 중"
+    }
+  }
+}

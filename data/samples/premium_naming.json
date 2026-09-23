@@ -1,0 +1,248 @@
+{
+  "version": 1,
+  "meta": {
+    "targetName": "김씨 남아 (예시 · 가상 인물)",
+    "isSample": true
+  },
+  "engine": {
+    "child": {
+      "weakest": [
+        "water"
+      ],
+      "second": [
+        "fire",
+        "metal"
+      ],
+      "strongest": "earth"
+    },
+    "names": [
+      {
+        "hangul": "태현",
+        "hanja": [
+          "汰",
+          "泫"
+        ],
+        "hun": [
+          "일",
+          "이슬 빛날"
+        ],
+        "eum": [
+          "태",
+          "현"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 8,
+          "g2": 9
+        },
+        "grids": {
+          "won": 17,
+          "hyeong": 16,
+          "i": 17,
+          "jeong": 25
+        },
+        "soundSeq": [
+          "wood",
+          "fire",
+          "earth"
+        ],
+        "elements": [
+          "water",
+          "water"
+        ],
+        "score": 106
+      },
+      {
+        "hangul": "민준",
+        "hanja": [
+          "民",
+          "准"
+        ],
+        "hun": [
+          "백성",
+          "준할"
+        ],
+        "eum": [
+          "민",
+          "준"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 5,
+          "g2": 10
+        },
+        "grids": {
+          "won": 15,
+          "hyeong": 13,
+          "i": 18,
+          "jeong": 23
+        },
+        "soundSeq": [
+          "wood",
+          "water",
+          "metal"
+        ],
+        "elements": [
+          "water",
+          "water"
+        ],
+        "score": 104
+      },
+      {
+        "hangul": "범준",
+        "hanja": [
+          "渢",
+          "准"
+        ],
+        "hun": [
+          "알맞은 소리",
+          "준할"
+        ],
+        "eum": [
+          "범",
+          "준"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 13,
+          "g2": 10
+        },
+        "grids": {
+          "won": 23,
+          "hyeong": 21,
+          "i": 18,
+          "jeong": 31
+        },
+        "soundSeq": [
+          "wood",
+          "water",
+          "metal"
+        ],
+        "elements": [
+          "water",
+          "water"
+        ],
+        "score": 104
+      },
+      {
+        "hangul": "도윤",
+        "hanja": [
+          "暏",
+          "沇"
+        ],
+        "hun": [
+          "새벽",
+          "흐를"
+        ],
+        "eum": [
+          "도",
+          "윤"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 13,
+          "g2": 8
+        },
+        "grids": {
+          "won": 21,
+          "hyeong": 21,
+          "i": 16,
+          "jeong": 29
+        },
+        "soundSeq": [
+          "wood",
+          "fire",
+          "earth"
+        ],
+        "elements": [
+          "fire",
+          "water"
+        ],
+        "score": 101
+      },
+      {
+        "hangul": "도현",
+        "hanja": [
+          "到",
+          "泫"
+        ],
+        "hun": [
+          "이를",
+          "이슬 빛날"
+        ],
+        "eum": [
+          "도",
+          "현"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 8,
+          "g2": 9
+        },
+        "grids": {
+          "won": 17,
+          "hyeong": 16,
+          "i": 17,
+          "jeong": 25
+        },
+        "soundSeq": [
+          "wood",
+          "fire",
+          "earth"
+        ],
+        "elements": [
+          "fire",
+          "water"
+        ],
+        "score": 101
+      }
+    ],
+    "insufficient": false
+  },
+  "sections": {
+    "names": {
+      "names": [
+        {
+          "hangul": "태현",
+          "oneLine": "태현, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        },
+        {
+          "hangul": "민준",
+          "oneLine": "민준, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        },
+        {
+          "hangul": "범준",
+          "oneLine": "범준, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        },
+        {
+          "hangul": "도윤",
+          "oneLine": "도윤, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        },
+        {
+          "hangul": "도현",
+          "oneLine": "도현, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        }
+      ]
+    },
+    "letter": {
+      "intro": "샘플 준비 중",
+      "letter": "샘플 준비 중",
+      "notice": "출생신고 전 대법원 전자가족관계등록시스템에서 인명용 한자 여부를 한 번 더 확인해 주세요."
+    }
+  }
+}
