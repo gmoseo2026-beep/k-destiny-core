@@ -797,7 +797,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       <Lock className="w-3.5 h-3.5 text-[#8A8291]" />
                     </div>
                     <p className="text-xs font-bold text-ink leading-snug">
-                      &ldquo;서로에게 자석처럼 끌리는 사주 오행의 비밀과 폭발적인 시너지 포인트 —&rdquo;
+                      &ldquo;서로에게 자석처럼 끌리는 타고난 기운의 비밀과 폭발적인 시너지 포인트 —&rdquo;
                     </p>
                     <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
                       두 사람의 기운이 만났을 때 펼쳐지는 긍정적인 잠재력과 관계를 단단하게 지탱해줄 기운을 분석합니다.
@@ -838,7 +838,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       &ldquo;상대방의 기운 중 나를 가장 편안하게 만들어주는 결정적인 매력 포인트 —&rdquo;
                     </p>
                     <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
-                      상대방의 기운과 나의 원국이 빚어내는 궁극의 인연 포인트와 평생을 함께할 찰떡 조화를 분석합니다.
+                      상대방의 기운과 나의 타고난 기운이 빚어내는 궁극의 인연 포인트와 평생을 함께할 찰떡 조화를 분석합니다.
                     </p>
                   </div>
                 </div>
