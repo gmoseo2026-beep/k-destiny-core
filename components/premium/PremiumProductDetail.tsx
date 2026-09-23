@@ -12,6 +12,12 @@ import sample2027 from "@/data/samples/premium_2027_daeun.json";
 import sampleNaming from "@/data/samples/premium_naming.json";
 import sampleDates from "@/data/samples/premium_date_selection.json";
 
+// 샘플 1순위 이름의 글자 기운. 오행 미상(null) 글자는 빼고, 모두 미상이면 빈 문자열(항목 생략).
+const sampleElementWords = ((sampleNaming.engine.names[0]?.elements ?? []) as (Element | null)[])
+  .filter((e): e is Element => e !== null && e in ELEMENT_WORD)
+  .map((e) => ELEMENT_WORD[e])
+  .join(" · ");
+
 interface PremiumProductDetailProps {
   product: CatalogItem;
   locale: string;
@@ -193,7 +199,8 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
                     추천 후보 1: {sampleNaming.engine.names[0]?.hangul} ({sampleNaming.engine.names[0]?.hanja.join("")})
                   </p>
                   <p className="text-xs text-[#B9AEC4] leading-relaxed mb-2">
-                    수리점수 {sampleNaming.engine.names[0]?.score}점 · 글자의 기운: {sampleNaming.engine.names[0]?.elements.map((e) => ELEMENT_WORD[e as Element] ?? e).join(" · ")}
+                    수리점수 {sampleNaming.engine.names[0]?.score}점
+                    {sampleElementWords && ` · 글자의 기운: ${sampleElementWords}`}
                   </p>
                   <p className="text-xs text-[#D9B26A] italic">
                     &quot;{sampleNaming.sections.names.names[0]?.oneLine}&quot;

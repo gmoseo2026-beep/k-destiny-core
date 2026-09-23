@@ -15,12 +15,13 @@ MALE_CHARS = {'雄', '彪', '郞', '郎', '丈', '夫'}
 MALE_WORDS = ['수컷', '사내', '사나이']
 
 # Add explicit male characters if not present in source
+# element 는 prepare_data.py 의 부수-자원오행 표와 같은 기준(虍·大 → 木, 邑 → 土, 一 → 미상 null)
 male_char_data = [
     {'char': '彪', 'eum': '표', 'hun': '호랑이무늬', 'genders': ['M'], 'tags': ['강인함', '귀함'], 'element': 'wood'},
-    {'char': '郞', 'eum': '랑', 'hun': '사내·밝을', 'genders': ['M'], 'tags': ['밝음', '귀함'], 'element': 'fire'},
-    {'char': '郎', 'eum': '랑', 'hun': '사내·밝을', 'genders': ['M'], 'tags': ['밝음', '귀함'], 'element': 'fire'},
-    {'char': '丈', 'eum': '장', 'hun': '어른·길', 'genders': ['M'], 'tags': ['강인함', '귀함'], 'element': 'metal'},
-    {'char': '夫', 'eum': '부', 'hun': '지아비·사내', 'genders': ['M'], 'tags': ['강인함', '귀함'], 'element': 'water'},
+    {'char': '郞', 'eum': '랑', 'hun': '사내·밝을', 'genders': ['M'], 'tags': ['밝음', '귀함'], 'element': 'earth'},
+    {'char': '郎', 'eum': '랑', 'hun': '사내·밝을', 'genders': ['M'], 'tags': ['밝음', '귀함'], 'element': 'earth'},
+    {'char': '丈', 'eum': '장', 'hun': '어른·길', 'genders': ['M'], 'tags': ['강인함', '귀함'], 'element': None},
+    {'char': '夫', 'eum': '부', 'hun': '지아비·사내', 'genders': ['M'], 'tags': ['강인함', '귀함'], 'element': 'wood'},
 ]
 existing_chars = {it['char'] for it in source}
 for mcd in male_char_data:

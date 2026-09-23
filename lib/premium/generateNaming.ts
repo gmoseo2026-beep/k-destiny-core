@@ -7,6 +7,11 @@ import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
 
 // 프롬프트에 한자·영문 오행 키를 넣으면 AI가 그대로 옮겨 적어 한자 검증에 걸린다 → 쉬운 말로만 전달한다.
 const elementWords = (els: Element[]) => els.map((e) => `${ELEMENT_WORD[e]} 기운`).join(", ");
+// 후보 글자의 기운: 오행 미상(null) 글자는 빼고, 모두 미상이면 "글자의 기운" 항목 자체를 생략한다.
+const elementPart = (els: (Element | null)[]) => {
+  const known = els.filter((e): e is Element => e !== null);
+  return known.length ? `, 글자의 기운: ${known.map((e) => `${ELEMENT_WORD[e]} 기운`).join(", ")}` : "";
+};
 
 export interface NameStoryItem {
   hangul: string;
@@ -57,7 +62,7 @@ export async function generateNamingReport(input: ChildNamingInput): Promise<Pre
   const candidateSummary = engine.names
     .map(
       (n, i) =>
-        `${i + 1}. ${input.surnameHangul}${n.hangul} (글자 뜻: ${n.hun.map((h, j) => `${h} ${n.eum[j]}`).join(" / ")}, 글자의 기운: ${elementWords(n.elements)}, 이름 점수: ${n.score}점)`,
+        `${i + 1}. ${input.surnameHangul}${n.hangul} (글자 뜻: ${n.hun.map((h, j) => `${h} ${n.eum[j]}`).join(" / ")}${elementPart(n.elements)}, 이름 점수: ${n.score}점)`,
     )
     .join("\n");
 

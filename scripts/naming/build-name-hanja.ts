@@ -12,7 +12,7 @@ interface SourceEntry {
   hun: string;
   genders: ("M" | "F")[];
   tags: NamingTag[];
-  element?: Element;
+  element?: Element | null; // null = 부수로 자원오행을 정하지 못한 글자(오행 미상)
 }
 
 interface UnihanEntry {
@@ -25,7 +25,7 @@ interface NameHanjaEntry {
   eum: string;
   hun: string;
   strokes: number;
-  element: Element;
+  element: Element | null;
   genders: ("M" | "F")[];
   tags: NamingTag[];
 }
@@ -44,7 +44,7 @@ function computeCharStrokes(ch: string, unihan: Record<string, UnihanEntry>): nu
   return radicalFullStrokes(rad) + rest;
 }
 
-function computeCharElement(ch: string, sourceElem: Element | undefined, unihan: Record<string, UnihanEntry>): Element {
+function computeCharElement(ch: string, sourceElem: Element | null | undefined, unihan: Record<string, UnihanEntry>): Element | null {
   const u = unihan[ch];
   if (!u || !u.rs) {
     throw new Error(`Missing Unihan rs for character: ${ch}`);
@@ -54,7 +54,7 @@ function computeCharElement(ch: string, sourceElem: Element | undefined, unihan:
   if (RADICAL_ELEMENT[rad]) {
     return RADICAL_ELEMENT[rad];
   }
-  if (sourceElem) {
+  if (sourceElem !== undefined) {
     return sourceElem;
   }
   throw new Error(`Missing resource element for character: ${ch} (radical ${rad})`);

@@ -64,6 +64,19 @@
     "element": "metal"
   },
   {
+    "char": "加",
+    "eum": "가",
+    "hun": "더할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "架",
     "eum": "가",
     "hun": "시렁",
@@ -240,6 +253,19 @@
     "element": "earth"
   },
   {
+    "char": "斝",
+    "eum": "가",
+    "hun": "술잔",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "袈",
     "eum": "가",
     "hun": "가사",
@@ -399,6 +425,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "痂",
+    "eum": "가",
+    "hun": "딱지",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "笳",
@@ -1041,6 +1080,32 @@
     ]
   },
   {
+    "char": "建",
+    "eum": "건",
+    "hun": "세울·엎지를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "乾",
+    "eum": "건",
+    "hun": "하늘·마를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "健",
     "eum": "건",
     "hun": "굳셀",
@@ -1195,6 +1260,19 @@
     "element": "wood"
   },
   {
+    "char": "乹",
+    "eum": "건",
+    "hun": "하늘",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "漧",
     "eum": "건",
     "hun": "하늘·마를",
@@ -1319,6 +1397,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "缺",
+    "eum": "결",
+    "hun": "이지러질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "潔",
@@ -1492,6 +1583,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "兼",
+    "eum": "겸",
+    "hun": "겸할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "謙",
@@ -1682,6 +1786,19 @@
     ]
   },
   {
+    "char": "鼸",
+    "eum": "겸",
+    "hun": "도마뱀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "經",
     "eum": "경",
     "hun": "날",
@@ -1730,6 +1847,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "京",
+    "eum": "경",
+    "hun": "서울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "更",
@@ -1781,6 +1911,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "卿",
+    "eum": "경",
+    "hun": "벼슬",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "警",
@@ -1947,6 +2090,19 @@
     ]
   },
   {
+    "char": "冏",
+    "eum": "경",
+    "hun": "빛날",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
+  },
+  {
     "char": "耿",
     "eum": "경",
     "hun": "빛",
@@ -1971,6 +2127,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "勁",
+    "eum": "경",
+    "hun": "굳셀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "강인함"
+    ],
+    "element": null
   },
   {
     "char": "憼",
@@ -2047,6 +2216,19 @@
     "element": "water"
   },
   {
+    "char": "冂",
+    "eum": "경",
+    "hun": "멀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "烱",
     "eum": "경",
     "hun": "빛날",
@@ -2084,6 +2266,19 @@
     ]
   },
   {
+    "char": "痙",
+    "eum": "경",
+    "hun": "경련",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "熲",
     "eum": "경",
     "hun": "불빛",
@@ -2107,6 +2302,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "囧",
+    "eum": "경",
+    "hun": "빛날",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
   },
   {
     "char": "涇",
@@ -2158,6 +2366,32 @@
       "강인함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "罄",
+    "eum": "경",
+    "hun": "빌·경쇠",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "亰",
+    "eum": "경",
+    "hun": "서울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "憬",
@@ -2249,6 +2483,19 @@
     "element": "water"
   },
   {
+    "char": "勍",
+    "eum": "경",
+    "hun": "굳셀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "강인함"
+    ],
+    "element": null
+  },
+  {
     "char": "璄",
     "eum": "경",
     "hun": "옥빛",
@@ -2311,6 +2558,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "扃",
+    "eum": "경",
+    "hun": "문빗장·살필",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "褧",
@@ -2476,6 +2736,19 @@
       "지혜"
     ],
     "element": "earth"
+  },
+  {
+    "char": "固",
+    "eum": "고",
+    "hun": "굳을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "강인함"
+    ],
+    "element": null
   },
   {
     "char": "古",
@@ -2707,6 +2980,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "痼",
+    "eum": "고",
+    "hun": "고질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "拷",
@@ -3627,6 +3913,32 @@
     ]
   },
   {
+    "char": "旣",
+    "eum": "기",
+    "hun": "이미",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "其",
+    "eum": "기",
+    "hun": "그",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "基",
     "eum": "기",
     "hun": "터",
@@ -3650,6 +3962,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "己",
+    "eum": "기",
+    "hun": "몸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "起",
@@ -3676,6 +4001,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "幾",
+    "eum": "기",
+    "hun": "조짐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "期",
@@ -3846,6 +4184,19 @@
     ]
   },
   {
+    "char": "冀",
+    "eum": "기",
+    "hun": "바랄",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "飢",
     "eum": "기",
     "hun": "주릴",
@@ -3918,6 +4269,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "夔",
+    "eum": "기",
+    "hun": "조심할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "箕",
@@ -4446,6 +4810,19 @@
     ]
   },
   {
+    "char": "鬐",
+    "eum": "기",
+    "hun": "갈기",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "屺",
     "eum": "기",
     "hun": "민둥산",
@@ -4849,6 +5226,19 @@
     ]
   },
   {
+    "char": "𡖔",
+    "eum": "나",
+    "hun": "많을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "𣃽",
     "eum": "나",
     "hun": "깃발 날릴",
@@ -4862,6 +5252,19 @@
     "element": "earth"
   },
   {
+    "char": "多",
+    "eum": "다",
+    "hun": "많을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "茶",
     "eum": "다",
     "hun": "차",
@@ -4872,6 +5275,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "夛",
+    "eum": "다",
+    "hun": "많을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "觰",
@@ -4989,6 +5405,19 @@
     "element": "water"
   },
   {
+    "char": "團",
+    "eum": "단",
+    "hun": "둥글·경단",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "지혜"
+    ],
+    "element": null
+  },
+  {
     "char": "段",
     "eum": "단",
     "hun": "조각",
@@ -5000,6 +5429,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "丹",
+    "eum": "단",
+    "hun": "붉을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "壇",
@@ -5065,6 +5507,19 @@
     "element": "water"
   },
   {
+    "char": "彖",
+    "eum": "단",
+    "hun": "판단할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "檀",
     "eum": "단",
     "hun": "박달나무",
@@ -5075,6 +5530,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "亶",
+    "eum": "단",
+    "hun": "미쁨",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蛋",
@@ -5325,6 +5793,19 @@
     ]
   },
   {
+    "char": "覃",
+    "eum": "담",
+    "hun": "깊을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "湛",
     "eum": "담",
     "hun": "괼",
@@ -5385,6 +5866,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "痰",
+    "eum": "담",
+    "hun": "가래",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "啖",
@@ -5612,6 +6106,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "罎",
+    "eum": "담",
+    "hun": "항아리",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "埮",
@@ -6005,6 +6512,19 @@
     "element": "metal"
   },
   {
+    "char": "圖",
+    "eum": "도",
+    "hun": "그림",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "途",
     "eum": "도",
     "hun": "길",
@@ -6302,6 +6822,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "韜",
+    "eum": "도",
+    "hun": "감출·활집",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "菟",
@@ -6655,6 +7188,19 @@
     ]
   },
   {
+    "char": "動",
+    "eum": "동",
+    "hun": "움직일",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "同",
     "eum": "동",
     "hun": "한가지",
@@ -6852,6 +7398,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "勭",
+    "eum": "동",
+    "hun": "자랄·움직일",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "烔",
@@ -7151,6 +7710,32 @@
     "tags": [
       "밝음"
     ]
+  },
+  {
+    "char": "癩",
+    "eum": "라",
+    "hun": "나병",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "瘰",
+    "eum": "라",
+    "hun": "연주창",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "騾",
@@ -7662,6 +8247,19 @@
     "element": "earth"
   },
   {
+    "char": "厲",
+    "eum": "려",
+    "hun": "갈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "慮",
     "eum": "려",
     "hun": "생각할",
@@ -7726,6 +8324,32 @@
     "element": "wood"
   },
   {
+    "char": "戾",
+    "eum": "려",
+    "hun": "어그러질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "勵",
+    "eum": "려",
+    "hun": "힘쓸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "閭",
     "eum": "려",
     "hun": "이문",
@@ -7788,6 +8412,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "癘",
+    "eum": "려",
+    "hun": "나병",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "礪",
@@ -8004,6 +8641,19 @@
     "element": "earth"
   },
   {
+    "char": "勞",
+    "eum": "로",
+    "hun": "일할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "盧",
     "eum": "로",
     "hun": "목로",
@@ -8028,6 +8678,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "鹵",
+    "eum": "로",
+    "hun": "소금",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "虜",
@@ -8266,6 +8929,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "癆",
+    "eum": "로",
+    "hun": "중독",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "瓐",
@@ -8628,6 +9304,19 @@
     "element": "metal"
   },
   {
+    "char": "瘻",
+    "eum": "루",
+    "hun": "부스럼",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "褸",
     "eum": "루",
     "hun": "헌 누더기",
@@ -8830,6 +9519,19 @@
     "element": "earth"
   },
   {
+    "char": "离",
+    "eum": "리",
+    "hun": "떠날·도깨비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "俐",
     "eum": "리",
     "hun": "똑똑할",
@@ -8891,6 +9593,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "厘",
+    "eum": "리",
+    "hun": "다스릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "罹",
@@ -9082,6 +9797,32 @@
     "element": "water"
   },
   {
+    "char": "貍",
+    "eum": "리",
+    "hun": "삵",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "痢",
+    "eum": "리",
+    "hun": "설사",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "邐",
     "eum": "리",
     "hun": "이어질",
@@ -9119,6 +9860,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "魑",
+    "eum": "리",
+    "hun": "도깨비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "哩",
@@ -9588,6 +10342,19 @@
     ]
   },
   {
+    "char": "臨",
+    "eum": "림",
+    "hun": "임할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "琳",
     "eum": "림",
     "hun": "옥",
@@ -9660,6 +10427,19 @@
     ]
   },
   {
+    "char": "痳",
+    "eum": "림",
+    "hun": "임질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "晽",
     "eum": "림",
     "hun": "알고자 할",
@@ -9708,6 +10488,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "冥",
+    "eum": "명",
+    "hun": "어두울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "銘",
@@ -10023,6 +10816,19 @@
     "element": "earth"
   },
   {
+    "char": "冞",
+    "eum": "미",
+    "hun": "점점",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "謎",
     "eum": "미",
     "hun": "수수께끼",
@@ -10087,6 +10893,19 @@
       "자연"
     ],
     "element": "fire"
+  },
+  {
+    "char": "亹",
+    "eum": "미",
+    "hun": "힘쓸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "煝",
@@ -10396,6 +11215,19 @@
     ]
   },
   {
+    "char": "民",
+    "eum": "민",
+    "hun": "백성",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "旻",
     "eum": "민",
     "hun": "가을 하늘",
@@ -10470,6 +11302,19 @@
       "자연"
     ],
     "element": "fire"
+  },
+  {
+    "char": "黽",
+    "eum": "민",
+    "hun": "힘쓸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "瑉",
@@ -10757,6 +11602,19 @@
     ]
   },
   {
+    "char": "凡",
+    "eum": "범",
+    "hun": "무릇",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "犯",
     "eum": "범",
     "hun": "범할",
@@ -10955,6 +11813,19 @@
     "element": "wood"
   },
   {
+    "char": "鼈",
+    "eum": "별",
+    "hun": "자라",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鱉",
     "eum": "별",
     "hun": "자라",
@@ -11005,6 +11876,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "㔡",
+    "eum": "별",
+    "hun": "클",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "莂",
@@ -11321,6 +12205,19 @@
     ]
   },
   {
+    "char": "黼",
+    "eum": "보",
+    "hun": "수",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "湺",
     "eum": "보",
     "hun": "물굽이·보루",
@@ -11445,6 +12342,19 @@
     "element": "water"
   },
   {
+    "char": "比",
+    "eum": "비",
+    "hun": "견줄",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "備",
     "eum": "비",
     "hun": "갖출",
@@ -11469,6 +12379,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "卑",
+    "eum": "비",
+    "hun": "낮을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "批",
@@ -11510,6 +12433,19 @@
     "element": "wood"
   },
   {
+    "char": "匕",
+    "eum": "비",
+    "hun": "비수",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "費",
     "eum": "비",
     "hun": "쓸·땅 이름",
@@ -11533,6 +12469,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "匪",
+    "eum": "비",
+    "hun": "비적",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "碑",
@@ -11598,6 +12547,19 @@
     "element": "water"
   },
   {
+    "char": "毖",
+    "eum": "비",
+    "hun": "삼갈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "沸",
     "eum": "비",
     "hun": "끓을",
@@ -11622,6 +12584,19 @@
     ]
   },
   {
+    "char": "毘",
+    "eum": "비",
+    "hun": "도울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "妣",
     "eum": "비",
     "hun": "죽은 어머니",
@@ -11632,6 +12607,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "丕",
+    "eum": "비",
+    "hun": "클",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蜚",
@@ -11645,6 +12633,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "痺",
+    "eum": "비",
+    "hun": "저릴·왜소할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "庇",
@@ -11673,6 +12674,19 @@
     "element": "fire"
   },
   {
+    "char": "扉",
+    "eum": "비",
+    "hun": "사립문",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "斐",
     "eum": "비",
     "hun": "문채 날",
@@ -11696,6 +12710,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "痹",
+    "eum": "비",
+    "hun": "저릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "泌",
@@ -11810,6 +12837,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "毗",
+    "eum": "비",
+    "hun": "도울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "誹",
@@ -12013,6 +13053,19 @@
     "element": "water"
   },
   {
+    "char": "痞",
+    "eum": "비",
+    "hun": "결릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "庀",
     "eum": "비",
     "hun": "다스릴",
@@ -12086,6 +13139,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "貔",
+    "eum": "비",
+    "hun": "비휴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蓖",
@@ -12403,6 +13469,19 @@
     "element": "earth"
   },
   {
+    "char": "鬢",
+    "eum": "빈",
+    "hun": "살쩍",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "儐",
     "eum": "빈",
     "hun": "인도할",
@@ -12618,6 +13697,19 @@
     ]
   },
   {
+    "char": "事",
+    "eum": "사",
+    "hun": "일",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "師",
     "eum": "사",
     "hun": "스승",
@@ -12720,6 +13812,19 @@
     "element": "water"
   },
   {
+    "char": "四",
+    "eum": "사",
+    "hun": "넉",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "寫",
     "eum": "사",
     "hun": "베낄",
@@ -12744,6 +13849,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "士",
+    "eum": "사",
+    "hun": "선비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "寺",
@@ -12796,6 +13914,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "斜",
+    "eum": "사",
+    "hun": "비낄",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "賜",
@@ -12862,6 +13993,19 @@
     "element": "wood"
   },
   {
+    "char": "肆",
+    "eum": "사",
+    "hun": "방자할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "赦",
     "eum": "사",
     "hun": "용서할",
@@ -12926,6 +14070,19 @@
     "element": "wood"
   },
   {
+    "char": "乍",
+    "eum": "사",
+    "hun": "잠깐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "紗",
     "eum": "사",
     "hun": "비단",
@@ -12937,6 +14094,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "卸",
+    "eum": "사",
+    "hun": "풀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
   },
   {
     "char": "伺",
@@ -13341,6 +14511,19 @@
     "element": "metal"
   },
   {
+    "char": "痧",
+    "eum": "사",
+    "hun": "곽란",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鰤",
     "eum": "사",
     "hun": "방어",
@@ -13352,6 +14535,32 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "皶",
+    "eum": "사",
+    "hun": "여드름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "上",
+    "eum": "상",
+    "hun": "윗",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "相",
@@ -13519,6 +14728,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "爽",
+    "eum": "상",
+    "hun": "시원할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "床",
@@ -13912,6 +15134,19 @@
     "element": "metal"
   },
   {
+    "char": "西",
+    "eum": "서",
+    "hun": "서녘",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "庶",
     "eum": "서",
     "hun": "여러",
@@ -13974,6 +15209,19 @@
     ]
   },
   {
+    "char": "舒",
+    "eum": "서",
+    "hun": "펼",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "抒",
     "eum": "서",
     "hun": "풀",
@@ -13985,6 +15233,19 @@
       "자연"
     ],
     "element": "wood"
+  },
+  {
+    "char": "鼠",
+    "eum": "서",
+    "hun": "쥐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "棲",
@@ -14036,6 +15297,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "叙",
+    "eum": "서",
+    "hun": "차례",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "逝",
@@ -14435,6 +15709,19 @@
     ]
   },
   {
+    "char": "釋",
+    "eum": "석",
+    "hun": "풀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
+  },
+  {
     "char": "錫",
     "eum": "석",
     "hun": "주석",
@@ -14521,6 +15808,19 @@
     ]
   },
   {
+    "char": "夕",
+    "eum": "석",
+    "hun": "저녁",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "晳",
     "eum": "석",
     "hun": "밝을",
@@ -14531,6 +15831,19 @@
     "tags": [
       "밝음"
     ]
+  },
+  {
+    "char": "舃",
+    "eum": "석",
+    "hun": "신",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "腊",
@@ -14640,6 +15953,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "鼫",
+    "eum": "석",
+    "hun": "석서",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蜥",
@@ -14797,6 +16123,19 @@
     "element": "wood"
   },
   {
+    "char": "亘",
+    "eum": "선",
+    "hun": "베풀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
+  },
+  {
     "char": "仙",
     "eum": "선",
     "hun": "신선",
@@ -14834,6 +16173,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "扇",
+    "eum": "선",
+    "hun": "부채",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "璇",
@@ -15020,6 +16372,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "癬",
+    "eum": "선",
+    "hun": "옴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "㻽",
@@ -15297,6 +16662,19 @@
     "element": "wood"
   },
   {
+    "char": "舌",
+    "eum": "설",
+    "hun": "혀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "泄",
     "eum": "설",
     "hun": "샐",
@@ -15360,6 +16738,19 @@
     "element": "fire"
   },
   {
+    "char": "齧",
+    "eum": "설",
+    "hun": "물",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
+  },
+  {
     "char": "洩",
     "eum": "설",
     "hun": "샐",
@@ -15370,6 +16761,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "卨",
+    "eum": "설",
+    "hun": "사람 이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "渫",
@@ -15491,6 +16895,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "禼",
+    "eum": "설",
+    "hun": "사람 이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "紲",
@@ -15986,6 +17403,19 @@
     "element": "fire"
   },
   {
+    "char": "世",
+    "eum": "세",
+    "hun": "인간·대",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "歲",
     "eum": "세",
     "hun": "해",
@@ -15997,6 +17427,19 @@
       "밝음"
     ],
     "element": "earth"
+  },
+  {
+    "char": "勢",
+    "eum": "세",
+    "hun": "형세",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "洗",
@@ -16173,6 +17616,32 @@
     "element": "wood"
   },
   {
+    "char": "所",
+    "eum": "소",
+    "hun": "바",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "疏",
+    "eum": "소",
+    "hun": "소통할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "지혜"
+    ],
+    "element": null
+  },
+  {
     "char": "小",
     "eum": "소",
     "hun": "작을",
@@ -16296,6 +17765,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "疎",
+    "eum": "소",
+    "hun": "성길",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "騷",
@@ -16462,6 +17944,19 @@
     "element": "earth"
   },
   {
+    "char": "卲",
+    "eum": "소",
+    "hun": "높을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "강인함"
+    ],
+    "element": null
+  },
+  {
     "char": "甦",
     "eum": "소",
     "hun": "깨어날·긁어모을",
@@ -16562,6 +18057,19 @@
     ]
   },
   {
+    "char": "劭",
+    "eum": "소",
+    "hun": "힘쓸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "穌",
     "eum": "소",
     "hun": "깨어날·긁어모을",
@@ -16645,6 +18153,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "瘙",
+    "eum": "소",
+    "hun": "피부병",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "繅",
@@ -16862,6 +18383,19 @@
     "element": "fire"
   },
   {
+    "char": "魈",
+    "eum": "소",
+    "hun": "도깨비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "樔",
     "eum": "소",
     "hun": "풀막",
@@ -16898,6 +18432,19 @@
     ]
   },
   {
+    "char": "䴛",
+    "eum": "소",
+    "hun": "소금",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "箾",
     "eum": "소",
     "hun": "퉁소",
@@ -16908,6 +18455,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "乺",
+    "eum": "솔",
+    "hun": "땅이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "䢦",
@@ -17039,6 +18599,19 @@
     "element": "metal"
   },
   {
+    "char": "鬆",
+    "eum": "송",
+    "hun": "더벅머리",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "竦",
     "eum": "송",
     "hun": "공경할",
@@ -17139,6 +18712,19 @@
     "element": "fire"
   },
   {
+    "char": "壽",
+    "eum": "수",
+    "hun": "목숨",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "遂",
     "eum": "수",
     "hun": "드디어·따를",
@@ -17150,6 +18736,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "受",
+    "eum": "수",
+    "hun": "받을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "隨",
@@ -17407,6 +19006,19 @@
     "element": "wood"
   },
   {
+    "char": "叟",
+    "eum": "수",
+    "hun": "늙은이",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "琇",
     "eum": "수",
     "hun": "옥돌",
@@ -17417,6 +19029,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "瘦",
+    "eum": "수",
+    "hun": "여윌",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "脩",
@@ -17520,6 +19145,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "鬚",
+    "eum": "수",
+    "hun": "수염",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "邃",
@@ -18108,6 +19746,19 @@
     "element": "wood"
   },
   {
+    "char": "勝",
+    "eum": "승",
+    "hun": "이길",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "承",
     "eum": "승",
     "hun": "이을",
@@ -18133,6 +19784,19 @@
     ]
   },
   {
+    "char": "乘",
+    "eum": "승",
+    "hun": "탈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "繩",
     "eum": "승",
     "hun": "노끈",
@@ -18144,6 +19808,32 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "升",
+    "eum": "승",
+    "hun": "되·오를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "丞",
+    "eum": "승",
+    "hun": "정승·도울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "陞",
@@ -18266,6 +19956,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "鬙",
+    "eum": "승",
+    "hun": "머리 헝클어질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "따뜻함"
+    ],
+    "element": null
   },
   {
     "char": "是",
@@ -18446,6 +20149,19 @@
     ]
   },
   {
+    "char": "匙",
+    "eum": "시",
+    "hun": "숟가락",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "偲",
     "eum": "시",
     "hun": "책선할",
@@ -18533,6 +20249,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "豺",
+    "eum": "시",
+    "hun": "승냥이",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蓍",
@@ -18695,6 +20424,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "厮",
+    "eum": "시",
+    "hun": "하인",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "澌",
@@ -18861,6 +20603,19 @@
     ]
   },
   {
+    "char": "臣",
+    "eum": "신",
+    "hun": "신하",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "伸",
     "eum": "신",
     "hun": "펼",
@@ -18999,6 +20754,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "囟",
+    "eum": "신",
+    "hun": "정수리",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蜃",
@@ -19216,6 +20984,19 @@
     "element": "wood"
   },
   {
+    "char": "亞",
+    "eum": "아",
+    "hun": "버금",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "阿",
     "eum": "아",
     "hun": "언덕",
@@ -19393,6 +21174,19 @@
     "element": "water"
   },
   {
+    "char": "丫",
+    "eum": "아",
+    "hun": "가닥",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "娿",
     "eum": "아",
     "hun": "아리따울",
@@ -19403,6 +21197,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "亜",
+    "eum": "아",
+    "hun": "버금",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "砑",
@@ -19942,6 +21749,19 @@
     "element": "metal"
   },
   {
+    "char": "良",
+    "eum": "량",
+    "hun": "어질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "따뜻함"
+    ],
+    "element": null
+  },
+  {
     "char": "養",
     "eum": "양",
     "hun": "기를",
@@ -20019,6 +21839,19 @@
     "element": "wood"
   },
   {
+    "char": "兩",
+    "eum": "량",
+    "hun": "두",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "昜",
     "eum": "양",
     "hun": "볕",
@@ -20065,6 +21898,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "亮",
+    "eum": "량",
+    "hun": "밝을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
   },
   {
     "char": "諒",
@@ -20118,6 +21964,19 @@
     "element": "wood"
   },
   {
+    "char": "癢",
+    "eum": "양",
+    "hun": "가려울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "糧",
     "eum": "량",
     "hun": "양식",
@@ -20166,6 +22025,32 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "瘍",
+    "eum": "양",
+    "hun": "헐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "痒",
+    "eum": "양",
+    "hun": "가려울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "釀",
@@ -20254,6 +22139,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "魎",
+    "eum": "량",
+    "hun": "도깨비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "粮",
@@ -20456,6 +22354,19 @@
     ]
   },
   {
+    "char": "與",
+    "eum": "여",
+    "hun": "더불·줄",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "如",
     "eum": "여",
     "hun": "같을",
@@ -20492,6 +22403,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "予",
+    "eum": "여",
+    "hun": "나·줄",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "余",
@@ -20555,6 +22479,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "舁",
+    "eum": "여",
+    "hun": "마주 들",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "轝",
@@ -20657,6 +22594,19 @@
     ]
   },
   {
+    "char": "延",
+    "eum": "연",
+    "hun": "늘일",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "然",
     "eum": "연",
     "hun": "불탈·그럴",
@@ -20679,6 +22629,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "年",
+    "eum": "년",
+    "hun": "해",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
   },
   {
     "char": "緣",
@@ -21509,6 +23472,19 @@
     "element": "water"
   },
   {
+    "char": "囦",
+    "eum": "연",
+    "hun": "못",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鰱",
     "eum": "련",
     "hun": "연어",
@@ -21834,6 +23810,19 @@
     "element": "earth"
   },
   {
+    "char": "齡",
+    "eum": "령",
+    "hun": "나이",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "瀛",
     "eum": "영",
     "hun": "바다",
@@ -22106,6 +24095,19 @@
     ]
   },
   {
+    "char": "囹",
+    "eum": "령",
+    "hun": "옥",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "縈",
     "eum": "영",
     "hun": "얽힐",
@@ -22295,6 +24297,19 @@
     "element": "fire"
   },
   {
+    "char": "癭",
+    "eum": "영",
+    "hun": "혹",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "浧",
     "eum": "영",
     "hun": "가득찰",
@@ -22482,6 +24497,19 @@
     "element": "fire"
   },
   {
+    "char": "鹷",
+    "eum": "령",
+    "hun": "소금",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "碤",
     "eum": "영",
     "hun": "물속 돌",
@@ -22542,6 +24570,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "叡",
+    "eum": "예",
+    "hun": "밝을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
   },
   {
     "char": "睿",
@@ -22647,6 +24688,19 @@
     "element": "fire"
   },
   {
+    "char": "乂",
+    "eum": "예",
+    "hun": "벨",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "艾",
     "eum": "예",
     "hun": "다스릴",
@@ -22694,6 +24748,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "医",
+    "eum": "예",
+    "hun": "동개",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "刈",
@@ -22782,6 +24849,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "壡",
+    "eum": "예",
+    "hun": "밝을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
   },
   {
     "char": "蓺",
@@ -22932,6 +25012,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "瘱",
+    "eum": "예",
+    "hun": "고요할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "帠",
@@ -23213,6 +25306,32 @@
     "element": "water"
   },
   {
+    "char": "五",
+    "eum": "오",
+    "hun": "다섯",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "午",
+    "eum": "오",
+    "hun": "낮",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "烏",
     "eum": "오",
     "hun": "까마귀",
@@ -23487,6 +25606,19 @@
     ]
   },
   {
+    "char": "鼇",
+    "eum": "오",
+    "hun": "자라",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "俉",
     "eum": "오",
     "hun": "맞이할",
@@ -23653,6 +25785,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "鼯",
+    "eum": "오",
+    "hun": "날다람쥐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "圬",
@@ -23975,6 +26120,32 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "韞",
+    "eum": "온",
+    "hun": "갈무리할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "瘟",
+    "eum": "온",
+    "hun": "돌림병",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "熅",
@@ -24436,6 +26607,19 @@
     ]
   },
   {
+    "char": "要",
+    "eum": "요",
+    "hun": "요긴할·허리",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "樂",
     "eum": "요",
     "hun": "좋아할",
@@ -24471,6 +26655,45 @@
     "tags": [
       "밝음"
     ]
+  },
+  {
+    "char": "料",
+    "eum": "료",
+    "hun": "헤아릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "療",
+    "eum": "료",
+    "hun": "고칠",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "了",
+    "eum": "료",
+    "hun": "마칠",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "搖",
@@ -24602,6 +26825,19 @@
     "element": "fire"
   },
   {
+    "char": "鬧",
+    "eum": "뇨",
+    "hun": "시끄러울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "繇",
     "eum": "요",
     "hun": "역사",
@@ -24639,6 +26875,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "凹",
+    "eum": "요",
+    "hun": "오목할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "寮",
@@ -24716,6 +26965,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "幺",
+    "eum": "요",
+    "hun": "작을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "腰",
@@ -25206,6 +27468,19 @@
     "element": "water"
   },
   {
+    "char": "勇",
+    "eum": "용",
+    "hun": "날랠",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "龍",
     "eum": "룡",
     "hun": "용",
@@ -25267,6 +27542,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "冗",
+    "eum": "용",
+    "hun": "한가로울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "茸",
@@ -25391,6 +27679,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "舂",
+    "eum": "용",
+    "hun": "찧을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "竜",
@@ -25581,6 +27882,19 @@
     "element": "fire"
   },
   {
+    "char": "友",
+    "eum": "우",
+    "hun": "벗",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "雨",
     "eum": "우",
     "hun": "비",
@@ -25591,6 +27905,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "禹",
+    "eum": "우",
+    "hun": "하우씨",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "右",
@@ -25606,6 +27933,19 @@
     "element": "water"
   },
   {
+    "char": "尤",
+    "eum": "우",
+    "hun": "더욱",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "遇",
     "eum": "우",
     "hun": "만날",
@@ -25617,6 +27957,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "于",
+    "eum": "우",
+    "hun": "어조사",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "牛",
@@ -25656,6 +28009,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "又",
+    "eum": "우",
+    "hun": "또",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "祐",
@@ -25999,6 +28365,19 @@
     "element": "fire"
   },
   {
+    "char": "亴",
+    "eum": "우",
+    "hun": "날",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "邘",
     "eum": "우",
     "hun": "땅 이름",
@@ -26099,6 +28478,19 @@
     ]
   },
   {
+    "char": "疣",
+    "eum": "우",
+    "hun": "혹",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "嵎",
     "eum": "우",
     "hun": "산굽이",
@@ -26122,6 +28514,19 @@
       "자연"
     ],
     "element": "metal"
+  },
+  {
+    "char": "齲",
+    "eum": "우",
+    "hun": "충치",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "盓",
@@ -26251,6 +28656,19 @@
     "element": "fire"
   },
   {
+    "char": "勖",
+    "eum": "욱",
+    "hun": "힘쓸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "彧",
     "eum": "욱",
     "hun": "문채",
@@ -26336,6 +28754,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "云",
+    "eum": "운",
+    "hun": "이를·구름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
   },
   {
     "char": "韻",
@@ -26612,6 +29043,19 @@
     ]
   },
   {
+    "char": "𠃗",
+    "eum": "울",
+    "hun": "땅 이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "䵥",
     "eum": "울",
     "hun": "검을",
@@ -26662,6 +29106,19 @@
     "element": "wood"
   },
   {
+    "char": "原",
+    "eum": "원",
+    "hun": "언덕·근원",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "遠",
     "eum": "원",
     "hun": "멀",
@@ -26687,6 +29144,19 @@
     ]
   },
   {
+    "char": "園",
+    "eum": "원",
+    "hun": "동산",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
+  },
+  {
     "char": "願",
     "eum": "원",
     "hun": "원할",
@@ -26710,6 +29180,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "圓",
+    "eum": "원",
+    "hun": "둥글",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "지혜"
+    ],
+    "element": null
   },
   {
     "char": "援",
@@ -26947,6 +29430,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "黿",
+    "eum": "원",
+    "hun": "자라",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "倇",
@@ -27191,6 +29687,19 @@
     "element": "water"
   },
   {
+    "char": "兪",
+    "eum": "유",
+    "hun": "대답할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "柳",
     "eum": "류",
     "hun": "버들",
@@ -27303,6 +29812,32 @@
     ]
   },
   {
+    "char": "幽",
+    "eum": "유",
+    "hun": "그윽할·검을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "乳",
+    "eum": "유",
+    "hun": "젖",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "誘",
     "eum": "유",
     "hun": "꾈",
@@ -27363,6 +29898,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "幼",
+    "eum": "유",
+    "hun": "어릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "儒",
@@ -27441,6 +29989,19 @@
     ]
   },
   {
+    "char": "臾",
+    "eum": "유",
+    "hun": "잠깐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "諭",
     "eum": "유",
     "hun": "깨우칠",
@@ -27465,6 +30026,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "冘",
+    "eum": "유",
+    "hun": "망설일",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "孺",
@@ -27606,6 +30180,32 @@
     "element": "wood"
   },
   {
+    "char": "瘤",
+    "eum": "류",
+    "hun": "혹",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "釉",
+    "eum": "유",
+    "hun": "광택",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鍮",
     "eum": "유",
     "hun": "놋쇠",
@@ -27665,6 +30265,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "囿",
+    "eum": "유",
+    "hun": "동산",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
   },
   {
     "char": "旒",
@@ -27952,6 +30565,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "龥",
+    "eum": "유",
+    "hun": "부를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "黝",
@@ -28244,6 +30870,19 @@
     ]
   },
   {
+    "char": "尹",
+    "eum": "윤",
+    "hun": "다스릴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "潤",
     "eum": "윤",
     "hun": "불을·윤택할",
@@ -28446,6 +31085,19 @@
     "element": "wood"
   },
   {
+    "char": "匀",
+    "eum": "윤",
+    "hun": "나눌",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鈗",
     "eum": "윤",
     "hun": "병기",
@@ -28480,6 +31132,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "勻",
+    "eum": "윤",
+    "hun": "나눌",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "橍",
@@ -28530,6 +31195,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "圇",
+    "eum": "륜",
+    "hun": "완전할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "㣧",
@@ -28595,6 +31273,19 @@
     "element": "fire"
   },
   {
+    "char": "聿",
+    "eum": "율",
+    "hun": "붓",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "栗",
     "eum": "률",
     "hun": "밤",
@@ -28617,6 +31308,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "矞",
+    "eum": "율",
+    "hun": "송곳질할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "䫻",
@@ -28940,6 +31644,19 @@
     ]
   },
   {
+    "char": "圁",
+    "eum": "은",
+    "hun": "물 이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
+  },
+  {
     "char": "蒽",
     "eum": "은",
     "hun": "풀 이름",
@@ -29027,6 +31744,32 @@
     ]
   },
   {
+    "char": "癮",
+    "eum": "은",
+    "hun": "속병",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "齗",
+    "eum": "은",
+    "hun": "잇몸",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "𨶡",
     "eum": "은",
     "hun": "온화할",
@@ -29062,6 +31805,32 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "𪙤",
+    "eum": "은",
+    "hun": "이 가지런할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "乙",
+    "eum": "을",
+    "hun": "새",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "鳦",
@@ -29278,6 +32047,32 @@
     ]
   },
   {
+    "char": "已",
+    "eum": "이",
+    "hun": "이미",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "二",
+    "eum": "이",
+    "hun": "두",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "異",
     "eum": "이",
     "hun": "다를",
@@ -29301,6 +32096,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "爾",
+    "eum": "이",
+    "hun": "너·꽃 많고 성한 모양",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
   },
   {
     "char": "移",
@@ -29391,6 +32199,19 @@
     "element": "water"
   },
   {
+    "char": "彛",
+    "eum": "이",
+    "hun": "떳떳할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "弛",
     "eum": "이",
     "hun": "늦출",
@@ -29454,6 +32275,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "彝",
+    "eum": "이",
+    "hun": "떳떳할·제기 이름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "尔",
@@ -29532,6 +32366,19 @@
     "element": "water"
   },
   {
+    "char": "肄",
+    "eum": "이",
+    "hun": "익힐",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "禰",
     "eum": "니",
     "hun": "아버지 사당",
@@ -29555,6 +32402,19 @@
       "따뜻함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "痍",
+    "eum": "이",
+    "hun": "상처",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "㦐",
@@ -29809,6 +32669,32 @@
     ]
   },
   {
+    "char": "印",
+    "eum": "인",
+    "hun": "도장",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "因",
+    "eum": "인",
+    "hun": "인할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "寅",
     "eum": "인",
     "hun": "범·세째 지지",
@@ -29909,6 +32795,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "夤",
+    "eum": "인",
+    "hun": "공경할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "茵",
@@ -30213,6 +33112,19 @@
     "element": "fire"
   },
   {
+    "char": "壬",
+    "eum": "임",
+    "hun": "북방",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "賃",
     "eum": "임",
     "hun": "품삯",
@@ -30441,6 +33353,19 @@
     "element": "metal"
   },
   {
+    "char": "再",
+    "eum": "재",
+    "hun": "두",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "纔",
     "eum": "재",
     "hun": "겨우",
@@ -30540,6 +33465,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "夈",
+    "eum": "재",
+    "hun": "재계할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "溨",
@@ -30655,6 +33593,19 @@
     "element": "wood"
   },
   {
+    "char": "丁",
+    "eum": "정",
+    "hun": "넷째 천간",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "貞",
     "eum": "정",
     "hun": "곧을",
@@ -30704,6 +33655,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "廷",
+    "eum": "정",
+    "hun": "조정",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "整",
@@ -30756,6 +33720,19 @@
     ]
   },
   {
+    "char": "亭",
+    "eum": "정",
+    "hun": "정자",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "禎",
     "eum": "정",
     "hun": "상서로울",
@@ -30767,6 +33744,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "鼎",
+    "eum": "정",
+    "hun": "솥",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "停",
@@ -30806,6 +33796,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "井",
+    "eum": "정",
+    "hun": "우물",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "자연"
+    ],
+    "element": null
   },
   {
     "char": "訂",
@@ -31338,6 +34341,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "疔",
+    "eum": "정",
+    "hun": "부스럼",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "湞",
@@ -32304,6 +35320,19 @@
     "element": "fire"
   },
   {
+    "char": "瘇",
+    "eum": "종",
+    "hun": "수중다리",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "周",
     "eum": "주",
     "hun": "두루",
@@ -32341,6 +35370,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "主",
+    "eum": "주",
+    "hun": "임금·주인",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "珠",
@@ -32923,6 +35965,19 @@
     ]
   },
   {
+    "char": "丟",
+    "eum": "주",
+    "hun": "아주 갈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "幬",
     "eum": "주",
     "hun": "휘장",
@@ -33125,6 +36180,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "鼄",
+    "eum": "주",
+    "hun": "거미",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "詋",
@@ -33565,6 +36633,19 @@
     "element": "wood"
   },
   {
+    "char": "皴",
+    "eum": "준",
+    "hun": "틀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "迿",
     "eum": "준",
     "hun": "앞설",
@@ -33602,6 +36683,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "罇",
+    "eum": "준",
+    "hun": "술두루미",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "逡",
@@ -33779,6 +36873,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "之",
+    "eum": "지",
+    "hun": "갈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "至",
@@ -34098,6 +37205,19 @@
     ]
   },
   {
+    "char": "舐",
+    "eum": "지",
+    "hun": "핥을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "砥",
     "eum": "지",
     "hun": "숫돌",
@@ -34259,6 +37379,19 @@
     "element": "wood"
   },
   {
+    "char": "劧",
+    "eum": "지",
+    "hun": "굳건할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "衹",
     "eum": "지",
     "hun": "마침",
@@ -34321,6 +37454,19 @@
     ]
   },
   {
+    "char": "痣",
+    "eum": "지",
+    "hun": "사마귀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鷙",
     "eum": "지",
     "hun": "맹금",
@@ -34356,6 +37502,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "厎",
+    "eum": "지",
+    "hun": "숫돌·부들",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "𥏾",
@@ -34834,6 +37993,19 @@
     ]
   },
   {
+    "char": "疹",
+    "eum": "진",
+    "hun": "마마",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "鉁",
     "eum": "진",
     "hun": "보배",
@@ -35059,6 +38231,19 @@
     "element": "wood"
   },
   {
+    "char": "䑐",
+    "eum": "진",
+    "hun": "밝을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "밝음"
+    ],
+    "element": null
+  },
+  {
     "char": "抮",
     "eum": "진",
     "hun": "되돌릴",
@@ -35070,6 +38255,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "鬒",
+    "eum": "진",
+    "hun": "숱 많고 검을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蔯",
@@ -35626,6 +38824,19 @@
     ]
   },
   {
+    "char": "鬯",
+    "eum": "창",
+    "hun": "울창주",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "倡",
     "eum": "창",
     "hun": "광대",
@@ -35662,6 +38873,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "瘡",
+    "eum": "창",
+    "hun": "부스럼",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "敞",
@@ -35940,6 +39164,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "采",
+    "eum": "채",
+    "hun": "풍채·캘",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "菜",
@@ -36327,6 +39564,19 @@
     ]
   },
   {
+    "char": "下",
+    "eum": "하",
+    "hun": "아래",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "荷",
     "eum": "하",
     "hun": "멜·꾸짖을",
@@ -36337,6 +39587,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "夏",
+    "eum": "하",
+    "hun": "여름",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "何",
@@ -36439,6 +39702,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "厦",
+    "eum": "하",
+    "hun": "문간방",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "蝦",
@@ -36580,6 +39856,19 @@
     ]
   },
   {
+    "char": "罅",
+    "eum": "하",
+    "hun": "틈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "煆",
     "eum": "하",
     "hun": "데울",
@@ -36627,6 +39916,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "韓",
+    "eum": "한",
+    "hun": "한국·나라",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "限",
@@ -37057,6 +40359,19 @@
     "element": "metal"
   },
   {
+    "char": "亥",
+    "eum": "해",
+    "hun": "돼지",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "該",
     "eum": "해",
     "hun": "갖출·마땅",
@@ -37294,6 +40609,19 @@
       "귀함"
     ],
     "element": "earth"
+  },
+  {
+    "char": "痎",
+    "eum": "해",
+    "hun": "학질",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "咍",
@@ -37572,6 +40900,19 @@
     ]
   },
   {
+    "char": "鬩",
+    "eum": "혁",
+    "hun": "다툴",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "侐",
     "eum": "혁",
     "hun": "고요할",
@@ -37583,6 +40924,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "弈",
+    "eum": "혁",
+    "hun": "바둑",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "洫",
@@ -38062,6 +41416,19 @@
     "element": "earth"
   },
   {
+    "char": "痃",
+    "eum": "현",
+    "hun": "현벽",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "䧋",
     "eum": "현",
     "hun": "한정할",
@@ -38150,6 +41517,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "亨",
+    "eum": "형",
+    "hun": "형통할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "지혜"
+    ],
+    "element": null
   },
   {
     "char": "衡",
@@ -38389,6 +41769,19 @@
     ]
   },
   {
+    "char": "夐",
+    "eum": "형",
+    "hun": "멀",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "灐",
     "eum": "형",
     "hun": "물 이름",
@@ -38449,6 +41842,19 @@
     ]
   },
   {
+    "char": "彗",
+    "eum": "혜",
+    "hun": "비",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "蕙",
     "eum": "혜",
     "hun": "풀 이름",
@@ -38459,6 +41865,19 @@
     "tags": [
       "자연"
     ]
+  },
+  {
+    "char": "兮",
+    "eum": "혜",
+    "hun": "어조사",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "鞋",
@@ -38472,6 +41891,19 @@
       "귀함"
     ],
     "element": "metal"
+  },
+  {
+    "char": "匸",
+    "eum": "혜",
+    "hun": "감출",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "暳",
@@ -38803,6 +42235,19 @@
     "element": "water"
   },
   {
+    "char": "乎",
+    "eum": "호",
+    "hun": "어조사",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "昊",
     "eum": "호",
     "hun": "하늘",
@@ -38840,6 +42285,19 @@
     ]
   },
   {
+    "char": "戶",
+    "eum": "호",
+    "hun": "집·지게",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "呼",
     "eum": "호",
     "hun": "부를",
@@ -38853,6 +42311,19 @@
     "element": "water"
   },
   {
+    "char": "互",
+    "eum": "호",
+    "hun": "서로",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "毫",
     "eum": "호",
     "hun": "터럭",
@@ -38864,6 +42335,19 @@
       "귀함"
     ],
     "element": "fire"
+  },
+  {
+    "char": "扈",
+    "eum": "호",
+    "hun": "따를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "皓",
@@ -39153,6 +42637,19 @@
     ]
   },
   {
+    "char": "鬍",
+    "eum": "호",
+    "hun": "수염",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "冱",
     "eum": "호",
     "hun": "얼",
@@ -39351,6 +42848,19 @@
     ]
   },
   {
+    "char": "瓳",
+    "eum": "호",
+    "hun": "반호",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "芐",
     "eum": "호",
     "hun": "지황",
@@ -39477,6 +42987,32 @@
     "element": "wood"
   },
   {
+    "char": "幻",
+    "eum": "환",
+    "hun": "헛보일·변할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
+    "char": "丸",
+    "eum": "환",
+    "hun": "둥글",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "지혜"
+    ],
+    "element": null
+  },
+  {
     "char": "奐",
     "eum": "환",
     "hun": "빛날",
@@ -39529,6 +43065,19 @@
     "element": "water"
   },
   {
+    "char": "圜",
+    "eum": "환",
+    "hun": "두를",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "晥",
     "eum": "환",
     "hun": "환할",
@@ -39577,6 +43126,19 @@
       "귀함"
     ],
     "element": "wood"
+  },
+  {
+    "char": "鬟",
+    "eum": "환",
+    "hun": "쪽",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "豢",
@@ -39768,6 +43330,19 @@
     ]
   },
   {
+    "char": "爻",
+    "eum": "효",
+    "hun": "사귈",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "嚆",
     "eum": "효",
     "hun": "울릴",
@@ -39779,6 +43354,19 @@
       "귀함"
     ],
     "element": "water"
+  },
+  {
+    "char": "効",
+    "eum": "효",
+    "hun": "본받을",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "梟",
@@ -40084,6 +43672,19 @@
     "element": "fire"
   },
   {
+    "char": "厚",
+    "eum": "후",
+    "hun": "두터울",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "候",
     "eum": "후",
     "hun": "기후·살필",
@@ -40338,6 +43939,19 @@
     "element": "water"
   },
   {
+    "char": "勳",
+    "eum": "훈",
+    "hun": "공",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "訓",
     "eum": "훈",
     "hun": "가르칠",
@@ -40363,6 +43977,19 @@
     ]
   },
   {
+    "char": "勲",
+    "eum": "훈",
+    "hun": "공",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "熏",
     "eum": "훈",
     "hun": "불길",
@@ -40385,6 +44012,19 @@
     "tags": [
       "귀함"
     ]
+  },
+  {
+    "char": "勛",
+    "eum": "훈",
+    "hun": "공",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
   },
   {
     "char": "焄",
@@ -40697,6 +44337,19 @@
     "element": "fire"
   },
   {
+    "char": "巸",
+    "eum": "희",
+    "hun": "즐거워할",
+    "genders": [
+      "M",
+      "F"
+    ],
+    "tags": [
+      "귀함"
+    ],
+    "element": null
+  },
+  {
     "char": "嬉",
     "eum": "희",
     "hun": "아름다울",
@@ -41005,7 +44658,7 @@
       "강인함",
       "귀함"
     ],
-    "element": "metal"
+    "element": null
   },
   {
     "char": "夫",
@@ -41018,6 +44671,6 @@
       "강인함",
       "귀함"
     ],
-    "element": "water"
+    "element": "wood"
   }
 ]

@@ -68,7 +68,8 @@ RADICAL_ELEMENT = {
 }
 
 # 확장 부수-오행 표(작명 관행의 부수별 자원오행을 따름). 기본 표에 없는 부수만 여기서 판정한다.
-# 여기에도 없는 부수(一·乙·又·疒 등 뜻으로 오행을 정하기 어려운 부수)의 글자는 후보에서 제외한다.
+# 여기에도 없는 부수(一·乙·又·疒 등 뜻으로 오행을 정하기 어려운 부수)의 글자는 element=null(오행 미상)로 두고,
+# 엔진은 이 글자에 오행 보완 점수를 주지도 빼지도 않는다.
 # 발음오행으로 대신 채우지 않는다(발음오행은 자원오행이 아니다).
 EXT_RADICAL_ELEMENT = {
   # 木: 网 米 糸 瓜 麻 片 爿 耒 韭 麥 黍 生 衣 手 目 儿 大 宀 广 文 爪 父 自 舟 虍 角 豆 門 風 香 示 巾 靑
@@ -99,7 +100,7 @@ def radical_of(rs):
     return int(rs.split(' ')[0].replace("'", "").split('.')[0])
 
 def resource_element(rad):
-    """기본 표에 있음 → None(빌드 스크립트가 판정), 확장 표에 있음 → 오행, 둘 다 없음 → False(제외)."""
+    """기본 표에 있음 → None(빌드 스크립트가 판정), 확장 표에 있음 → 오행, 둘 다 없음 → False(오행 미상)."""
     if rad in RADICAL_ELEMENT:
         return None
     return EXT_RADICAL_ELEMENT.get(rad, False)
@@ -187,16 +188,16 @@ for g in ['M', 'F']:
 candidates = []
 seen_chars = set()
 
-excluded_no_element = []
+unknown_element = []
 
 def make_entry(c, hun, eum, tags):
     rad = radical_of(rs_map[c])
     elem = resource_element(rad)
-    if elem is False:
-        excluded_no_element.append((c, eum, rad))
-        return None
     entry = {'char': c, 'eum': eum, 'hun': hun, 'genders': ['M', 'F'], 'tags': tags}
-    if elem:
+    if elem is False:
+        unknown_element.append((c, eum, rad))
+        entry['element'] = None  # 오행 미상(보완 점수 0)
+    elif elem:
         entry['element'] = elem
     return entry
 
@@ -269,7 +270,7 @@ if len(candidates) < 800:
             break
 
 print(f"Total candidates selected: {len(candidates)}")
-print(f"Excluded (radical without resource element): {len(excluded_no_element)}")
+print(f"Unknown resource element (element=null): {len(unknown_element)}")
 
 # Write name-hanja.source.json
 with open('data/naming/name-hanja.source.json', 'w', encoding='utf-8') as f:

@@ -53,7 +53,8 @@ export interface NameHanjaItem {
   eum: string;
   hun: string;
   strokes: number;
-  element: Element;
+  /** 자원오행. null = 부수로 오행을 정하지 못한 글자(오행 보완 점수 가감 없음) */
+  element: Element | null;
   genders: ("M" | "F")[];
   tags: string[];
 }
@@ -76,7 +77,7 @@ export interface NamingEngineCandidate {
   strokes: { s: number; g1: number; g2: number };
   grids: ReturnType<typeof fourGrids>;
   soundSeq: Element[];
-  elements: [Element, Element];
+  elements: [Element | null, Element | null];
   score: number;
 }
 
@@ -211,6 +212,7 @@ export function buildNamingEngine(
 
         let compScore = 0;
         for (const elem of [g1.element, g2.element]) {
+          if (elem === null) continue; // 오행 미상 → 보완 점수 0
           if (weakest.includes(elem)) compScore += 12;
           else if (second.includes(elem)) compScore += 5;
           else if (strongest && elem === strongest) compScore -= 6;

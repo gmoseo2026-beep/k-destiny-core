@@ -264,6 +264,36 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     });
   });
 
+  describe("오행 미상 글자(element: null) 유지", () => {
+    const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
+
+    it("부수로 오행을 정하지 못한 인기 글자(夏·世·勳·韓·多)도 데이터에 있다", () => {
+      for (const ch of ["夏", "世", "勳", "韓", "多"]) {
+        expect(hanjaByChar.get(ch), ch).toBeDefined();
+        expect(hanjaByChar.get(ch)?.element, ch).toBeNull();
+      }
+    });
+
+    it("element: null 글자로만 된 픽스처에서도 후보를 내고, 오행 보완 점수는 0이다", () => {
+      const nullHanja = [
+        { char: "序", eum: "서", hun: "차례", strokes: 7, element: null, genders: ["M", "F"] as ("M" | "F")[], tags: [] },
+        { char: "律", eum: "률", hun: "법칙", strokes: 9, element: null, genders: ["M", "F"] as ("M" | "F")[], tags: [] },
+      ];
+      const r = buildNamingEngine(
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: nullHanja },
+      );
+      expect(r.names).toHaveLength(1);
+      expect(r.names[0].elements).toEqual([null, null]);
+      // 50(기본) + 발음 흐름 + 자연스러움 10(1순위) + 태그 0 — 오행 보완 가감이 없어야 한다
+      const withElements = buildNamingEngine(
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: nullHanja.map((h) => ({ ...h, element: r.child.weakest[0] })) },
+      );
+      expect(withElements.names[0].score - r.names[0].score).toBe(24); // 부족 오행 2글자 × 12
+    });
+  });
+
   describe("부적합 글자 제외(isNameWorthy)", () => {
     const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
 
