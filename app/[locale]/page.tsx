@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import KongdakHero from "@/components/KongdakHero";
 import DashboardView from "@/components/DashboardView";
-import { getAllProducts, priceLabel } from "@/lib/catalog";
+import { getAllProducts, getPremiumProducts, priceLabel } from "@/lib/catalog";
 import Link from "next/link";
 import { LucideIcon, Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star } from "lucide-react";
+import { PremiumBadge } from "@/components/premium/PremiumBadge";
 
 export const metadata: Metadata = {
   title: "콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합",
@@ -28,11 +29,63 @@ export default async function Home({ params }: PageProps) {
   const individualProducts = products.filter(p => p.target === "individual" && p.type !== "SET");
   const coupleProducts = products.filter(p => p.target === "couple" && p.type !== "SET");
   const sets = products.filter(p => p.type === "SET");
+  const premiumProducts = getPremiumProducts();
 
   return (
     <main className="min-h-screen bg-background text-ink">
       {session?.user?.id ? <DashboardView /> : <KongdakHero locale={locale} />}
       
+      {/* Premium Products Full-Width Dark Band */}
+      {premiumProducts.length > 0 && (
+        <section className="w-full bg-[#14101A] text-[#F6F1EA] py-16 border-y border-[#3A2E45]">
+          <div className="max-w-5xl mx-auto px-4">
+            <div className="text-center max-w-xl mx-auto mb-10">
+              <div className="mb-3">
+                <PremiumBadge text="KONGDAK SIGNATURE" />
+              </div>
+              <h2 className="font-serif-kr text-2xl sm:text-3xl font-bold text-[#F6F1EA] mb-3">
+                콩닥 프리미엄 리포트
+              </h2>
+              <p className="text-xs sm:text-sm text-[#B9AEC4] leading-relaxed">
+                인생의 중대한 기로, 정통 역학의 완전한 수리 분석과 최고 사양 AI가 집필하는 독보적인 심층 리포트
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {premiumProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/${locale}/products/${product.id}`}
+                  className="group block rounded-3xl focus-visible:outline-none focus-visible:ring-2 ring-[#D9B26A]"
+                >
+                  <div className="bg-[#1E1726] border border-[#3A2E45] rounded-3xl p-6 h-full flex flex-col justify-between hover:border-[#D9B26A]/60 hover:shadow-xl transition-all">
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <PremiumBadge text="PREMIUM" />
+                        <span className="text-[11px] text-[#B9AEC4]">단건 이용권</span>
+                      </div>
+                      <h3 className="font-serif-kr text-xl font-bold text-[#F6F1EA] mb-2 group-hover:text-[#F3E3BF] transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-[#B9AEC4] leading-relaxed mb-6">
+                        {product.description}
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-[#3A2E45]/80 flex items-center justify-between">
+                      <span className="font-serif-kr text-lg font-bold text-[#F3E3BF]">
+                        {priceLabel(product)}
+                      </span>
+                      <span className="text-xs font-semibold text-[#D9B26A] group-hover:underline">
+                        자세히 보기 →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <div id="products" className="max-w-5xl mx-auto px-4 py-16 scroll-mt-14">
         {sets.length > 0 && (
           <section className="mb-16">
