@@ -383,8 +383,8 @@ describe("POST /api/reports/generate route contract tests", () => {
     expect(resWithPreview.status).toBe(200);
   });
 
-  // 10. annual_2026 → 400, SET → 400, 프리미엄 → 400(Phase 4 전까지).
-  it("case 10: annual_2026, set, and premium return 400", async () => {
+  // 10. annual_2026 → 400, SET → 400
+  it("case 10: annual_2026 and set return 400", async () => {
     process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
     session.current = { user: { id: "preview_1", email: "preview@kongdak.kr" } };
 
@@ -399,11 +399,198 @@ describe("POST /api/reports/generate route contract tests", () => {
     expect(resSet.status).toBe(400);
     const bodySet = await resSet.json();
     expect(bodySet.error).toContain("세트는 구성 상품별로");
+  });
 
-    // premium (premium_2027_daeun) -> 400
-    const resPremium = await POST(req({ catalogId: "premium_2027_daeun", kind: "TEASER", input: person }));
-    expect(resPremium.status).toBe(400);
-    const bodyPremium = await resPremium.json();
-    expect(bodyPremium.error).toContain("지원하지 않는 상품입니다");
+  // 11. 프리미엄 FULL도 compat 주문으로는 403 (B1과 같은 원리)
+  it("case 11: premium FULL with compat order returns 403 with 0 AI calls", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "order_compat",
+      orderId: "ord_compat_prem",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "COMPAT",
+      productKey: "compat_basic",
+      compatId: "comp_123",
+      userId: null,
+      unlocks: [{ id: "u1", productType: "COMPAT", productKey: "compat_basic", compatId: "comp_123", expiresAt: future }],
+    });
+
+    const res = await POST(
+      req({
+        catalogId: "premium_2027_daeun",
+        kind: "FULL",
+        orderId: "ord_compat_prem",
+        compatId: "comp_123",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(403);
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // 12. 프리미엄 TEASER 응답에 이름·날짜·한자·점수 목록 등 유료 필드가 없음 (teasers.ts 화이트리스트, AI 호출 0회)
+  it("case 12: premium TEASER returns whitelist teaser without calling AI", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    const res = await POST(
+      req({
+        catalogId: "premium_2027_daeun",
+        kind: "TEASER",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+    const body = await res.json();
+    expect(body.kind).toBe("TEASER");
+    expect(body.data.yearScore).toBeDefined();
+    expect(body.data.cycleLabel).toBeDefined();
+    expect(body.data.bestMonthMasked).toContain("●월");
+    // Ensure paid full-report fields are not present
+    expect(body.data.cycleStory).toBeUndefined();
+    expect(body.data.yearSummary).toBeUndefined();
+    expect(body.data.domains).toBeUndefined();
+    expect(body.data.months).toBeUndefined();
+    expect(body.data.letter).toBeUndefined();
+  });
+
+  // 13. 프리미엄 FULL은 gen.generateJson이 섹션 수(2027은 4개)만큼 호출되고 성공 시 200 반환
+  it("case 13: premium FULL calls generateJson for each section and succeeds", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "ord_db_p1",
+      orderId: "ord_prem_paid",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "FORTUNE",
+      productKey: "premium_2027_daeun",
+      compatId: null,
+      userId: "user_1",
+      unlocks: [{ id: "u_p1", productType: "FORTUNE", productKey: "premium_2027_daeun", compatId: null, expiresAt: future }],
+    });
+
+    db.generatedReport.create.mockResolvedValueOnce({ id: "rep_prem_1" });
+
+    // Mock 4 parallel responses
+    gen.generateJson.mockResolvedValueOnce({
+      data: {
+        headline: "2027 대운 개요",
+        keywords: ["도약", "안정", "성취"],
+        cycleStory: "10년 주기 이야기입니다.",
+        position: "2027년의 위치입니다.",
+        yearSummary: "2027년 한 해 총평입니다.",
+      },
+      model: "gemini-2.5-pro",
+    });
+    gen.generateJson.mockResolvedValueOnce({
+      data: {
+        domains: [
+          { key: "love", body: "애정운 풀이", do: ["표현하기", "대화하기"], dont: ["의심하기", "서운해하기"] },
+          { key: "money", body: "재물운 풀이", do: ["저축하기", "기록하기"], dont: ["충동구매", "무리한투자"] },
+          { key: "career", body: "직업운 풀이", do: ["도전하기", "학습하기"], dont: ["방심하기", "미루기"] },
+          { key: "health", body: "건강운 풀이", do: ["운동하기", "수면챙기기"], dont: ["과로하기", "야식먹기"] },
+          { key: "relationships", body: "인간관계 풀이", do: ["경청하기", "존중하기"], dont: ["편견갖기", "비판하기"] },
+          { key: "family", body: "가정운 풀이", do: ["안부묻기", "함께식사"], dont: ["소홀하기", "짜증내기"] },
+        ],
+      },
+      model: "gemini-2.5-pro",
+    });
+    gen.generateJson.mockResolvedValueOnce({
+      data: {
+        months: Array.from({ length: 12 }, (_, i) => ({
+          month: i + 1,
+          theme: `${i + 1}월 테마`,
+          body: `${i + 1}월 운세 풀이입니다.`,
+          do: "실천",
+          dont: "주의",
+        })),
+      },
+      model: "gemini-2.5-pro",
+    });
+    gen.generateJson.mockResolvedValueOnce({
+      data: {
+        quarterPlan: [
+          { quarter: 1, focus: "1분기 목표", actions: ["행동1", "행동2", "행동3"] },
+          { quarter: 2, focus: "2분기 목표", actions: ["행동1", "행동2", "행동3"] },
+          { quarter: 3, focus: "3분기 목표", actions: ["행동1", "행동2", "행동3"] },
+          { quarter: 4, focus: "4분기 목표", actions: ["행동1", "행동2", "행동3"] },
+        ],
+        letter: "두근이의 편지입니다.",
+      },
+      model: "gemini-2.5-pro",
+    });
+
+    const res = await POST(
+      req({
+        catalogId: "premium_2027_daeun",
+        kind: "FULL",
+        orderId: "ord_prem_paid",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(gen.generateJson).toHaveBeenCalledTimes(4);
+    const body = await res.json();
+    expect(body.kind).toBe("FULL");
+    expect(body.data.sections.overview.headline).toBe("2027 대운 개요");
+    expect(body.data.sections.domains.domains).toHaveLength(6);
+    expect(body.data.sections.months.months).toHaveLength(12);
+  });
+
+  // 14. 프리미엄 FULL에서 섹션 생성 중 하나라도 실패하면 500 에러 및 failGeneration (FAILED 처리)
+  it("case 14: premium FULL fails with 500 and updates report status to FAILED if any section fails", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "ord_db_p2",
+      orderId: "ord_prem_fail",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "FORTUNE",
+      productKey: "premium_2027_daeun",
+      compatId: null,
+      userId: "user_1",
+      unlocks: [{ id: "u_p2", productType: "FORTUNE", productKey: "premium_2027_daeun", compatId: null, expiresAt: future }],
+    });
+
+    db.generatedReport.create.mockResolvedValueOnce({ id: "rep_prem_fail" });
+
+    // Mock 1st succeeds, 2nd rejects
+    gen.generateJson.mockResolvedValueOnce({
+      data: {
+        headline: "2027 대운 개요",
+        keywords: ["도약", "안정", "성취"],
+        cycleStory: "10년 이야기",
+        position: "2027 위치",
+        yearSummary: "요약",
+      },
+      model: "gemini-2.5-pro",
+    });
+    gen.generateJson.mockRejectedValueOnce(new Error("AI section failed"));
+
+    const res = await POST(
+      req({
+        catalogId: "premium_2027_daeun",
+        kind: "FULL",
+        orderId: "ord_prem_fail",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(500);
+    expect(db.generatedReport.update).toHaveBeenCalledWith({
+      where: { id: "rep_prem_fail" },
+      data: { status: "FAILED" },
+    });
   });
 });
