@@ -58,20 +58,19 @@ def clean_hun(raw_hun, eum, char):
     cleaned_parts = []
     for p in parts:
         p_clean = p
+        # 띄어 쓴 음만 뗀다. 붙어 있는 끝 글자는 낱말의 일부다(은혜·기린·인륜 — 떼면 '은'·'기'·'인'이 된다).
         if p_clean.endswith(' ' + eum):
             p_clean = p_clean[:-len(' ' + eum)].strip()
-        elif p_clean.endswith(eum) and len(p_clean) > len(eum) and p_clean != eum:
-            p_clean = p_clean[:-len(eum)].strip()
+        if p_clean == eum:
+            continue
         if p_clean and p_clean not in cleaned_parts:
             cleaned_parts.append(p_clean)
     if not cleaned_parts:
         cleaned_parts = [raw_hun]
     result = '·'.join(cleaned_parts[:2])
-    # final sanity check: if result ends with eum, strip it
+    # final sanity check: if result ends with a spaced eum, strip it
     if result.endswith(' ' + eum):
         result = result[:-len(' ' + eum)].strip()
-    elif result.endswith(eum) and len(result) > len(eum):
-        result = result[:-len(eum)].strip()
     return result
 
 changed_genders = []

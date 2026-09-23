@@ -1,1 +1,882 @@
-[]
+[
+  {
+    "char": "佳",
+    "hun": "아름다울",
+    "eum": "가",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嘉",
+    "hun": "아름다울",
+    "eum": "가",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫝",
+    "hun": "편안할",
+    "eum": "강",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㛃",
+    "hun": "맑을",
+    "eum": "결",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫢",
+    "hun": "가는 허리",
+    "eum": "규",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬀",
+    "hun": "물 이름",
+    "eum": "규",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娜",
+    "hun": "아름다울",
+    "eum": "나",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "炎",
+    "hun": "아름다울",
+    "eum": "담",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婪",
+    "hun": "탐할",
+    "eum": "람",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㛦",
+    "hun": "예쁠",
+    "eum": "람",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "郞",
+    "hun": "사내",
+    "eum": "랑",
+    "genders": [
+      "M"
+    ]
+  },
+  {
+    "char": "娘",
+    "hun": "여자",
+    "eum": "랑",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "郎",
+    "hun": "사내",
+    "eum": "랑",
+    "genders": [
+      "M"
+    ]
+  },
+  {
+    "char": "婁",
+    "hun": "끌",
+    "eum": "루",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "美",
+    "hun": "아름다울",
+    "eum": "미",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媚",
+    "hun": "아첨할·예쁠",
+    "eum": "미",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媺",
+    "hun": "착하고 아름다울",
+    "eum": "미",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媄",
+    "hun": "아름다울",
+    "eum": "미",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娓",
+    "hun": "장황할",
+    "eum": "미",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妃",
+    "hun": "왕비",
+    "eum": "비",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妣",
+    "hun": "죽은 어머니",
+    "eum": "비",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬪",
+    "hun": "아내",
+    "eum": "빈",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娑",
+    "hun": "춤출·사바 세상",
+    "eum": "사",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姒",
+    "hun": "동서",
+    "eum": "사",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "藇",
+    "hun": "아름다울",
+    "eum": "서",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫬",
+    "hun": "여자의 자",
+    "eum": "서",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬋",
+    "hun": "고울",
+    "eum": "선",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫙",
+    "hun": "예쁠",
+    "eum": "선",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "䁢",
+    "hun": "아름다울",
+    "eum": "선",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媟",
+    "hun": "버릇없이 굴",
+    "eum": "설",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娍",
+    "hun": "아름다울",
+    "eum": "성",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "𡜧",
+    "hun": "조용할",
+    "eum": "세",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姺",
+    "hun": "나라 이름",
+    "eum": "신",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娥",
+    "hun": "예쁠",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妸",
+    "hun": "아름다울",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婀",
+    "hun": "아리따울",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娿",
+    "hun": "아리따울",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婭",
+    "hun": "동서",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妿",
+    "hun": "여자 스승",
+    "eum": "아",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妟",
+    "hun": "편안할",
+    "eum": "안",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婩",
+    "hun": "고울",
+    "eum": "안",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姲",
+    "hun": "여자의 자",
+    "eum": "안",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "孃",
+    "hun": "아가씨",
+    "eum": "냥",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "眻",
+    "hun": "눈 아름다울",
+    "eum": "양",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "女",
+    "hun": "여자",
+    "eum": "녀",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妤",
+    "hun": "궁녀",
+    "eum": "여",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姸",
+    "hun": "고울",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娟",
+    "hun": "예쁠",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妍",
+    "hun": "고울",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬿",
+    "hun": "아름다울",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娫",
+    "hun": "빛날",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姢",
+    "hun": "예쁠",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "孌",
+    "hun": "아름다울",
+    "eum": "련",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㜣",
+    "hun": "여자의 자태",
+    "eum": "연",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬰",
+    "hun": "어린아이",
+    "eum": "영",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姈",
+    "hun": "슬기로울",
+    "eum": "령",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬴",
+    "hun": "찰",
+    "eum": "영",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫕",
+    "hun": "유순할",
+    "eum": "예",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫛",
+    "hun": "갓난아이·유순할",
+    "eum": "예",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "𣫙",
+    "hun": "아름다울",
+    "eum": "예",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娛",
+    "hun": "즐길",
+    "eum": "오",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫯",
+    "hun": "교만할",
+    "eum": "오",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媪",
+    "hun": "할머니",
+    "eum": "온",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媼",
+    "hun": "할머니",
+    "eum": "온",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婉",
+    "hun": "순할",
+    "eum": "완",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妧",
+    "hun": "좋을",
+    "eum": "완",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婠",
+    "hun": "품성 좋을",
+    "eum": "완",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姚",
+    "hun": "예쁠",
+    "eum": "요",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫋",
+    "hun": "예쁠",
+    "eum": "뇨",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬲",
+    "hun": "희롱할",
+    "eum": "뇨",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬈",
+    "hun": "번거로울",
+    "eum": "뇨",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫽",
+    "hun": "희롱할",
+    "eum": "료",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妘",
+    "hun": "여자의 자",
+    "eum": "운",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "雄",
+    "hun": "수컷",
+    "eum": "웅",
+    "genders": [
+      "M"
+    ]
+  },
+  {
+    "char": "媛",
+    "hun": "여자",
+    "eum": "원",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫄",
+    "hun": "사람 이름",
+    "eum": "원",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婑",
+    "hun": "아리따울",
+    "eum": "유",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姷",
+    "hun": "짝",
+    "eum": "유",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "贇",
+    "hun": "예쁠",
+    "eum": "윤",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "瑮",
+    "hun": "옥 아름다울",
+    "eum": "률",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媐",
+    "hun": "기쁠",
+    "eum": "이",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㛅",
+    "hun": "여자의 자",
+    "eum": "이",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姃",
+    "hun": "단정할",
+    "eum": "정",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婷",
+    "hun": "예쁠",
+    "eum": "정",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婧",
+    "hun": "날씬할",
+    "eum": "정",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妌",
+    "hun": "엄전할",
+    "eum": "정",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "𩓞",
+    "hun": "아름다울",
+    "eum": "정",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "媞",
+    "hun": "안존할",
+    "eum": "제",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娣",
+    "hun": "손아래 누이",
+    "eum": "제",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姼",
+    "hun": "예쁠",
+    "eum": "제",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姝",
+    "hun": "예쁠",
+    "eum": "주",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妵",
+    "hun": "사람 이름",
+    "eum": "주",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㜺",
+    "hun": "희고 환할",
+    "eum": "찬",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婇",
+    "hun": "여자의 자",
+    "eum": "채",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娧",
+    "hun": "아름다울",
+    "eum": "태",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫺",
+    "hun": "우아할",
+    "eum": "한",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫻",
+    "hun": "우아할",
+    "eum": "한",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "忓",
+    "hun": "아름다울",
+    "eum": "한",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姟",
+    "hun": "백 조",
+    "eum": "해",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬛",
+    "hun": "산뜻할",
+    "eum": "현",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "妶",
+    "hun": "절개 있을",
+    "eum": "현",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娊",
+    "hun": "허리 가늘",
+    "eum": "현",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "娙",
+    "hun": "여관",
+    "eum": "형",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫮",
+    "hun": "아름다울",
+    "eum": "호",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嫭",
+    "hun": "아름다울",
+    "eum": "호",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "婋",
+    "hun": "재치 있을",
+    "eum": "효",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姁",
+    "hun": "아름다울",
+    "eum": "후",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "姫",
+    "hun": "여자",
+    "eum": "희",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "嬉",
+    "hun": "아름다울",
+    "eum": "희",
+    "genders": [
+      "F"
+    ]
+  },
+  {
+    "char": "㜯",
+    "hun": "기쁠",
+    "eum": "희",
+    "genders": [
+      "F"
+    ]
+  }
+]

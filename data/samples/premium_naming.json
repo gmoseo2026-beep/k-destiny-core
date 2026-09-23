@@ -19,11 +19,11 @@
       {
         "hangul": "태윤",
         "hanja": [
-          "泰",
+          "台",
           "潤"
         ],
         "hun": [
-          "클",
+          "별·태풍",
           "불을·윤택할"
         ],
         "eum": [
@@ -32,14 +32,14 @@
         ],
         "strokes": {
           "s": 8,
-          "g1": 9,
+          "g1": 5,
           "g2": 16
         },
         "grids": {
-          "won": 25,
-          "hyeong": 17,
+          "won": 21,
+          "hyeong": 13,
           "i": 24,
-          "jeong": 33
+          "jeong": 29
         },
         "soundSeq": [
           "wood",
@@ -51,6 +51,42 @@
           "water"
         ],
         "score": 103
+      },
+      {
+        "hangul": "태양",
+        "hanja": [
+          "泰",
+          "養"
+        ],
+        "hun": [
+          "클",
+          "기를"
+        ],
+        "eum": [
+          "태",
+          "양"
+        ],
+        "strokes": {
+          "s": 8,
+          "g1": 9,
+          "g2": 15
+        },
+        "grids": {
+          "won": 24,
+          "hyeong": 17,
+          "i": 23,
+          "jeong": 32
+        },
+        "soundSeq": [
+          "wood",
+          "fire",
+          "earth"
+        ],
+        "elements": [
+          "water",
+          "water"
+        ],
+        "score": 102
       },
       {
         "hangul": "도현",
@@ -83,71 +119,35 @@
           "earth"
         ],
         "elements": [
-          "fire",
+          "metal",
           "water"
         ],
         "score": 101
       },
       {
-        "hangul": "태현",
+        "hangul": "동윤",
         "hanja": [
-          "兌",
-          "泫"
+          "冬",
+          "潤"
         ],
         "hun": [
-          "바꿀·기쁠",
-          "이슬 빛날"
+          "겨울·북소리",
+          "불을·윤택할"
         ],
         "eum": [
-          "태",
-          "현"
+          "동",
+          "윤"
         ],
         "strokes": {
           "s": 8,
-          "g1": 7,
-          "g2": 9
-        },
-        "grids": {
-          "won": 16,
-          "hyeong": 15,
-          "i": 17,
-          "jeong": 24
-        },
-        "soundSeq": [
-          "wood",
-          "fire",
-          "earth"
-        ],
-        "elements": [
-          "fire",
-          "water"
-        ],
-        "score": 99
-      },
-      {
-        "hangul": "태율",
-        "hanja": [
-          "泰",
-          "潏"
-        ],
-        "hun": [
-          "클",
-          "사주"
-        ],
-        "eum": [
-          "태",
-          "율"
-        ],
-        "strokes": {
-          "s": 8,
-          "g1": 9,
+          "g1": 5,
           "g2": 16
         },
         "grids": {
-          "won": 25,
-          "hyeong": 17,
+          "won": 21,
+          "hyeong": 13,
           "i": 24,
-          "jeong": 33
+          "jeong": 29
         },
         "soundSeq": [
           "wood",
@@ -161,29 +161,29 @@
         "score": 99
       },
       {
-        "hangul": "태우",
+        "hangul": "태율",
         "hanja": [
-          "泰",
-          "雨"
+          "台",
+          "汩"
         ],
         "hun": [
-          "클",
-          "비"
+          "별·태풍",
+          "흐를"
         ],
         "eum": [
           "태",
-          "우"
+          "율"
         ],
         "strokes": {
           "s": 8,
-          "g1": 9,
+          "g1": 5,
           "g2": 8
         },
         "grids": {
-          "won": 17,
-          "hyeong": 17,
+          "won": 13,
+          "hyeong": 13,
           "i": 16,
-          "jeong": 25
+          "jeong": 21
         },
         "soundSeq": [
           "wood",
@@ -210,6 +210,13 @@
           "sound": "샘플 준비 중"
         },
         {
+          "hangul": "태양",
+          "oneLine": "태양, 세상을 밝히는 깊은 지혜의 이름",
+          "meaning": "샘플 준비 중",
+          "harmony": "샘플 준비 중",
+          "sound": "샘플 준비 중"
+        },
+        {
           "hangul": "도현",
           "oneLine": "도현, 세상을 밝히는 깊은 지혜의 이름",
           "meaning": "샘플 준비 중",
@@ -217,8 +224,8 @@
           "sound": "샘플 준비 중"
         },
         {
-          "hangul": "태현",
-          "oneLine": "태현, 세상을 밝히는 깊은 지혜의 이름",
+          "hangul": "동윤",
+          "oneLine": "동윤, 세상을 밝히는 깊은 지혜의 이름",
           "meaning": "샘플 준비 중",
           "harmony": "샘플 준비 중",
           "sound": "샘플 준비 중"
@@ -226,13 +233,6 @@
         {
           "hangul": "태율",
           "oneLine": "태율, 세상을 밝히는 깊은 지혜의 이름",
-          "meaning": "샘플 준비 중",
-          "harmony": "샘플 준비 중",
-          "sound": "샘플 준비 중"
-        },
-        {
-          "hangul": "태우",
-          "oneLine": "태우, 세상을 밝히는 깊은 지혜의 이름",
           "meaning": "샘플 준비 중",
           "harmony": "샘플 준비 중",
           "sound": "샘플 준비 중"

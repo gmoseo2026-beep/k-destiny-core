@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { radicalFullStrokes, originalStrokes } from "@/lib/premium/naming/strokes";
 import { reduce81, fourGrids, allLucky, parityBalanced, soundElement, soundFlowScore } from "@/lib/premium/naming/rules";
 import { buildNamingEngine, isNameWorthy, dueumSourceSyllables } from "@/lib/premium/naming/engine";
@@ -221,6 +223,47 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     });
   });
 
+  describe("ㄹ음 인명 한자 복구(두음 원음 포함 재구축)", () => {
+    const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
+    const inmyong = new Set(
+      readFileSync(path.join(process.cwd(), "data/naming/inmyong-hanja.txt"), "utf8")
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith("#")),
+    );
+
+    it("律·麟·蓮·倫·林·利·璃·玲 중 인명용 글자는 데이터에 있고 이름으로 쓸 수 있다", () => {
+      for (const ch of ["律", "麟", "蓮", "倫", "林", "利", "璃", "玲"]) {
+        if (!inmyong.has(ch)) continue;
+        const h = hanjaByChar.get(ch);
+        expect(h, ch).toBeDefined();
+        expect(isNameWorthy(h!), ch).toBe(true);
+      }
+    });
+
+    it("사전 음(률·린 등)을 그대로 저장한다", () => {
+      expect(hanjaByChar.get("律")?.eum).toBe("률");
+      expect(hanjaByChar.get("麟")?.eum).toBe("린");
+      expect(hanjaByChar.get("蓮")?.eum).toBe("련");
+    });
+
+    it("사전 음이 ㄹ로 시작하는 항목이 150개 이상이다", () => {
+      const cho = (s: string) => Math.floor((s.charCodeAt(0) - 0xac00) / 588);
+      const rCount = nameHanjaDataRaw.filter((h) => cho(h.eum) === 5).length;
+      expect(rCount).toBeGreaterThanOrEqual(150);
+    });
+
+    it("실데이터로 '서율'(여)·'시율'(남)을 만들면 이름 음은 '율'로 표기된다", () => {
+      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const f = buildNamingEngine({ ...base, gender: "F", dob: "2025-03-01" }, { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] } });
+      const m = buildNamingEngine({ ...base, gender: "M", dob: "2025-03-01" }, { givenNames: { M: [{ name: "시율", rank: 1 }], F: [] } });
+      for (const r of [f, m]) {
+        expect(r.names.length).toBeGreaterThan(0);
+        for (const n of r.names) expect(n.eum[1]).toBe("율");
+      }
+    });
+  });
+
   describe("부적합 글자 제외(isNameWorthy)", () => {
     const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
 
@@ -269,9 +312,16 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
       expect(withSlash).toHaveLength(0);
     });
 
-    it("모든 항목의 hun이 eum으로 끝나지 않는다", () => {
-      const endsWithEum = nameHanjaDataRaw.filter((h) => h.hun.endsWith(h.eum));
+    it("모든 항목의 hun에 음이 따로 붙어 있지 않다('은혜 혜' 금지, '은혜'는 정상 낱말)", () => {
+      const endsWithEum = nameHanjaDataRaw.filter((h) => h.hun === h.eum || h.hun.endsWith(" " + h.eum));
       expect(endsWithEum).toHaveLength(0);
+    });
+
+    it("낱말 끝 글자를 음으로 착각해 잘라내지 않는다(惠 은혜, 麟 기린, 倫 인륜)", () => {
+      const byChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h.hun]));
+      expect(byChar.get("惠")).toBe("은혜");
+      expect(byChar.get("麟")).toBe("기린");
+      expect(byChar.get("倫")).toBe("인륜");
     });
   });
 });
