@@ -3,7 +3,20 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function OnboardingClient({ initialProfile, locale }: { initialProfile: any, locale: string }) {
+interface UserProfileData {
+  name?: string | null;
+  gender?: string | null;
+  birthYear?: string | number | null;
+  birthMonth?: string | number | null;
+  birthDay?: string | number | null;
+  birthTime?: string | null;
+  unknownTime?: boolean | null;
+  city?: string | null;
+  country?: string | null;
+  [key: string]: unknown;
+}
+
+export default function OnboardingClient({ initialProfile, locale }: { initialProfile: UserProfileData | null, locale: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -45,8 +58,8 @@ export default function OnboardingClient({ initialProfile, locale }: { initialPr
       // Success, redirect back to home or dashboard
       router.push(`/${locale}`);
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save profile");
     } finally {
       setLoading(false);
     }
@@ -62,18 +75,18 @@ export default function OnboardingClient({ initialProfile, locale }: { initialPr
           value={formData.name} 
           onChange={handleChange} 
           required
-          className="w-full bg-[#FFF6F1] border-none rounded-xl p-3 text-sm text-[#2B2430] outline-none focus:ring-2 focus:ring-[#FF8AA1]"
+          className="w-full bg-cream border-none rounded-xl p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[#FF8AA1]"
         />
       </div>
 
       <div>
         <label className="block text-xs font-bold text-[#6A2C70] mb-1">성별</label>
         <div className="flex gap-2">
-          <label className={`flex-1 text-center p-3 rounded-xl cursor-pointer font-bold text-sm transition-colors ${formData.gender === 'M' ? 'bg-[#FF8AA1] text-white' : 'bg-[#FFF6F1] text-[#8A8291]'}`}>
+          <label className={`flex-1 text-center p-3 rounded-xl cursor-pointer font-bold text-sm transition-colors ${formData.gender === 'M' ? 'bg-[#FF8AA1] text-white' : 'bg-cream text-[#8A8291]'}`}>
             <input type="radio" name="gender" value="M" checked={formData.gender === 'M'} onChange={handleChange} className="hidden" />
             남성
           </label>
-          <label className={`flex-1 text-center p-3 rounded-xl cursor-pointer font-bold text-sm transition-colors ${formData.gender === 'F' ? 'bg-[#FF8AA1] text-white' : 'bg-[#FFF6F1] text-[#8A8291]'}`}>
+          <label className={`flex-1 text-center p-3 rounded-xl cursor-pointer font-bold text-sm transition-colors ${formData.gender === 'F' ? 'bg-[#FF8AA1] text-white' : 'bg-cream text-[#8A8291]'}`}>
             <input type="radio" name="gender" value="F" checked={formData.gender === 'F'} onChange={handleChange} className="hidden" />
             여성
           </label>
@@ -83,15 +96,15 @@ export default function OnboardingClient({ initialProfile, locale }: { initialPr
       <div className="flex gap-2">
         <div className="flex-1">
           <label className="block text-xs font-bold text-[#6A2C70] mb-1">태어난 년도</label>
-          <input type="number" name="birthYear" value={formData.birthYear} onChange={handleChange} required className="w-full bg-[#FFF6F1] border-none rounded-xl p-3 text-sm text-[#2B2430] outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
+          <input type="number" name="birthYear" value={formData.birthYear} onChange={handleChange} required className="w-full bg-cream border-none rounded-xl p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
         </div>
         <div className="flex-1">
           <label className="block text-xs font-bold text-[#6A2C70] mb-1">월</label>
-          <input type="number" name="birthMonth" value={formData.birthMonth} min="1" max="12" onChange={handleChange} required className="w-full bg-[#FFF6F1] border-none rounded-xl p-3 text-sm text-[#2B2430] outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
+          <input type="number" name="birthMonth" value={formData.birthMonth} min="1" max="12" onChange={handleChange} required className="w-full bg-cream border-none rounded-xl p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
         </div>
         <div className="flex-1">
           <label className="block text-xs font-bold text-[#6A2C70] mb-1">일</label>
-          <input type="number" name="birthDay" value={formData.birthDay} min="1" max="31" onChange={handleChange} required className="w-full bg-[#FFF6F1] border-none rounded-xl p-3 text-sm text-[#2B2430] outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
+          <input type="number" name="birthDay" value={formData.birthDay} min="1" max="31" onChange={handleChange} required className="w-full bg-cream border-none rounded-xl p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[#FF8AA1]" />
         </div>
       </div>
 
@@ -103,10 +116,10 @@ export default function OnboardingClient({ initialProfile, locale }: { initialPr
           value={formData.birthTime} 
           onChange={handleChange}
           disabled={formData.unknownTime}
-          className="w-full bg-[#FFF6F1] border-none rounded-xl p-3 text-sm text-[#2B2430] outline-none focus:ring-2 focus:ring-[#FF8AA1] disabled:opacity-50"
+          className="w-full bg-cream border-none rounded-xl p-3 text-sm text-ink outline-none focus:ring-2 focus:ring-[#FF8AA1] disabled:opacity-50"
         />
         <label className="flex items-center gap-2 mt-2 text-xs text-[#8A8291] cursor-pointer">
-          <input type="checkbox" name="unknownTime" checked={formData.unknownTime} onChange={handleChange} className="accent-[#FF5C77]" />
+          <input type="checkbox" name="unknownTime" checked={formData.unknownTime} onChange={handleChange} className="accent-coral" />
           태어난 시간을 모릅니다
         </label>
       </div>
@@ -116,7 +129,7 @@ export default function OnboardingClient({ initialProfile, locale }: { initialPr
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#FF5C77] text-white font-black text-sm py-4 rounded-xl mt-4 shadow-md hover:bg-[#ff4766] transition-all disabled:opacity-70"
+        className="w-full bg-coral text-white font-black text-sm py-4 rounded-xl mt-4 shadow-md hover:bg-[#ff4766] transition-all disabled:opacity-70"
       >
         {loading ? "저장 중..." : "내 사주 정보 저장하기"}
       </button>

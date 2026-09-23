@@ -20,7 +20,7 @@ export default function LoginButton() {
   };
 
   if (status === 'loading') {
-    return <div className="h-10 w-24 bg-[#2B2430]/5 animate-pulse rounded-full" />;
+    return <div className="h-10 w-24 bg-ink/5 animate-pulse rounded-full" />;
   }
 
   if (session && session.user) {
@@ -28,14 +28,14 @@ export default function LoginButton() {
       <div className="flex items-center gap-4">
 
         
-        <div className="flex items-center gap-1.5 sm:gap-3 bg-white border border-[#2B2430]/8 rounded-full pl-1.5 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5 hover:bg-coral/[0.03] hover:border-coral/30 shadow-sm transition-all group">
+        <div className="flex items-center gap-1.5 sm:gap-3 bg-white border border-ink/8 rounded-full pl-1.5 sm:pl-2 pr-2 sm:pr-4 py-1 sm:py-1.5 hover:bg-coral/[0.03] hover:border-coral/30 shadow-sm transition-all group">
           {session.user.image ? (
             <Image 
               src={session.user.image} 
               alt={session.user.name || 'User'} 
               width={28} 
               height={28} 
-              className="rounded-full border border-[#2B2430]/10"
+              className="rounded-full border border-ink/10"
             />
           ) : (
             <div className="w-7 h-7 rounded-full bg-coral/10 flex items-center justify-center border border-coral/20">

@@ -29,11 +29,26 @@ interface DailyData {
   goodTiming: string;
 }
 
+interface WeeklyData {
+  summary?: string;
+  loveLuck?: string;
+  wealthLuck?: string;
+  workLuck?: string;
+  goodDays?: string[];
+  cautionDays?: string[];
+  bestDay?: {
+    day?: string;
+    reason?: string;
+  };
+  caution?: string;
+  [key: string]: unknown;
+}
+
 export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneClientProps) {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const [weeklyData, setWeeklyData] = useState<any>(null);
+  const [weeklyData, setWeeklyData] = useState<WeeklyData | null>(null);
   const [dailyData, setDailyData] = useState<DailyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,9 +102,9 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
         } else if (dailyRes.ok && dailyJson.data) {
           setDailyData(dailyJson.data);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to load coach fortunes:", err);
-        setError(err.message || "운세를 불러오는 중 오류가 발생했습니다.");
+        setError(err instanceof Error ? err.message : "운세를 불러오는 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
@@ -147,7 +162,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
         <p className="text-red-500 font-bold mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-5 py-2.5 bg-[#FF5C77] text-white rounded-xl font-bold text-sm shadow-xs active:scale-95 transition-all"
+          className="px-5 py-2.5 bg-coral text-white rounded-xl font-bold text-sm shadow-xs active:scale-95 transition-all"
         >
           다시 시도하기
         </button>
@@ -156,7 +171,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
   }
 
   const focusMap: Record<string, { label: string; color: string; bg: string }> = {
-    love: { label: "연애 & 애정", color: "text-[#FF5C77]", bg: "bg-[#FF5C77]/10" },
+    love: { label: "연애 & 애정", color: "text-coral", bg: "bg-coral/10" },
     money: { label: "재물 & 금전", color: "text-[#FFC24B]", bg: "bg-[#FFC24B]/10" },
     career: { label: "일 & 학업", color: "text-[#6A2C70]", bg: "bg-[#6A2C70]/10" },
     relationship: { label: "인간관계 & 소통", color: "text-indigo-500", bg: "bg-indigo-500/10" },
@@ -167,10 +182,10 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       {/* 1. Header Banner */}
       <div className="text-center">
         <div className="inline-flex items-center gap-1.5 bg-[#6A2C70]/10 text-[#6A2C70] px-3.5 py-1 rounded-full text-xs font-bold mb-2">
-          <Sparkles className="w-3.5 h-3.5 text-[#FF5C77]" />
+          <Sparkles className="w-3.5 h-3.5 text-coral" />
           <span>매일 오는 나만의 운세 코치</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black text-[#2B2430] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
           데일리 코치 & 주간 운세
         </h1>
         <p className="text-xs sm:text-sm text-[#8A8291] mt-1.5">
@@ -179,7 +194,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       </div>
 
       {/* 2. Today's Daily Coach Card */}
-      <section className="bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-3xl p-6 text-white shadow-md relative overflow-hidden">
+      <section className="bg-gradient-to-br from-[#FF8AA1] via-coral to-[#6A2C70] rounded-3xl p-6 text-white shadow-md relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white border border-white/20">
             <span>오늘의 운세 코치</span>
@@ -262,11 +277,11 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       {/* 3. Push Notification Opt-in Card */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#FFD9E0]/60 shadow-xs flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77] shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-coral/10 flex items-center justify-center text-coral shrink-0">
             <Bell className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <h4 className="text-xs sm:text-sm font-bold text-[#2B2430]">매일 아침 데일리 운세 알림</h4>
+            <h4 className="text-xs sm:text-sm font-bold text-ink">매일 아침 데일리 운세 알림</h4>
             <p className="text-[11px] text-[#8A8291] mt-0.5">좋은 날·데이트 길일 놓치지 않게 알려드려요</p>
           </div>
         </div>
@@ -277,7 +292,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1 active:scale-95 ${
             pushSubscribed
               ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-              : "bg-[#FFF6F1] hover:bg-[#FFD9E0]/50 text-[#FF5C77] border border-[#FFD9E0]"
+              : "bg-cream hover:bg-[#FFD9E0]/50 text-coral border border-[#FFD9E0]"
           }`}
         >
           {pushSubscribed ? (
@@ -294,12 +309,12 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       {/* 4. Weekly Flow Section */}
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-base sm:text-lg font-black text-[#2B2430] flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#FF5C77]" />
+          <h2 className="text-base sm:text-lg font-black text-ink flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-coral" />
             <span>이번 주 월~일 흐름</span>
           </h2>
           {isLocked && (
-            <span className="text-xs font-bold text-[#FF5C77] bg-[#FFF6F1] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-xs font-bold text-coral bg-cream border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1">
               <Lock className="w-3 h-3" />
               <span>패스 전용</span>
             </span>
@@ -311,7 +326,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           <h3 className="text-xs font-bold text-[#6A2C70] mb-2 flex items-center gap-1.5">
             <span>이번 주 총평</span>
           </h3>
-          <p className="text-xs sm:text-sm text-[#2B2430] leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
             {weeklyData?.summary || "이번 주 당신을 기다리는 특별한 흐름이 준비되어 있어요."}
           </p>
         </div>
@@ -320,25 +335,25 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
         {!isLocked && weeklyData?.loveLuck && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div className="bg-white p-5 rounded-2xl shadow-xs border border-[#FFD9E0]/50">
-              <h4 className="font-bold text-sm text-[#FF5C77] mb-2 flex items-center gap-1.5">
+              <h4 className="font-bold text-sm text-coral mb-2 flex items-center gap-1.5">
                 <Heart className="w-4 h-4" />
                 <span>이번 주 애정운</span>
               </h4>
-              <p className="text-xs text-[#2B2430] leading-relaxed font-medium">{weeklyData.loveLuck}</p>
+              <p className="text-xs text-ink leading-relaxed font-medium">{weeklyData.loveLuck}</p>
             </div>
             <div className="bg-white p-5 rounded-2xl shadow-xs border border-[#FFD9E0]/50">
               <h4 className="font-bold text-sm text-[#FFC24B] mb-2 flex items-center gap-1.5">
                 <Coins className="w-4 h-4" />
                 <span>이번 주 금전운</span>
               </h4>
-              <p className="text-xs text-[#2B2430] leading-relaxed font-medium">{weeklyData.wealthLuck}</p>
+              <p className="text-xs text-ink leading-relaxed font-medium">{weeklyData.wealthLuck}</p>
             </div>
             {weeklyData.bestDay && (
-              <div className="bg-[#FFF6F1] p-5 rounded-2xl border border-[#FFD9E0]/50">
+              <div className="bg-cream p-5 rounded-2xl border border-[#FFD9E0]/50">
                 <h4 className="font-bold text-sm text-[#6A2C70] mb-1.5">
                   🌟 가장 좋은 요일: {weeklyData.bestDay.day}
                 </h4>
-                <p className="text-xs text-[#2B2430] leading-relaxed font-medium">{weeklyData.bestDay.reason}</p>
+                <p className="text-xs text-ink leading-relaxed font-medium">{weeklyData.bestDay.reason}</p>
               </div>
             )}
             {weeklyData.caution && (
@@ -346,7 +361,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
                 <h4 className="font-bold text-sm text-red-500 mb-1.5">
                   ⚠️ 주의할 타이밍
                 </h4>
-                <p className="text-xs text-[#2B2430] leading-relaxed font-medium">{weeklyData.caution}</p>
+                <p className="text-xs text-ink leading-relaxed font-medium">{weeklyData.caution}</p>
               </div>
             )}
           </div>
@@ -357,14 +372,14 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           <div className="relative">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 blur-[4px] select-none pointer-events-none opacity-40">
               <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/40">
-                <h4 className="font-bold text-xs text-[#FF5C77] mb-1">애정운</h4>
+                <h4 className="font-bold text-xs text-coral mb-1">애정운</h4>
                 <p className="text-xs text-[#8A8291]">이번 주 연애와 연락 타이밍 흐름...</p>
               </div>
               <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/40">
                 <h4 className="font-bold text-xs text-[#FFC24B] mb-1">금전운</h4>
                 <p className="text-xs text-[#8A8291]">소비와 수익이 생기는 길일...</p>
               </div>
-              <div className="bg-[#FFF6F1] p-4 rounded-2xl border border-[#FFD9E0]/40">
+              <div className="bg-cream p-4 rounded-2xl border border-[#FFD9E0]/40">
                 <h4 className="font-bold text-xs text-[#6A2C70] mb-1">가장 좋은 요일: 수요일</h4>
                 <p className="text-xs text-[#8A8291]">중요한 만남을 갖기 좋은 날...</p>
               </div>
@@ -380,11 +395,11 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       {/* 5. Pass Subscription CTA Card (When Locked) */}
       {isLocked && (
         <div className="bg-white border-2 border-[#FF8AA1] rounded-3xl p-6 sm:p-7 shadow-md text-center mt-2">
-          <div className="inline-flex items-center gap-1.5 bg-[#FF5C77]/10 text-[#FF5C77] px-3 py-0.5 rounded-full text-xs font-bold mb-3">
+          <div className="inline-flex items-center gap-1.5 bg-coral/10 text-coral px-3 py-0.5 rounded-full text-xs font-bold mb-3">
             <span>콩닥 플러스 30일 패스</span>
           </div>
 
-          <h3 className="text-xl font-black text-[#2B2430] mb-2">
+          <h3 className="text-xl font-black text-ink mb-2">
             매일 오는 나만의 운세 코치 받기
           </h3>
 
@@ -394,21 +409,21 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           </p>
 
           {/* Value Highlights */}
-          <ul className="text-left space-y-2 text-xs text-[#6A2C70] font-bold max-w-xs mx-auto mb-5 bg-[#FFF6F1] p-4 rounded-2xl border border-[#FFD9E0]/50">
+          <ul className="text-left space-y-2 text-xs text-[#6A2C70] font-bold max-w-xs mx-auto mb-5 bg-cream p-4 rounded-2xl border border-[#FFD9E0]/50">
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77]">✓</span>
+              <span className="text-coral">✓</span>
               <span>매일: 오늘의 운세 + 뭘 하면 좋은지 행동 조언</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77]">✓</span>
+              <span className="text-coral">✓</span>
               <span>매주: 월~일 흐름, 좋은 날·조심할 날·연락 타이밍</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77]">✓</span>
+              <span className="text-coral">✓</span>
               <span>+ 2026 총운 · 모든 심층 궁합 30일 무제한 열람</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#FF5C77]">✓</span>
+              <span className="text-coral">✓</span>
               <span>1회 결제 (자동결제 없음 · 9,900원)</span>
             </li>
           </ul>
@@ -418,16 +433,16 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
               type="button"
               onClick={handleOpenPassCheckout}
               disabled={isProcessingPayment}
-              className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+              className="w-full bg-coral hover:bg-[#ff4766] active:scale-[0.97] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
               <span>30일 패스 결제하기 (9,900원)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <Link
-              href={`/${locale}/pricing`}
-              className="text-xs font-semibold text-[#8A8291] hover:text-[#2B2430] py-1 transition-colors"
+              href={`/${locale}#products`}
+              className="text-xs font-semibold text-[#8A8291] hover:text-ink py-1 transition-colors"
             >
-              요금 안내 전체보기 →
+              상품 안내 전체보기 →
             </Link>
           </div>
         </div>
@@ -448,17 +463,16 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           try {
             setIsProcessingPayment(true);
             await requestPortOnePayment({
-              type: "PERIOD_PASS",
-              planId: "1_MONTH",
+              productId: "annual_2026",
               buyer,
               locale,
             });
-          } catch (e: any) {
-            alert(e?.message || "결제 진행 중 오류가 발생했습니다.");
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.";
+            alert(msg);
           } finally {
             setIsProcessingPayment(false);
             setCheckoutModalOpen(false);
-            window.location.reload();
           }
         }}
       />

@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import AnnualFortuneClient from "./AnnualFortuneClient";
 import Link from "next/link";
@@ -32,17 +31,17 @@ export default async function AnnualFortunePage({
   }
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 sm:py-12 flex flex-col items-center">
+    <main className="min-h-screen bg-cream text-ink px-4 py-8 sm:py-12 flex flex-col items-center">
       <header className="w-full max-w-md md:max-w-2xl flex items-center justify-between mb-6">
         <Link
           href={`/${locale}`}
-          className="flex items-center gap-1.5 text-xs font-bold text-[#8A8291] hover:text-[#FF5C77] transition-colors group"
+          className="flex items-center gap-1.5 text-xs font-bold text-[#8A8291] hover:text-coral transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>홈으로</span>
         </Link>
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">

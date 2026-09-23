@@ -134,7 +134,7 @@ export default function LoginPage() {
           <div className="flex justify-center mb-2">
             <KongdakMascot size={72} animate="bounce" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#2B2430] mb-2">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-ink mb-2">
             {t("title")}
           </h1>
           <p className="text-xs sm:text-sm text-[#8A8291] font-medium leading-relaxed max-w-xs mx-auto">
@@ -159,7 +159,7 @@ export default function LoginPage() {
                 className="absolute inset-0 z-50 rounded-3xl bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center border border-[#FFD9E0]"
               >
                 <div className="mb-3">
-                  <Loader2 className="w-10 h-10 text-[#FF5C77] animate-spin" />
+                  <Loader2 className="w-10 h-10 text-coral animate-spin" />
                 </div>
                 <p className="text-xs font-bold text-[#6A2C70] animate-pulse">{t("loading")}</p>
               </motion.div>
@@ -221,7 +221,7 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm bg-white hover:bg-gray-50 border border-[#E5E0DC] text-[#2B2430]"
+              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl transition-all shadow-sm bg-white hover:bg-gray-50 border border-[#E5E0DC] text-ink"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5">
                 <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -259,7 +259,7 @@ export default function LoginPage() {
                 exit={{ opacity: 0, height: 0 }}
               >
                 <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
-                  <User className="w-3.5 h-3.5 text-[#FF5C77]" />
+                  <User className="w-3.5 h-3.5 text-coral" />
                   <span>{locale === 'ko' ? '이름 (선택)' : 'Name (optional)'}</span>
                 </label>
                 <input
@@ -267,14 +267,14 @@ export default function LoginPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={locale === 'ko' ? '예: 콩닥이' : 'e.g. Kongdak'}
-                  className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
+                  className="w-full bg-cream/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral text-xs sm:text-sm font-medium transition-all"
                 />
               </motion.div>
             )}
 
             <div>
               <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
-                <Mail className="w-3.5 h-3.5 text-[#FF5C77]" />
+                <Mail className="w-3.5 h-3.5 text-coral" />
                 <span>{t("label_email")}</span>
               </label>
               <input
@@ -283,13 +283,13 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={t("placeholder_email")}
                 required
-                className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
+                className="w-full bg-cream/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral text-xs sm:text-sm font-medium transition-all"
               />
             </div>
 
             <div>
               <label className="text-xs font-bold text-[#6A5E72] flex items-center gap-1.5 mb-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#FF5C77]" />
+                <Lock className="w-3.5 h-3.5 text-coral" />
                 <span>{t("label_password")}</span>
               </label>
               <input
@@ -299,7 +299,7 @@ export default function LoginPage() {
                 placeholder={t("placeholder_password")}
                 required
                 minLength={6}
-                className="w-full bg-[#FFF6F1]/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-[#2B2430] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77] text-xs sm:text-sm font-medium transition-all"
+                className="w-full bg-cream/50 border border-[#F0E3D6] rounded-2xl px-4 py-3 text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral text-xs sm:text-sm font-medium transition-all"
               />
             </div>
 
@@ -307,7 +307,7 @@ export default function LoginPage() {
               type="submit"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
-              className="w-full mt-2 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 active:scale-[0.96] transition-all"
+              className="w-full mt-2 py-3.5 rounded-2xl bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 active:scale-[0.96] transition-all"
             >
               {isSignUp ? t("btn_signup") : t("btn_signin")}
             </motion.button>
@@ -316,7 +316,7 @@ export default function LoginPage() {
           {/* Toggle Sign In / Sign Up */}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-            className="w-full mt-4 text-center text-xs text-[#8A8291] hover:text-[#FF5C77] font-semibold transition-colors"
+            className="w-full mt-4 text-center text-xs text-[#8A8291] hover:text-coral font-semibold transition-colors"
           >
             {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
           </button>

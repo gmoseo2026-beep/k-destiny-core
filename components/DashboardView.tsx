@@ -139,7 +139,7 @@ export default function DashboardView() {
             type="button"
             onClick={handleClaimUnlock}
             disabled={isClaiming}
-            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
+            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-coral text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
           >
             {isClaiming ? "연동 중..." : "연동하기"}
           </button>
@@ -160,7 +160,7 @@ export default function DashboardView() {
         {/* Primary action — new compatibility reading */}
         <div>
           <Link href="/compat/new" className="block group">
-            <div className="rounded-3xl bg-[#FF5C77] p-6 sm:p-8 text-white shadow-lg shadow-coral/20 border border-white/30 transition-all duration-150 active:scale-[0.97]">
+            <div className="rounded-3xl bg-coral p-6 sm:p-8 text-white shadow-lg shadow-coral/20 border border-white/30 transition-all duration-150 active:scale-[0.97]">
               <div className="flex items-center gap-2 text-white/90 text-xs font-bold mb-3">
                 <Sparkles className="w-4 h-4" />
                 <span>{t("cta_badge")}</span>
@@ -185,15 +185,15 @@ export default function DashboardView() {
           <Link href="/fortune/annual" className="block group">
             <div className="rounded-2xl bg-white border border-[#FF8AA1]/60 p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#FF5C77] text-lg shadow-2xs">
+                <div className="w-11 h-11 rounded-xl bg-cream border border-[#FFD9E0] flex items-center justify-center text-coral text-lg shadow-2xs">
                   🔮
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#FF5C77] transition-colors duration-150">
+                    <h3 className="text-sm font-extrabold text-ink group-hover:text-coral transition-colors duration-150">
                       2026 나의 총운
                     </h3>
-                    <span className="text-[10px] font-black text-white bg-[#FF5C77] px-1.5 py-0.5 rounded-md">
+                    <span className="text-[10px] font-black text-white bg-coral px-1.5 py-0.5 rounded-md">
                       NEW
                     </span>
                   </div>
@@ -202,18 +202,18 @@ export default function DashboardView() {
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#FF5C77] group-hover:translate-x-1 transition-transform duration-150" />
+              <ArrowRight className="w-4 h-4 text-coral group-hover:translate-x-1 transition-transform duration-150" />
             </div>
           </Link>
 
           <Link href="/fortune/weekly" className="block group">
             <div className="rounded-2xl bg-white border border-[#FFD9E0] p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-[#FFF6F1] border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-2xs">
+                <div className="w-11 h-11 rounded-xl bg-cream border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-2xs">
                   ✨
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#2B2430] group-hover:text-[#6A2C70] transition-colors duration-150">
+                  <h3 className="text-sm font-extrabold text-ink group-hover:text-[#6A2C70] transition-colors duration-150">
                     이번 주 종합 운세
                   </h3>
                   <p className="text-xs text-[#8A8291] font-medium mt-0.5">
@@ -231,17 +231,17 @@ export default function DashboardView() {
           <div className="mt-4">
             <div className="flex items-center justify-between rounded-2xl bg-white border border-[#FF8AA1]/30 p-4 shadow-2xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#FFF6F1] flex items-center justify-center text-[#FF5C77] flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-coral flex-shrink-0">
                   <Bell className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-[#2B2430]">운세 & 궁합 알림 받기</p>
+                  <p className="text-xs sm:text-sm font-bold text-ink">운세 & 궁합 알림 받기</p>
                   <p className="text-[11px] text-gray-500">새로운 운세 소식을 실시간 푸시로 받아보세요 💘</p>
                 </div>
               </div>
               <button
                 onClick={handleEnableNotif}
-                className="bg-[#FF5C77] text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-[0.97] transition-transform duration-150 flex-shrink-0"
+                className="bg-coral text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-[0.97] transition-transform duration-150 flex-shrink-0"
               >
                 알림 켜기
               </button>
@@ -270,10 +270,10 @@ export default function DashboardView() {
                 <Link
                   key={item.id}
                   href={`/compat/${item.shareToken}`}
-                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#FFF6F1]/60 border border-[#FFD9E0]/40 hover:bg-[#FFF6F1] hover:border-coral/40 transition-all duration-150 active:scale-[0.97] group"
+                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-cream/60 border border-[#FFD9E0]/40 hover:bg-cream hover:border-coral/40 transition-all duration-150 active:scale-[0.97] group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#FF5C77] flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
+                    <div className="w-10 h-10 rounded-2xl bg-coral flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
                       {item.score}
                     </div>
                     <div>
@@ -302,7 +302,7 @@ export default function DashboardView() {
         <div className="mt-6">
           <Link
             href="/guide"
-            className="flex items-center justify-between rounded-2xl bg-white border border-[#2B2430]/8 px-5 py-4 shadow-2xs hover:border-coral/40 hover:bg-coral/[0.03] transition-colors duration-150 active:scale-[0.97] group"
+            className="flex items-center justify-between rounded-2xl bg-white border border-ink/8 px-5 py-4 shadow-2xs hover:border-coral/40 hover:bg-coral/[0.03] transition-colors duration-150 active:scale-[0.97] group"
           >
             <span className="flex items-center gap-3">
               <BookOpen className="w-4 h-4 text-coral" />

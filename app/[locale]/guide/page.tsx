@@ -5,7 +5,6 @@ import { Link } from "@/i18n/routing";
 import {
   Calendar,
   Heart,
-  Share2,
   ArrowRight,
   ArrowLeft,
   Lightbulb,
@@ -295,13 +294,13 @@ export default function GuidePage() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
             <Link href="/" className="block">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-[#2B2430]/10 bg-white text-gray-600 hover:text-ink hover:border-coral/40 transition-all duration-150 text-sm font-semibold group active:scale-[0.97]">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-2xl border border-ink/10 bg-white text-gray-600 hover:text-ink hover:border-coral/40 transition-all duration-150 text-sm font-semibold group active:scale-[0.97]">
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-150" />
                 {t("btn_back")}
               </button>
             </Link>
             <Link href="/compat/new" className="block">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white bg-[#FF5C77] hover:bg-[#ff4766] font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] active:scale-[0.97] transition-all duration-150 group">
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-white bg-coral hover:bg-[#ff4766] font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] active:scale-[0.97] transition-all duration-150 group">
                 <Heart className="w-5 h-5 fill-white" />
                 <span>{t("btn_start")}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-150" />

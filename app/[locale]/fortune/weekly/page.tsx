@@ -38,10 +38,10 @@ export default async function WeeklyFortunePage({
   }
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center">
       <header className="w-full max-w-md flex items-center justify-between mb-6">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
@@ -51,7 +51,7 @@ export default async function WeeklyFortunePage({
       </header>
 
       <div className="w-full max-w-md text-center mb-6">
-        <h1 className="text-2xl font-black text-[#2B2430] tracking-tight">
+        <h1 className="text-2xl font-black text-ink tracking-tight">
           {compatId ? "우리 커플의 이번 주 운세" : "나의 이번 주 종합 운세"}
         </h1>
         <p className="text-xs font-semibold text-[#8A8291] mt-1.5">

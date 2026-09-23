@@ -4,7 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import OnboardingClient from "./OnboardingClient";
-import { getTranslations } from "next-intl/server";
 
 export default async function OnboardingPage({ params }: { params: { locale: string } }) {
   const { locale } = await params;
@@ -19,10 +18,8 @@ export default async function OnboardingPage({ params }: { params: { locale: str
     where: { userId: session.user.id }
   });
 
-  const t = await getTranslations({ locale, namespace: "Onboarding" });
-
   return (
-    <main className="min-h-screen bg-[#FFF6F1] flex flex-col items-center py-10 px-4">
+    <main className="min-h-screen bg-cream flex flex-col items-center py-10 px-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-sm border border-[#FFD9E0]/50">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-black text-[#6A2C70] mb-2">내 사주 프로필 등록</h1>

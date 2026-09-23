@@ -37,7 +37,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
   const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
 
   // Portal target is only available on the client.
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   // Lock background scroll while the modal is open.
   useEffect(() => {
@@ -62,8 +64,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
     setMessage(null);
     try {
       await signIn("google", { callbackUrl: destination });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t("error_general");
+      setMessage({ type: "error", text: msg || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -73,8 +76,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
     setMessage(null);
     try {
       await signIn("kakao", { callbackUrl: destination });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t("error_general");
+      setMessage({ type: "error", text: msg || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -84,8 +88,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
     setMessage(null);
     try {
       await signIn("naver", { callbackUrl: destination });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t("error_general");
+      setMessage({ type: "error", text: msg || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -137,8 +142,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
         onSuccess();
         window.location.href = destination;
       }
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || t("error_general") });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t("error_general");
+      setMessage({ type: "error", text: msg || t("error_general") });
       setIsLoading(false);
     }
   };
@@ -155,7 +161,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-[#2B2430]/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-ink/50 backdrop-blur-sm"
         />
 
         {/* Modal Container */}
@@ -164,7 +170,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white border border-[#2B2430]/10 rounded-3xl p-6 sm:p-10 shadow-[0_20px_60px_rgba(106,44,112,0.25)]"
+          className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white border border-ink/10 rounded-3xl p-6 sm:p-10 shadow-[0_20px_60px_rgba(106,44,112,0.25)]"
         >
           {/* Decorative gradients (soft coral blush) */}
           <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#FF8AA1]/20 via-transparent to-transparent blur-[80px] pointer-events-none" />
@@ -174,7 +180,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           <button
             onClick={onClose}
             aria-label="Close login dialog"
-            className="absolute top-4 right-4 p-2 rounded-full bg-[#FFF6F1] border border-[#2B2430]/10 text-[#8A8291] hover:text-[#2B2430] hover:bg-[#FFF0EA] transition-colors z-20"
+            className="absolute top-4 right-4 p-2 rounded-full bg-cream border border-ink/10 text-[#8A8291] hover:text-ink hover:bg-[#FFF0EA] transition-colors z-20"
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -182,9 +188,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           <div className="relative z-10">
             <div className="text-center mb-6 sm:mb-8">
               <div className="flex items-center justify-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-[#FF5C77]" />
+                <Sparkles className="w-5 h-5 text-coral" />
               </div>
-              <h2 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-[#2B2430]">
+              <h2 className="font-sans text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-ink">
                 {t("modal_title")}
               </h2>
             </div>
@@ -196,16 +202,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-50 rounded-3xl bg-white/90 backdrop-blur-md flex flex-col items-center justify-center border border-[#FF5C77]/20"
+                  className="absolute inset-0 z-50 rounded-3xl bg-white/90 backdrop-blur-md flex flex-col items-center justify-center border border-coral/20"
                 >
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                     className="mb-4 relative"
                   >
-                    <Loader2 className="w-10 h-10 text-[#FF5C77]" />
+                    <Loader2 className="w-10 h-10 text-coral" />
                   </motion.div>
-                  <p className="font-sans text-sm text-[#FF5C77]/80 animate-pulse">{t("loading")}</p>
+                  <p className="font-sans text-sm text-coral/80 animate-pulse">{t("loading")}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -261,7 +267,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                 onClick={handleGoogleLogin}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-[#2B2430]/15 transition-colors bg-white hover:bg-[#FFF6F1]"
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border border-ink/15 transition-colors bg-white hover:bg-cream"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-6 h-6">
                   <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -269,7 +275,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                   <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
                   <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                 </svg>
-                <span className="font-sans font-medium text-[#2B2430] tracking-wide">{t("btn_google")}</span>
+                <span className="font-sans font-medium text-ink tracking-wide">{t("btn_google")}</span>
               </motion.button>
 
               {inApp && (
@@ -283,9 +289,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
 
             {/* Divider */}
             <div className="flex items-center gap-4 my-6">
-              <div className="h-px flex-1 bg-[#2B2430]/10" />
+              <div className="h-px flex-1 bg-ink/10" />
               <span className="text-xs text-[#8A8291] font-sans uppercase tracking-widest">{t("or")}</span>
-              <div className="h-px flex-1 bg-[#2B2430]/10" />
+              <div className="h-px flex-1 bg-ink/10" />
             </div>
 
             {/* Email / Password Form */}
@@ -296,7 +302,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <label className="text-xs sm:text-sm font-sans font-medium text-[#2B2430] tracking-wide flex items-center gap-2 mb-2">
+                  <label className="text-xs sm:text-sm font-sans font-medium text-ink tracking-wide flex items-center gap-2 mb-2">
                     <User className="w-3.5 h-3.5" />
                     {locale === 'ko' ? '이름 (선택)' : 'Name (optional)'}
                   </label>
@@ -305,13 +311,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={locale === 'ko' ? '예: 홍길동' : 'e.g. John'}
-                    className="w-full bg-[#FFF6F1] border border-[#2B2430]/12 rounded-xl px-4 py-3 text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77]/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
+                    className="w-full bg-cream border border-ink/12 rounded-xl px-4 py-3 text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
                   />
                 </motion.div>
               )}
 
               <div>
-                <label className="text-xs sm:text-sm font-sans font-medium text-[#2B2430] tracking-wide flex items-center gap-2 mb-2">
+                <label className="text-xs sm:text-sm font-sans font-medium text-ink tracking-wide flex items-center gap-2 mb-2">
                   <Mail className="w-3.5 h-3.5" />
                   {t("label_email")}
                 </label>
@@ -321,12 +327,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t("placeholder_email")}
                   required
-                  className="w-full bg-[#FFF6F1] border border-[#2B2430]/12 rounded-xl px-4 py-3 text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77]/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
+                  className="w-full bg-cream border border-ink/12 rounded-xl px-4 py-3 text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
                 />
               </div>
 
               <div>
-                <label className="text-xs sm:text-sm font-sans font-medium text-[#2B2430] tracking-wide flex items-center gap-2 mb-2">
+                <label className="text-xs sm:text-sm font-sans font-medium text-ink tracking-wide flex items-center gap-2 mb-2">
                   <Lock className="w-3.5 h-3.5" />
                   {t("label_password")}
                 </label>
@@ -337,7 +343,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                   placeholder={t("placeholder_password")}
                   required
                   minLength={6}
-                  className="w-full bg-[#FFF6F1] border border-[#2B2430]/12 rounded-xl px-4 py-3 text-[#2B2430] focus:outline-none focus:ring-2 focus:ring-[#FF5C77]/40 focus:border-[#FF5C77]/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
+                  className="w-full bg-cream border border-ink/12 rounded-xl px-4 py-3 text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 focus:border-coral/50 transition-all font-sans text-sm placeholder:text-[#B8B2BC]"
                 />
               </div>
 
@@ -345,7 +351,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
                 type="submit"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF8AA1] to-[#FF5C77] hover:from-[#FF7E9B] hover:to-[#FF4A69] text-white font-sans font-bold text-sm tracking-wide transition-all shadow-[0_8px_20px_rgba(255,92,119,0.3)]"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF8AA1] to-coral hover:from-[#FF7E9B] hover:to-[#FF4A69] text-white font-sans font-bold text-sm tracking-wide transition-all shadow-[0_8px_20px_rgba(255,92,119,0.3)]"
               >
                 {isSignUp ? t("btn_signup") : t("btn_signin")}
               </motion.button>
@@ -354,7 +360,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
             {/* Toggle Sign In / Sign Up */}
             <button
               onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-              className="w-full mt-4 text-center text-sm text-[#8A8291] hover:text-[#FF5C77] transition-colors font-sans"
+              className="w-full mt-4 text-center text-sm text-[#8A8291] hover:text-coral transition-colors font-sans"
             >
               {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
             </button>

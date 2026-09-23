@@ -2,9 +2,12 @@ import { Metadata } from "next";
 import Link from "next/link";
 import FortuneNewClient from "@/components/FortuneNewClient";
 import { canonicalUrlFor } from "@/lib/seo";
+import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
+import { getProduct, isViewableFor } from "@/lib/catalog";
+import { canPreview } from "@/lib/preview";
 
 const TITLE = "내 사주 정보 입력 — 콩닥";
 const DESCRIPTION = "사주 정보를 입력하고 정확한 분석 결과를 확인하세요.";
@@ -34,7 +37,13 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
   const { locale } = await params;
   const { productId } = await searchParams;
 
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions).catch(() => null);
+  const preview = canPreview(session?.user?.email);
+  const product = productId ? getProduct(productId) : null;
+  if (product && !isViewableFor(product, preview)) {
+    notFound();
+  }
+
   let profile = null;
   if (session?.user?.id) {
     profile = await prisma.userSajuProfile.findUnique({
@@ -43,22 +52,27 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
   }
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center">
+      {product?.isHidden && preview && (
+        <div className="w-full max-w-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
+          🔒 미리보기 — 미공개 상품
+        </div>
+      )}
       {/* Top Header */}
       <header className="w-full max-w-md flex items-center justify-between mb-6">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coral-light to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">kongdak</span>
+          <span className="font-extrabold text-lg tracking-tight text-plum">
+            콩닥 <span className="text-xs font-semibold text-muted">kongdak</span>
           </span>
         </Link>
       </header>
 
       {/* Hero Title */}
       <div className="w-full max-w-md text-center mb-6">
-        <h1 className="text-2xl font-black text-[#2B2430] tracking-tight">
+        <h1 className="text-2xl font-black text-ink tracking-tight">
           내 사주 정보 입력
         </h1>
         <p className="text-xs font-semibold text-[#8A8291] mt-1.5">

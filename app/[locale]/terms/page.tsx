@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, Shield } from "lucide-react";
 
 const sectionClass =
-  "bg-white border border-[#2B2430]/8 rounded-3xl p-6 sm:p-8 shadow-sm";
+  "bg-white border border-ink/8 rounded-3xl p-6 sm:p-8 shadow-sm";
 
 export default function TermsPage() {
   const t = useTranslations("Legal");
@@ -47,7 +47,7 @@ export default function TermsPage() {
           </div>
 
           {/* 제3조 (서비스의 성격 — 중요) */}
-          <div className={`${sectionClass} border-[#FF5C77]/30 bg-[#FF5C77]/[0.03]`}>
+          <div className={`${sectionClass} border-coral/30 bg-coral/[0.03]`}>
             <h2 className="font-serif text-xl text-coral mb-4">{t("terms_s3_title")}</h2>
             <p className="font-sans text-ink leading-relaxed text-sm font-medium whitespace-pre-line">
               {t("terms_s3_body")}
@@ -103,7 +103,7 @@ export default function TermsPage() {
           </div>
 
           {/* 부칙 및 문의 */}
-          <div className="bg-white border border-[#2B2430]/8 rounded-2xl p-6 text-center space-y-2 shadow-sm">
+          <div className="bg-white border border-ink/8 rounded-2xl p-6 text-center space-y-2 shadow-sm">
             <p className="font-sans text-xs text-gray-500">{t("terms_addendum")}</p>
             <p className="font-sans text-xs text-gray-500">
               문의: <a href="mailto:help@kongdak.kr" className="text-coral hover:underline">help@kongdak.kr</a>

@@ -13,7 +13,7 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
   return (
     <div className="relative min-h-[85vh] w-full flex flex-col lg:flex-row items-center justify-center px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto py-10 lg:py-14 gap-10 lg:gap-16 pt-20 sm:pt-24">
       {/* Background Ambient Glow (Restrained & Soft) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#FF5C77]/10 via-transparent to-transparent rounded-full blur-[80px] pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-coral/10 via-transparent to-transparent rounded-full blur-[80px] pointer-events-none -z-10" />
 
       {/* Left Column: Text & CTA */}
       <div className="flex-1 flex flex-col items-center lg:items-start w-full z-10 text-center lg:text-left">
@@ -25,10 +25,10 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
         </div>
 
         {/* Main Headline (Clean 1-point coral accent) */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-[#2B2430] leading-[1.15] mb-5">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-ink leading-[1.15] mb-5">
           우리,{" "}
           <br className="hidden lg:block" />
-          <span className="text-[#FF5C77]">
+          <span className="text-coral">
             얼마나 잘 맞을까?
           </span>
         </h1>
@@ -44,7 +44,7 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
         <div className="w-full max-w-xs sm:max-w-sm flex flex-col items-center lg:items-start gap-2.5">
           <Link
             href={`/${locale}/compat/new`}
-            className="w-full bg-[#FF5C77] hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-7 rounded-2xl font-bold text-base sm:text-lg shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 group"
+            className="w-full bg-coral hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-7 rounded-2xl font-bold text-base sm:text-lg shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 group"
           >
             <Heart className="w-5 h-5 fill-white text-white group-hover:scale-105 transition-transform duration-150" />
             <span>우리 궁합 무료로 보기</span>
@@ -56,7 +56,7 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
 
           <Link
             href={`/${locale}/fortune/annual`}
-            className="w-full bg-white hover:bg-[#FFF6F1] border border-[#FF8AA1]/70 active:scale-[0.97] text-[#FF5C77] py-3 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-2xs transition-all duration-150 flex items-center justify-center gap-2 group mt-1"
+            className="w-full bg-white hover:bg-cream border border-[#FF8AA1]/70 active:scale-[0.97] text-coral py-3 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-2xs transition-all duration-150 flex items-center justify-center gap-2 group mt-1"
           >
             <span>2026 나의 총운 미리보기</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-150" />
@@ -72,16 +72,16 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
         </div>
 
         {/* Clean, Refined Preview Card */}
-        <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 text-[#2B2430] shadow-[0_8px_32px_rgba(43,36,48,0.08)] border border-[#FFD9E0]/80 relative overflow-hidden">
+        <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl p-6 sm:p-7 text-ink shadow-[0_8px_32px_rgba(43,36,48,0.08)] border border-[#FFD9E0]/80 relative overflow-hidden">
           <div className="flex items-center justify-between text-[#6A5E72] text-xs sm:text-sm font-bold mb-4">
             <span>나 · 상대방</span>
-            <span className="bg-[#FFF6F1] text-[#FF5C77] border border-[#FFD9E0] px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+            <span className="bg-cream text-coral border border-[#FFD9E0] px-2.5 py-0.5 rounded-full text-[11px] font-bold">
               콩닥 궁합 리포트
             </span>
           </div>
 
           <div className="flex items-baseline justify-center gap-1 my-3">
-            <span className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight text-[#FF5C77]">
+            <span className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight text-coral">
               91
             </span>
             <span className="text-2xl sm:text-3xl font-bold text-[#FFC24B]">점</span>
@@ -91,7 +91,7 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
             {["천생연분", "기운 찰떡궁합", "떨어질 수 없는 케미"].map((tag, idx) => (
               <span
                 key={idx}
-                className="bg-[#FFF6F1] text-[#6A2C70] px-3 py-1 rounded-full text-xs font-bold border border-[#FFD9E0] shadow-2xs"
+                className="bg-cream text-[#6A2C70] px-3 py-1 rounded-full text-xs font-bold border border-[#FFD9E0] shadow-2xs"
               >
                 {tag}
               </span>

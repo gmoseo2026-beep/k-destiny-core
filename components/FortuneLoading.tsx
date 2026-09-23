@@ -55,7 +55,7 @@ export default function FortuneLoading({
       {/* 1. 마스코트 & 단계별 문구 */}
       <div className="flex flex-col items-center text-center px-4">
         <KongdakMascot size={76} animate="bounce" />
-        <h2 className="mt-4 text-base sm:text-lg font-black text-[#2B2430] min-h-[28px] flex items-center justify-center transition-all duration-300">
+        <h2 className="mt-4 text-base sm:text-lg font-black text-ink min-h-[28px] flex items-center justify-center transition-all duration-300">
           {steps[stepIndex] || "분석을 진행하는 중…"}
         </h2>
         <p className="text-xs text-[#8A8291] mt-1 font-medium">
@@ -64,15 +64,15 @@ export default function FortuneLoading({
 
         {/* 2. 진행 바 */}
         <div className="w-64 sm:w-80 mt-4">
-          <div className="w-full bg-[#FFF6F1] border border-[#FFD9E0] h-2.5 rounded-full overflow-hidden p-0.5 shadow-inner">
+          <div className="w-full bg-cream border border-[#FFD9E0] h-2.5 rounded-full overflow-hidden p-0.5 shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] rounded-full transition-all duration-300 ease-out"
+              className="h-full bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] rounded-full transition-all duration-300 ease-out"
               style={{ width: `${Math.round(progress)}%` }}
             />
           </div>
           <div className="flex justify-between items-center text-[10px] text-[#8A8291] mt-1.5 font-bold px-0.5">
             <span>운세 리포트 분석 중</span>
-            <span className="text-[#FF5C77] font-extrabold">{Math.round(progress)}%</span>
+            <span className="text-coral font-extrabold">{Math.round(progress)}%</span>
           </div>
         </div>
       </div>
@@ -82,7 +82,7 @@ export default function FortuneLoading({
         {skeletonVariant === "annual" && (
           <>
             {/* 총운 히어로 스켈레톤 */}
-            <div className="relative bg-gradient-to-br from-[#FFD9E0]/40 via-[#FFF6F1] to-[#EAD4ED]/30 rounded-3xl p-6 sm:p-8 border border-[#FFD9E0]/60 flex flex-col items-center gap-3 shadow-xs">
+            <div className="relative bg-gradient-to-br from-[#FFD9E0]/40 via-cream to-[#EAD4ED]/30 rounded-3xl p-6 sm:p-8 border border-[#FFD9E0]/60 flex flex-col items-center gap-3 shadow-xs">
               <div className="w-36 h-5 bg-gray-200/80 rounded-full" />
               <div className="w-52 h-7 bg-gray-200/90 rounded-xl mt-1" />
               <div className="w-28 h-16 bg-gray-200 rounded-2xl my-2" />
@@ -111,7 +111,7 @@ export default function FortuneLoading({
         {skeletonVariant === "deep-report" && (
           <>
             {/* 심층 리포트 헤더 스켈레톤 */}
-            <div className="bg-gradient-to-br from-[#FFF6F1] to-[#FFD9E0]/40 rounded-2xl p-5 sm:p-6 border border-[#FF8AA1]/40 flex flex-col gap-3 shadow-xs">
+            <div className="bg-gradient-to-br from-cream to-[#FFD9E0]/40 rounded-2xl p-5 sm:p-6 border border-[#FF8AA1]/40 flex flex-col gap-3 shadow-xs">
               <div className="w-24 h-4 bg-gray-200 rounded-full" />
               <div className="w-48 h-6 bg-gray-300 rounded-lg" />
               <div className="w-full h-12 bg-white/70 rounded-xl mt-1" />
@@ -138,7 +138,7 @@ export default function FortuneLoading({
         {skeletonVariant === "weekly" && (
           <>
             {/* 주간 총평 스켈레톤 */}
-            <div className="bg-gradient-to-br from-[#FF8AA1]/60 to-[#FF5C77]/60 p-6 rounded-3xl shadow-xs text-white flex flex-col gap-3">
+            <div className="bg-gradient-to-br from-[#FF8AA1]/60 to-coral/60 p-6 rounded-3xl shadow-xs text-white flex flex-col gap-3">
               <div className="w-32 h-6 bg-white/50 rounded-lg" />
               <div className="w-full h-12 bg-white/40 rounded-xl" />
             </div>

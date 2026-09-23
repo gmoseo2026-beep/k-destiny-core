@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, Eye } from "lucide-react";
 
 const sectionClass =
-  "bg-white border border-[#2B2430]/8 rounded-3xl p-6 sm:p-8 shadow-sm";
+  "bg-white border border-ink/8 rounded-3xl p-6 sm:p-8 shadow-sm";
 
 export default function PrivacyPage() {
   const t = useTranslations("Legal");
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
 
         <div className="space-y-6">
           {/* 머리말 */}
-          <div className="bg-white border border-[#2B2430]/8 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-ink/8 rounded-2xl p-5 shadow-sm">
             <p className="font-sans text-ink text-sm leading-relaxed">{t("privacy_intro")}</p>
           </div>
 
@@ -107,18 +107,18 @@ export default function PrivacyPage() {
             <p className="font-sans text-ink leading-relaxed text-sm mb-4">{t("privacy_s5_desc")}</p>
             
             {/* 위탁 및 국외이전 6개사 표 */}
-            <div className="overflow-x-auto rounded-2xl border border-[#2B2430]/8 mb-4">
+            <div className="overflow-x-auto rounded-2xl border border-ink/8 mb-4">
               <table className="w-full text-left font-sans text-xs sm:text-sm">
-                <thead className="bg-[#FFF6F1] text-plum border-b border-[#2B2430]/8">
+                <thead className="bg-cream text-plum border-b border-ink/8">
                   <tr>
                     <th className="py-3 px-4 font-bold">수탁자</th>
                     <th className="py-3 px-4 font-bold">위탁 업무</th>
                     <th className="py-3 px-4 font-bold">소재 국가</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#2B2430]/8 text-ink">
+                <tbody className="divide-y divide-ink/10 text-ink">
                   {overseasTransfers.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-[#FFF6F1]/50 transition-colors">
+                    <tr key={idx} className="hover:bg-cream/50 transition-colors">
                       <td className="py-3 px-4 font-medium text-ink">{row.trustee}</td>
                       <td className="py-3 px-4">{row.task}</td>
                       <td className="py-3 px-4 text-gray-500">{row.country}</td>

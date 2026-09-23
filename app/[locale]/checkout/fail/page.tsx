@@ -15,7 +15,7 @@ function CheckoutFailContent({ locale }: { locale: string }) {
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
       <KongdakMascot size={100} animate="pulse" expression="hyunta" />
       
-      <h1 className="text-2xl font-black text-[#2B2430] mt-6 mb-2">
+      <h1 className="text-2xl font-black text-ink mt-6 mb-2">
         결제 실패
       </h1>
       <p className="text-[#8A8291] font-medium max-w-md break-keep mb-8">
@@ -30,7 +30,7 @@ function CheckoutFailContent({ locale }: { locale: string }) {
             router.replace(`/${locale}/`);
           }
         }}
-        className="bg-[#FF5C77] text-white px-8 py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition-all"
+        className="bg-coral text-white px-8 py-3.5 rounded-xl font-bold shadow-md active:scale-95 transition-all"
       >
         돌아가기
       </button>
