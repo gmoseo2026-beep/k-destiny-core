@@ -106,6 +106,8 @@ export function PremiumNewClient({
   const [selectedTags, setSelectedTags] = useState<NamingTag[]>(["지혜", "밝음"]);
   const [avoidInput, setAvoidInput] = useState("");
   const [avoidSyllables, setAvoidSyllables] = useState<string[]>([]);
+  // 만 14세 미만 아동 정보 → 법정대리인 동의(필수). 동의 전에는 미리보기·결제 버튼을 막는다.
+  const [guardianConsent, setGuardianConsent] = useState(false);
 
   // Surnames table lookup
   const availableHanjas = useMemo(() => {
@@ -198,6 +200,7 @@ export function PremiumNewClient({
         if (Array.isArray(p.avoidSyllables)) {
           setAvoidSyllables(p.avoidSyllables as string[]);
         }
+        if (p.guardianConsent === true) setGuardianConsent(true);
       });
     } else if (isDates && p.purpose) {
       queueMicrotask(() => {
@@ -226,6 +229,7 @@ export function PremiumNewClient({
       return formatBirthInput(personValues);
     }
     if (isNaming) {
+      if (!guardianConsent) return null;
       if (!surname || !surnameHanja || !namingDobYear || !namingDobMonth || !namingDobDay) return null;
       const mStr = namingDobMonth.padStart(2, "0");
       const dStr = namingDobDay.padStart(2, "0");
@@ -254,6 +258,7 @@ export function PremiumNewClient({
         dollim,
         tags: selectedTags,
         avoidSyllables,
+        guardianConsent: true,
       };
     }
     if (isDates) {
@@ -325,6 +330,8 @@ export function PremiumNewClient({
   // ─────────────────────────────────────────────────────────────
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const consentMissing = isNaming && !guardianConsent;
 
   const handleOpenCheckout = () => {
     if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
@@ -675,6 +682,20 @@ export function PremiumNewClient({
                 </div>
               )}
             </div>
+
+            {/* 법정대리인 동의 (필수) */}
+            <label className="flex items-start gap-2.5 cursor-pointer bg-[#14101A] border border-[#3A2E45] rounded-xl p-3 text-[11px] text-[#B9AEC4] leading-relaxed select-none">
+              <input
+                type="checkbox"
+                required
+                checked={guardianConsent}
+                onChange={(e) => setGuardianConsent(e.target.checked)}
+                className="mt-0.5 rounded accent-[#D9B26A]"
+              />
+              <span>
+                <strong className="text-[#F3E3BF] font-semibold">[필수]</strong> 본인은 아이의 법정대리인(부모 등)으로서, 이름 추천을 위한 아이의 정보(성·성별·생년월일·출생시간) 입력과 처리에 동의합니다.
+              </span>
+            </label>
           </div>
         )}
 
@@ -867,8 +888,8 @@ export function PremiumNewClient({
           <button
             type="button"
             onClick={handleComputeTeaser}
-            disabled={isLoadingTeaser}
-            className="w-full py-3.5 bg-gradient-to-r from-[#D9B26A]/20 via-[#D9B26A]/30 to-[#D9B26A]/20 hover:from-[#D9B26A]/30 hover:to-[#D9B26A]/30 border border-[#D9B26A]/50 rounded-2xl font-bold text-sm text-[#F3E3BF] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            disabled={isLoadingTeaser || consentMissing}
+            className="w-full py-3.5 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#D9B26A]/20 via-[#D9B26A]/30 to-[#D9B26A]/20 hover:from-[#D9B26A]/30 hover:to-[#D9B26A]/30 border border-[#D9B26A]/50 rounded-2xl font-bold text-sm text-[#F3E3BF] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4 text-[#D9B26A]" />
             <span>{isLoadingTeaser ? "사주 기운 분석 중..." : "기운 분석 및 무료 맛보기 확인"}</span>
@@ -983,9 +1004,9 @@ export function PremiumNewClient({
         <button
           type="button"
           onClick={handleOpenCheckout}
-          disabled={isDates && teaserDates?.insufficient}
+          disabled={(isDates && teaserDates?.insufficient) || consentMissing}
           className={`w-full py-4 rounded-2xl font-bold text-base shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
-            isDates && teaserDates?.insufficient
+            (isDates && teaserDates?.insufficient) || consentMissing
               ? "bg-[#3A2E45] text-[#B9AEC4] cursor-not-allowed opacity-50"
               : "bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] text-[#14101A] hover:opacity-95"
           }`}

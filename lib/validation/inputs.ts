@@ -19,6 +19,8 @@ export interface ChildNamingInput {
   dollim: { syllable: string; position: 1 | 2; hanja: string | null } | null;
   tags: NamingTag[];
   avoidSyllables: string[];
+  /** 만 14세 미만 아동 정보 — 법정대리인(부모 등)의 입력·처리 동의. true 가 아니면 입력 거부 */
+  guardianConsent: true;
 }
 
 export const PURPOSES = ["WEDDING", "MOVING", "OPENING", "CONTRACT"] as const;
@@ -77,6 +79,7 @@ export type SurnameTable = Record<string, string[]>;
 export function parseChildNamingInput(raw: unknown, surnames: SurnameTable, now?: Date): ChildNamingInput | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
+  if (r.guardianConsent !== true) return null; // 법정대리인 동의 필수
   if (typeof r.surnameHangul !== "string" || typeof r.surnameHanja !== "string") return null;
   
   const hTable = surnames[r.surnameHangul];
@@ -119,6 +122,7 @@ export function parseChildNamingInput(raw: unknown, surnames: SurnameTable, now?
     dollim,
     tags,
     avoidSyllables: avoid,
+    guardianConsent: true,
   };
 }
 

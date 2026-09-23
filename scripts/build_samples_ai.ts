@@ -59,7 +59,7 @@ const namingInput: ChildNamingInput = {
   time: "14:30",
   dollim: null,
   tags: ["지혜", "밝음"],
-  avoidSyllables: [],
+  avoidSyllables: [], guardianConsent: true,
 };
 const rNaming = await timed("premium_naming", () => generateNamingReport(namingInput));
 writeSample("premium_naming.json", rNaming);

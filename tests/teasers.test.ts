@@ -36,7 +36,7 @@ describe("premium teasers 화이트리스트 검증", () => {
       time: "14:30",
       dollim: null,
       tags: ["지혜", "밝음"],
-      avoidSyllables: [],
+      avoidSyllables: [], guardianConsent: true,
     };
 
     const teaser = buildNamingTeaser(input);

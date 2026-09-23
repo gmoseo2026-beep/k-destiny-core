@@ -605,7 +605,7 @@ describe("POST /api/reports/generate route contract tests", () => {
         kind: "TEASER",
         input: {
           surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null,
-          dollim: null, tags: [], avoidSyllables: [],
+          dollim: null, tags: [], avoidSyllables: [], guardianConsent: true,
         },
       })
     );
@@ -625,6 +625,25 @@ describe("POST /api/reports/generate route contract tests", () => {
     );
     expect(dates.status).toBe(200);
     expect((await dates.json()).kind).toBe("TEASER");
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // 16. 작명 입력은 법정대리인 동의가 없으면 400 (만 14세 미만 아동 정보)
+  it("case 16: premium naming TEASER without guardianConsent → 400", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    const res = await POST(
+      req({
+        catalogId: "premium_naming",
+        kind: "TEASER",
+        input: {
+          surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null,
+          dollim: null, tags: [], avoidSyllables: [],
+        },
+      })
+    );
+    expect(res.status).toBe(400);
     expect(gen.generateJson).toHaveBeenCalledTimes(0);
   });
 });

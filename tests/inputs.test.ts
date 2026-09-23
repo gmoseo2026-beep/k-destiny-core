@@ -4,6 +4,7 @@ import {
   isValidTimeString,
   parsePersonInput,
   parseDateSelectionInput,
+  parseChildNamingInput,
 } from "@/lib/validation/inputs";
 
 describe("Input Validation", () => {
@@ -143,5 +144,24 @@ describe("Input Validation", () => {
       gender: "F",
     });
     expect(parseBirthInput(formatted3)).toEqual(v3);
+  });
+});
+
+describe("작명 입력 — 법정대리인 동의(만 14세 미만 아동 정보)", () => {
+  const surnames = { 김: ["金"] };
+  const raw = {
+    surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null,
+    dollim: null, tags: [], avoidSyllables: [],
+  };
+  const now = new Date("2026-09-23T00:00:00Z");
+
+  it("guardianConsent 가 true 가 아니면 null", () => {
+    expect(parseChildNamingInput(raw, surnames, now)).toBeNull();
+    expect(parseChildNamingInput({ ...raw, guardianConsent: false }, surnames, now)).toBeNull();
+    expect(parseChildNamingInput({ ...raw, guardianConsent: "true" }, surnames, now)).toBeNull();
+  });
+
+  it("guardianConsent: true 면 통과하고 결과에 동의가 남는다", () => {
+    expect(parseChildNamingInput({ ...raw, guardianConsent: true }, surnames, now)?.guardianConsent).toBe(true);
   });
 });

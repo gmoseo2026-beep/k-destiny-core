@@ -95,7 +95,7 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     time: "14:30",
     dollim: null,
     tags: ["지혜", "밝음"],
-    avoidSyllables: [],
+    avoidSyllables: [], guardianConsent: true,
   };
 
   it("결정론: 두 번 호출한 결과가 동일함", () => {
@@ -153,9 +153,9 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
 
     it("실데이터 buildNamingEngine 남아(M) 3종 실행 시 모든 한자가 genders에 M 포함", () => {
       const maleCases: ChildNamingInput[] = [
-        { surnameHangul: "김", surnameHanja: "金", gender: "M", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "밝음"], avoidSyllables: [] },
-        { surnameHangul: "이", surnameHanja: "李", gender: "M", dob: "2025-01-10", time: "09:15", dollim: null, tags: ["강인함", "지혜"], avoidSyllables: [] },
-        { surnameHangul: "박", surnameHanja: "朴", gender: "M", dob: "2026-08-20", time: "18:00", dollim: null, tags: ["귀함", "밝음"], avoidSyllables: [] },
+        { surnameHangul: "김", surnameHanja: "金", gender: "M", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "밝음"], avoidSyllables: [], guardianConsent: true },
+        { surnameHangul: "이", surnameHanja: "李", gender: "M", dob: "2025-01-10", time: "09:15", dollim: null, tags: ["강인함", "지혜"], avoidSyllables: [], guardianConsent: true },
+        { surnameHangul: "박", surnameHanja: "朴", gender: "M", dob: "2026-08-20", time: "18:00", dollim: null, tags: ["귀함", "밝음"], avoidSyllables: [], guardianConsent: true },
       ];
 
       for (const mc of maleCases) {
@@ -174,9 +174,9 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
 
     it("실데이터 buildNamingEngine 여아(F) 3종 실행 시 모든 한자가 genders에 F 포함", () => {
       const femaleCases: ChildNamingInput[] = [
-        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "따뜻함"], avoidSyllables: [] },
-        { surnameHangul: "최", surnameHanja: "崔", gender: "F", dob: "2025-03-22", time: "11:20", dollim: null, tags: ["따뜻함", "밝음"], avoidSyllables: [] },
-        { surnameHangul: "정", surnameHanja: "鄭", gender: "F", dob: "2026-11-05", time: "08:45", dollim: null, tags: ["자연", "귀함"], avoidSyllables: [] },
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "따뜻함"], avoidSyllables: [], guardianConsent: true },
+        { surnameHangul: "최", surnameHanja: "崔", gender: "F", dob: "2025-03-22", time: "11:20", dollim: null, tags: ["따뜻함", "밝음"], avoidSyllables: [], guardianConsent: true },
+        { surnameHangul: "정", surnameHanja: "鄭", gender: "F", dob: "2026-11-05", time: "08:45", dollim: null, tags: ["자연", "귀함"], avoidSyllables: [], guardianConsent: true },
       ];
 
       for (const fc of femaleCases) {
@@ -214,7 +214,7 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
       ];
       // s=8(金): 원 7+9=16, 형 8+7=15, 이 8+9=17, 정 24 → 모두 길수, 획수 홀짝 혼합
       const r = buildNamingEngine(
-        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true },
         { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: fixtureHanja },
       );
       expect(r.names).toHaveLength(1);
@@ -254,7 +254,7 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     });
 
     it("실데이터로 '서율'(여)·'시율'(남)을 만들면 이름 음은 '율'로 표기된다", () => {
-      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true as const };
       const f = buildNamingEngine({ ...base, gender: "F", dob: "2025-03-01" }, { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] } });
       const m = buildNamingEngine({ ...base, gender: "M", dob: "2025-03-01" }, { givenNames: { M: [{ name: "시율", rank: 1 }], F: [] } });
       for (const r of [f, m]) {
@@ -280,14 +280,14 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
         { char: "律", eum: "률", hun: "법칙", strokes: 9, element: null, genders: ["M", "F"] as ("M" | "F")[], tags: [] },
       ];
       const r = buildNamingEngine(
-        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true },
         { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: nullHanja },
       );
       expect(r.names).toHaveLength(1);
       expect(r.names[0].elements).toEqual([null, null]);
       // 50(기본) + 발음 흐름 + 자연스러움 10(1순위) + 태그 0 — 오행 보완 가감이 없어야 한다
       const withElements = buildNamingEngine(
-        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true },
         { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: nullHanja.map((h) => ({ ...h, element: r.child.weakest[0] })) },
       );
       expect(withElements.names[0].score - r.names[0].score).toBe(24); // 부족 오행 2글자 × 12
@@ -305,7 +305,7 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     });
 
     it("실데이터 하린·서율·지유(여), 도윤·시우·하준(남) 결과 글자는 모두 이름에 쓸 수 있다", () => {
-      const base = { surnameHangul: "김", surnameHanja: "金", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const base = { surnameHangul: "김", surnameHanja: "金", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true as const };
       const cases: [string, "M" | "F"][] = [["하린", "F"], ["서율", "F"], ["지유", "F"], ["도윤", "M"], ["시우", "M"], ["하준", "M"]];
       for (const [name, gender] of cases) {
         const r = buildNamingEngine(
@@ -339,7 +339,7 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     });
 
     it("실데이터 결과(남·여 각 3건)에 부적합 글자가 없다", () => {
-      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true as const };
       const cases: ChildNamingInput[] = [
         { ...base, gender: "M", dob: "2025-03-01" },
         { ...base, gender: "M", dob: "2024-11-20", time: "08:15" },
