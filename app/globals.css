@@ -3,19 +3,44 @@
 :root {
   --background: #FFFFFF;
   --background-alt: #FAFAFA;
-  --foreground: #191919;
-  --coral: #FF3E6C;
+  --foreground: #1A1A1A;
+  --ink: #1A1A1A;
+  --text-2: #4A4550;
+  --caption: #6B6470;
+  --line: #EDE8E6;
+  --surface: #F4F1EF;
+  --surface-soft: #FAF7F6;
+  --coral: #E0245A;
   --coral-light: #FF8AA1;
+  --coral-soft: #FFE8EE;
+  --coral-deep: #B01D48;
   --plum: #6A2C70;
+  --plum-deep: #3A1F33;
   --gold: #FFC24B;
+  --gold-soft: #F2D08F;
   --cream: #FFF6F1;
-  --ink: #191919;
+  --hero-from: #FFE3EA;
+  --hero-to: #FFC7D4;
   
   --cat-fortune: #8B5CF6;
-  --cat-compat: #FF3E6C;
+  --cat-compat: #E0245A;
   --cat-wealth: #F59E0B;
   --cat-reunion: #EF4444;
   --cat-career: #3B82F6;
+
+  /* Category Banner Gradients (white title text contrast >= 3:1) */
+  --cat-fortune-from: #9B7BF7;
+  --cat-fortune-to: #5B34D6;
+  --cat-compat-from: #FF8FA8;
+  --cat-compat-to: #E0245A;
+  --cat-wealth-from: #F7C85A;
+  --cat-wealth-to: #C98A0B;
+  --cat-reunion-from: #FF9A8B;
+  --cat-reunion-to: #C9362F;
+  --cat-career-from: #7FA9FF;
+  --cat-career-to: #2A5FD0;
+  --cat-premium-from: #5B3354;
+  --cat-premium-to: #2A1526;
 
   /* Premium tokens */
   --premium-bg: #14101A;
@@ -36,12 +61,23 @@
   --color-background: var(--background);
   --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-text-2: var(--text-2);
+  --color-caption: var(--caption);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
   --color-coral: var(--coral);
   --color-coral-light: var(--coral-light);
+  --color-coral-soft: var(--coral-soft);
+  --color-coral-deep: var(--coral-deep);
   --color-plum: var(--plum);
+  --color-plum-deep: var(--plum-deep);
   --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --color-cream: var(--cream);
-  --color-ink: var(--ink);
+  --color-hero-from: var(--hero-from);
+  --color-hero-to: var(--hero-to);
 
   --color-cat-fortune: var(--cat-fortune);
   --color-cat-compat: var(--cat-compat);
@@ -90,6 +126,27 @@ html:lang(ja) body {
 @layer utilities {
   .transform-style-3d {
     transform-style: preserve-3d;
+  }
+  .bg-hero-gradient {
+    background: linear-gradient(180deg, var(--hero-from) 0%, var(--hero-to) 100%);
+  }
+  .bg-cat-fortune-gradient {
+    background: linear-gradient(135deg, var(--cat-fortune-from), var(--cat-fortune-to));
+  }
+  .bg-cat-compat-gradient {
+    background: linear-gradient(135deg, var(--cat-compat-from), var(--cat-compat-to));
+  }
+  .bg-cat-wealth-gradient {
+    background: linear-gradient(135deg, var(--cat-wealth-from), var(--cat-wealth-to));
+  }
+  .bg-cat-reunion-gradient {
+    background: linear-gradient(135deg, var(--cat-reunion-from), var(--cat-reunion-to));
+  }
+  .bg-cat-career-gradient {
+    background: linear-gradient(135deg, var(--cat-career-from), var(--cat-career-to));
+  }
+  .bg-cat-premium-gradient {
+    background: linear-gradient(135deg, var(--cat-premium-from), var(--cat-premium-to));
   }
 }
 

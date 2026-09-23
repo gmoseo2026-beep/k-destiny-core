@@ -19,7 +19,7 @@ export default async function OnboardingPage({ params }: { params: { locale: str
   });
 
   return (
-    <main className="min-h-screen bg-cream flex flex-col items-center py-10 px-4">
+    <main className="min-h-screen bg-white flex flex-col items-center py-10 px-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-sm border border-[#FFD9E0]/50">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-black text-[#6A2C70] mb-2">내 사주 프로필 등록</h1>

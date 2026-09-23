@@ -16,7 +16,7 @@ export default async function ReportViewPage({ params }: PageProps) {
   const { locale, reportId } = await params;
 
   return (
-    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
       {/* Top Header */}
       <header className="w-full max-w-md flex items-center justify-between mb-6">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">

@@ -36,7 +36,7 @@ export default async function AnnualFortunePage({
   }
 
   return (
-    <main className="min-h-screen bg-cream text-ink px-4 py-8 sm:py-12 flex flex-col items-center">
+    <main className="min-h-screen bg-white text-ink px-4 py-8 sm:py-12 flex flex-col items-center">
       <header className="w-full max-w-md md:max-w-2xl flex items-center justify-between mb-6">
         <Link
           href={`/${locale}`}

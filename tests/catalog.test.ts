@@ -30,4 +30,22 @@ describe("catalog 불변식", () => {
   it("무료 상품은 판매 불가", () => {
     expect(isSellable(getProduct("free_personality"))).toBe(false);
   });
+  it("T2 필드 불변식 (icon3d, gridLabel, hook, recommendFor 정확히 3개)", () => {
+    const hanjaRegex = /[\u4e00-\u9fff]/;
+    for (const c of CATALOG) {
+      expect(c.icon3d, `${c.id} icon3d`).toMatch(/^\/(icons3d|mascot)\/.+\.webp$/);
+      expect(c.gridLabel, `${c.id} gridLabel`).toBeTruthy();
+      expect(c.gridLabel.length).toBeLessThanOrEqual(10);
+      expect(c.hook, `${c.id} hook`).toBeTruthy();
+      expect(c.recommendFor, `${c.id} recommendFor`).toBeDefined();
+      expect(c.recommendFor.length, `${c.id} recommendFor length`).toBe(3);
+
+      // 문구 검증: 한자 금지
+      expect(hanjaRegex.test(c.hook), `${c.id} hook has hanja`).toBe(false);
+      for (const rec of c.recommendFor) {
+        expect(hanjaRegex.test(rec), `${c.id} recommendFor has hanja`).toBe(false);
+      }
+    }
+  });
 });
+

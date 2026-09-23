@@ -56,7 +56,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
   }
 
   return (
-    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
       {product?.isHidden && preview && (
         <div className="w-full max-w-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
           🔒 미리보기 — 미공개 상품

@@ -142,7 +142,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   };
 
   return (
-    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
       {/* Top Brand Logo */}
       <header className="w-full max-w-md flex items-center justify-between mb-2">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">

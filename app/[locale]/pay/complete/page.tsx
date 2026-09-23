@@ -203,7 +203,7 @@ function PayCompleteContent() {
       : `/${locale}/me`;
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
       <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-md border border-coral/20 text-center flex flex-col items-center">
         <div className="mb-6">
           <KongdakMascot
@@ -284,7 +284,7 @@ function PayCompleteContent() {
 
 export default function PayCompletePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center p-8 text-plum">로딩 중...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8 text-plum">로딩 중...</div>}>
       <PayCompleteContent />
     </Suspense>
   );
