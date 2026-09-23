@@ -102,7 +102,7 @@ export const DAY_MASTER_KOREAN_DESC: Record<string, string> = {
   '癸': '맑고 촉촉한 단비 물 기운',
 };
 
-export const STRICT_NO_HANJA_RULE = `🚨 절대 규칙: 한자(漢字 기호 전체)와 사주 전문용어(오행, 일간, 천간, 지지, 상생, 상극, 합국 등)는 출력에 절대 쓰지 마세요. 오직 친근하고 다정한 순수 한국어(일상 언어)로만 서술하세요.`;
+export const STRICT_NO_HANJA_RULE = `⚠️ 절대 규칙: 한자(漢字 기호 일체)와 사주 전문용어(오행, 일간, 천간, 지지, 상생, 상극, 원국 등)를 출력에 절대 쓰지 마세요. 오직 친근하고 다정한 순수 한국어 일상 언어로만 서술하세요.`;
 
 /** Shared context block for Compatibility (Kongdak Phase A) */
 export function compatContextBlock(params: {
