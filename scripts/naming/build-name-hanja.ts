@@ -122,7 +122,7 @@ function main() {
     fs.readFileSync(surnamesPath, "utf8"),
   );
 
-  for (const [hangul, list] of Object.entries(surnames)) {
+  for (const list of Object.values(surnames)) {
     for (const item of list) {
       // For compound surnames (복성) like "南宮", calculate sum of strokes
       let totalStrokes = 0;
