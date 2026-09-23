@@ -39,6 +39,46 @@ export function formatBirthInput(v: BirthValues): { name: string; dob: string; t
   return { name: v.name.trim() || "나", dob, time, gender: v.gender };
 }
 
+export function parseBirthInput(input: {
+  name?: string | null;
+  dob?: string | null;
+  time?: string | null;
+  gender?: string | null;
+}): BirthValues {
+  const [y = "", m = "", d = ""] = (input.dob || "").split("-");
+  let ampm = "";
+  let hour = "1";
+  let min = "00";
+
+  if (input.time) {
+    const [hStr, mStr] = input.time.split(":");
+    const h = parseInt(hStr, 10);
+    if (!isNaN(h)) {
+      if (h >= 12) {
+        ampm = "PM";
+        hour = String(h === 12 ? 12 : h - 12);
+      } else {
+        ampm = "AM";
+        hour = String(h === 0 ? 12 : h);
+      }
+    }
+    if (mStr) {
+      min = mStr;
+    }
+  }
+
+  return {
+    name: input.name === "나" ? "" : (input.name || ""),
+    year: y,
+    month: m ? String(parseInt(m, 10)) : "",
+    day: d ? String(parseInt(d, 10)) : "",
+    gender: input.gender === "M" ? "M" : "F",
+    ampm,
+    hour,
+    min,
+  };
+}
+
 export default function BirthFields({
   values,
   onChange,

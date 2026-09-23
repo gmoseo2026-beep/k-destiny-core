@@ -10,8 +10,8 @@ import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, CATALOG, isViewableFor } from "@/lib/catalog";
-import { savePendingInput } from "@/lib/reportHandoff";
-import BirthFields, { BirthValues, formatBirthInput } from "@/components/forms/BirthFields";
+import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
+import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { trackEvent } from "@/lib/gtag";
@@ -99,6 +99,24 @@ export default function FortuneNewClient({
   useEffect(() => {
     queueMicrotask(() => setIsInApp(isInAppBrowser()));
   }, []);
+
+  // Restore pending input on mount (e.g. after login redirect)
+  useEffect(() => {
+    const pending = loadPendingInput(currentProductId);
+    if (pending && typeof pending === "object") {
+      const restored = parseBirthInput(pending as {
+        name?: string | null;
+        dob?: string | null;
+        time?: string | null;
+        gender?: string | null;
+      });
+      if (restored.year && restored.month && restored.day) {
+        queueMicrotask(() => {
+          setFormValues(restored);
+        });
+      }
+    }
+  }, [currentProductId]);
 
   const handleOpenCheckout = () => {
     if (blockPaymentIfInApp(() => setInAppOpen(true))) return;

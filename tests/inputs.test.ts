@@ -81,4 +81,67 @@ describe("Input Validation", () => {
     const r1 = parseDateSelectionInput({ purpose: "MOVING", start: "2026-05-11", end: "2026-05-20", people, excludeDates: ["2026-05-21"] }, today);
     expect(r1).toBeNull(); // outside range
   });
+
+  it("formatBirthInput & parseBirthInput roundtrip", async () => {
+    const { formatBirthInput, parseBirthInput } = await import("@/components/forms/BirthFields");
+    const v1 = {
+      name: "김콩닥",
+      year: "1995",
+      month: "3",
+      day: "15",
+      gender: "F" as const,
+      ampm: "PM",
+      hour: "2",
+      min: "30",
+    };
+    const formatted1 = formatBirthInput(v1);
+    expect(formatted1).toEqual({
+      name: "김콩닥",
+      dob: "1995-03-15",
+      time: "14:30",
+      gender: "F",
+    });
+    const parsed1 = parseBirthInput(formatted1);
+    expect(parsed1).toEqual(v1);
+
+    // Midnight check
+    const v2 = {
+      name: "홍길동",
+      year: "2000",
+      month: "12",
+      day: "31",
+      gender: "M" as const,
+      ampm: "AM",
+      hour: "12",
+      min: "15",
+    };
+    const formatted2 = formatBirthInput(v2);
+    expect(formatted2).toEqual({
+      name: "홍길동",
+      dob: "2000-12-31",
+      time: "00:15",
+      gender: "M",
+    });
+    expect(parseBirthInput(formatted2)).toEqual(v2);
+
+    // No time check
+    const v3 = {
+      name: "",
+      year: "1988",
+      month: "7",
+      day: "7",
+      gender: "F" as const,
+      ampm: "",
+      hour: "1",
+      min: "00",
+    };
+    const formatted3 = formatBirthInput(v3);
+    expect(formatted3).toEqual({
+      name: "나",
+      dob: "1988-07-07",
+      time: null,
+      gender: "F",
+    });
+    expect(parseBirthInput(formatted3)).toEqual(v3);
+  });
 });
