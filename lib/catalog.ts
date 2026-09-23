@@ -137,7 +137,7 @@ export const CATALOG: CatalogItem[] = [
       yearly_overview: "2026년 한 해 전체를 관통하는 핵심 기운과 총평",
       monthly_flow: "1월부터 12월까지 계절별 운세의 오르내림",
       caution_points: "올해 특히 주의하고 현명하게 넘겨야 할 포인트",
-      fortune_tips: "나에게 찾아올 행운을 200% 활용하는 행동 팁"
+      fortune_tips: "나에게 찾아올 좋은 기운을 살리는 행동 팁"
     }
   },
   {
@@ -537,7 +537,7 @@ export const CATALOG: CatalogItem[] = [
     id: "conflict",
     type: "COMPAT",
     name: "갈등과 해법",
-    description: "우리가 자주 싸우는 진짜 이유와 완벽한 해결책",
+    description: "우리가 자주 싸우는 진짜 이유와 풀어 가는 방법",
     category: "cat-reunion",
     target: "couple",
     price: 6900,
@@ -620,7 +620,7 @@ export const CATALOG: CatalogItem[] = [
     icon3d: "/icons3d/set_this_person.webp",
     gridLabel: "이 사람 세트",
     hook: "궁합부터 속마음, 결혼까지 이 사람의 모든 것을 한 번에",
-    subtitle: "궁합·속마음·결혼까지, 한 번에 완벽하게 확인해보세요",
+    subtitle: "궁합·속마음·결혼까지, 한 번에 확인해 보세요",
     recommendFor: [
       "현재 만나는 사람과의 모든 것을 깊이 있게 알고 싶은 분",
       "궁합, 속마음, 결혼까지 꼼꼼히 점검하고 싶은 분",
@@ -730,7 +730,7 @@ export const CATALOG: CatalogItem[] = [
     icon3d: "/icons3d/career.webp",
     gridLabel: "취업 세트",
     hook: "나에게 딱 맞는 커리어 방향과 올 한 해의 이동수",
-    subtitle: "취업과 이직, 올 한 해 커리어 도약의 완벽한 가이드",
+    subtitle: "취업과 이직, 올 한 해 커리어 흐름을 한 번에",
     recommendFor: [
       "취업과 이직을 본격적으로 준비하며 새해 운세를 보고 싶은 분",
       "나의 커리어 타이밍과 이동수를 면밀히 살피고 싶은 분",
@@ -758,7 +758,7 @@ export const CATALOG: CatalogItem[] = [
     requiresLogin: true,
     icon3d: "/icons3d/annual_2027.webp",
     gridLabel: "2027 세트",
-    hook: "2027년을 완벽하게 준비하는 신년 종합 리포트",
+    hook: "2027년을 미리 준비하는 신년 종합 리포트",
     subtitle: "남들보다 앞서 준비하는 2027년 신년 종합 가이드",
     recommendFor: [
       "2027년의 재물, 일, 전체적인 운세를 미리 선점하고 싶은 분",

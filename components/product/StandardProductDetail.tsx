@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel } from "@/lib/catalog";
+import { priceLabel, formatWon } from "@/lib/catalog";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
@@ -94,6 +94,10 @@ export function StandardProductDetail({
         communication: "대화와 감정의 온도",
         conflict: "부딪히기 쉬운 순간과 해법",
         advice: "두근이의 다정한 현실 조언",
+        yearly_overview: "한 해의 큰 흐름",
+        monthly_flow: "월별 운세의 오르내림",
+        caution_points: "조심하면 좋은 시기",
+        fortune_tips: "좋은 기운을 살리는 행동 팁",
       };
       featurePoints = Object.entries(product.pointDesc).map(([key, desc]) => ({
         title: titles[key] || "핵심 포인트",
@@ -167,7 +171,7 @@ export function StandardProductDetail({
       </header>
 
       {/* Main Container constrained to max-w-[480px] */}
-      <main className="w-full max-w-[480px] mx-auto pt-14">
+      <div className="w-full max-w-[480px] mx-auto">
         {/* Hidden preview banner if applicable */}
         {product.isHidden && preview && (
           <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-semibold py-2 px-4 text-center">
@@ -266,9 +270,10 @@ export function StandardProductDetail({
           <div className="flex items-center justify-between pt-3 pb-2 border-t border-line">
             <div className="flex items-center gap-2.5 flex-wrap">
               <span className="text-2xl font-black text-ink">
-                {priceLabel(product)}
+                {product.isFree ? "무료" : formatWon(product.price)}
               </span>
-              {!product.isFree && product.price > 0 && (
+              {/* 첫 결제 할인은 표준 단품만(세트 제외) — 서버 주문 규칙과 동일 */}
+              {!product.isFree && product.price > 0 && product.tier === "standard" && product.type !== "SET" && (
                 <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">
                   회원 첫 결제 4,900원
                 </span>
@@ -409,11 +414,11 @@ export function StandardProductDetail({
             <div className="space-y-2.5 text-xs text-white/90">
               <div className="flex items-start gap-2">
                 <span className="text-gold-soft font-bold">1.</span>
-                <span>같은 생년월일이면 언제 봐도 100% 동일한 점수와 해석</span>
+                <span>같은 생년월일이면 언제 봐도 같은 점수</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-gold-soft font-bold">2.</span>
-                <span>생년월일·시간은 원문으로 절대 저장하지 않아요 (단방향 암호화)</span>
+                <span>비회원이 입력한 생년월일·시간은 원문으로 저장하지 않아요</span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-gold-soft font-bold">3.</span>
@@ -468,7 +473,7 @@ export function StandardProductDetail({
             </div>
           </section>
         )}
-      </main>
+      </div>
 
       {/* 8. Fixed Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-line z-40 max-w-[480px] mx-auto shadow-lg">
