@@ -20,7 +20,18 @@ import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 
 type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
 
+import type { Prisma } from "@prisma/client";
+import type { GenerationConfig } from "@google/generative-ai";
 import { isValidDateString, isValidTimeString } from "@/lib/validation/inputs";
+import { getProduct, isViewable } from "@/lib/catalog";
+
+type FourPillarsObj = { year: string; month: string; day: string; time: string | null };
+type ElementsScoreMap = Record<string, number>;
+
+const YEAR_CONTEXT: Record<number, string> = {
+  2026: "2026년 병오년 - 붉은 말의 해",
+  2027: "2027년 정미년 - 붉은 양의 해",
+};
 
 export async function POST(req: Request) {
   try {
@@ -33,16 +44,24 @@ export async function POST(req: Request) {
     const userId = session?.user?.id;
 
     // Body parsing with default locale
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     try {
-      body = await req.json();
+      body = (await req.json()) as Record<string, unknown>;
     } catch {
       body = {};
     }
-    const locale = body.locale || "ko";
+    const locale = typeof body.locale === "string" ? body.locale : "ko";
 
-    // Enforce target year as 2026
-    const year = 2026;
+    const productId = typeof body.productId === "string" ? body.productId : "annual_2026";
+    let year = 2026;
+    if (productId === "annual_2026") year = 2026;
+    else if (productId === "annual_2027") year = 2027;
+    else return NextResponse.json({ error: "Invalid product" }, { status: 400 });
+
+    const product = getProduct(productId);
+    if (!isViewable(product)) {
+      return NextResponse.json({ error: "Product not available" }, { status: 404 });
+    }
 
     // ─────────────────────────────────────────────────────────────
     // A. 비회원 (Guest) 경로: 생년월일만으로 즉석 무료 맛보기(점수+연애운 1개)
@@ -111,11 +130,11 @@ export async function POST(req: Request) {
         name,
         gender,
         dayMaster: saju.dayMasterSignKey,
-        fourPillars: saju.fourPillars as any,
-        elementsScore: saju.elementsScore as any,
+        fourPillars: saju.fourPillars,
+        elementsScore: saju.elementsScore,
         dictionaryContext,
       });
-      contextBlock += `\nTARGET YEAR: ${year} (2026년 병오년 - 붉은 말의 해)\n`;
+      contextBlock += `\nTARGET YEAR: ${year} (${YEAR_CONTEXT[year]})\n`;
 
       // 4) Gemini 소형 맛보기 생성 (출력 토큰 대폭 축소로 2~3초대 초고속 응답)
       const t0 = Date.now();
@@ -129,7 +148,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -139,7 +158,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -148,7 +167,7 @@ export async function POST(req: Request) {
       const tGen = Date.now();
       console.log(`[annual-timing] mode=guest-teaser cache=miss genMs=${tGen - t0} model=${modelName}`);
 
-      const jsonResult = repairJSON(resultText) as any;
+      const jsonResult = (repairJSON(resultText) as Partial<AnnualTeaser>) || null;
       if (!jsonResult) {
         const fr = lastResult?.response?.candidates?.[0]?.finishReason;
         console.error(`[annual-teaser parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
@@ -158,8 +177,8 @@ export async function POST(req: Request) {
       // 결정론적 총운 점수 산출 (미리보기 점수와 결제 후 전체 리포트 점수의 100% 일치 보장)
       const fixedScore = calculateAnnualYearScore({
         dayMaster: saju.dayMasterSignKey,
-        fourPillars: saju.fourPillars as any,
-        elementsScore: saju.elementsScore as any,
+        fourPillars: saju.fourPillars,
+        elementsScore: saju.elementsScore,
         year,
       });
 
@@ -169,7 +188,7 @@ export async function POST(req: Request) {
       const teaserData: AnnualTeaser & { locked: boolean; isGuest: boolean } = {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
-        summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        summary: jsonResult.summary || `${year}년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.`,
         freeSection: jsonResult.freeSection || {
           type: "love",
           score: 85,
@@ -247,12 +266,12 @@ export async function POST(req: Request) {
     }
 
     // 2. Check entitlement (콩닥 플러스 패스: SUBSCRIPTION / ADMIN, 또는 2026 총운 단건 Unlock)
-    const entitlement = await isEntitled({
-      userId,
-      role: session?.user?.role,
-      tier: session?.user?.tier,
-      productKey: "ANNUAL:2026",
-    });
+      const entitlement = await isEntitled({
+        userId,
+        role: session?.user?.role,
+        tier: session?.user?.tier,
+        productKey: `ANNUAL:${year}`,
+      });
     const isUnlocked = entitlement.entitled;
 
     // 3. Check Cache
@@ -293,17 +312,17 @@ export async function POST(req: Request) {
       name: userProfile.name || "사용자",
       gender: userProfile.gender,
       dayMaster: userProfile.dayMaster,
-      fourPillars: userProfile.fourPillars as any,
-      elementsScore: userProfile.elementsScore as any,
+      fourPillars: userProfile.fourPillars as unknown as FourPillarsObj,
+      elementsScore: userProfile.elementsScore as ElementsScoreMap,
       dictionaryContext,
     });
-    contextBlock += `\nTARGET YEAR: ${year} (2026년 병오년 - 붉은 말의 해)\n`;
+    contextBlock += `\nTARGET YEAR: ${year} (${YEAR_CONTEXT[year]})\n`;
 
     // 결정론적 총운 점수 산출 (미리보기 점수 == 결제 후 전체 리포트 점수 100% 일치 보장)
     const fixedScore = calculateAnnualYearScore({
       dayMaster: userProfile.dayMaster,
-      fourPillars: userProfile.fourPillars as any,
-      elementsScore: userProfile.elementsScore as any,
+      fourPillars: userProfile.fourPillars as unknown as FourPillarsObj,
+      elementsScore: userProfile.elementsScore as ElementsScoreMap,
       year,
     });
 
@@ -320,7 +339,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -330,7 +349,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as any
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -339,7 +358,7 @@ export async function POST(req: Request) {
       const tGen = Date.now();
       console.log(`[annual-timing] mode=teaser cache=miss genMs=${tGen - t0} model=${modelName}`);
 
-      const jsonResult = repairJSON(resultText) as any;
+      const jsonResult = (repairJSON(resultText) as Partial<AnnualTeaser>) || null;
       if (!jsonResult) {
         const fr = lastResult?.response?.candidates?.[0]?.finishReason;
         console.error(`[annual-teaser parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
@@ -349,7 +368,7 @@ export async function POST(req: Request) {
       const teaserData: AnnualTeaser & { locked: boolean } = {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
-        summary: jsonResult.summary || "2026년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.",
+        summary: jsonResult.summary || `${year}년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.`,
         freeSection: jsonResult.freeSection || {
           type: "love",
           score: 85,
@@ -387,7 +406,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
       });
       lastResult = result;
       resultText = result.response.text();
@@ -397,7 +416,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as any
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
       });
       lastResult = result;
       resultText = result.response.text();
@@ -420,7 +439,7 @@ export async function POST(req: Request) {
       data: {
         userId,
         year,
-        content: jsonResult as any,
+        content: jsonResult as unknown as Prisma.InputJsonValue,
       }
     });
     const tDone = Date.now();
@@ -434,7 +453,7 @@ export async function POST(req: Request) {
       data: { ...savedContent, locked: false },
       locked: false,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[annual-fortune POST] Error:", error);
     return NextResponse.json(
       { error: "총운을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." },

@@ -30,7 +30,7 @@ export async function generateJson<T>(o: GenerateJsonOptions<T>): Promise<{ data
         };
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: o.prompt }] }],
-          generationConfig: config as any,
+          generationConfig: config as GenerationConfig,
         });
         const text = result.response.text();
         const fr = result.response.candidates?.[0]?.finishReason;

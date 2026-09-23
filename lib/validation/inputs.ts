@@ -102,7 +102,7 @@ export function parseChildNamingInput(raw: unknown, surnames: SurnameTable, now?
   if (!Array.isArray(r.tags)) return null;
   const tags: NamingTag[] = [];
   for (const t of r.tags) {
-    if (NAMING_TAGS.includes(t as any)) tags.push(t as NamingTag);
+    if (typeof t === "string" && (NAMING_TAGS as readonly string[]).includes(t)) tags.push(t as NamingTag);
   }
   if (tags.length > 3) return null;
 
@@ -126,7 +126,7 @@ export function parseDateSelectionInput(raw: unknown, today: string): DateSelect
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   
-  if (!PURPOSES.includes(r.purpose as any)) return null;
+  if (typeof r.purpose !== "string" || !(PURPOSES as readonly string[]).includes(r.purpose)) return null;
   const purpose = r.purpose as SelectablePurpose;
 
   if (typeof r.start !== "string" || typeof r.end !== "string") return null;
@@ -167,14 +167,14 @@ export function parseDateSelectionInput(raw: unknown, today: string): DateSelect
     if (people.length < 1 || people.length > 2) return null;
   }
 
-  let weekdays: number[] = [];
+  const weekdays: number[] = [];
   if (Array.isArray(r.weekdays)) {
     for (const w of r.weekdays) {
       if (typeof w === "number" && w >= 0 && w <= 6) weekdays.push(w);
     }
   }
 
-  let excludeDates: string[] = [];
+  const excludeDates: string[] = [];
   if (Array.isArray(r.excludeDates)) {
     for (const ed of r.excludeDates) {
       if (typeof ed !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(ed)) return null;
