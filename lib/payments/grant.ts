@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { getProduct } from "@/lib/catalog";
+import { toCatalogId } from "@/lib/productIdentity";
 
 export async function applyPaidOrder(orderId: string, providerTxId?: string) {
   return await prisma.$transaction(async (tx) => {
@@ -14,17 +16,19 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
 
     // 이후 Unlock / 패스 연장 진행 (같은 트랜잭션 안에서)
     if (order.type === "SINGLE") {
-      const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 결제일로부터 90일간 유효
-
       let pType = order.productType;
       let pKey = order.productKey;
-      let cId = order.compatId;
+      const cId = order.compatId;
 
       // Legacy fallback
       if (!pType && cId) {
         pType = "COMPAT";
         pKey = "compat_basic";
       }
+
+      const catalogId = toCatalogId(pType, pKey, cId) ?? "";
+      const accessDays = getProduct(catalogId)?.accessDays ?? 90;
+      const expiresAt = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000);
 
       if (pType && pKey) {
         // [SECURITY / H-2] status 가드(위 updateMany)가 이미 1회 실행을 보장하므로 조회는 이중 안전장치다.

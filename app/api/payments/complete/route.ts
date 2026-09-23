@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { payments } from "@/lib/payments";
 import { applyPaidOrder } from "@/lib/payments/grant";
+import { toCatalogId } from "@/lib/productIdentity";
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
         compatId: order.compatId,
         productType: order.productType ?? null,
         productKey: order.productKey ?? null,
+        catalogId: toCatalogId(order.productType, order.productKey, order.compatId),
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
