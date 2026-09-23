@@ -19,13 +19,13 @@ export default async function MePage({ params }: PageProps) {
   const { locale } = await params;
 
   return (
-    <main className="min-h-screen bg-[#FFF6F1] text-[#2B2430] px-4 py-8 flex flex-col items-center justify-between">
+    <main className="min-h-screen bg-cream text-ink px-4 py-8 flex flex-col items-center justify-between">
       <header className="w-full max-w-md flex items-center justify-between mb-8">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
+          <span className="font-extrabold text-lg tracking-tight text-plum">
             콩닥 <span className="text-xs font-semibold text-[#8A8291]">kongdak</span>
           </span>
         </Link>
