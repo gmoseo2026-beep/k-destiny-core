@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Cinzel, Noto_Sans_KR, Noto_Sans_JP } from "next/font/google";
+import { Inter, Cinzel, Noto_Sans_KR, Noto_Sans_JP, Noto_Serif_KR } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 
@@ -62,6 +62,13 @@ const notoSansJP = Noto_Sans_JP({
   preload: false,
   display: "swap",
   weight: ["400", "500", "700"],
+});
+
+const notoSerifKR = Noto_Serif_KR({
+  variable: "--font-serif-kr",
+  preload: false,
+  display: "swap",
+  weight: ["500", "700"],
 });
 
 // SEO note: canonical / hreflang / title / description now live in lib/seo.ts
@@ -181,7 +188,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body
-        className={`${pretendard.variable} ${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} antialiased bg-background text-foreground`}
+        className={`${pretendard.variable} ${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} ${notoSerifKR.variable} antialiased bg-background text-foreground`}
       >
         <Analytics />
         <NextIntlClientProvider messages={messages}>

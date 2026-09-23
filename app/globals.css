@@ -17,6 +17,16 @@
   --cat-reunion: #EF4444;
   --cat-career: #3B82F6;
 
+  /* Premium tokens */
+  --premium-bg: #14101A;
+  --premium-surface: #1E1726;
+  --premium-line: #3A2E45;
+  --premium-gold: #D9B26A;
+  --premium-gold-soft: #F3E3BF;
+  --premium-text: #F6F1EA;
+  --premium-muted: #B9AEC4;
+  --cat-premium: #D9B26A;
+
   /* Global motion tokens: 0.15s cubic-bezier(0.4, 0, 0.2, 1) */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
   --dur-default: 150ms;
@@ -39,8 +49,18 @@
   --color-cat-reunion: var(--cat-reunion);
   --color-cat-career: var(--cat-career);
 
+  --color-premium-bg: var(--premium-bg);
+  --color-premium-surface: var(--premium-surface);
+  --color-premium-line: var(--premium-line);
+  --color-premium-gold: var(--premium-gold);
+  --color-premium-gold-soft: var(--premium-gold-soft);
+  --color-premium-text: var(--premium-text);
+  --color-premium-muted: var(--premium-muted);
+  --color-cat-premium: var(--cat-premium);
+
   --font-sans: var(--font-pretendard), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-serif: var(--font-cinzel);
+  --font-serif-kr: var(--font-serif-kr);
 }
 
 body {
@@ -157,3 +177,35 @@ button, [role="button"] {
 button:active, [role="button"]:active {
   transform: scale(0.97);
 }
+
+/* Premium Styles */
+.premium-gold-text {
+  background: linear-gradient(135deg, #F3E3BF 0%, #D9B26A 45%, #A8823C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.font-serif-kr {
+  font-family: var(--font-serif-kr), "Noto Serif KR", serif;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .premium-shell {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    border-color: #D9B26A !important;
+    box-shadow: none !important;
+  }
+  .premium-shell * {
+    color: #111111 !important;
+    background: transparent !important;
+  }
+  .premium-chapter {
+    break-before: page !important;
+  }
+}
+
