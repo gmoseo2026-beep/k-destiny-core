@@ -1,3 +1,160 @@
+# REVIEW_HANDOFF — 콩닥 디자인 개편 T1~T7 (2026-09-23, Gemini/Antigravity)
+
+> 지시문: `콩닥_디자인개편_지시문_Gemini.md` (T1~T7). 결제·권한·리포트 로직 무수정, 지어낸 숫자·순위·후기 배제 원칙 준수.
+> 커밋:
+> - `12d47f6` `feat(design): 3D 아이콘 에셋과 카탈로그 표시 필드` (T1, T2)
+> - `3f5a74d` `feat(design): 홈·상세·고객화면 전면개편 및 방문자수 집계 (T3-T6)` (T3~T6)
+> 🛑 **배포 게이트 대기 중**: 로컬 빌드·테스트·타입·린트·시크릿 스캔 전원 통과 완료. 사장님의 **"배포 진행"** 명령 대기 중.
+
+---
+
+## 1. 사전 점검(Pre-flight) 및 자체 검증 결과 (T7)
+
+| 검증 항목 | 명령어 | 결과 | 비고 |
+| :--- | :--- | :--- | :--- |
+| **단위 테스트** | `npm test` | **PASS (156/156)** | 24개 테스트 파일 전원 통과 (기존 145개 + 신규 11개) |
+| **타입 검사** | `npx tsc --noEmit` | **PASS (Exit 0)** | 타입 에러 0건 |
+| **린트 검사** | `npx eslint <modified_files>` | **PASS (Exit 0)** | 수정/추가된 43개 파일 에러 0건, 경고 0건 |
+| **프로덕션 빌드** | `npm run build` | **PASS (Exit 0)** | 39개 App Router 정적/동적 라우트 컴파일 완료 |
+| **시크릿 스캔** | diff secret scan | **CLEAN (0건)** | `sk-`, `password=`, `DEPLOY_PASS=`, 개인키 검출 0건 |
+
+### 단위 테스트 출력 요약
+```
+ ✓ tests/catalog.test.ts (7 tests)
+ ✓ tests/visitors.test.ts (3 tests)
+ ✓ tests/subjectKey.test.ts (4 tests)
+ ✓ tests/subject.test.ts (3 tests)
+ ✓ tests/inputs.test.ts (9 tests)
+ ✓ tests/entitlementRules.test.ts (16 tests)
+ ✓ tests/productIdentity.test.ts (6 tests)
+ ✓ tests/daeun.test.ts (4 tests)
+ ✓ tests/standardReport.test.ts (8 tests)
+ ✓ tests/productSpecs.test.ts (1 test)
+ ✓ tests/routes/visit.test.ts (4 tests)
+ ✓ tests/dateSelection.test.ts (7 tests)
+ ✓ tests/routes/reportsView.test.ts (5 tests)
+ ✓ tests/routes/paymentsOrder.test.ts (8 tests)
+ ✓ tests/smoke.test.ts (1 test)
+ ✓ tests/teaser.test.ts (1 test)
+ ✓ tests/ganzhi.test.ts (5 tests)
+ ✓ tests/preview.test.ts (4 tests)
+ ✓ tests/hanjaGuard.test.ts (2 tests)
+ ✓ tests/homeRanking.test.ts (3 tests)
+ ✓ tests/mine.test.ts (3 tests)
+ ✓ tests/teasers.test.ts (3 tests)
+ ✓ tests/naming.test.ts (33 tests)
+ ✓ tests/routes/reportsGenerate.test.ts (16 tests)
+
+ Test Files  24 passed (24)
+      Tests  156 passed (156)
+```
+
+---
+
+## 2. 작업 내역 상세 (T1 ~ T6)
+
+### T1. 브랜드 디자인 토큰 확립 (`app/globals.css`)
+- 시안 토큰 구현:
+  - 배경: `--background: #FFFDFD` (깨끗한 웜화이트)
+  - 코랄: `--coral: #FF5C77`, `--coral-deep: #E0245A`, `--coral-soft: #FFF0F2`
+  - 플럼: `--plum: #6A2C70`, `--plum-deep: #2A1526`
+  - 골드: `--gold: #FFC24B`, `--gold-soft: #FFE6A3`
+  - 잉크: `--ink: #2B2430` (명도 높은 부드러운 검정)
+  - 서피스/라인: `--surface-soft: #FAF6F5`, `--line: #EFE9E6`
+- 폰트 Pretendard 및 시그니처 그라디언트, 버튼 축소 물리 애니메이션(`active:scale-[0.96]`) 적용.
+
+### T2. 3D 아이콘 에셋 & 카탈로그 표시 필드
+- Microsoft Fluent 3D 이모지 고화질 19종 배치 (`public/icons3d/`).
+- 라이선스 고지 문서 작성: `THIRD_PARTY_NOTICES.md` (MIT License 준수).
+- `CatalogItem` 표시 필드 확장: `icon3d`, `gridLabel`, `hook`, `recommendFor`, `featuredOrder`, `subtitle`, `pointDesc`.
+
+### T3. 모바일 퍼스트 홈 화면 (`app/[locale]/page.tsx`)
+- 시안 100% 반영 모바일 480px 컨테이너 구조:
+  1. `HomeHero`: 두근이 마스코트, 따뜻한 브랜드 헤드라인 및 신뢰 서브텍스트.
+  2. `TrustBanner`: "단방향 암호화 · 100% 동일한 결과 · 정통 명리학" 신뢰 3원칙 칩.
+  3. `HomeSearch`: 클라이언트 사이드 즉시 필터링 검색창.
+  4. `ProductGrid`: 2열 3D 아이콘 카드 그리드 (뱃지, 카테고리 태그, 명확한 가격 표시).
+  5. `PremiumBanner`: 2026 프리미엄 신년운세 플럼 딥 그라디언트 하이라이트 배너.
+  6. `HomeRankingView`: 실제 결제 주문 데이터 기반 실시간 집계 (`lib/home/ranking.ts`).
+     - **원칙**: 20건 미만 시 지어낸 순위를 표기하지 않고 "콩닥 추천 콘텐츠"로 자동 전환.
+  7. `MoreContentCards`: 추가 카테고리(재회, 직업, 세트 등) 카드.
+  8. `VisitorSection`: 누적 방문자수 카운터 (T6 연동).
+  9. `BrandStory`: "사주를 보는 가장 다정한 방법" 브랜드 스토리.
+
+### T4. 표준 상품 상세 화면 (`components/product/StandardProductDetail.tsx`)
+- 270px 카테고리 그라디언트 배너 + 14% 투명도 하트 패턴 SVG 오버레이.
+- 190px 대형 3D 아이콘 및 36px 900 굵은 화이트 타이틀.
+- 태그 및 클린 가격 표시: 취소선 가격 배제, `회원 첫 결제 4,900원` 칩, Web Share API 공유 버튼.
+- 리포트 미리보기 4대 포인트 카드 (세트 상품일 경우 구성 상품 목록 표시).
+- `이런 분께 추천해요` 3개 라인 + 코랄 체크마크.
+- `두근이의 세 가지 약속` (`--plum-deep` 다크 플럼 카드).
+- `함께 보면 좋은 콘텐츠` 3개 추천 카드.
+- 하단 고정 CTA 버튼 (`fixed bottom-0 max-w-[480px]`).
+
+### T5. 고객 화면 일관성 개편 (UI 디자인 시스템 통일)
+- 기반 컴포넌트 업그레이드: `Card`, `Button`, `Tag`, `Badge`, `ReportSection`, `ScoreGauge`.
+- 개편 적용 화면:
+  - 정통 궁합 입력 화면 (`components/CompatNewClient.tsx`): 72px 3D 아이콘, 생년월일 폼, Card/Button 적용.
+  - 사주/신년운세 입력 화면 (`components/FortuneNewClient.tsx`, `AnnualFortuneClient.tsx`): 72px 3D 아이콘 상단 배치.
+  - 무료 티저 화면 (`components/CompatResultClient.tsx`): **CSS 블러 텍스트(`blur-[3px]`, `blur-[4px]`) 전면 제거**, `--surface-soft` 배경의 깔끔한 잠금 티저 카드로 교체.
+  - 리포트 화면 (`components/report/StandardReportView.tsx`, `ReportNewClient.tsx`, `ReportViewClient.tsx`): Card, Badge, ReportSection 적용.
+  - 마이페이지/보관함 (`components/MeClient.tsx`): 탭, 구매 내역 카드, 잠금 해제 태그 UI 개편.
+  - 비회원 결제 모달 (`components/GuestCheckoutModal.tsx`), 결제 완료 (`pay/complete/page.tsx`), 대시보드 (`DashboardView.tsx`).
+
+#### T5 컴포넌트 사용처 수 집계
+- `Card`: 10개 파일
+- `Button`: 10개 파일
+- `Tag`: 3개 파일
+- `Badge`: 5개 파일
+- `ScoreGauge`: 1개 파일
+- `ReportSection`: 1개 파일
+
+### T6. 방문자 수 카운터 시스템
+- DB 스키마: `prisma/schema.prisma`에 `SiteCounter` 모델 추가 (additive 마이그레이션).
+- 집계 API: `POST /api/visit`
+  - 1년 만료 `kd_vid` httpOnly 쿠키 활용 (쿠키 값 DB 미저장).
+  - 크롤러/봇 User-Agent 필터링.
+  - 동일 IP 1일 최대 5회 증분 제한 (인메모리 레이트 리미터, IP DB 미저장).
+  - 원자적 증분: `prisma.siteCounter.upsert`.
+- 수집기: `components/VisitTracker.tsx` (클라이언트 사이드 마운트 시 `sessionStorage` 확인 후 1회 전송).
+- 문턱 제어: `VISITOR_COUNTER_MIN_DISPLAY = 1000`. 1,000 미만일 경우 섹션 숨김 (지어낸 숫자 노출 금지).
+- 개인정보처리방침 보완: `messages/ko.json` 쿠키 항목 문구 추가.
+
+---
+
+## 3. 시안 대비 차이점 및 사유
+
+1. **상단 "오늘의 운세" 플로팅 바 교체**
+   - 시안에는 "오늘의 운세" 플로팅 알림바가 있으나, 현재 Phase A 백엔드 및 카탈로그에 독립 일일 운세 자동 생성 파이프라인이 부재하여 지어낸 데이터 노출을 방지하기 위해 정규 카테고리 네비게이션 및 "2026 신년운세 / 정통 궁합" 추천으로 자연스럽게 안내했습니다.
+2. **무료 결과 화면 CSS 블러(blur) 효과 배제**
+   - 시안의 블러 처리된 더미 텍스트는 사주 엔진의 결정론적 무결성 원칙과 Phase A 보안 규칙(서버에서 잠긴 데이터를 전달하지 않음)에 따라 더미 텍스트 블러 대신 `--surface-soft` 배경의 깔끔한 잠금 티저 카드로 구현했습니다.
+3. **방문자 수 카운터 초깃값 미조작**
+   - 시안 예시의 "1,884,277명"과 같은 가상 숫자를 삽입하지 않고 0부터 카운트하며, 신뢰 유지를 위해 1,000 미만일 때는 섹션 자체를 안전하게 숨기도록 구현했습니다.
+
+---
+
+## 4. 자체 의심 지점 (Self-Doubt)
+
+1. **모바일 실기기 스티키 헤더 / 뷰포트 여백**:
+   - `max-w-[480px]` 중앙 정렬과 `fixed top-0`, `fixed bottom-0` 헤더/CTA가 다양한 모바일 브라우저(Safari 하단 주소창, 카카오톡 인앱 브라우저 등)에서 겹침 없이 동작하는지 배포 후 실기기 캡처를 통해 면밀히 확인해야 합니다.
+2. **SiteCounter 테이블 운영 DB 생성**:
+   - 코드는 `SiteCounter` 모델을 안전하게 조회(`fetchVisitorCount`)하도록 try/catch 처리되어 있으며, 운영 배포 시 `scripts/safe_deploy.py` 또는 Prisma 마이그레이션이 반영되면 정상 집계가 시작됩니다.
+
+---
+
+## 5. 배포 후 비교 캡처 이미지 첨부 (배포 완료 후 업데이트 예정)
+
+> 사장님의 **"배포 진행"** 승인 후 `python scripts/safe_deploy.py`를 실행하여 `Deploy VERIFIED`를 확인한 뒤, 390px 모바일 실기기/브라우저 캡처본을 시안과 1:1 비교 이미지로 생성하여 여기에 첨부합니다.
+
+- [ ] 홈 화면 (비로그인, 전체 스크롤) vs 시안
+- [ ] 상품 상세 화면 (`compat_basic`) vs 시안
+- [ ] 정통 궁합 입력 화면
+- [ ] 무료 결과 (티저) 화면
+- [ ] 보관함 (마이페이지)
+
+---
+
+# 이전 인계 기록 (작명 상품 마감 K1~K4)
 # REVIEW_HANDOFF — 작명 상품 마감 K1~K4 (2026-09-23, 터미널 Opus 5.5)
 
 > 지시문: `콩닥_작명마감_터미널Opus_지시문.md`. `premium_naming` 은 **`isHidden: true` 유지**(공개 안 함).
