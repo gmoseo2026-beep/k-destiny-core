@@ -1,0 +1,712 @@
+{
+  "김": [
+    {
+      "hanja": "金",
+      "strokes": 8
+    }
+  ],
+  "이": [
+    {
+      "hanja": "李",
+      "strokes": 7
+    }
+  ],
+  "박": [
+    {
+      "hanja": "朴",
+      "strokes": 6
+    }
+  ],
+  "최": [
+    {
+      "hanja": "崔",
+      "strokes": 11
+    }
+  ],
+  "정": [
+    {
+      "hanja": "鄭",
+      "strokes": 19
+    },
+    {
+      "hanja": "丁",
+      "strokes": 2
+    }
+  ],
+  "강": [
+    {
+      "hanja": "姜",
+      "strokes": 9
+    },
+    {
+      "hanja": "康",
+      "strokes": 11
+    }
+  ],
+  "조": [
+    {
+      "hanja": "趙",
+      "strokes": 14
+    },
+    {
+      "hanja": "曺",
+      "strokes": 10
+    }
+  ],
+  "윤": [
+    {
+      "hanja": "尹",
+      "strokes": 4
+    }
+  ],
+  "장": [
+    {
+      "hanja": "張",
+      "strokes": 11
+    },
+    {
+      "hanja": "章",
+      "strokes": 11
+    }
+  ],
+  "임": [
+    {
+      "hanja": "林",
+      "strokes": 8
+    },
+    {
+      "hanja": "任",
+      "strokes": 6
+    }
+  ],
+  "한": [
+    {
+      "hanja": "韓",
+      "strokes": 17
+    }
+  ],
+  "오": [
+    {
+      "hanja": "吳",
+      "strokes": 7
+    }
+  ],
+  "서": [
+    {
+      "hanja": "徐",
+      "strokes": 10
+    }
+  ],
+  "신": [
+    {
+      "hanja": "申",
+      "strokes": 5
+    },
+    {
+      "hanja": "辛",
+      "strokes": 7
+    },
+    {
+      "hanja": "愼",
+      "strokes": 14
+    }
+  ],
+  "권": [
+    {
+      "hanja": "權",
+      "strokes": 22
+    }
+  ],
+  "황": [
+    {
+      "hanja": "黃",
+      "strokes": 12
+    }
+  ],
+  "안": [
+    {
+      "hanja": "安",
+      "strokes": 6
+    }
+  ],
+  "송": [
+    {
+      "hanja": "宋",
+      "strokes": 7
+    }
+  ],
+  "유": [
+    {
+      "hanja": "柳",
+      "strokes": 9
+    },
+    {
+      "hanja": "劉",
+      "strokes": 15
+    },
+    {
+      "hanja": "兪",
+      "strokes": 9
+    }
+  ],
+  "류": [
+    {
+      "hanja": "柳",
+      "strokes": 9
+    }
+  ],
+  "홍": [
+    {
+      "hanja": "洪",
+      "strokes": 10
+    }
+  ],
+  "고": [
+    {
+      "hanja": "高",
+      "strokes": 10
+    }
+  ],
+  "문": [
+    {
+      "hanja": "文",
+      "strokes": 4
+    }
+  ],
+  "양": [
+    {
+      "hanja": "梁",
+      "strokes": 11
+    },
+    {
+      "hanja": "楊",
+      "strokes": 13
+    }
+  ],
+  "손": [
+    {
+      "hanja": "孫",
+      "strokes": 10
+    }
+  ],
+  "배": [
+    {
+      "hanja": "裵",
+      "strokes": 14
+    }
+  ],
+  "백": [
+    {
+      "hanja": "白",
+      "strokes": 5
+    }
+  ],
+  "허": [
+    {
+      "hanja": "許",
+      "strokes": 11
+    }
+  ],
+  "남": [
+    {
+      "hanja": "南",
+      "strokes": 9
+    }
+  ],
+  "심": [
+    {
+      "hanja": "沈",
+      "strokes": 8
+    }
+  ],
+  "노": [
+    {
+      "hanja": "盧",
+      "strokes": 16
+    },
+    {
+      "hanja": "魯",
+      "strokes": 15
+    }
+  ],
+  "하": [
+    {
+      "hanja": "河",
+      "strokes": 9
+    }
+  ],
+  "곽": [
+    {
+      "hanja": "郭",
+      "strokes": 15
+    }
+  ],
+  "성": [
+    {
+      "hanja": "成",
+      "strokes": 6
+    }
+  ],
+  "차": [
+    {
+      "hanja": "車",
+      "strokes": 7
+    }
+  ],
+  "주": [
+    {
+      "hanja": "朱",
+      "strokes": 6
+    },
+    {
+      "hanja": "周",
+      "strokes": 8
+    }
+  ],
+  "우": [
+    {
+      "hanja": "禹",
+      "strokes": 9
+    }
+  ],
+  "구": [
+    {
+      "hanja": "具",
+      "strokes": 8
+    },
+    {
+      "hanja": "丘",
+      "strokes": 5
+    }
+  ],
+  "나": [
+    {
+      "hanja": "羅",
+      "strokes": 20
+    }
+  ],
+  "전": [
+    {
+      "hanja": "全",
+      "strokes": 6
+    },
+    {
+      "hanja": "田",
+      "strokes": 5
+    },
+    {
+      "hanja": "錢",
+      "strokes": 16
+    }
+  ],
+  "민": [
+    {
+      "hanja": "閔",
+      "strokes": 12
+    }
+  ],
+  "진": [
+    {
+      "hanja": "陳",
+      "strokes": 16
+    },
+    {
+      "hanja": "眞",
+      "strokes": 10
+    }
+  ],
+  "지": [
+    {
+      "hanja": "池",
+      "strokes": 7
+    },
+    {
+      "hanja": "智",
+      "strokes": 12
+    }
+  ],
+  "엄": [
+    {
+      "hanja": "嚴",
+      "strokes": 20
+    }
+  ],
+  "채": [
+    {
+      "hanja": "蔡",
+      "strokes": 17
+    }
+  ],
+  "원": [
+    {
+      "hanja": "元",
+      "strokes": 4
+    }
+  ],
+  "천": [
+    {
+      "hanja": "千",
+      "strokes": 3
+    }
+  ],
+  "방": [
+    {
+      "hanja": "方",
+      "strokes": 4
+    },
+    {
+      "hanja": "房",
+      "strokes": 8
+    }
+  ],
+  "공": [
+    {
+      "hanja": "孔",
+      "strokes": 4
+    }
+  ],
+  "현": [
+    {
+      "hanja": "玄",
+      "strokes": 5
+    }
+  ],
+  "함": [
+    {
+      "hanja": "咸",
+      "strokes": 9
+    }
+  ],
+  "변": [
+    {
+      "hanja": "卞",
+      "strokes": 4
+    },
+    {
+      "hanja": "邊",
+      "strokes": 22
+    }
+  ],
+  "염": [
+    {
+      "hanja": "廉",
+      "strokes": 13
+    }
+  ],
+  "여": [
+    {
+      "hanja": "呂",
+      "strokes": 7
+    },
+    {
+      "hanja": "余",
+      "strokes": 7
+    }
+  ],
+  "추": [
+    {
+      "hanja": "秋",
+      "strokes": 9
+    }
+  ],
+  "도": [
+    {
+      "hanja": "都",
+      "strokes": 16
+    },
+    {
+      "hanja": "道",
+      "strokes": 16
+    }
+  ],
+  "소": [
+    {
+      "hanja": "蘇",
+      "strokes": 22
+    },
+    {
+      "hanja": "邵",
+      "strokes": 12
+    }
+  ],
+  "석": [
+    {
+      "hanja": "石",
+      "strokes": 5
+    },
+    {
+      "hanja": "昔",
+      "strokes": 8
+    }
+  ],
+  "선": [
+    {
+      "hanja": "宣",
+      "strokes": 9
+    }
+  ],
+  "설": [
+    {
+      "hanja": "薛",
+      "strokes": 19
+    }
+  ],
+  "마": [
+    {
+      "hanja": "馬",
+      "strokes": 10
+    }
+  ],
+  "길": [
+    {
+      "hanja": "吉",
+      "strokes": 6
+    }
+  ],
+  "연": [
+    {
+      "hanja": "延",
+      "strokes": 7
+    }
+  ],
+  "표": [
+    {
+      "hanja": "表",
+      "strokes": 9
+    }
+  ],
+  "위": [
+    {
+      "hanja": "魏",
+      "strokes": 18
+    }
+  ],
+  "기": [
+    {
+      "hanja": "奇",
+      "strokes": 8
+    }
+  ],
+  "반": [
+    {
+      "hanja": "潘",
+      "strokes": 16
+    }
+  ],
+  "라": [
+    {
+      "hanja": "羅",
+      "strokes": 20
+    }
+  ],
+  "왕": [
+    {
+      "hanja": "王",
+      "strokes": 4
+    }
+  ],
+  "금": [
+    {
+      "hanja": "琴",
+      "strokes": 13
+    }
+  ],
+  "옥": [
+    {
+      "hanja": "玉",
+      "strokes": 5
+    }
+  ],
+  "육": [
+    {
+      "hanja": "陸",
+      "strokes": 16
+    }
+  ],
+  "인": [
+    {
+      "hanja": "印",
+      "strokes": 6
+    }
+  ],
+  "맹": [
+    {
+      "hanja": "孟",
+      "strokes": 8
+    }
+  ],
+  "제": [
+    {
+      "hanja": "諸",
+      "strokes": 16
+    }
+  ],
+  "모": [
+    {
+      "hanja": "牟",
+      "strokes": 6
+    },
+    {
+      "hanja": "毛",
+      "strokes": 4
+    }
+  ],
+  "탁": [
+    {
+      "hanja": "卓",
+      "strokes": 8
+    }
+  ],
+  "국": [
+    {
+      "hanja": "國",
+      "strokes": 11
+    },
+    {
+      "hanja": "鞠",
+      "strokes": 17
+    }
+  ],
+  "어": [
+    {
+      "hanja": "魚",
+      "strokes": 11
+    }
+  ],
+  "은": [
+    {
+      "hanja": "殷",
+      "strokes": 10
+    }
+  ],
+  "편": [
+    {
+      "hanja": "片",
+      "strokes": 4
+    }
+  ],
+  "용": [
+    {
+      "hanja": "龍",
+      "strokes": 16
+    }
+  ],
+  "예": [
+    {
+      "hanja": "芮",
+      "strokes": 10
+    }
+  ],
+  "봉": [
+    {
+      "hanja": "奉",
+      "strokes": 8
+    }
+  ],
+  "경": [
+    {
+      "hanja": "慶",
+      "strokes": 15
+    },
+    {
+      "hanja": "景",
+      "strokes": 12
+    }
+  ],
+  "사": [
+    {
+      "hanja": "史",
+      "strokes": 5
+    }
+  ],
+  "부": [
+    {
+      "hanja": "夫",
+      "strokes": 4
+    }
+  ],
+  "계": [
+    {
+      "hanja": "桂",
+      "strokes": 10
+    }
+  ],
+  "태": [
+    {
+      "hanja": "太",
+      "strokes": 4
+    }
+  ],
+  "남궁": [
+    {
+      "hanja": "南宮",
+      "strokes": 19
+    }
+  ],
+  "제갈": [
+    {
+      "hanja": "諸葛",
+      "strokes": 31
+    }
+  ],
+  "선우": [
+    {
+      "hanja": "鮮于",
+      "strokes": 20
+    }
+  ],
+  "황보": [
+    {
+      "hanja": "皇甫",
+      "strokes": 16
+    }
+  ],
+  "독고": [
+    {
+      "hanja": "獨孤",
+      "strokes": 25
+    }
+  ],
+  "사공": [
+    {
+      "hanja": "司空",
+      "strokes": 13
+    }
+  ],
+  "단": [
+    {
+      "hanja": "段",
+      "strokes": 9
+    }
+  ],
+  "갈": [
+    {
+      "hanja": "葛",
+      "strokes": 15
+    }
+  ],
+  "견": [
+    {
+      "hanja": "甄",
+      "strokes": 14
+    }
+  ],
+  "동": [
+    {
+      "hanja": "董",
+      "strokes": 15
+    }
+  ],
+  "감": [
+    {
+      "hanja": "甘",
+      "strokes": 5
+    }
+  ],
+  "간": [
+    {
+      "hanja": "簡",
+      "strokes": 18
+    }
+  ]
+}
