@@ -8,6 +8,10 @@ import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { AlertCircle, Lock, Home, Link2, Check } from "lucide-react";
+import { Daeun2027Report, NamingReport, DateSelectionReport } from "@/components/premium";
+import type { Premium2027ReportContent } from "@/lib/premium/generate2027";
+import type { PremiumNamingReportContent } from "@/lib/premium/generateNaming";
+import type { PremiumDateSelectionReportContent } from "@/lib/premium/generateDates";
 
 interface ReportViewClientProps {
   locale: string;
@@ -18,7 +22,7 @@ interface ReportResponse {
   reportId: string;
   catalogId: string;
   score: number;
-  data: StandardReport;
+  data: unknown;
 }
 
 function getAllOrderTokens(): string[] {
@@ -177,6 +181,49 @@ export default function ReportViewClient({
 
   const product = getProduct(reportData.catalogId);
 
+  if (product?.tier === "premium") {
+    return (
+      <div className="w-full pb-16">
+        {reportData.catalogId === "premium_2027_daeun" && (
+          <Daeun2027Report
+            reportId={reportData.reportId}
+            content={reportData.data as Premium2027ReportContent}
+          />
+        )}
+        {reportData.catalogId === "premium_naming" && (
+          <NamingReport
+            reportId={reportData.reportId}
+            content={reportData.data as PremiumNamingReportContent}
+          />
+        )}
+        {reportData.catalogId === "premium_date_selection" && (
+          <DateSelectionReport
+            reportId={reportData.reportId}
+            content={reportData.data as PremiumDateSelectionReportContent}
+          />
+        )}
+
+        <div className="max-w-md mx-auto flex flex-col gap-2.5 mt-8 px-4 no-print">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="w-full py-3.5 bg-[#1E1726] border border-[#3A2E45] text-[#F6F1EA] font-bold rounded-2xl shadow-xs hover:bg-[#2B1D3A] transition-all flex items-center justify-center gap-2 text-sm"
+          >
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4 text-[#D9B26A]" />}
+            <span>{copied ? "링크가 복사되었어요!" : "리포트 링크 복사하기"}</span>
+          </button>
+          <Link
+            href={`/${locale}`}
+            className="w-full py-3.5 bg-[#14101A] border border-[#3A2E45] text-[#B9AEC4] hover:text-[#F6F1EA] font-bold rounded-2xl transition-all text-center text-sm flex items-center justify-center gap-2"
+          >
+            <Home className="w-4 h-4" />
+            <span>다른 운세·궁합 보러가기</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto flex flex-col gap-6 pb-12">
       {/* Product Name Header */}
@@ -192,7 +239,7 @@ export default function ReportViewClient({
       <StandardReportView
         mode="full"
         score={reportData.score}
-        data={reportData.data}
+        data={reportData.data as StandardReport}
       />
 
       {/* Action Buttons */}
