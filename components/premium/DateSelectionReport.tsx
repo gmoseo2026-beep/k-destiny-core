@@ -266,8 +266,6 @@ export function DateSelectionReport({
                     <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-[#B9AEC4]">
                       <span>{lunarStr}</span>
                       <span>•</span>
-                      <span>{pick.dayGanZhi}일</span>
-                      <span>•</span>
                       <span className="text-[#F3E3BF] font-semibold">{officerDesc}</span>
                     </div>
                   </div>

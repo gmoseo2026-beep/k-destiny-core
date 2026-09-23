@@ -3,6 +3,7 @@ import { STYLE_GUIDE, STRICT_NO_HANJA_RULE } from "@/lib/destinyGen";
 import { PREMIUM_MODELS } from "@/lib/premium/models";
 import { buildPremium2027Engine, type Premium2027Engine } from "@/lib/premium/daeun";
 import { selectTopDates } from "@/lib/premium/dateSelection";
+import { officerWord } from "@/lib/premium/dateLabels";
 import { calculateFourPillars } from "@/lib/saju";
 import type { PersonInput } from "@/lib/validation/inputs";
 
@@ -176,7 +177,7 @@ export async function generate2027Report(input: Daeun2027GenerationInput): Promi
     );
     monthlyGoodDates[m] = datesRes.picks.slice(0, 2).map((d) => ({
       date: d.date,
-      title: d.officer,
+      title: officerWord(d.officer),
       score: d.score,
     }));
   }
@@ -193,7 +194,7 @@ export async function generate2027Report(input: Daeun2027GenerationInput): Promi
 - 생년월일: ${input.dob} ${input.time ?? "시간 모름"} (${input.gender === "M" ? "남성" : "여성"})
 
 [엔진 데이터 - 10년 대운 및 2027 정미년 흐름]
-- 현재 대운 주기: ${engine.current ? `${engine.current.startAge}세~ (${engine.current.ganZhi} 대운, ${engine.current.label})` : "기운 교체기"}
+- 현재 대운 주기: ${engine.current ? `${engine.current.startAge}세~ (${engine.current.label})` : "기운 교체기"}
 - 2027년 점수: 총 ${engine.yearScore}점
 - 2027년 분야별 점수:
   - 사랑/애정(love): ${engine.domains.love}점
@@ -202,8 +203,8 @@ export async function generate2027Report(input: Daeun2027GenerationInput): Promi
   - 건강/활력(health): ${engine.domains.health}점
   - 인간관계(relationships): ${engine.domains.relationships}점
   - 가정/안정(family): ${engine.domains.family}점
-- 2027년 월별 흐름 (1~12월 점수 및 간지):
-${engine.months.map((mo) => `  ${mo.month}월: ${mo.score}점 (${mo.ganZhi})`).join("\n")}
+- 2027년 월별 흐름 (1~12월 점수):
+${engine.months.map((mo) => `  ${mo.month}월: ${mo.score}점`).join("\n")}
 `;
 
   // A. Overview

@@ -3,6 +3,10 @@ import { STYLE_GUIDE, STRICT_NO_HANJA_RULE } from "@/lib/destinyGen";
 import { PREMIUM_MODELS } from "@/lib/premium/models";
 import { buildNamingEngine, type NamingEngineResult } from "@/lib/premium/naming/engine";
 import type { ChildNamingInput } from "@/lib/validation/inputs";
+import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
+
+// 프롬프트에 한자·영문 오행 키를 넣으면 AI가 그대로 옮겨 적어 한자 검증에 걸린다 → 쉬운 말로만 전달한다.
+const elementWords = (els: Element[]) => els.map((e) => `${ELEMENT_WORD[e]} 기운`).join(", ");
 
 export interface NameStoryItem {
   hangul: string;
@@ -53,16 +57,16 @@ export async function generateNamingReport(input: ChildNamingInput): Promise<Pre
   const candidateSummary = engine.names
     .map(
       (n, i) =>
-        `${i + 1}. ${input.surnameHangul}${n.hangul} (${n.hanja.join("")}, 훈: ${n.hun.join(" / ")}, 오행: ${n.elements.join("·")}, 수리점수: ${n.score}점)`,
+        `${i + 1}. ${input.surnameHangul}${n.hangul} (글자 뜻: ${n.hun.map((h, j) => `${h} ${n.eum[j]}`).join(" / ")}, 글자의 기운: ${elementWords(n.elements)}, 이름 점수: ${n.score}점)`,
     )
     .join("\n");
 
   const promptContext = `
 [아이 정보]
-- 성씨: ${input.surnameHangul} (${input.surnameHanja})
+- 성씨: ${input.surnameHangul}
 - 성별: ${input.gender === "M" ? "남아" : "여아"}
 - 생년월일시: ${input.dob} ${input.time ?? "시간 모름"}
-- 사주 오행 분석: 가장 보완이 필요한 기운(${engine.child.weakest.join(", ")}), 두 번째 보완 기운(${engine.child.second.join(", ")})
+- 타고난 기운: 가장 채워 주면 좋은 기운(${elementWords(engine.child.weakest)}), 그다음으로 채워 주면 좋은 기운(${elementWords(engine.child.second)})
 - 부모가 희망하는 느낌/가치관: ${input.tags.join(", ")}
 
 [엔진이 엄선한 최종 추천 이름 5선 (순서 엄수)]

@@ -129,12 +129,9 @@ export function Daeun2027Report({
                     </span>
                     {isCurrent && <PremiumBadge text="현재 대운" />}
                   </div>
-                  <div className="font-serif-kr text-base font-bold text-[#F6F1EA] mb-1">
-                    {c.ganZhi}
-                  </div>
-                  <p className="text-[11px] text-[#B9AEC4] line-clamp-2 leading-tight">
+                  <div className="font-serif-kr text-sm font-bold text-[#F6F1EA] mb-1 leading-snug">
                     {c.label}
-                  </p>
+                  </div>
                   <span className="text-[10px] text-[#B9AEC4]/60 mt-2 block">
                     {c.startYear}~{c.endYear}년
                   </span>
@@ -417,7 +414,6 @@ export function Daeun2027Report({
                       <span className="font-serif-kr text-base font-bold text-[#F3E3BF]">
                         {m.month}월
                       </span>
-                      <span className="text-xs text-[#B9AEC4]">({engMonth?.ganZhi}월)</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs bg-[#1E1726] border border-[#D9B26A]/30 px-2 py-0.5 rounded text-[#D9B26A] font-semibold">
