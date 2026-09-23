@@ -297,6 +297,31 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
   describe("부적합 글자 제외(isNameWorthy)", () => {
     const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
 
+    it("K2 검수로 뺀 글자(吝 인색할·胯 사타구니·獸 짐승)는 이름에 쓸 수 없다", () => {
+      for (const ch of ["吝", "胯", "獸"]) {
+        const h = hanjaByChar.get(ch) ?? { char: ch, hun: "" };
+        expect(isNameWorthy(h), ch).toBe(false);
+      }
+    });
+
+    it("실데이터 하린·서율·지유(여), 도윤·시우·하준(남) 결과 글자는 모두 이름에 쓸 수 있다", () => {
+      const base = { surnameHangul: "김", surnameHanja: "金", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const cases: [string, "M" | "F"][] = [["하린", "F"], ["서율", "F"], ["지유", "F"], ["도윤", "M"], ["시우", "M"], ["하준", "M"]];
+      for (const [name, gender] of cases) {
+        const r = buildNamingEngine(
+          { ...base, gender },
+          { givenNames: { M: gender === "M" ? [{ name, rank: 1 }] : [], F: gender === "F" ? [{ name, rank: 1 }] : [] } },
+        );
+        expect(r.names.length, name).toBeGreaterThan(0);
+        for (const n of r.names) {
+          for (const ch of n.hanja) {
+            const h = hanjaByChar.get(ch);
+            expect(h && isNameWorthy(h), `${name} ${ch}`).toBe(true);
+          }
+        }
+      }
+    });
+
     it("뜻이 나쁘거나 이름에 부적합한 글자는 후보가 될 수 없다", () => {
       for (const ch of ["汰", "殆", "怠", "妓", "娼", "妖", "孀", "憂", "愚", "邪", "淫", "怨"]) {
         const h = hanjaByChar.get(ch) ?? { char: ch, hun: "" };
