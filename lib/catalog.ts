@@ -3,9 +3,12 @@ export type ProductCategory =
   | "cat-compat"
   | "cat-wealth"
   | "cat-reunion"
-  | "cat-career";
+  | "cat-career"
+  | "cat-premium";
 
 export type ProductTarget = "individual" | "couple";
+export type ProductTier = "standard" | "premium";
+export type InputKind = "person" | "couple" | "child_naming" | "date_selection";
 
 export interface CatalogItem {
   id: string; // productKey e.g. "annual_2026", "compat_basic"
@@ -23,6 +26,35 @@ export interface CatalogItem {
   isFree?: boolean;
   isHidden?: boolean;
   items?: string[]; // for SETs
+  tier: ProductTier;
+  inputKind: InputKind;
+  accessDays: number;       // Unlock 유효기간(일). 표준 90, 프리미엄 365
+  requiresLogin?: boolean;  // 결제에 로그인 필수 (annual_*, 총운 포함 세트, 프리미엄)
+  passCovered?: boolean;    // 레거시 기간권 보유자 열람 허용 (compat_basic, annual_*)
+}
+
+export const FIRST_PURCHASE_PRICE = 4900; // 사장님 결정 D3: 회원 첫 결제 1회
+
+export function isViewable(p: CatalogItem | undefined): p is CatalogItem {
+  return !!p && !p.isHidden;
+}
+export function isSellable(p: CatalogItem | undefined): p is CatalogItem {
+  return isViewable(p) && !p.isFree && p.price > 0;
+}
+export function formatWon(n: number): string {
+  return `${n.toLocaleString("ko-KR")}원`;
+}
+
+/** 화면 가격 표기의 유일한 출처(감사 B2). 서버 order route 의 계산 규칙과 반드시 같아야 한다. */
+export function priceLabel(p: CatalogItem): string {
+  if (p.isFree) return "무료";
+  if (p.tier === "standard" && p.type !== "SET") {
+    return `${formatWon(p.price)} · 회원 첫 결제 ${formatWon(FIRST_PURCHASE_PRICE)}`;
+  }
+  return formatWon(p.price);
+}
+export function getPremiumProducts(): CatalogItem[] {
+  return CATALOG.filter((p) => p.tier === "premium" && !p.isHidden);
 }
 
 export const CATALOG: CatalogItem[] = [
@@ -39,6 +71,9 @@ export const CATALOG: CatalogItem[] = [
     icon: "User",
     promptKey: "personality_basic",
     isFree: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "annual_2026",
@@ -48,10 +83,15 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-fortune",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Calendar",
     promptKey: "annual_2026",
     isPopular: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
+    requiresLogin: true,
+    passCovered: true,
   },
   {
     id: "annual_2027",
@@ -61,11 +101,16 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-fortune",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Sparkles",
     promptKey: "annual_2027",
     isNew: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
+    requiresLogin: true,
+    passCovered: true,
   },
   {
     id: "wealth",
@@ -75,11 +120,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-wealth",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Coins",
     promptKey: "wealth_analysis",
     isPopular: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "career",
@@ -89,10 +137,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-career",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Briefcase",
     promptKey: "career_analysis",
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "love_single",
@@ -102,10 +153,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Heart",
     promptKey: "love_single_analysis",
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "charm",
@@ -115,10 +169,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Sparkle",
     promptKey: "charm_analysis",
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "health",
@@ -128,10 +185,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-fortune",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Activity",
     promptKey: "health_analysis",
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "spicy_annual",
@@ -141,11 +201,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-reunion",
     target: "individual",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Flame",
     promptKey: "spicy_annual",
     isNew: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
 
   // --- RELATIONSHIP (관계/궁합) ---
@@ -153,14 +216,18 @@ export const CATALOG: CatalogItem[] = [
     id: "compat_basic",
     type: "COMPAT",
     name: "정통 궁합",
-    description: "오행으로 풀어내는 우리 두 사람의 궁합 점수",
+    description: "두 사람의 타고난 기운으로 보는 우리 궁합 점수",
     category: "cat-compat",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "HeartHandshake",
     promptKey: "compat_basic",
     isPopular: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
+    passCovered: true,
   },
   {
     id: "inner_mind",
@@ -170,10 +237,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "MessageCircleHeart",
     promptKey: "inner_mind",
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "reunion",
@@ -183,11 +253,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-reunion",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Undo2",
     promptKey: "reunion",
     isPopular: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "cheating",
@@ -197,10 +270,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-reunion",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Eye",
     promptKey: "cheating_tendency",
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "marriage",
@@ -210,10 +286,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Gem",
     promptKey: "marriage_compat",
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "conflict",
@@ -223,10 +302,13 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-reunion",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Swords",
     promptKey: "conflict_resolution",
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "secret_love",
@@ -236,11 +318,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "couple",
     price: 6900,
-    originalPrice: 15000,
+    originalPrice: 6900,
     icon: "Moon",
     promptKey: "secret_love",
     isNew: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
 
   // --- SETS (세트 상품) ---
@@ -252,12 +337,15 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "couple",
     price: 12900,
-    originalPrice: 20700,
+    originalPrice: 12900,
     icon: "Users",
     promptKey: "SET",
     items: ["compat_basic", "inner_mind", "marriage"],
     isPopular: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "set_reunion",
@@ -267,11 +355,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-reunion",
     target: "couple",
     price: 12900,
-    originalPrice: 20700,
+    originalPrice: 12900,
     icon: "HeartCrack",
     promptKey: "SET",
     items: ["reunion", "inner_mind", "conflict"],
     isHidden: true,
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
   },
   {
     id: "set_love",
@@ -281,11 +372,14 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-compat",
     target: "individual",
     price: 12900,
-    originalPrice: 13800,
+    originalPrice: 12900,
     icon: "HeartHandshake",
     promptKey: "SET",
     items: ["love_single", "charm"],
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
   },
   {
     id: "set_me",
@@ -295,11 +389,15 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-fortune",
     target: "individual",
     price: 12900,
-    originalPrice: 27600,
+    originalPrice: 12900,
     icon: "Star",
     promptKey: "SET",
     items: ["annual_2026", "wealth", "career", "health"],
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
+    requiresLogin: true,
   },
   {
     id: "set_career",
@@ -309,11 +407,15 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-career",
     target: "individual",
     price: 12900,
-    originalPrice: 13800,
+    originalPrice: 12900,
     icon: "Briefcase",
     promptKey: "SET",
     items: ["career", "annual_2026"],
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
+    requiresLogin: true,
   },
   {
     id: "set_2027",
@@ -323,12 +425,38 @@ export const CATALOG: CatalogItem[] = [
     category: "cat-fortune",
     target: "individual",
     price: 16900,
-    originalPrice: 20700,
+    originalPrice: 16900,
     icon: "Sparkles",
     promptKey: "SET",
     items: ["annual_2027", "wealth", "career"],
     isNew: true,
     isHidden: true,
+    tier: "standard",
+    inputKind: "person",
+    accessDays: 90,
+    requiresLogin: true,
+  },
+  // --- PREMIUM 3종 ---
+  {
+    id: "premium_2027_daeun", type: "FORTUNE", tier: "premium", inputKind: "person",
+    name: "2027 대운 프리미엄 리포트",
+    description: "앞으로 10년의 큰 흐름 속 2027년의 자리와 12개월 상세 달력",
+    category: "cat-premium", target: "individual", price: 19900, originalPrice: 19900,
+    icon: "Crown", promptKey: "premium_2027_daeun", accessDays: 365, requiresLogin: true, isHidden: true,
+  },
+  {
+    id: "premium_naming", type: "FORTUNE", tier: "premium", inputKind: "child_naming",
+    name: "우리 아이 이름 짓기",
+    description: "아이의 사주에 맞춘 좋은 이름 5개와 한 글자씩 담긴 이야기",
+    category: "cat-premium", target: "individual", price: 39000, originalPrice: 39000,
+    icon: "Baby", promptKey: "premium_naming", accessDays: 365, requiresLogin: true, isHidden: true,
+  },
+  {
+    id: "premium_date_pick", type: "FORTUNE", tier: "premium", inputKind: "date_selection",
+    name: "길일 택일",
+    description: "결혼·이사·개업·계약, 원하는 기간 안에서 가장 좋은 날 5곳",
+    category: "cat-premium", target: "individual", price: 19900, originalPrice: 19900,
+    icon: "CalendarHeart", promptKey: "premium_date_pick", accessDays: 365, requiresLogin: true, isHidden: true,
   },
 ];
 
@@ -337,13 +465,13 @@ export function getProduct(id: string): CatalogItem | undefined {
 }
 
 export function getProductsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.target === target && p.type !== "SET" && !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type !== "SET" && !p.isHidden);
 }
 
 export function getSetsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.target === target && p.type === "SET" && !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type === "SET" && !p.isHidden);
 }
 
 export function getAllProducts(): CatalogItem[] {
-  return CATALOG.filter((p) => !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && !p.isHidden);
 }

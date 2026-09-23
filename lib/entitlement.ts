@@ -1,189 +1,70 @@
 import prisma from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
-import { CATALOG } from "@/lib/catalog";
+import { getProduct } from "@/lib/catalog";
+import { grantingCatalogIds, normalizeProductKey, toStorageKey } from "@/lib/productIdentity";
+import { unlockGrants } from "@/lib/entitlementRules";
 
 export interface EntitlementResult {
   entitled: boolean;
-  reason: 'ADMIN' | 'SUBSCRIPTION' | 'UNLOCK' | 'NONE';
+  reason: "ADMIN" | "SUBSCRIPTION" | "UNLOCK" | "NONE";
 }
+
+const NONE: EntitlementResult = { entitled: false, reason: "NONE" };
 
 export async function isEntitled(params: {
   userId?: string | null;
   role?: string | null;
   tier?: string | null;
   compatId?: string | null;
-  email?: string | null; // For legacy/compatibility
-  orderId?: string | null; // For guest users
-  productKey?: string | null; // For specific products (e.g. "ANNUAL:2026" or "annual_2026")
+  email?: string | null;
+  orderId?: string | null;
+  productKey?: string | null; // "ANNUAL:2026" 또는 카탈로그 id
 }): Promise<EntitlementResult> {
-  const { userId, role, tier, compatId, email, orderId, productKey } = params;
+  const { userId, role, compatId, orderId, productKey } = params;
+  if (role === "ADMIN") return { entitled: true, reason: "ADMIN" };
 
-  // 1. ADMIN is always entitled to everything (testing/bypass)
-  if (role === 'ADMIN') {
-    return { entitled: true, reason: 'ADMIN' };
-  }
+  // productKey 없이 compatId 만 오면 레거시 궁합 심층(deep-report) 요청 → compat_basic 으로만 해석
+  const catalogId = productKey ? normalizeProductKey(productKey) : compatId ? "compat_basic" : null;
+  const product = catalogId ? getProduct(catalogId) : undefined;
 
-  if (userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { tier: true, premiumEndDate: true }
-    });
-
-    if (user && user.tier === 'PREMIUM') {
-      const now = new Date();
-      if (!user.premiumEndDate || user.premiumEndDate > now) {
-        return { entitled: true, reason: 'SUBSCRIPTION' };
-      }
+  // 레거시 기간권: passCovered 상품만(사장님 결정 D4). 상품 지정이 없는 호출(주간/데일리)은 기존대로 전체.
+  if (userId && (!catalogId || product?.passCovered)) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tier: true, premiumEndDate: true } });
+    if (user?.tier === "PREMIUM" && (!user.premiumEndDate || user.premiumEndDate > new Date())) {
+      return { entitled: true, reason: "SUBSCRIPTION" };
     }
-    
-    // Check for active subscriptions just in case
     const activeSub = await prisma.subscription.findFirst({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        currentPeriodEnd: { gte: new Date() }
-      }
+      where: { userId, status: "ACTIVE", currentPeriodEnd: { gte: new Date() } },
+      select: { id: true },
     });
-    if (activeSub) {
-      return { entitled: true, reason: 'SUBSCRIPTION' };
+    if (activeSub) return { entitled: true, reason: "SUBSCRIPTION" };
+  }
+
+  if (!catalogId || !product) return NONE; // 알 수 없는 상품 → fail-closed
+
+  const req = { catalogId, compatId: compatId ?? null, now: new Date() };
+
+  // [H-2] 게스트: orderId 제시(베어러)
+  if (orderId) {
+    const order = await prisma.order.findUnique({ where: { orderId }, include: { unlocks: true } });
+    if (order?.status === "PAID" && order.unlocks.some((x) => unlockGrants(x, req))) {
+      return { entitled: true, reason: "UNLOCK" };
     }
   }
 
-  const now = new Date();
-
-  // 2-1. Single unlock check for a specific productKey
-  if (productKey) {
-    // Parse legacy "ANNUAL:2026" or standard catalog IDs like "annual_2026"
-    let pType = "";
-    let pKey = "";
-    if (productKey.includes(':')) {
-      [pType, pKey] = productKey.split(':');
-    } else {
-      pKey = productKey;
-      const catalogItem = CATALOG.find((c) => c.id === pKey);
-      pType = catalogItem ? catalogItem.type : (pKey.startsWith("annual_") ? "ANNUAL" : "FORTUNE");
+  // 회원: 본인 Unlock 중 규칙을 통과하는 행
+  if (userId) {
+    const keys: Prisma.UnlockWhereInput[] = grantingCatalogIds(catalogId).map((id) => toStorageKey(id));
+    if (catalogId === "compat_basic") {
+      keys.push({ productType: null }, { productType: "COMPAT", productKey: null }); // 레거시 궁합 행
     }
-    
-    // Find sets containing this product
-    const setsContainingProduct = CATALOG.filter((c) => c.type === "SET" && c.items?.includes(pKey));
-    const allowedKeys = [{ pType, pKey }];
-    for (const set of setsContainingProduct) {
-      allowedKeys.push({ pType: "SET", pKey: set.id });
-    }
-
-    // Check Guest via orderId
-    if (orderId) {
-      const order = await prisma.order.findUnique({
-        where: { orderId },
-        include: { unlocks: true },
-      });
-      if (order && order.status === 'PAID') {
-        const matchingUnlock = order.unlocks?.find((u) => 
-          allowedKeys.some(ak => {
-            if (u.productType !== ak.pType || u.productKey !== ak.pKey) return false;
-            
-            const cItem = CATALOG.find(c => c.id === ak.pKey);
-            const isCouple = ak.pType === 'COMPAT' || (cItem && cItem.target === 'couple');
-            if (isCouple && u.compatId !== compatId) return false;
-            
-            return true;
-          })
-        );
-        if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
-          return { entitled: true, reason: 'UNLOCK' };
-        }
-      }
-    }
-
-    // Check Member via userId
-    if (userId) {
-      const orConditions = allowedKeys.map(ak => {
-        const cItem = CATALOG.find(c => c.id === ak.pKey);
-        const isCouple = ak.pType === 'COMPAT' || (cItem && cItem.target === 'couple');
-        const condition: Prisma.UnlockWhereInput = {
-          productType: ak.pType,
-          productKey: ak.pKey,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
-        };
-        if (isCouple) {
-          condition.compatId = compatId; // Must match exactly
-        }
-        return condition;
-      });
-
-      const unlock = await prisma.unlock.findFirst({
-        where: {
-          userId,
-          OR: orConditions
-        },
-      });
-      if (unlock) {
-        return { entitled: true, reason: 'UNLOCK' };
-      }
-    }
-    
-    // If no compatId fallback, return NONE
-    if (!compatId) {
-      return { entitled: false, reason: 'NONE' };
-    }
-  }
-
-  // 3. Single unlock check for a specific compatId
-  if (compatId) {
-    const setsContainingCompat = CATALOG.filter((c) => c.type === "SET" && c.items?.includes("compat_basic"));
-    const allowedSetKeys = setsContainingCompat.map(s => s.id);
-
-    if (orderId) {
-      const order = await prisma.order.findUnique({
-        where: { orderId },
-        include: { unlocks: true },
-      });
-      if (order && order.status === 'PAID') {
-        const matchingUnlock = order.unlocks?.find((u) => {
-           if (u.compatId !== compatId) return false;
-           
-           if (!u.productType || u.productType === "COMPAT") return true;
-           // Also check if they unlocked a SET that contains compat_basic
-           if (u.productType === "SET" && u.productKey && allowedSetKeys.includes(u.productKey)) return true;
-           return false;
-        });
-        if (matchingUnlock && (!matchingUnlock.expiresAt || matchingUnlock.expiresAt > now)) {
-          return { entitled: true, reason: 'UNLOCK' };
-        }
-      }
-    }
-
-    const whereClause: Prisma.UnlockWhereInput = { compatId };
-    if (userId) {
-      whereClause.userId = userId;
-    } else {
-      return { entitled: false, reason: 'NONE' };
-    }
-
-    const unlock = await prisma.unlock.findFirst({
-      where: {
-        ...whereClause,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      },
+    const unlocks = await prisma.unlock.findMany({
+      where: { userId, OR: keys },
+      select: { productType: true, productKey: true, compatId: true, expiresAt: true },
     });
-    if (unlock) {
-      return { entitled: true, reason: 'UNLOCK' };
-    }
-    
-    // Check if user has SET for compat_basic
-    if (userId && allowedSetKeys.length > 0) {
-      const setUnlock = await prisma.unlock.findFirst({
-        where: {
-          userId,
-          productType: "SET",
-          productKey: { in: allowedSetKeys },
-          compatId, // Enforce compatId matching for sets containing compat_basic
-          OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-        }
-      });
-      if (setUnlock) return { entitled: true, reason: 'UNLOCK' };
-    }
+    if (unlocks.some((x) => unlockGrants(x, req))) return { entitled: true, reason: "UNLOCK" };
   }
 
-  return { entitled: false, reason: 'NONE' };
+  // ⛔ 여기서 끝. 과거처럼 compatId 전용 분기로 폴스루하지 않는다(감사 B1).
+  return NONE;
 }

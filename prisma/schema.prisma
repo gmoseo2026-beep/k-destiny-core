@@ -361,3 +361,42 @@ model UserDailyFortune {
   @@index([userId])
 }
 
+// 17. 범용 리포트 AI 생성 캐시 (단건/세트 등 공용) - deprecated, 미사용
+model ReportCache {
+  id          String   @id @default(cuid())
+  userId      String?  // 회원일 경우 userId
+  orderId     String?  // 비회원일 경우 orderId (claimToken)
+  productKey  String   // 카탈로그의 productId (예: "wealth_analysis", "annual_2026")
+  compatId    String?  // 관계 상품일 경우 대상자 ID
+  inputHash   String   // 사주 입력값의 해시 (재계산 여부 판별)
+  content     Json     // 생성된 JSON 리포트 내용
+  isTeaser    Boolean  @default(false) // 권한 없는 티저 상태인지 여부
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([compatId])
+  // 비회원을 포함한 동일 요청 중복 방지 (식별할 수 있는 키들로 복합 인덱싱/유니크 고려. 여기선 단순화)
+}
+
+// 18. 생성 리포트 저장소 — "주문 1건 = 리포트 1건" 고정(감사 H2), 티저/무료 캐시 겸용
+model GeneratedReport {
+  id            String    @id @default(cuid())
+  cacheKey      String    @unique // FULL:<Order.id>:<catalogId> | TEASER:<catalogId>:<subjectHash>:<compatId|-> | FREE:<catalogId>:<subjectHash>
+  kind          String    // "TEASER" | "FULL" | "FREE"
+  catalogId     String
+  orderId       String?   // Order.id (FULL 전용)
+  userId        String?
+  compatId      String?
+  subjectHash   String    // HMAC(SUBJECT_HASH_SECRET, 정규화 입력) — 생년월일 원문 저장 금지
+  status        String    @default("GENERATING") // GENERATING | READY | FAILED
+  attempts      Int       @default(0)
+  content       Json?
+  model         String?
+  firstViewedAt DateTime? // 최초 열람 시각 — 청약철회 판단용
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([orderId])
+}

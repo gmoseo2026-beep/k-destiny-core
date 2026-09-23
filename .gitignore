@@ -80,3 +80,5 @@ automation/out/
 
 # Cowork(Claude) 산출물 보관함 — 지시문·마케팅 자산 등. 로컬 전용, 커밋 금지.
 /Claude outputs/
+
+.env.development.local

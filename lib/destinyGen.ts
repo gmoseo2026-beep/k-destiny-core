@@ -522,3 +522,181 @@ export function calculateDailyScore(params: {
   return Math.min(96, Math.max(65, score));
 }
 
+// -----------------------------------------------------------------------------
+// D2: 범용 상품 (재물, 취업, 매력 등 단품) 및 범용 관계 상품 (속마음, 바람기 등)
+// -----------------------------------------------------------------------------
+
+export interface SingleReportContent {
+  score: number;       // 0~100 점수
+  headline: string;    // 한 줄 핵심 요약 (두근이 톤)
+  summary: string;     // 전체 2~3문장 무료 요약 (구체적 결론 제외)
+  freeSection: {       // 무료 공개할 구체적 리포트 1문단
+    type: string;
+    text: string;
+  };
+  details: string;     // 상세 분석 (유료)
+  advice: string;      // 구체적 행동 조언 (유료)
+}
+
+export interface SingleTeaserContent {
+  score: number;
+  headline: string;
+  summary: string;
+  freeSection: {
+    type: string;
+    text: string;
+  };
+  hooks: string[];     // 결제 유도용 흥미로운 훅 (2~3개)
+}
+
+export function buildGenericFortunePrompt(contextBlock: string, promptKey: string, isTeaser: boolean, toneGuide: string): string {
+  const contentFormat = isTeaser ? `interface SingleTeaserContent {
+  score: number;       // 0~100
+  headline: string;    // One-line punchy mascot headline
+  summary: string;     // 2~3 sentences overview. NO concrete conclusions. Leave deep curiosity.
+  freeSection: {       // One paragraph of actual fortune reading for free preview
+    type: string;
+    text: string;
+  };
+  hooks: string[];     // 2~3 cliffhanger sentences that stop right before the revelation.
+}` : `interface SingleReportContent {
+  score: number;       // 0~100
+  headline: string;    // One-line punchy mascot headline
+  summary: string;     // 2~3 sentences general overview
+  freeSection: {       // One paragraph of actual fortune reading
+    type: string;
+    text: string;
+  };
+  details: string;     // Deep, specific analysis (2-3 paragraphs)
+  advice: string;      // Actionable, practical advice
+}`;
+
+  return `${STYLE_GUIDE}
+
+${STRICT_NO_HANJA_RULE}
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+TOPIC: ${promptKey}
+
+Write a deeply insightful fortune reading about the TOPIC above. 
+${isTeaser ? 'CRITICAL GOAL: Spark intense curiosity. Do NOT give away complete answers or conclusions in summary/hooks. Write punchy cliffhanger hooks.' : ''}
+
+You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+${contentFormat}
+\`\`\`
+
+Requirements:
+1. Make it sound deeply personal, warm, encouraging, and insightful like a wise, empathetic mentor.
+2. Absolutely NO Chinese characters (한자) and NO saju technical terms.
+3. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;
+}
+
+export function buildGenericCompatPrompt(contextBlock: string, promptKey: string, isTeaser: boolean, toneGuide: string): string {
+  const contentFormat = isTeaser ? `interface SingleTeaserContent {
+  score: number;       // 0~100 compatibility/relationship score for this topic
+  headline: string;    // One-line punchy headline
+  summary: string;     // 2~3 sentences overview of the dynamic. NO concrete conclusions.
+  freeSection: {       // One paragraph of actual relationship reading for free preview
+    type: string;
+    text: string;
+  };
+  hooks: string[];     // 2~3 cliffhanger sentences that stop right before the revelation.
+}` : `interface SingleReportContent {
+  score: number;       // 0~100 compatibility/relationship score for this topic
+  headline: string;    // One-line punchy headline
+  summary: string;     // 2~3 sentences general overview
+  freeSection: {       // One paragraph of actual relationship reading
+    type: string;
+    text: string;
+  };
+  details: string;     // Deep, specific analysis of the two people (2-3 paragraphs)
+  advice: string;      // Actionable, practical advice for the relationship
+}`;
+
+  return `${STYLE_GUIDE}
+
+${STRICT_NO_HANJA_RULE}
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+TOPIC: ${promptKey}
+
+Write a deeply insightful relationship/compatibility reading about the TOPIC above for these two people. 
+${isTeaser ? 'CRITICAL GOAL: Spark intense curiosity. Do NOT give away complete answers or conclusions in summary/hooks. Write punchy cliffhanger hooks.' : ''}
+
+You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+\`\`\`typescript
+${contentFormat}
+\`\`\`
+
+Requirements:
+1. Make it sound deeply personal, warm, and insightful like a wise mentor.
+2. Absolutely NO Chinese characters (한자) and NO saju technical terms.
+3. Output ONLY the raw JSON object. Do NOT include markdown code fences.`;
+}
+
+/** 
+ * 범용 개인 리포트 결정론적 점수 산출 
+ * (입력 해시와 상품키(promptKey)를 활용하여 항상 동일한 점수(65~95) 도출)
+ */
+export function calculateGenericScore(params: {
+  productKey: string;
+  dayMaster?: string | null;
+  fourPillars?: { year?: string; month?: string; day?: string; time?: string | null } | null;
+  elementsScore?: Record<string, number> | null;
+}): number {
+  let score = 75; // 베이스
+  
+  // 1. 사주 해시
+  const dayPillar = params.fourPillars?.day || "";
+  let hash = 0;
+  for (let i = 0; i < dayPillar.length; i++) {
+    hash = (hash * 31 + dayPillar.charCodeAt(i)) & 0xffff;
+  }
+  
+  // 2. 상품키 해시
+  let keyHash = 0;
+  for (let i = 0; i < params.productKey.length; i++) {
+    keyHash = (keyHash * 17 + params.productKey.charCodeAt(i)) & 0xffff;
+  }
+  
+  const variance = ((hash + keyHash) % 31) - 15; // -15 ~ +15
+  score += variance;
+  
+  return Math.min(95, Math.max(65, score));
+}
+
+/** 
+ * 범용 궁합 리포트 결정론적 점수 산출 
+ */
+export function calculateGenericCompatScore(params: {
+  productKey: string;
+  personADayMaster: string;
+  personBDayMaster: string;
+}): number {
+  let score = 75;
+  
+  let hash = 0;
+  const combo = params.personADayMaster + params.personBDayMaster;
+  for (let i = 0; i < combo.length; i++) {
+    hash = (hash * 31 + combo.charCodeAt(i)) & 0xffff;
+  }
+  
+  let keyHash = 0;
+  for (let i = 0; i < params.productKey.length; i++) {
+    keyHash = (keyHash * 17 + params.productKey.charCodeAt(i)) & 0xffff;
+  }
+  
+  const variance = ((hash + keyHash) % 31) - 15;
+  score += variance;
+  
+  return Math.min(98, Math.max(60, score));
+}
