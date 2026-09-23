@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, Shield } from "lucide-react";
 
 const sectionClass =
@@ -9,6 +9,8 @@ const sectionClass =
 
 export default function TermsPage() {
   const t = useTranslations("Legal");
+  // 2026-09-23 개정 조항은 한국어 본문에만 있다(동면 로케일은 기존 문구 유지).
+  const isKo = useLocale() === "ko";
 
   return (
     <main className="relative min-h-[100dvh] w-full bg-background overflow-hidden flex flex-col items-center py-12 px-4 sm:px-6">
@@ -31,6 +33,7 @@ export default function TermsPage() {
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-ink">{t("terms_title")}</h1>
           <p className="text-gray-500 text-sm font-sans">{t("last_updated")}</p>
+          {isKo && <p className="text-gray-500 text-xs font-sans">{t("revision_note")}</p>}
         </div>
 
         <div className="space-y-6">
@@ -88,6 +91,9 @@ export default function TermsPage() {
           <div className={sectionClass}>
             <h2 className="font-serif text-xl text-plum mb-4">{t("terms_s9_title")}</h2>
             <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s9_body")}</p>
+            {isKo && (
+              <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line mt-3">{t("terms_s9_amend")}</p>
+            )}
           </div>
 
           {/* 제10조 (면책) */}
@@ -102,9 +108,18 @@ export default function TermsPage() {
             <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s11_body")}</p>
           </div>
 
+          {/* 제12조 (아이 이름 짓기 고지) — 2026-09-23 신설 */}
+          {isKo && (
+            <div className={sectionClass}>
+              <h2 className="font-serif text-xl text-plum mb-4">{t("terms_s12_title")}</h2>
+              <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s12_body")}</p>
+            </div>
+          )}
+
           {/* 부칙 및 문의 */}
           <div className="bg-white border border-ink/8 rounded-2xl p-6 text-center space-y-2 shadow-sm">
             <p className="font-sans text-xs text-gray-500">{t("terms_addendum")}</p>
+            {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_2")}</p>}
             <p className="font-sans text-xs text-gray-500">
               문의: <a href="mailto:help@kongdak.kr" className="text-coral hover:underline">help@kongdak.kr</a>
             </p>

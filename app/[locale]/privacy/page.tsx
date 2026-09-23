@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, Eye } from "lucide-react";
 
 const sectionClass =
@@ -9,12 +9,14 @@ const sectionClass =
 
 export default function PrivacyPage() {
   const t = useTranslations("Legal");
+  // 2026-09-23 개정 항목은 한국어 본문에만 있다(동면 로케일은 기존 문구 유지).
+  const isKo = useLocale() === "ko";
 
   const overseasTransfers = [
     { trustee: "Supabase, Inc.", task: "데이터베이스 호스팅", country: "미국" },
     { trustee: "Contabo GmbH", task: "서버 인프라 운영", country: "독일" },
     { trustee: "Cloudflare, Inc.", task: "CDN · 보안(DDoS/WAF) · 트래픽 처리", country: "미국" },
-    { trustee: "Google LLC (Gemini API)", task: "AI 궁합 해석 생성", country: "미국" },
+    { trustee: "Google LLC (Gemini API)", task: "AI 궁합·운세·작명·택일 리포트 문장 생성", country: "미국" },
     { trustee: "Google LLC (Google Analytics)", task: "서비스 이용 통계 · 분석", country: "미국" },
     { trustee: "카카오 · 네이버 · 구글", task: "소셜 로그인 · 회원 식별", country: "국내(카카오·네이버), 미국(구글)" },
   ];
@@ -40,6 +42,7 @@ export default function PrivacyPage() {
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-ink">{t("privacy_title")}</h1>
           <p className="text-gray-500 text-sm font-sans">{t("last_updated")}</p>
+          {isKo && <p className="text-gray-500 text-xs font-sans">{t("revision_note")}</p>}
         </div>
 
         <div className="space-y-6">
@@ -69,6 +72,13 @@ export default function PrivacyPage() {
                 <p className="font-bold text-ink mb-1">▪ {t("privacy_s1_item4_label")}</p>
                 <p className="leading-relaxed pl-3">{t("privacy_s1_item4_desc")}</p>
               </div>
+              {isKo && (
+                <div>
+                  <p className="font-bold text-ink mb-1">▪ {t("privacy_s1_item5_label")}</p>
+                  <p className="leading-relaxed pl-3">{t("privacy_s1_item5_desc")}</p>
+                  <p className="text-xs text-coral/90 mt-1 pl-3 font-medium">{t("privacy_s1_item5_note")}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -92,6 +102,7 @@ export default function PrivacyPage() {
               <li>{t("privacy_s3_li2")}</li>
               <li>{t("privacy_s3_li3")}</li>
               <li>{t("privacy_s3_li4")}</li>
+              {isKo && <li>{t("privacy_s3_li5")}</li>}
             </ul>
           </div>
 
@@ -129,6 +140,7 @@ export default function PrivacyPage() {
             </div>
 
             <p className="font-sans text-xs text-gray-500 leading-relaxed">{t("privacy_s5_note")}</p>
+            {isKo && <p className="font-sans text-xs text-gray-500 leading-relaxed mt-2">{t("privacy_s5_gemini")}</p>}
           </div>
 
           {/* 6. 이용자의 권리 */}
@@ -156,6 +168,7 @@ export default function PrivacyPage() {
           <div className={sectionClass}>
             <h2 className="font-serif text-xl text-plum mb-4">{t("privacy_s9_title")}</h2>
             <p className="font-sans text-ink leading-relaxed text-sm">{t("privacy_s9_body")}</p>
+            {isKo && <p className="font-sans text-ink leading-relaxed text-sm mt-2">{t("privacy_s9_naming")}</p>}
           </div>
 
           {/* 10. 개인정보 보호책임자 및 문의처 */}
@@ -175,6 +188,7 @@ export default function PrivacyPage() {
             <h2 className="font-serif text-xl text-plum mb-4">{t("privacy_s11_title")}</h2>
             <p className="font-sans text-ink leading-relaxed text-sm mb-3">{t("privacy_s11_body")}</p>
             <p className="font-sans text-xs text-coral/80 font-semibold">{t("privacy_effective_date")}</p>
+            {isKo && <p className="font-sans text-xs text-gray-500 mt-1">{t("privacy_revision_history")}</p>}
           </div>
         </div>
 
