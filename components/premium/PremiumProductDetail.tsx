@@ -1,4 +1,4 @@
-import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
 import type { CatalogItem } from "@/lib/catalog";
@@ -90,20 +90,33 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
       </header>
 
       <div className="pt-20 max-w-2xl mx-auto px-4 sm:px-6">
-        {/* 1. Hero Section */}
-        <section className="text-center py-10 md:py-14 border-b border-[#3A2E45]/80">
-          <div className="mb-4">
-            <PremiumBadge text="KONGDAK SIGNATURE" />
+        {/* 1. Hero Section with cat-premium gradient and 3D icon */}
+        <section className="relative text-center py-10 md:py-14 rounded-3xl bg-gradient-to-b from-[#5B3354] to-[#2A1526] border border-[#7A4570]/40 overflow-hidden mb-8 shadow-xl">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-10" aria-hidden="true">
+            <defs>
+              <pattern id="premium-heart-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M20 32s-10-6.5-14-12.5C2 13 4 7 10 7c3.5 0 7 3 10 5.5C23 9.5 26.5 7 30 7c6 0 8 6 4 12.5C30 25.5 20 32 20 32z" fill="white" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#premium-heart-pattern)" />
+          </svg>
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-24 h-24 relative mb-4">
+              <Image src={product.icon3d} alt="" width={96} height={96} className="object-contain drop-shadow-lg" priority />
+            </div>
+            <div className="mb-3">
+              <PremiumBadge text="KONGDAK SIGNATURE" />
+            </div>
+            <h1 className="font-serif-kr text-3xl sm:text-4xl font-bold tracking-tight text-[#F6F1EA] mb-3 leading-tight">
+              {product.name}
+            </h1>
+            <p className="text-sm sm:text-base text-[#F3E3BF] font-medium max-w-lg mx-auto mb-3 leading-relaxed px-4">
+              {specDetails.headline}
+            </p>
+            <p className="text-xs sm:text-sm text-[#B9AEC4] max-w-md mx-auto leading-relaxed px-4">
+              {product.description}
+            </p>
           </div>
-          <h1 className="font-serif-kr text-3xl sm:text-4xl font-bold tracking-tight text-[#F6F1EA] mb-4 leading-tight">
-            {product.name}
-          </h1>
-          <p className="text-base sm:text-lg text-[#F3E3BF] font-medium max-w-lg mx-auto mb-6 leading-relaxed">
-            {specDetails.headline}
-          </p>
-          <p className="text-sm text-[#B9AEC4] max-w-md mx-auto leading-relaxed">
-            {product.description}
-          </p>
         </section>
 
         {/* 2. What's in this report */}

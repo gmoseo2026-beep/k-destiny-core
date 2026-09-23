@@ -28,18 +28,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-150 ease-default focus:outline-none focus:ring-2 focus:ring-coral/40 focus:ring-offset-2';
+    const baseStyles = 'inline-flex items-center justify-center font-bold rounded-2xl transition-all duration-150 ease-default focus:outline-none focus:ring-2 focus:ring-coral/40';
     
     const variants = {
-      primary: 'bg-coral text-white hover:bg-[#E5385C] shadow-[0_6px_24px_rgba(181,71,96,0.15)] hover:shadow-[0_8px_32px_rgba(181,71,96,0.25)]',
-      secondary: 'bg-white text-coral border border-coral hover:bg-coral/5 shadow-sm',
-      text: 'bg-transparent text-foreground hover:bg-gray-100',
+      primary: 'bg-coral hover:bg-coral-deep text-white shadow-[0_8px_20px_rgba(224,36,90,0.25)]',
+      secondary: 'bg-white hover:bg-surface-soft text-ink border border-line shadow-xs',
+      text: 'bg-transparent text-text-2 hover:bg-surface-soft',
     };
 
     const sizes = {
-      sm: 'text-sm px-4 py-2',
-      md: 'text-base px-6 py-3',
-      lg: 'text-lg px-8 py-4',
+      sm: 'text-xs px-3.5 py-2 h-9',
+      md: 'text-sm px-5 py-2.5 h-11',
+      lg: 'text-base px-6 py-3.5 h-[52px]',
     };
 
     const classes = [
@@ -47,7 +47,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variants[variant],
       sizes[size],
       fullWidth ? 'w-full' : '',
-      disabled || isLoading ? 'opacity-50 cursor-not-allowed transform-none' : 'active:scale-97',
+      disabled || isLoading ? 'opacity-50 cursor-not-allowed transform-none' : 'active:scale-[0.96]',
       className,
     ].filter(Boolean).join(' ');
 

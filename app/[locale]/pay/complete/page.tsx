@@ -7,6 +7,8 @@ import KongdakMascot from "@/components/KongdakMascot";
 import { rememberUnlockToken, rememberOrderToken } from "@/lib/payments/client";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 function PayCompleteContent() {
   const params = useParams();
@@ -204,7 +206,7 @@ function PayCompleteContent() {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-      <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-md border border-coral/20 text-center flex flex-col items-center">
+      <Card className="max-w-md w-full p-8 text-center flex flex-col items-center">
         <div className="mb-6">
           <KongdakMascot
             size={80}
@@ -219,52 +221,55 @@ function PayCompleteContent() {
           {status === "error" && "결제 안내"}
         </h1>
 
-        <p className="text-sm text-[#6A5E72] leading-relaxed mb-6 whitespace-pre-line">
+        <p className="text-sm text-text-2 leading-relaxed mb-6 whitespace-pre-line">
           {msg}
         </p>
 
         {status === "success" && paidCompatId && (
-          <div className="w-full bg-[#FFF0F3] border border-coral/20 rounded-2xl p-4 text-left mb-6">
+          <Card variant="soft" className="w-full p-4 text-left mb-6">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
               <span>비회원 결과 보관 안내</span>
             </div>
-            <p className="text-xs text-[#6A5E72] leading-relaxed mb-3">
+            <p className="text-xs text-text-2 leading-relaxed mb-3">
               현재 브라우저에 열람 권한이 자동 저장되었습니다. 링크를 잃어버리거나 다른 기기에서 보시려면 링크를 꼭 보관해 두세요!
             </p>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={handleCopyResultLink}
-                className="flex-1 bg-white border border-coral/20 text-plum py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-cream transition-all flex items-center justify-center gap-1.5 active:scale-95 focus-visible:ring-2 ring-coral"
+                className="flex-1"
               >
                 <span>{copied ? "✓ 복사 완료!" : "🔗 링크 복사"}</span>
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={handleShareKakaoSelf}
-                className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-95 focus-visible:ring-2 ring-coral"
+                className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-2xl text-xs font-bold shadow-xs hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-[0.96] focus-visible:ring-2 ring-coral"
               >
                 <span>💬 카톡으로 저장</span>
               </button>
             </div>
-          </div>
+          </Card>
         )}
 
         <div className="w-full flex flex-col gap-3">
           {status === "success" && (
-            <button
+            <Button
+              size="lg"
+              fullWidth
               onClick={handleGoToReport}
-              className="w-full bg-gradient-to-r from-[#FF8AA1] via-coral to-plum text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all active:scale-95 focus-visible:ring-2 ring-coral"
             >
               {buttonText}
-            </button>
+            </Button>
           )}
 
           {status === "success" && (
             <Link
               href={`/${locale}/login?callbackUrl=${encodeURIComponent(callbackTarget)}`}
-              className="w-full bg-cream text-plum border border-coral/20 py-3 rounded-2xl font-bold text-xs hover:bg-coral/10 transition-all active:scale-95 block text-center focus-visible:ring-2 ring-coral"
+              className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"
             >
               ✨ 가입하고 내 계정에 평생 보관하기
             </Link>
@@ -272,12 +277,12 @@ function PayCompleteContent() {
 
           <Link
             href={`/${locale}`}
-            className="w-full text-[#8A8291] py-2 font-medium text-xs hover:text-plum transition-colors block text-center focus-visible:ring-2 ring-coral"
+            className="w-full text-text-3 py-2 font-medium text-xs hover:text-ink transition-colors block text-center"
           >
             콩닥 홈으로 가기
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

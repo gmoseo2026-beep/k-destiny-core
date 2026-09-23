@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import KongdakMascot from "@/components/KongdakMascot";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
@@ -16,6 +16,8 @@ import StandardReportView from "@/components/report/StandardReportView";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -366,25 +368,37 @@ export default function FortuneNewClient({
   // Input Form View
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-6 pb-12 mx-auto">
-      {/* Kongdak Mascot Header */}
-      <div className="flex flex-col items-center justify-center -mb-2">
-        <KongdakMascot size={64} animate={isLoading ? "bounce" : "none"} />
-      </div>
+      {/* 3D Product Icon 72px & Title */}
+      {product && (
+        <div className="flex flex-col items-center justify-center -mb-2">
+          <div className="w-[72px] h-[72px] relative mb-2">
+            <Image
+              src={product.icon3d}
+              alt=""
+              width={72}
+              height={72}
+              priority
+              className="object-contain drop-shadow-sm"
+            />
+          </div>
+          <h2 className="text-base font-extrabold text-ink">{product.name}</h2>
+        </div>
+      )}
 
       {errorMsg && (
-        <div className="bg-coral/10 border border-coral text-coral p-3.5 rounded-xl text-sm font-semibold text-center">
+        <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
           {errorMsg}
         </div>
       )}
 
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-plum/10 flex flex-col gap-3.5 w-full">
-        <div className="flex items-center justify-between border-b border-cream pb-2">
+      <Card className="p-5 flex flex-col gap-3.5 w-full">
+        <div className="flex items-center justify-between border-b border-line pb-2">
           <div className="flex items-center gap-2">
             <span className="text-base">👤</span>
             <h3 className="font-bold text-sm text-ink">{product?.name || "사주"} 정보 입력</h3>
           </div>
           {initialProfile && (
-            <span className="text-[10px] bg-coral/10 text-coral px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-bold">
               저장된 프로필 불러옴
             </span>
           )}
@@ -394,23 +408,17 @@ export default function FortuneNewClient({
           values={formValues}
           onChange={(patch) => setFormValues((v) => ({ ...v, ...patch }))}
         />
-      </div>
+      </Card>
 
       {/* Submit Button */}
-      <button
+      <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
+        size="lg"
+        fullWidth
+        isLoading={isLoading}
       >
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span>결과 분석 중...</span>
-          </div>
-        ) : (
-          <span>결과 확인하기 ✨</span>
-        )}
-      </button>
+        결과 확인하기 ✨
+      </Button>
     </form>
   );
 }

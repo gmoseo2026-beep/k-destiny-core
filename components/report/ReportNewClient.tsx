@@ -12,6 +12,8 @@ import { loadPendingInput, clearPendingInput, savePendingInput } from "@/lib/rep
 import { ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
 import { PremiumGenerating } from "@/components/premium/PremiumGenerating";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 interface ReportNewClientProps {
   locale: string;
@@ -251,50 +253,51 @@ export default function ReportNewClient({
   // Missing Order Token
   if (!orderId) {
     return (
-      <div className="w-full max-w-md mx-auto bg-white rounded-3xl p-8 border border-plum/10 shadow-sm text-center">
+      <Card className="w-full max-w-md mx-auto p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-bold text-ink mb-2">결제 정보가 없어요</h2>
-        <p className="text-sm text-muted mb-6 leading-relaxed">
+        <p className="text-sm text-caption mb-6 leading-relaxed">
           리포트 생성을 위한 결제 내역을 확인할 수 없습니다. 상품 페이지에서 결제를 완료해 주세요.
         </p>
         <Link
           href={`/${locale}/products/${catalogId}`}
-          className="inline-block w-full py-3.5 bg-coral text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all text-center"
+          className="inline-block w-full py-3.5 bg-coral hover:bg-coral-deep text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
         >
           상품 페이지로 이동
         </Link>
-      </div>
+      </Card>
     );
   }
 
   // Need Input Form
   if (needInput) {
     return (
-      <div className="w-full max-w-md mx-auto bg-white rounded-3xl p-6 border border-plum/10 shadow-sm">
+      <Card className="w-full max-w-md mx-auto p-6">
         <div className="text-center mb-6">
           <KongdakMascot size={48} animate="none" />
           <h2 className="text-xl font-black text-ink mt-2">사주 정보 입력</h2>
-          <p className="text-xs text-muted mt-1">리포트 생성을 위해 생년월일을 확인해 주세요.</p>
+          <p className="text-xs text-caption mt-1">리포트 생성을 위해 생년월일을 확인해 주세요.</p>
         </div>
 
         {errorMsg && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3 rounded-xl mb-4 text-center">
+          <div className="bg-coral-soft border border-coral text-coral-deep text-xs p-3 rounded-xl mb-4 text-center">
             {errorMsg}
           </div>
         )}
 
         <form onSubmit={handleFormSubmit} className="flex flex-col gap-5">
           <BirthFields values={formValues} onChange={(patch) => setFormValues((v) => ({ ...v, ...patch }))} />
-          <button
+          <Button
             type="submit"
-            className="w-full py-4 bg-coral text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all active:scale-[0.97]"
+            size="lg"
+            fullWidth
           >
             리포트 생성 시작하기 ✨
-          </button>
+          </Button>
         </form>
-      </div>
+      </Card>
     );
   }
 
@@ -302,25 +305,25 @@ export default function ReportNewClient({
   if (product?.type === "SET") {
     return (
       <div className="w-full max-w-md mx-auto flex flex-col gap-6">
-        <div className="bg-white rounded-3xl p-6 border border-plum/10 shadow-sm text-center">
+        <Card className="p-6 text-center">
           <KongdakMascot size={48} animate="bounce" />
           <h2 className="text-xl font-black text-ink mt-3">{product.name}</h2>
-          <p className="text-xs text-muted mt-1">세트 구성 리포트를 생성하고 있어요.</p>
-        </div>
+          <p className="text-xs text-caption mt-1">세트 구성 리포트를 생성하고 있어요.</p>
+        </Card>
 
         <div className="flex flex-col gap-3">
           {setItems.map((item) => (
             <div
               key={item.catalogId}
-              className="bg-white rounded-2xl p-4 border border-plum/10 shadow-xs flex items-center justify-between gap-3"
+              className="bg-white rounded-2xl p-4 border border-line shadow-xs flex items-center justify-between gap-3"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-coral shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-surface-soft flex items-center justify-center text-coral shrink-0">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-ink">{item.name}</h4>
-                  <p className="text-xs text-muted">
+                  <p className="text-xs text-caption">
                     {item.status === "PENDING" && "대기 중"}
                     {item.status === "GENERATING" && "분석 리포트 생성 중..."}
                     {item.status === "READY" && "생성 완료"}

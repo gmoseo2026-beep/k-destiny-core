@@ -95,7 +95,7 @@ export default function BirthFields({
     <div className="flex flex-col gap-3.5 w-full">
       {showName && (
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1">
+          <label className="block text-xs font-semibold text-text-2 mb-1">
             이름 또는 닉네임 (선택)
           </label>
           <input
@@ -104,14 +104,14 @@ export default function BirthFields({
             onChange={(e) => onChange({ name: e.target.value })}
             placeholder="예: 김콩닥"
             disabled={disabled}
-            className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+            className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
           />
         </div>
       )}
 
       <div className="flex flex-col gap-3">
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1">
+          <label className="block text-xs font-semibold text-text-2 mb-1">
             생년월일 <span className="text-coral">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -119,7 +119,7 @@ export default function BirthFields({
               value={values.year}
               onChange={(e) => onChange({ year: e.target.value })}
               disabled={disabled}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             >
               <option value="">년도</option>
               {years.map((y) => (
@@ -132,7 +132,7 @@ export default function BirthFields({
               value={values.month}
               onChange={(e) => onChange({ month: e.target.value })}
               disabled={disabled}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             >
               <option value="">월</option>
               {months.map((m) => (
@@ -145,7 +145,7 @@ export default function BirthFields({
               value={values.day}
               onChange={(e) => onChange({ day: e.target.value })}
               disabled={disabled}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             >
               <option value="">일</option>
               {Array.from(
@@ -162,19 +162,19 @@ export default function BirthFields({
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="sm:col-span-1">
-            <label className="block text-xs font-semibold text-muted mb-1">성별</label>
+            <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
             <select
               value={values.gender}
               onChange={(e) => onChange({ gender: e.target.value as "F" | "M" })}
               disabled={disabled}
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             >
               <option value="F">여성</option>
               <option value="M">남성</option>
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label className="block text-xs font-semibold text-muted mb-1">
+            <label className="block text-xs font-semibold text-text-2 mb-1">
               태어난 시간 (선택)
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -182,7 +182,7 @@ export default function BirthFields({
                 value={values.ampm}
                 onChange={(e) => onChange({ ampm: e.target.value })}
                 disabled={disabled}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 focus-visible:ring-2 ring-coral"
+                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
               >
                 <option value="">모름</option>
                 <option value="AM">오전</option>
@@ -192,7 +192,7 @@ export default function BirthFields({
                 value={values.hour}
                 onChange={(e) => onChange({ hour: e.target.value })}
                 disabled={disabled || !values.ampm}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
               >
                 {hours.map((h) => (
                   <option key={h} value={h}>
@@ -204,7 +204,7 @@ export default function BirthFields({
                 value={values.min}
                 onChange={(e) => onChange({ min: e.target.value })}
                 disabled={disabled || !values.ampm}
-                className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
               >
                 {minutes.map((m) => (
                   <option key={m} value={m}>

@@ -3,10 +3,10 @@ import React from 'react';
 export interface ScoreGaugeProps {
   score: number;
   label?: string;
-  color?: string; // e.g. '#FF3E6C'
+  color?: string; // e.g. '#E0245A'
 }
 
-export function ScoreGauge({ score, label, color = '#FF3E6C' }: ScoreGaugeProps) {
+export function ScoreGauge({ score, label, color = '#E0245A' }: ScoreGaugeProps) {
   // Simple SVG semi-circle gauge
   const radius = 40;
   const circumference = radius * Math.PI;

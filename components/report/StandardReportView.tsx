@@ -3,6 +3,8 @@
 import React from "react";
 import { ScoreGauge } from "@/components/ui/ScoreGauge";
 import { ReportSection } from "@/components/ui/ReportSection";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { Lock, Sparkles, CheckCircle2, XCircle, Heart } from "lucide-react";
 
@@ -32,15 +34,15 @@ export default function StandardReportView({
     return (
       <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
         {/* Score & Headline Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 text-center flex flex-col items-center">
-          <ScoreGauge score={score} label="종합 흐름 점수" color="var(--coral)" />
+        <Card className="text-center flex flex-col items-center">
+          <ScoreGauge score={score} label="종합 흐름 점수" color="#E0245A" />
           <h2 className="text-xl font-black text-ink mt-4 mb-2 tracking-tight">
             &ldquo;{data.headline}&rdquo;
           </h2>
-          <p className="text-sm text-muted leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-text-2 leading-relaxed whitespace-pre-line">
             {data.summary}
           </p>
-        </div>
+        </Card>
 
         {/* 4 Full Sections */}
         <div className="flex flex-col gap-4">
@@ -59,7 +61,7 @@ export default function StandardReportView({
 
         {/* Advice (Do & Don't) */}
         {data.advice && (
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 flex flex-col gap-4">
+          <Card className="flex flex-col gap-4">
             <h3 className="font-extrabold text-base text-ink flex items-center gap-2">
               <Heart className="w-4 h-4 text-coral" />
               두근이의 실천 조언
@@ -94,13 +96,13 @@ export default function StandardReportView({
                 ))}
               </ul>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Closing */}
         {data.closing && (
-          <div className="bg-cream rounded-3xl p-6 border border-plum/10 text-center">
-            <p className="text-sm font-semibold text-plum leading-relaxed whitespace-pre-line">
+          <div className="bg-surface-soft rounded-2xl p-5 border border-line text-center">
+            <p className="text-sm font-semibold text-plum-deep leading-relaxed whitespace-pre-line">
               {data.closing}
             </p>
           </div>
@@ -108,7 +110,7 @@ export default function StandardReportView({
 
         {/* Disclaimer */}
         <footer className="text-center py-2 px-4">
-          <p className="text-[11px] text-muted leading-relaxed">
+          <p className="text-[11px] text-caption leading-relaxed">
             ※ 콩닥의 리포트는 정통 사주 데이터를 바탕으로 오락 및 자기이해를 위해 다정하게 제공되는 참고 정보이며, 단정적 미래를 보장하지 않습니다.
           </p>
         </footer>
@@ -121,15 +123,15 @@ export default function StandardReportView({
   return (
     <div className="flex flex-col gap-5 w-full max-w-md mx-auto">
       {/* Score & Headline Card */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 text-center flex flex-col items-center">
-        <ScoreGauge score={score} label="종합 흐름 점수" color="var(--coral)" />
+      <Card className="text-center flex flex-col items-center">
+        <ScoreGauge score={score} label="종합 흐름 점수" color="#E0245A" />
         <h2 className="text-xl font-black text-ink mt-4 mb-2 tracking-tight">
           &ldquo;{teaser.headline}&rdquo;
         </h2>
-        <p className="text-sm text-muted leading-relaxed whitespace-pre-line">
+        <p className="text-sm text-text-2 leading-relaxed whitespace-pre-line">
           {teaser.summary}
         </p>
-      </div>
+      </Card>
 
       {/* Free Section 1 */}
       {teaser.freeSection && (
@@ -143,27 +145,27 @@ export default function StandardReportView({
         </ReportSection>
       )}
 
-      {/* 3 Locked Sections (Hook only, NO full body DOM) */}
+      {/* 3 Locked Sections (Hook only, NO full body DOM, surface-soft bg) */}
       <div className="flex flex-col gap-3">
         {(teaser.hooks || []).map((hook, idx) => {
           const specTitle = lockedSpecs[idx]?.title || `심층 분석 ${idx + 2}`;
           return (
             <div
               key={idx}
-              className="bg-white/80 rounded-2xl p-4 border border-plum/10 shadow-xs flex items-center justify-between gap-3 text-left"
+              className="bg-surface-soft rounded-2xl p-4 border border-line flex items-center justify-between gap-3 text-left"
             >
               <div className="flex flex-col gap-1 min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-ink truncate">{specTitle}</span>
-                  <span className="text-[10px] text-coral bg-coral/10 font-bold px-1.5 py-0.5 rounded">
+                  <Badge variant="popular" className="text-[10px] px-1.5 py-0.2">
                     잠금
-                  </span>
+                  </Badge>
                 </div>
-                <p className="text-xs text-muted leading-snug truncate">
+                <p className="text-xs text-caption leading-snug truncate">
                   {hook}
                 </p>
               </div>
-              <div className="w-8 h-8 rounded-full bg-cream flex items-center justify-center text-muted shrink-0">
+              <div className="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center shrink-0 shadow-2xs">
                 <Lock className="w-4 h-4 text-coral" />
               </div>
             </div>

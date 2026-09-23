@@ -122,56 +122,56 @@ export default function DashboardView() {
   const firstName = session?.user?.name?.split(" ")[0] || t("guest_name");
 
   return (
-    <main className="min-h-[70vh] w-full bg-background px-4 sm:px-6 py-10 sm:py-14 relative">
+    <div className="w-full max-w-[480px] mx-auto px-4 py-8 relative">
       {claimToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#6A2C70] text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 animate-bounce border border-white/20">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-plum-deep text-white px-5 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-bold flex items-center gap-2 animate-bounce border border-white/20">
           <span>🎉</span>
           <span>{claimToast}</span>
         </div>
       )}
       {claimAvailable && (
-        <div className="max-w-3xl mx-auto mb-6 bg-white border border-[#FFD9E0] rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+        <div className="w-full mb-6 bg-white border border-line rounded-2xl p-4 flex items-center gap-3 shadow-xs">
           <span className="text-xl shrink-0">💌</span>
-          <p className="flex-1 text-xs sm:text-sm text-[#6A5E72] leading-relaxed font-medium">
+          <p className="flex-1 text-xs sm:text-sm text-text-2 leading-relaxed font-medium">
             결제하신 궁합 결과가 있어요. 이 계정에 저장할까요?
           </p>
           <button
             type="button"
             onClick={handleClaimUnlock}
             disabled={isClaiming}
-            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-coral text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
+            className="shrink-0 bg-coral text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs hover:bg-coral-deep transition-all active:scale-[0.96] disabled:opacity-60"
           >
             {isClaiming ? "연동 중..." : "연동하기"}
           </button>
         </div>
       )}
-      <div className="max-w-3xl mx-auto">
+      <div className="w-full">
         {/* Greeting */}
-        <div className="flex items-center gap-4 mb-8">
-          <KongdakMascot size={56} animate="none" />
+        <div className="flex items-center gap-4 mb-6">
+          <KongdakMascot size={52} animate="none" />
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-ink">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-ink">
               {t("welcome", { name: firstName })}
             </h1>
-            <p className="text-sm text-gray-500 font-medium mt-1">{t("subtitle")}</p>
+            <p className="text-xs sm:text-sm text-caption font-medium mt-0.5">{t("subtitle")}</p>
           </div>
         </div>
 
         {/* Primary action — new compatibility reading */}
         <div>
           <Link href="/compat/new" className="block group">
-            <div className="rounded-3xl bg-coral p-6 sm:p-8 text-white shadow-lg shadow-coral/20 border border-white/30 transition-all duration-150 active:scale-[0.97]">
-              <div className="flex items-center gap-2 text-white/90 text-xs font-bold mb-3">
+            <div className="rounded-2xl bg-coral p-5 sm:p-6 text-white shadow-md shadow-coral/20 border border-white/30 transition-all duration-150 active:scale-[0.96]">
+              <div className="flex items-center gap-2 text-white/90 text-xs font-bold mb-2">
                 <Sparkles className="w-4 h-4" />
                 <span>{t("cta_badge")}</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight mb-2">
+              <h2 className="text-lg sm:text-xl font-black tracking-tight mb-1.5">
                 {t("cta_title")}
               </h2>
-              <p className="text-sm text-white/85 leading-relaxed mb-5">
+              <p className="text-xs sm:text-sm text-white/90 leading-relaxed mb-4">
                 {t("cta_desc")}
               </p>
-              <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2.5 text-sm font-bold border border-white/25">
+              <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-xs sm:text-sm font-bold border border-white/25">
                 <Heart className="w-4 h-4 fill-white" />
                 {t("cta_button")}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-150" />
@@ -181,47 +181,47 @@ export default function DashboardView() {
         </div>
 
         {/* Quick Fortune Cards (2026 총운 & 이번 주 운세) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           <Link href="/fortune/annual" className="block group">
-            <div className="rounded-2xl bg-white border border-[#FF8AA1]/60 p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
+            <div className="rounded-2xl bg-white border border-line p-4 shadow-xs hover:bg-surface-soft transition-all duration-150 active:scale-[0.96] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-cream border border-[#FFD9E0] flex items-center justify-center text-coral text-lg shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-surface-soft border border-line flex items-center justify-center text-coral text-base shadow-2xs">
                   🔮
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-extrabold text-ink group-hover:text-coral transition-colors duration-150">
+                    <h3 className="text-xs sm:text-sm font-extrabold text-ink group-hover:text-coral transition-colors duration-150">
                       2026 나의 총운
                     </h3>
                     <span className="text-[10px] font-black text-white bg-coral px-1.5 py-0.5 rounded-md">
                       NEW
                     </span>
                   </div>
-                  <p className="text-xs text-[#8A8291] font-medium mt-0.5">
-                    병오년 1년 운세 & 5대 영역 리포트
+                  <p className="text-[11px] text-caption font-medium mt-0.5">
+                    병오년 1년 운세 & 5대 영역
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-coral group-hover:translate-x-1 transition-transform duration-150" />
+              <ArrowRight className="w-4 h-4 text-caption group-hover:translate-x-1 group-hover:text-coral transition-all duration-150" />
             </div>
           </Link>
 
           <Link href="/fortune/weekly" className="block group">
-            <div className="rounded-2xl bg-white border border-[#FFD9E0] p-4 sm:p-5 shadow-2xs hover:shadow-sm transition-all duration-150 active:scale-[0.97] flex items-center justify-between">
+            <div className="rounded-2xl bg-white border border-line p-4 shadow-xs hover:bg-surface-soft transition-all duration-150 active:scale-[0.96] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-cream border border-[#FFD9E0] flex items-center justify-center text-[#6A2C70] text-lg shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-surface-soft border border-line flex items-center justify-center text-plum-deep text-base shadow-2xs">
                   ✨
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-ink group-hover:text-[#6A2C70] transition-colors duration-150">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-ink group-hover:text-plum-deep transition-colors duration-150">
                     이번 주 종합 운세
                   </h3>
-                  <p className="text-xs text-[#8A8291] font-medium mt-0.5">
-                    매주 월요일 업데이트되는 주간 흐름
+                  <p className="text-[11px] text-caption font-medium mt-0.5">
+                    매주 월요일 주간 흐름
                   </p>
                 </div>
               </div>
-              <ArrowRight className="w-4 h-4 text-[#6A2C70] group-hover:translate-x-1 transition-transform duration-150" />
+              <ArrowRight className="w-4 h-4 text-caption group-hover:translate-x-1 group-hover:text-plum-deep transition-all duration-150" />
             </div>
           </Link>
         </div>
@@ -229,19 +229,19 @@ export default function DashboardView() {
         {/* Notification card if not granted */}
         {notifPermission === "default" && (
           <div className="mt-4">
-            <div className="flex items-center justify-between rounded-2xl bg-white border border-[#FF8AA1]/30 p-4 shadow-2xs">
+            <div className="flex items-center justify-between rounded-2xl bg-white border border-line p-4 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-coral flex-shrink-0">
-                  <Bell className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-surface-soft flex items-center justify-center text-coral flex-shrink-0">
+                  <Bell className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm font-bold text-ink">운세 & 궁합 알림 받기</p>
-                  <p className="text-[11px] text-gray-500">새로운 운세 소식을 실시간 푸시로 받아보세요 💘</p>
+                  <p className="text-xs font-bold text-ink">운세 & 궁합 알림 받기</p>
+                  <p className="text-[11px] text-caption">새로운 운세 소식을 실시간 푸시로 💘</p>
                 </div>
               </div>
               <button
                 onClick={handleEnableNotif}
-                className="bg-coral text-white text-xs font-bold px-4 py-2 rounded-xl active:scale-[0.97] transition-transform duration-150 flex-shrink-0"
+                className="bg-coral text-white text-xs font-bold px-3 py-1.5 rounded-xl active:scale-[0.96] transition-transform duration-150 flex-shrink-0"
               >
                 알림 켜기
               </button>
@@ -250,68 +250,66 @@ export default function DashboardView() {
         )}
 
         {/* History section */}
-        <div
-          className="mt-6 rounded-3xl bg-white border border-[#FFD9E0]/50 p-6 sm:p-8 shadow-xs"
-        >
+        <div className="mt-6 rounded-2xl bg-white border border-line p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-base font-bold text-ink">{t("history_title")}</h3>
+            <h3 className="text-sm font-bold text-ink">{t("history_title")}</h3>
             {historyItems.length > 0 && (
-              <span className="text-xs text-[#6A2C70] font-semibold bg-[#FFD9E0]/40 px-2.5 py-0.5 rounded-full">
+              <span className="text-[11px] text-plum-deep font-semibold bg-surface-soft px-2 py-0.5 rounded-full border border-line">
                 {historyItems.length}개
               </span>
             )}
           </div>
 
           {loading ? (
-            <div className="py-4 text-center text-xs text-gray-400">궁합 기록을 불러오는 중...</div>
+            <div className="py-4 text-center text-xs text-caption">궁합 기록을 불러오는 중...</div>
           ) : historyItems.length > 0 ? (
-            <div className="space-y-3 mt-4">
+            <div className="space-y-2.5 mt-3">
               {historyItems.map((item) => (
                 <Link
                   key={item.id}
                   href={`/compat/${item.shareToken}`}
-                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-cream/60 border border-[#FFD9E0]/40 hover:bg-cream hover:border-coral/40 transition-all duration-150 active:scale-[0.97] group"
+                  className="flex items-center justify-between p-3 rounded-xl bg-surface-soft border border-line/60 hover:bg-[#F5EFEF] hover:border-coral/30 transition-all duration-150 active:scale-[0.96] group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-coral flex items-center justify-center text-white font-black text-sm shadow-xs flex-shrink-0">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-coral flex items-center justify-center text-white font-black text-xs shadow-2xs flex-shrink-0">
                       {item.score}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-ink group-hover:text-coral transition-colors duration-150 flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-ink group-hover:text-coral transition-colors duration-150 flex items-center gap-1">
                         <span>{item.personA.name}</span>
-                        <span className="text-coral text-xs">❤️</span>
+                        <span className="text-coral text-[10px]">❤️</span>
                         <span>{item.personB.name}</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                      <div className="text-[10px] text-caption mt-0.5 flex items-center gap-1 flex-wrap">
                         <span>{item.keywords.slice(0, 2).join(" · ")}</span>
                         <span>•</span>
                         <span>{new Date(item.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span>
                       </div>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all duration-150 flex-shrink-0" />
+                  <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-1 group-hover:text-coral transition-all duration-150 flex-shrink-0" />
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 leading-relaxed">{t("history_desc")}</p>
+            <p className="text-xs text-caption leading-relaxed">{t("history_desc")}</p>
           )}
         </div>
 
         {/* Guide link */}
-        <div className="mt-6">
+        <div className="mt-4">
           <Link
             href="/guide"
-            className="flex items-center justify-between rounded-2xl bg-white border border-ink/8 px-5 py-4 shadow-2xs hover:border-coral/40 hover:bg-coral/[0.03] transition-colors duration-150 active:scale-[0.97] group"
+            className="flex items-center justify-between rounded-2xl bg-white border border-line px-4 py-3 shadow-xs hover:border-coral/40 hover:bg-surface-soft transition-colors duration-150 active:scale-[0.96] group"
           >
-            <span className="flex items-center gap-3">
+            <span className="flex items-center gap-2.5">
               <BookOpen className="w-4 h-4 text-coral" />
-              <span className="text-sm font-semibold text-ink">{t("guide_link")}</span>
+              <span className="text-xs font-semibold text-ink">{t("guide_link")}</span>
             </span>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 group-hover:text-coral transition-all duration-150" />
+            <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-1 group-hover:text-coral transition-all duration-150" />
           </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export const ReportSection = React.forwardRef<HTMLDivElement, ReportSectionProps
           {icon && <div className="mr-2 text-coral">{icon}</div>}
           <h3 className="text-xl font-bold text-foreground">{title}</h3>
         </div>
-        <div className="bg-white rounded-2xl shadow-[0_6px_24px_rgba(181,71,96,0.08)] p-6 text-foreground leading-relaxed">
+        <div className="bg-white rounded-2xl border border-line shadow-xs p-5 sm:p-6 text-ink leading-relaxed">
           {children}
         </div>
       </section>

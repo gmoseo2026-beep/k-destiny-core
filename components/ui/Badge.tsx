@@ -11,9 +11,9 @@ export function Badge({ className = '', variant = 'default', icon, children, ...
   const baseStyles = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider';
   
   const variants = {
-    popular: 'bg-coral text-white shadow-sm',
-    new: 'bg-gold text-white shadow-sm',
-    default: 'bg-gray-100 text-gray-600',
+    popular: 'bg-coral text-white shadow-2xs',
+    new: 'bg-[#FF8AA1] text-white shadow-2xs',
+    default: 'bg-surface-soft text-text-2 border border-line',
   };
 
   const classes = [

@@ -10,6 +10,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 import InAppBrowserModal from "@/components/InAppBrowserModal";
@@ -442,20 +445,22 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
       {/* [SECURITY / M-8] 결제 연동은 사용자가 직접 확인할 때만 수행한다(자동 귀속 금지) */}
       {claimAvailable && (
-        <div className="w-full mt-4 bg-white border border-[#FFD9E0] rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+        <Card variant="soft" className="w-full mt-4 p-4 flex items-center gap-3">
           <span className="text-xl shrink-0">💌</span>
-          <p className="flex-1 text-xs text-[#6A5E72] leading-relaxed font-medium">
+          <p className="flex-1 text-xs text-text-2 leading-relaxed font-medium">
             결제하신 궁합 결과가 있어요. 이 계정에 저장할까요?
           </p>
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={handleClaimUnlock}
             disabled={isClaiming}
-            className="shrink-0 bg-gradient-to-r from-[#FF8AA1] to-coral text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all disabled:opacity-60"
+            isLoading={isClaiming}
+            className="shrink-0"
           >
-            {isClaiming ? "연동 중..." : "연동하기"}
-          </button>
-        </div>
+            연동하기
+          </Button>
+        </Card>
       )}
 
       {/* Main Score Card */}
@@ -556,10 +561,10 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               setCheckoutType("SINGLE");
               setCheckoutModalOpen(true);
             }}
-            className="w-full mt-4 bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+            className="w-full mt-4 bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-8 h-8 rounded-xl bg-coral/10 flex items-center justify-center text-coral shrink-0">
+              <span className="w-9 h-9 rounded-xl bg-coral-soft flex items-center justify-center text-coral-deep shrink-0">
                 <Lock className="w-4 h-4" />
               </span>
               <div className="flex flex-col min-w-0">
@@ -567,16 +572,16 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors">
                     결정적인 건 잠겨 있어요 — 전체 리포트 열기
                   </span>
-                  <span className="text-[10px] font-black text-coral bg-cream border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
+                  <Badge variant="popular">
                     {compatPrice}
-                  </span>
+                  </Badge>
                 </div>
-                <span className="text-[11px] text-[#8A8291] truncate">
+                <span className="text-[11px] text-text-3 truncate">
                   갈등 유발 포인트 3가지 & 극복법 · 현실 연애 조언
                 </span>
               </div>
             </div>
-            <span className="text-xs font-bold text-coral shrink-0 flex items-center gap-0.5 bg-cream px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-coral group-hover:text-white transition-all">
+            <span className="text-xs font-bold text-coral shrink-0 flex items-center gap-0.5 bg-surface-soft px-3 py-1.5 rounded-xl border border-line shadow-2xs group-hover:bg-coral group-hover:text-white transition-all">
               열기 <ArrowRight className="w-3 h-3" />
             </span>
           </button>
@@ -585,7 +590,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           {isInApp && (
             <div
               onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-              className="w-full mt-2.5 bg-coral/10 hover:bg-coral/15 border border-coral/30 rounded-2xl p-3 text-xs text-plum flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
+              className="w-full mt-2.5 bg-coral-soft hover:bg-coral/20 border border-coral/30 rounded-2xl p-3 text-xs text-ink flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
             >
               <span className="font-semibold text-left">
                 🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
@@ -599,10 +604,10 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       )}
 
       {/* AI Free Summary Section */}
-      <div className="w-full bg-white rounded-2xl p-6 mt-6 shadow-sm border border-[#FFD9E0]/40">
+      <Card className="w-full mt-6">
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-4 h-4 text-coral" />
-          <h3 className="text-base font-bold text-ink">우리 사이의 진짜 케미</h3>
+          <h3 className="text-base font-black text-ink">우리 사이의 진짜 케미</h3>
         </div>
 
         {isGenerating ? (
@@ -612,10 +617,10 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               두근두근 궁합 보는 중…
             </p>
             <div className="w-full space-y-2 mt-2">
-              <div className="h-3 bg-cream rounded-full animate-pulse w-full" />
-              <div className="h-3 bg-cream rounded-full animate-pulse w-4/5 mx-auto" />
+              <div className="h-3 bg-surface-soft rounded-full animate-pulse w-full" />
+              <div className="h-3 bg-surface-soft rounded-full animate-pulse w-4/5 mx-auto" />
             </div>
-            <p className="text-xs text-[#8A8291]">
+            <p className="text-xs text-text-3">
               두 사람의 기운을 다정하게 읽고 있어요
             </p>
           </div>
@@ -624,7 +629,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             {summary}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Premium Section */}
       {deepReport ? (
@@ -715,14 +720,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           )}
         </div>
       ) : (
-        <div className="w-full bg-gradient-to-br from-[cream] to-[#FFD9E0]/50 border border-[#FF8AA1]/40 rounded-2xl p-6 mt-8 text-center relative overflow-hidden shadow-sm">
-          <div className="inline-block bg-plum text-gold text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
+        <Card className="w-full mt-8 text-center relative overflow-hidden">
+          <div className="inline-block bg-plum-deep text-gold text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
             Special Reading
           </div>
           <h4 className="text-lg font-black text-ink mb-2">
             우리 관계의 진짜 갈등 포인트와<br/>현실적인 연애 조언이 궁금하다면?
           </h4>
-          <p className="text-sm text-[#8A8291] mb-6 font-medium">
+          <p className="text-sm text-text-2 mb-6 font-medium">
             서로에게 끌리는 진짜 이유와 타이밍까지<br/>AI가 분석한 심층 궁합 리포트를 만나보세요.
           </p>
           
@@ -741,33 +746,35 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               />
             ) : (
               <div className="flex flex-col gap-2">
-                <button
+                <Button
                   onClick={handleGenerateDeepReport}
                   disabled={isLoadingDeepReport}
-                  className="w-full bg-gradient-to-r from-[#FF8AA1] to-[plum] hover:opacity-95 text-white py-4 rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-wait"
+                  isLoading={isLoadingDeepReport}
+                  size="lg"
+                  fullWidth
                 >
                   콩닥 플러스: 심층 리포트 즉시 열람
-                </button>
+                </Button>
                 {deepReportError && <p className="text-xs text-red-500 mt-1">{deepReportError}</p>}
               </div>
             )
           ) : (
             <div className="flex flex-col gap-3">
-              {/* 잠긴 심층 리포트 궁금증-갭 미리보기: 영역별 1줄 훅 + 블러 실루엣 + 자물쇠 */}
-              <div className="w-full bg-white rounded-2xl p-5 shadow-xs border border-[#FFD9E0]/60 text-left mb-3">
+              {/* 잠긴 심층 리포트 궁금증-갭 미리보기: 영역별 1줄 훅 + --surface-soft 바탕 + 자물쇠 */}
+              <Card variant="soft" className="w-full text-left mb-3">
                 <div className="flex items-center justify-between mb-3.5">
-                  <p className="text-xs font-bold text-plum flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-ink flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-coral" />
                     <span>{data.personA.name} × {data.personB.name} 심층 궁합 미리보기</span>
                   </p>
-                  <span className="text-[10px] font-bold text-coral bg-cream border border-[#FFD9E0] px-2 py-0.5 rounded-full">
+                  <Badge variant="popular">
                     핵심 포인트 잠김
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="space-y-3">
                   {/* Item 1: 갈등 포인트 3가지 */}
-                  <div className="p-3 bg-cream/70 rounded-xl border border-[#FFD9E0]/50 flex flex-col gap-1.5">
+                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <AlertTriangle className="w-4 h-4 text-coral" />
@@ -777,16 +784,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       </div>
                       <Lock className="w-3.5 h-3.5 text-coral" />
                     </div>
-                    <p className="text-xs font-bold text-ink leading-snug">
-                      &ldquo;두 사람이 감정적으로 부딪히기 쉬운 결정적 계기와 오해가 시작되는 순간이 있습니다 —&rdquo;
-                    </p>
-                    <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
-                      상처 주지 않고 자연스럽게 갈등을 푸는 소통법과 상대방의 마음에 닿는 실전 대처법이 상세 리포트에 담겨 있습니다.
+                    <p className="text-xs font-medium text-text-2 leading-snug">
+                      두 사람이 감정적으로 부딪히기 쉬운 결정적 계기와 오해가 시작되는 순간, 실전 대처법이 담겨 있습니다.
                     </p>
                   </div>
 
                   {/* Item 2: 관계의 핵심 에너지 */}
-                  <div className="p-3 bg-white rounded-xl border border-[#FFD9E0]/40 flex flex-col gap-1.5">
+                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Compass className="w-4 h-4 text-plum" />
@@ -794,37 +798,31 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                           관계의 핵심 에너지 & 시너지
                         </span>
                       </div>
-                      <Lock className="w-3.5 h-3.5 text-[#8A8291]" />
+                      <Lock className="w-3.5 h-3.5 text-text-3" />
                     </div>
-                    <p className="text-xs font-bold text-ink leading-snug">
-                      &ldquo;서로에게 자석처럼 끌리는 타고난 기운의 비밀과 폭발적인 시너지 포인트 —&rdquo;
-                    </p>
-                    <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
-                      두 사람의 기운이 만났을 때 펼쳐지는 긍정적인 잠재력과 관계를 단단하게 지탱해줄 기운을 분석합니다.
+                    <p className="text-xs font-medium text-text-2 leading-snug">
+                      서로에게 자석처럼 끌리는 타고난 기운의 비밀과 폭발적인 시너지 포인트를 분석합니다.
                     </p>
                   </div>
 
                   {/* Item 3: 현실 연애 조언 & 타이밍 */}
-                  <div className="p-3 bg-white rounded-xl border border-[#FFD9E0]/40 flex flex-col gap-1.5">
+                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-gold" />
+                        <Lightbulb className="w-4 h-4 text-[#C98A0B]" />
                         <span className="text-xs sm:text-sm font-extrabold text-ink">
                           현실 연애 조언 & 이번 달 애정운 타이밍
                         </span>
                       </div>
-                      <Lock className="w-3.5 h-3.5 text-[#8A8291]" />
+                      <Lock className="w-3.5 h-3.5 text-text-3" />
                     </div>
-                    <p className="text-xs font-bold text-ink leading-snug">
-                      &ldquo;두 사람 사이에 중요한 대화나 결정을 내리기 가장 좋은 타이밍이 있어요 —&rdquo;
-                    </p>
-                    <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
-                      서로에게 상처 주지 않고 신뢰를 쌓는 실전 소통법과 이번 달 두 사람의 애정운 흐름을 구체적으로 알려드립니다.
+                    <p className="text-xs font-medium text-text-2 leading-snug">
+                      두 사람 사이에 중요한 대화나 결정을 내리기 가장 좋은 타이밍과 실전 소통법을 알려드립니다.
                     </p>
                   </div>
 
                   {/* Item 4: 이상형 사주 기운 */}
-                  <div className="p-3 bg-white rounded-xl border border-[#FFD9E0]/40 flex flex-col gap-1.5">
+                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Heart className="w-4 h-4 text-coral" />
@@ -832,24 +830,21 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                           나와 찰떡인 이상형 사주 기운
                         </span>
                       </div>
-                      <Lock className="w-3.5 h-3.5 text-[#8A8291]" />
+                      <Lock className="w-3.5 h-3.5 text-text-3" />
                     </div>
-                    <p className="text-xs font-bold text-ink leading-snug">
-                      &ldquo;상대방의 기운 중 나를 가장 편안하게 만들어주는 결정적인 매력 포인트 —&rdquo;
-                    </p>
-                    <p className="text-[11px] text-[#8A8291] blur-[3px] select-none pointer-events-none opacity-45 leading-relaxed">
-                      상대방의 기운과 나의 타고난 기운이 빚어내는 궁극의 인연 포인트와 평생을 함께할 찰떡 조화를 분석합니다.
+                    <p className="text-xs font-medium text-text-2 leading-snug">
+                      상대방의 기운 중 나를 가장 편안하게 만들어주는 매력 포인트와 궁극의 인연 조화를 분석합니다.
                     </p>
                   </div>
                 </div>
-              </div>
+              </Card>
 
               {/* 단건 리포트 안내 카드 — 기간권 UI 동면(D4) */}
               <div className="mb-2 text-left w-full">
-                <div className="bg-cream p-3 rounded-2xl border border-[#FFD9E0]/60">
+                <div className="bg-surface-soft p-3 rounded-2xl border border-line">
                   <span className="text-[10px] font-extrabold text-coral block mb-0.5">단건 리포트</span>
                   <span className="text-xs font-black text-ink block">심층 궁합 1회</span>
-                  <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">{compatPrice} · 90일 보관</span>
+                  <span className="text-[10px] text-text-3 leading-tight block mt-0.5">{compatPrice} · 90일 보관</span>
                 </div>
               </div>
 
@@ -860,48 +855,18 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   setCheckoutType("SINGLE");
                   setCheckoutModalOpen(true);
                 }}
-                className="w-full bg-coral hover:bg-coral text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] flex flex-col items-center justify-center gap-0.5"
+                className="w-full bg-coral hover:bg-coral-deep text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(224,36,90,0.25)] transition-all duration-150 active:scale-[0.96] flex flex-col items-center justify-center gap-0.5"
               >
                 <span className="text-sm sm:text-base font-extrabold text-white">
                   우리 갈등 포인트 & 심층 리포트 열기
                 </span>
-                <span className="text-[11px] font-medium text-white/80">
+                <span className="text-[11px] font-medium text-white/90">
                   {compatPrice} · 결제 후 90일간 즉시 열람
                 </span>
               </button>
-              
-              {/* [D4] 기간권 구매 UI 동면
-              <div className="bg-white rounded-2xl p-4 shadow-2xs border border-[#FFD9E0]/60 flex flex-col gap-2.5 mt-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <span className="text-xs sm:text-sm font-extrabold text-ink block">30일 무제한 패스</span>
-                    <span className="text-[11px] text-[#8A8291]">매일 오는 데일리 코치 + 모든 궁합 무제한</span>
-                  </div>
-                  <span className="text-sm font-black text-plum">9,900원</span>
-                </div>
-                <button
-                  onClick={() => {
-                    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-                    trackEvent("click_unlock_pass", { plan: "1_MONTH" });
-                    if (!session?.user?.id) {
-                      alert("패스권 구매는 로그인이 필요합니다.");
-                      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-                      return;
-                    }
-                    setSelectedPlan("1_MONTH");
-                    setCheckoutType("PERIOD_PASS");
-                    setCheckoutModalOpen(true);
-                  }}
-                  className="w-full bg-cream hover:bg-[#FFD9E0]/50 border border-[#FF8AA1]/50 text-plum py-3 rounded-xl font-bold text-xs sm:text-sm shadow-2xs transition-all duration-150 active:scale-[0.97]"
-                >
-                  30일 패스로 매일 코치 받기 (9,900원) →
-                </button>
-              </div>
-              <p className="text-[11px] text-[#8A8291] mt-1">매일 오늘의 운세 코치 + 매주 데이트 길일 배달 + 2026 총운/궁합 무제한</p>
-              */}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Action Buttons */}
@@ -909,7 +874,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         {/* Kakao Share Button */}
         <button
           onClick={handleKakaoShare}
-          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.97] text-black py-4 rounded-2xl font-bold text-base shadow-sm transition-all duration-150 flex items-center justify-center gap-2"
+          className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.96] text-[#191919] py-4 rounded-2xl font-bold text-base shadow-xs transition-all duration-150 flex items-center justify-center gap-2"
         >
           <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
             <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z"/>
@@ -918,22 +883,26 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         </button>
 
         {/* Share Link Button */}
-        <button
+        <Button
           onClick={handleShareLink}
-          className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+          variant="primary"
+          size="lg"
+          fullWidth
+          leftIcon={<Link2 className="w-5 h-5 text-white" />}
         >
-          <Link2 className="w-5 h-5 text-white" />
           <span>링크 복사하기</span>
-        </button>
+        </Button>
 
         {/* Download Story Card Button */}
-        <button
+        <Button
           onClick={handleDownloadCard}
-          className="w-full bg-white border border-[#FF8AA1]/70 text-coral hover:bg-cream active:scale-[0.97] py-3.5 rounded-2xl font-bold text-sm shadow-2xs transition-all duration-150 flex items-center justify-center gap-2"
+          variant="secondary"
+          size="lg"
+          fullWidth
+          leftIcon={<span className="text-base">📸</span>}
         >
-          <span>📸</span>
           <span>인스타 스토리 카드 다운로드 (1080×1350)</span>
-        </button>
+        </Button>
       </div>
 
       {/* Guest Checkout Modal */}

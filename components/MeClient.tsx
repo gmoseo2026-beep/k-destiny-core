@@ -7,6 +7,10 @@ import { useSession } from "next-auth/react";
 import { getProduct } from "@/lib/catalog";
 import { rememberOrderToken } from "@/lib/payments/client";
 import KongdakMascot from "@/components/KongdakMascot";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Tag } from "@/components/ui/Tag";
 
 interface ReportItem {
   catalogId: string;
@@ -104,32 +108,32 @@ export default function MeClient({ locale }: MeClientProps) {
   if (!session?.user) {
     return (
       <div className="w-full max-w-md flex flex-col items-center">
-        <div className="w-full bg-white rounded-3xl p-6 shadow-sm border border-coral/20 mb-6 text-center">
-          <div className="w-16 h-16 rounded-full bg-coral/10 mx-auto flex items-center justify-center text-3xl mb-4">
+        <Card className="w-full mb-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-coral-soft mx-auto flex items-center justify-center text-3xl mb-4">
             💌
           </div>
-          <h2 className="text-xl font-bold text-ink mb-2">내 리포트 보관함</h2>
-          <p className="text-sm text-[#8A8291] leading-relaxed mb-6">
+          <h2 className="text-xl font-black text-ink mb-2">내 리포트 보관함</h2>
+          <p className="text-sm text-text-2 leading-relaxed mb-6">
             로그인하시면 구매하신 모든 심층 리포트를 여러 기기에서 언제든 다시 열어보실 수 있습니다.
           </p>
 
           <Link
             href={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/me`)}`}
-            className="w-full bg-gradient-to-r from-[#FF8AA1] via-coral to-plum text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all active:scale-95 block text-center focus-visible:ring-2 ring-coral"
+            className="w-full bg-coral hover:bg-coral-deep text-white py-3.5 rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(224,36,90,0.25)] transition-all active:scale-[0.96] block text-center"
           >
             로그인하고 내 보관함 확인하기
           </Link>
-        </div>
+        </Card>
 
-        <div className="w-full bg-cream border border-coral/20 rounded-2xl p-4 text-left">
+        <Card variant="soft" className="w-full p-4 text-left">
           <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
             <span>💡</span>
             <span>비회원으로 결제하셨나요?</span>
           </div>
-          <p className="text-xs text-[#8A8291] leading-relaxed">
+          <p className="text-xs text-text-2 leading-relaxed">
             결제 시 입력하신 정보로 로그인하시면, 이전 기기에서 결제하신 리포트가 자동으로 내 계정에 연결됩니다.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -137,28 +141,28 @@ export default function MeClient({ locale }: MeClientProps) {
   return (
     <div className="w-full max-w-md flex flex-col items-center">
       {/* Header Profile Summary */}
-      <div className="w-full bg-white rounded-3xl p-6 shadow-sm border border-coral/20 mb-6">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="w-full mb-6">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-coral/15 flex items-center justify-center text-coral font-bold text-lg">
+            <div className="w-12 h-12 rounded-full bg-coral-soft flex items-center justify-center text-coral-deep font-black text-lg">
               {session.user.name?.[0] || "콩"}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-ink">{session.user.name || "회원"} 님의 보관함</h2>
-              <p className="text-xs text-[#8A8291]">{session.user.email}</p>
+              <h2 className="text-base font-black text-ink">{session.user.name || "회원"} 님의 보관함</h2>
+              <p className="text-xs text-text-3">{session.user.email}</p>
             </div>
           </div>
-          <span className="text-xs font-bold bg-coral/10 text-coral px-3 py-1 rounded-full">
+          <Tag category="compat">
             회원 혜택 적용중
-          </span>
+          </Tag>
         </div>
-      </div>
+      </Card>
 
       {/* Orders & Reports List */}
       <div className="w-full flex flex-col gap-4 mb-8">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-bold text-ink">구매한 리포트 목록</h3>
-          <span className="text-xs font-medium text-[#8A8291]">총 {orders.length}건</span>
+          <span className="text-xs font-medium text-text-3">총 {orders.length}건</span>
         </div>
 
         {error && (
@@ -168,19 +172,19 @@ export default function MeClient({ locale }: MeClientProps) {
         )}
 
         {orders.length === 0 && !error && (
-          <div className="w-full bg-white rounded-3xl p-8 border border-coral/20 text-center flex flex-col items-center">
+          <Card className="w-full p-8 text-center flex flex-col items-center">
             <KongdakMascot size={64} animate="none" expression="flutter" />
-            <h4 className="text-base font-bold text-ink mt-3 mb-1">아직 보관된 리포트가 없어요</h4>
-            <p className="text-xs text-[#8A8291] mb-6">
+            <h4 className="text-base font-black text-ink mt-3 mb-1">아직 보관된 리포트가 없어요</h4>
+            <p className="text-xs text-text-2 mb-6">
               궁합과 사주를 깊이 있게 풀어낸 심층 리포트를 만나보세요.
             </p>
             <Link
               href={`/${locale}#products`}
-              className="bg-coral hover:bg-[#ff4766] text-white py-3 px-6 rounded-2xl text-xs font-bold transition-all active:scale-95 shadow-sm focus-visible:ring-2 ring-coral"
+              className="bg-coral hover:bg-coral-deep text-white py-3 px-6 rounded-2xl text-xs font-bold transition-all active:scale-[0.96] shadow-xs"
             >
               인기 리포트 둘러보기
             </Link>
-          </div>
+          </Card>
         )}
 
         {orders.map((order) => {
@@ -188,34 +192,28 @@ export default function MeClient({ locale }: MeClientProps) {
           const dDay = calculateDDay(order.expiresAt);
 
           return (
-            <div
+            <Card
               key={order.orderId}
-              className="w-full bg-white rounded-3xl p-5 border border-coral/20 shadow-sm flex flex-col gap-3"
+              className="w-full flex flex-col gap-3"
             >
-              <div className="flex items-start justify-between border-b border-coral/10 pb-3">
+              <div className="flex items-start justify-between border-b border-line pb-3">
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-coral">
                       {parentProduct?.name || order.catalogId}
                     </span>
                     {parentProduct?.type === "SET" && (
-                      <span className="text-[10px] bg-plum/10 text-plum font-bold px-1.5 py-0.5 rounded">
+                      <Tag category="default">
                         세트 상품
-                      </span>
+                      </Tag>
                     )}
                   </div>
-                  <span className="text-[11px] text-[#8A8291]">주문번호: {order.orderId.slice(0, 14)}...</span>
+                  <span className="text-[11px] text-text-3">주문번호: {order.orderId.slice(0, 14)}...</span>
                 </div>
                 {dDay && (
-                  <span
-                    className={`text-xs font-black px-2.5 py-1 rounded-full ${
-                      dDay === "만료됨"
-                        ? "bg-gray-100 text-gray-500"
-                        : "bg-coral/10 text-coral"
-                    }`}
-                  >
+                  <Badge variant={dDay === "만료됨" ? "default" : "popular"}>
                     {dDay}
-                  </span>
+                  </Badge>
                 )}
               </div>
 
@@ -228,13 +226,13 @@ export default function MeClient({ locale }: MeClientProps) {
                   return (
                     <div
                       key={`${order.orderId}-${rep.catalogId}-${idx}`}
-                      className="bg-cream/50 rounded-2xl p-3.5 border border-coral/10 flex items-center justify-between gap-3"
+                      className="bg-surface-soft rounded-2xl p-3.5 border border-line flex items-center justify-between gap-3"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold text-ink truncate">{title}</span>
                         </div>
-                        <p className="text-[11px] text-[#8A8291]">
+                        <p className="text-[11px] text-text-3">
                           {rep.status === "READY"
                             ? "열람 가능"
                             : rep.status === "ANNUAL_ROUTE"
@@ -246,42 +244,47 @@ export default function MeClient({ locale }: MeClientProps) {
                       </div>
 
                       {rep.status === "READY" && rep.reportId ? (
-                        <button
+                        <Button
+                          size="sm"
                           type="button"
                           onClick={() => handleViewReport(rep.reportId!, rep.catalogId, order.orderId, order.compatId)}
-                          className="bg-coral text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#ff4766] transition-all active:scale-95 shadow-sm shrink-0 focus-visible:ring-2 ring-coral"
+                          className="shrink-0"
                         >
                           리포트 보기
-                        </button>
+                        </Button>
                       ) : rep.status === "ANNUAL_ROUTE" ? (
                         <Link
                           href={`/${locale}/fortune/annual?year=${rep.catalogId.replace("annual_", "")}`}
-                          className="bg-coral text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-[#ff4766] transition-all active:scale-95 shadow-sm shrink-0 focus-visible:ring-2 ring-coral"
+                          className="bg-coral hover:bg-coral-deep text-white text-xs font-bold px-4 py-2 rounded-2xl transition-all active:scale-[0.96] shadow-xs shrink-0"
                         >
                           총운 보기
                         </Link>
                       ) : rep.status === "GENERATING" ? (
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           type="button"
                           onClick={() => handleCreateReport(rep.catalogId, order.orderId, order.compatId)}
-                          className="bg-coral/20 text-coral text-xs font-bold px-4 py-2 rounded-xl hover:bg-coral/30 transition-all active:scale-95 shrink-0 focus-visible:ring-2 ring-coral"
+                          className="shrink-0"
                         >
                           생성 확인
-                        </button>
+                        </Button>
                       ) : (
-                        <button
+                        <Button
+                          size="sm"
+                          variant="secondary"
                           type="button"
                           onClick={() => handleCreateReport(rep.catalogId, order.orderId, order.compatId)}
-                          className="bg-plum text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-plum/90 transition-all active:scale-95 shadow-sm shrink-0 focus-visible:ring-2 ring-coral"
+                          className="shrink-0"
                         >
                           리포트 만들기
-                        </button>
+                        </Button>
                       )}
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -289,7 +292,7 @@ export default function MeClient({ locale }: MeClientProps) {
       {/* CTA Button */}
       <Link
         href={`/${locale}#products`}
-        className="w-full bg-cream hover:bg-coral/10 active:scale-[0.97] text-plum text-center py-3.5 rounded-2xl font-bold text-sm border border-coral/30 transition-all duration-150 flex items-center justify-center gap-2 focus-visible:ring-2 ring-coral"
+        className="w-full bg-white hover:bg-surface-soft active:scale-[0.96] text-ink text-center py-3.5 rounded-2xl font-bold text-sm border border-line shadow-xs transition-all flex items-center justify-center gap-2"
       >
         <span>더 많은 운세·궁합 보러가기 ✨</span>
       </Link>

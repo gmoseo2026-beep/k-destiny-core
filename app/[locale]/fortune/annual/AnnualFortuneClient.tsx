@@ -26,7 +26,12 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Tag } from "@/components/ui/Tag";
 
 interface AnnualFortuneClientProps {
   locale: string;
@@ -339,22 +344,30 @@ export default function AnnualFortuneClient({
   if (showInputForm && !data) {
     return (
       <div className="w-full max-w-md md:max-w-xl flex flex-col items-center">
-        {/* Intro banner - Compact for zero scroll */}
-        <div className="text-center mb-4 sm:mb-5">
-          <div className="inline-flex items-center gap-1.5 bg-coral/10 text-coral px-3.5 py-1 rounded-full text-xs font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{year}년 특별 운세</span>
+        {/* Intro banner with 72px 3D Icon */}
+        <div className="flex flex-col items-center text-center mb-5">
+          <div className="w-[72px] h-[72px] mb-3 relative flex items-center justify-center">
+            <Image
+              src={annualProduct?.icon3d || "/icons3d/calendar.webp"}
+              alt={annualProduct?.name || `${year} 신년 총운`}
+              width={72}
+              height={72}
+              className="object-contain"
+            />
           </div>
+          <Tag category="fortune" className="mb-2">
+            {year}년 특별 운세
+          </Tag>
           <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
             {year} 나의 총운 무료 맛보기
           </h1>
-          <p className="text-xs sm:text-sm text-[#6A5E72] mt-1.5 leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-text-2 mt-1.5 leading-relaxed font-medium">
             생년월일만 넣으면 3초 만에 무료로 총운 점수와 연애운 확인
           </p>
         </div>
 
         {/* Input Card */}
-        <div className="w-full bg-white p-5 sm:p-7 rounded-3xl shadow-sm border border-[#FFD9E0]/60">
+        <Card className="w-full">
           <form onSubmit={handleFormSubmit} className="flex flex-col gap-3.5">
             {formError && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold">
@@ -364,7 +377,7 @@ export default function AnnualFortuneClient({
 
             {/* 1. 생년월일 (맨 위 기본 노출) */}
             <div>
-              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+              <label className="block text-xs font-bold text-ink mb-1.5">
                 생년월일 (양력) <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -373,7 +386,7 @@ export default function AnnualFortuneClient({
                   autoFocus
                   value={birthYear}
                   onChange={(e) => setBirthYear(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink"
                   required
                 >
                   <option value="">년도</option>
@@ -384,7 +397,7 @@ export default function AnnualFortuneClient({
                 <select
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink"
                   required
                 >
                   <option value="">월</option>
@@ -395,7 +408,7 @@ export default function AnnualFortuneClient({
                 <select
                   value={day}
                   onChange={(e) => setDay(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink"
                   required
                 >
                   <option value="">일</option>
@@ -408,7 +421,7 @@ export default function AnnualFortuneClient({
 
             {/* 2. 성별 (원터치 2버튼 토글) */}
             <div>
-              <label className="block text-xs font-bold text-[#6A2C70] mb-1.5">
+              <label className="block text-xs font-bold text-ink mb-1.5">
                 성별 <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -418,7 +431,7 @@ export default function AnnualFortuneClient({
                   className={`py-2.5 sm:py-3 rounded-xl text-sm font-bold border transition-all active:scale-[0.96] ${
                     gender === "F"
                       ? "bg-coral text-white border-coral shadow-xs"
-                      : "bg-cream/40 text-[#6A5E72] border-gray-200 hover:border-coral/40"
+                      : "bg-surface-soft text-text-2 border-line hover:border-coral/40"
                   }`}
                 >
                   여성
@@ -429,7 +442,7 @@ export default function AnnualFortuneClient({
                   className={`py-2.5 sm:py-3 rounded-xl text-sm font-bold border transition-all active:scale-[0.96] ${
                     gender === "M"
                       ? "bg-coral text-white border-coral shadow-xs"
-                      : "bg-cream/40 text-[#6A5E72] border-gray-200 hover:border-coral/40"
+                      : "bg-surface-soft text-text-2 border-line hover:border-coral/40"
                   }`}
                 >
                   남성
@@ -438,20 +451,20 @@ export default function AnnualFortuneClient({
             </div>
 
             {/* 3. 선택 항목 접기/펼치기 (이름 & 태어난 시간) */}
-            <div className="pt-1 flex flex-col gap-2 border-t border-gray-100">
+            <div className="pt-1 flex flex-col gap-2 border-t border-line">
               {/* 이름 필드 토글 */}
               {!showNameInput ? (
                 <button
                   type="button"
                   onClick={() => setShowNameInput(true)}
-                  className="self-start text-xs font-semibold text-[#8A8291] hover:text-coral transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
+                  className="self-start text-xs font-semibold text-text-3 hover:text-coral transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
                 >
                   <span>+ 이름 넣기 (선택)</span>
                 </button>
               ) : (
                 <div className="space-y-1 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-[#6A2C70]">
+                    <label className="block text-xs font-bold text-ink">
                       이름 또는 닉네임 (선택)
                     </label>
                     <button
@@ -460,7 +473,7 @@ export default function AnnualFortuneClient({
                         setShowNameInput(false);
                         setName("");
                       }}
-                      className="text-[11px] text-[#8A8291] hover:text-coral"
+                      className="text-[11px] text-text-3 hover:text-coral"
                     >
                       접기
                     </button>
@@ -471,7 +484,7 @@ export default function AnnualFortuneClient({
                     onChange={(e) => setName(e.target.value)}
                     placeholder="예: 김콩닥 (미입력 시 '나')"
                     maxLength={20}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                    className="w-full border border-line rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink placeholder:text-text-3"
                   />
                 </div>
               )}
@@ -481,14 +494,14 @@ export default function AnnualFortuneClient({
                 <button
                   type="button"
                   onClick={() => setShowTimeInput(true)}
-                  className="self-start text-xs font-semibold text-[#8A8291] hover:text-coral transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
+                  className="self-start text-xs font-semibold text-text-3 hover:text-coral transition-colors py-0.5 flex items-center gap-1 active:scale-[0.96]"
                 >
                   <span>+ 태어난 시간 넣기 (선택, 더 정밀한 사주)</span>
                 </button>
               ) : (
                 <div className="space-y-1 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-[#6A2C70]">
+                    <label className="block text-xs font-bold text-ink">
                       태어난 시간 (선택)
                     </label>
                     <button
@@ -497,7 +510,7 @@ export default function AnnualFortuneClient({
                         setShowTimeInput(false);
                         setAmpm("");
                       }}
-                      className="text-[11px] text-[#8A8291] hover:text-coral"
+                      className="text-[11px] text-text-3 hover:text-coral"
                     >
                       접기
                     </button>
@@ -506,7 +519,7 @@ export default function AnnualFortuneClient({
                     <select
                       value={ampm}
                       onChange={(e) => setAmpm(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                      className="w-full border border-line rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink"
                     >
                       <option value="">시간 모름</option>
                       <option value="AM">오전</option>
@@ -516,7 +529,7 @@ export default function AnnualFortuneClient({
                       value={hour}
                       onChange={(e) => setHour(e.target.value)}
                       disabled={!ampm}
-                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-40"
+                      className="w-full border border-line rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink disabled:opacity-40"
                     >
                       {hours.map((h) => (
                         <option key={h} value={h}>{h}시</option>
@@ -526,7 +539,7 @@ export default function AnnualFortuneClient({
                       value={min}
                       onChange={(e) => setMin(e.target.value)}
                       disabled={!ampm}
-                      className="w-full border border-gray-200 rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-40"
+                      className="w-full border border-line rounded-xl p-2.5 sm:p-3 text-sm focus:outline-none focus:ring-2 focus:ring-coral/40 bg-surface-soft text-ink disabled:opacity-40"
                     >
                       {minutes.map((m) => (
                         <option key={m} value={m}>{m}분</option>
@@ -537,22 +550,25 @@ export default function AnnualFortuneClient({
               )}
             </div>
 
-            {/* 4. CTA 버튼 (행동형 문구, 전역 active scale 애니메이션) */}
-            <button
+            {/* 4. CTA 버튼 */}
+            <Button
               type="submit"
-              className="w-full mt-2 bg-coral hover:bg-[#ff4766] active:scale-[0.96] text-white py-3.5 sm:py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+              size="lg"
+              fullWidth
+              isLoading={loading}
+              className="mt-2"
+              rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
             >
-              <span>무료로 내 {year} 총운 보기</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              무료로 내 {year} 총운 보기
+            </Button>
 
-            {/* 5. 개인정보 안내 (버튼 아래로 이동하여 폼을 컴팩트하게 유지) */}
-            <div className="p-2.5 bg-cream rounded-xl border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] flex items-center justify-center gap-1.5 mt-0.5 text-center">
+            {/* 5. 개인정보 안내 */}
+            <div className="p-2.5 bg-surface-soft rounded-xl border border-line text-[11px] text-text-3 flex items-center justify-center gap-1.5 mt-0.5 text-center">
               <ShieldCheck className="w-3.5 h-3.5 text-coral shrink-0" />
               <span>비회원 입력 정보는 계산에만 사용되며 저장되지 않습니다.</span>
             </div>
           </form>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -622,10 +638,10 @@ export default function AnnualFortuneClient({
           <button
             type="button"
             onClick={() => handleOpenCheckout("SINGLE")}
-            className="w-full bg-white/95 hover:bg-white border-2 border-[#FF8AA1]/60 rounded-2xl p-3.5 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+            className="w-full bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-8 h-8 rounded-xl bg-coral/10 flex items-center justify-center text-coral shrink-0">
+              <span className="w-9 h-9 rounded-xl bg-coral-soft flex items-center justify-center text-coral-deep shrink-0">
                 <Lock className="w-4 h-4" />
               </span>
               <div className="flex flex-col min-w-0">
@@ -633,25 +649,25 @@ export default function AnnualFortuneClient({
                   <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors">
                     결정적인 건 잠겨 있어요 — 전체 리포트 열기
                   </span>
-                  <span className="text-[10px] font-black text-coral bg-cream border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
+                  <Badge variant="popular">
                     {annualPrice}
-                  </span>
+                  </Badge>
                 </div>
-                <span className="text-[11px] text-[#8A8291] truncate">
+                <span className="text-[11px] text-text-3 truncate">
                   5대 영역 심층 분석 & 12개월 타임라인 즉시 확인
                 </span>
               </div>
             </div>
-            <span className="text-xs font-bold text-coral shrink-0 flex items-center gap-0.5 bg-cream px-2.5 py-1.5 rounded-xl border border-[#FFD9E0] shadow-2xs group-hover:bg-coral group-hover:text-white transition-all">
+            <span className="text-xs font-bold text-coral shrink-0 flex items-center gap-0.5 bg-surface-soft px-3 py-1.5 rounded-xl border border-line shadow-2xs group-hover:bg-coral group-hover:text-white transition-all">
               열기 <ArrowRight className="w-3 h-3" />
             </span>
           </button>
 
-          {/* In-app Browser Notice Banner (인앱 결제 오류 사전 탈출 유도) */}
+          {/* In-app Browser Notice Banner */}
           {isInApp && (
             <div
               onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-              className="w-full bg-coral/10 hover:bg-coral/15 border border-coral/30 rounded-2xl p-3 text-xs text-[#6A2C70] flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
+              className="w-full bg-coral-soft hover:bg-coral/20 border border-coral/30 rounded-2xl p-3 text-xs text-ink flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
             >
               <span className="font-semibold text-left">
                 🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
@@ -664,7 +680,7 @@ export default function AnnualFortuneClient({
         </>
       )}
 
-      {/* 2. 5 Key Life Sections (궁금증-갭 미리보기: 각 영역 한 줄 훅 + 블러 실루엣 + 자물쇠) */}
+      {/* 2. 5 Key Life Sections */}
       <section className="flex flex-col gap-3.5">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base sm:text-lg font-black text-ink flex items-center gap-2">
@@ -672,22 +688,22 @@ export default function AnnualFortuneClient({
             <span>5대 영역별 운세 분석</span>
           </h2>
           {isLocked && (
-            <span className="text-xs font-bold text-coral bg-cream border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-              <Lock className="w-3 h-3" />
-              <span>미리보기</span>
-            </span>
+            <Badge variant="popular">
+              <Lock className="w-3 h-3 mr-1" />
+              미리보기
+            </Badge>
           )}
         </div>
 
-        {/* 미결제 상태: 5개 영역 각각 선명한 1줄 훅(cliffhanger) + CSS 블러 더미 텍스트 + 자물쇠 */}
+        {/* 미결제 상태: 5개 영역 각각 선명한 1줄 훅 + 자물쇠 */}
         {isLocked && (
           <div className="flex flex-col gap-3.5">
             {SECTION_CONFIG.map(({ key, title, icon: Icon, color, bg }) => {
-              const hookText = (data.hooks as Record<string, string> | undefined)?.[key] || "2026년 이 영역에서 당신에게 결정적인 순간이 찾아옵니다 —";
+              const hookText = (data.hooks as Record<string, string> | undefined)?.[key] || `${year}년 이 영역에서 당신에게 결정적인 순간이 찾아옵니다 —`;
               return (
-                <div
+                <Card
                   key={key}
-                  className="bg-white rounded-2xl p-5 sm:p-6 border border-[#FFD9E0]/70 shadow-xs flex flex-col gap-3 relative overflow-hidden"
+                  className="flex flex-col gap-3"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
@@ -696,24 +712,21 @@ export default function AnnualFortuneClient({
                       </div>
                       <span className="font-extrabold text-sm sm:text-base text-ink">{title}</span>
                     </div>
-                    <div className="flex items-center gap-1 bg-cream px-2.5 py-0.5 rounded-xl border border-[#FFD9E0]/50 text-xs font-bold text-[#8A8291]">
+                    <div className="flex items-center gap-1 bg-surface-soft px-2.5 py-0.5 rounded-xl border border-line text-xs font-bold text-text-3">
                       <Lock className="w-3 h-3 text-coral" />
                       <span>심층 분석</span>
                     </div>
                   </div>
 
-                  {/* 선명한 한 줄 훅 (결론 직전 끊기) */}
-                  <div className="bg-cream/80 rounded-xl p-3 border border-[#FFD9E0]/50 text-xs sm:text-sm font-bold text-ink leading-snug">
+                  {/* 선명한 한 줄 훅 */}
+                  <div className="bg-surface-soft rounded-xl p-3 border border-line text-xs sm:text-sm font-bold text-ink leading-snug">
                     &ldquo;{hookText}&rdquo;
                   </div>
 
-                  {/* CSS 블러 처리된 더미/실루엣 텍스트 (서버에서 유료 본문 미전송 = 유출 0) */}
-                  <div className="relative">
-                    <p className="text-xs text-[#8A8291] leading-relaxed blur-[4px] select-none pointer-events-none opacity-40">
-                      2026년 이 영역에서 펼쳐지는 구체적 기회의 시기와 피해야 할 함정, 그리고 사주 기운이 가리키는 실전 행동 조언이 상세 리포트에 모두 담겨 있습니다.
-                    </p>
-                  </div>
-                </div>
+                  <p className="text-xs text-text-2 leading-relaxed font-medium">
+                    {year}년 이 영역에서 펼쳐지는 구체적 기회의 시기와 피해야 할 함정, 사주 기운의 실전 조언이 전체 리포트에 담겨 있습니다.
+                  </p>
+                </Card>
               );
             })}
           </div>
@@ -726,9 +739,9 @@ export default function AnnualFortuneClient({
               const sec = data.sections![key as keyof typeof data.sections];
               if (!sec) return null;
               return (
-                <div
+                <Card
                   key={key}
-                  className="bg-white rounded-2xl p-5 sm:p-6 border border-[#FFD9E0]/50 shadow-xs flex flex-col gap-3"
+                  className="flex flex-col gap-3"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
@@ -737,22 +750,22 @@ export default function AnnualFortuneClient({
                       </div>
                       <span className="font-extrabold text-sm sm:text-base text-ink">{title}</span>
                     </div>
-                    <div className="flex items-center gap-1 bg-cream px-2.5 py-0.5 rounded-xl border border-[#FFD9E0]/50">
-                      <span className="text-xs font-semibold text-[#8A8291]">운세 지수</span>
+                    <div className="flex items-center gap-1 bg-surface-soft px-2.5 py-0.5 rounded-xl border border-line">
+                      <span className="text-xs font-semibold text-text-3">운세 지수</span>
                       <span className="text-sm font-black text-coral">{sec.score}점</span>
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm text-ink leading-relaxed">
                     {sec.text}
                   </p>
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
       </section>
 
-      {/* 3. 12 Months Highlights (월별 운세 타임라인 + 가장 좋은 달/조심할 달 티저) */}
+      {/* 3. 12 Months Highlights */}
       <section className="flex flex-col gap-3.5 mt-2">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base sm:text-lg font-black text-ink flex items-center gap-2">
@@ -760,61 +773,57 @@ export default function AnnualFortuneClient({
             <span>12개월 월별 운세 타임라인</span>
           </h2>
           {isLocked && (
-            <span className="text-xs font-bold text-[#8A8291] bg-white border border-[#FFD9E0] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              <span>미리보기</span>
-            </span>
+            <Badge variant="default">
+              <Lock className="w-3 h-3 mr-1" />
+              미리보기
+            </Badge>
           )}
         </div>
 
-        {/* 미결제 시: 올해 가장 좋은 달 · 조심할 달 티저 pill + 12개월 타임라인 실루엣 */}
+        {/* 미결제 시: 올해 가장 좋은 달 · 조심할 달 티저 pill */}
         {isLocked && (
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9E0]/70 flex items-center justify-between shadow-2xs">
-                <span className="text-xs font-bold text-[#6A5E72]">올해 가장 빛나는 달</span>
-                <span className="text-xs font-black text-coral bg-cream border border-[#FFD9E0] px-2.5 py-1 rounded-xl flex items-center gap-1">
+              <div className="bg-white p-3.5 rounded-2xl border border-line flex items-center justify-between shadow-2xs">
+                <span className="text-xs font-bold text-text-2">올해 가장 빛나는 달</span>
+                <span className="text-xs font-black text-coral bg-surface-soft border border-line px-2.5 py-1 rounded-xl flex items-center gap-1">
                   <span>{data.teasers?.bestMonth || "올해 가장 빛나는 달은 ●월"}</span>
                   <Lock className="w-3 h-3 text-coral" />
                 </span>
               </div>
-              <div className="bg-white p-3.5 rounded-2xl border border-[#FFD9E0]/70 flex items-center justify-between shadow-2xs">
-                <span className="text-xs font-bold text-[#6A5E72]">조심하면 좋은 달</span>
-                <span className="text-xs font-black text-[#6A2C70] bg-cream border border-[#FFD9E0] px-2.5 py-1 rounded-xl flex items-center gap-1">
+              <div className="bg-white p-3.5 rounded-2xl border border-line flex items-center justify-between shadow-2xs">
+                <span className="text-xs font-bold text-text-2">조심하면 좋은 달</span>
+                <span className="text-xs font-black text-[#6A2C70] bg-surface-soft border border-line px-2.5 py-1 rounded-xl flex items-center gap-1">
                   <span>{data.teasers?.cautionMonth || "딱 한 달, 감정·선택 조심"}</span>
                   <Lock className="w-3 h-3 text-[#6A2C70]" />
                 </span>
               </div>
             </div>
 
-            {/* 12개월 타임라인 실루엣 (CSS 블러 더미) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 blur-[4px] select-none pointer-events-none opacity-40">
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <div key={m} className="bg-white p-3 rounded-xl border border-[#FFD9E0]/40 shadow-xs">
-                  <span className="text-xs font-bold text-coral">{m}월</span>
-                  <p className="text-[11px] text-[#8A8291] mt-0.5 line-clamp-1">기회의 달...</p>
-                </div>
-              ))}
-            </div>
+            <Card variant="soft" className="p-4 text-center">
+              <p className="text-xs text-text-2 font-medium">
+                🔒 전체 리포트에서 1월부터 12월까지 매달의 핵심 흐름과 주의사항 타임라인을 확인하실 수 있습니다.
+              </p>
+            </Card>
           </div>
         )}
 
         {!isLocked && data.monthlyHighlights && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {data.monthlyHighlights.map(({ month, note }) => (
-              <div
+              <Card
                 key={month}
-                className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/50 shadow-xs flex flex-col gap-1.5"
+                className="flex flex-col gap-1.5"
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-coral bg-cream border border-[#FFD9E0] px-2 py-0.5 rounded-md">
+                  <span className="text-xs font-black text-coral bg-surface-soft border border-line px-2 py-0.5 rounded-md">
                     {month}월
                   </span>
                 </div>
                 <p className="text-xs text-ink leading-relaxed">
                   {note}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -824,60 +833,51 @@ export default function AnnualFortuneClient({
       <section className="flex flex-col gap-3 mt-2">
         <h2 className="text-base sm:text-lg font-black text-ink flex items-center gap-2 px-1">
           <Sparkles className="w-4 h-4 text-[#FFC24B]" />
-          <span>2026 행운 포인트</span>
+          <span>{year} 행운 포인트</span>
         </h2>
 
         {!isLocked && data.luckyPoints ? (
           <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/50 text-center shadow-xs">
-              <span className="text-[11px] font-bold text-[#8A8291] block mb-1">행운의 컬러</span>
+            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+              <span className="text-[11px] font-bold text-text-3 block mb-1">행운의 컬러</span>
               <span className="text-xs sm:text-sm font-black text-[#6A2C70]">{data.luckyPoints.color}</span>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/50 text-center shadow-xs">
-              <span className="text-[11px] font-bold text-[#8A8291] block mb-1">행운의 아이템</span>
+            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+              <span className="text-[11px] font-bold text-text-3 block mb-1">행운의 아이템</span>
               <span className="text-xs sm:text-sm font-black text-coral">{data.luckyPoints.item}</span>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/50 text-center shadow-xs">
-              <span className="text-[11px] font-bold text-[#8A8291] block mb-1">가장 좋은 달</span>
+            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+              <span className="text-[11px] font-bold text-text-3 block mb-1">가장 좋은 달</span>
               <span className="text-xs sm:text-sm font-black text-[#FFC24B]">{data.luckyPoints.month}월</span>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2.5 blur-[4px] select-none pointer-events-none opacity-40">
-            <div className="bg-white p-3 rounded-2xl border border-[#FFD9E0]/40 text-center">
-              <span className="text-[10px] text-[#8A8291] block">컬러</span>
-              <span className="text-xs font-bold text-[#6A2C70]">따뜻한 코랄</span>
-            </div>
-            <div className="bg-white p-3 rounded-2xl border border-[#FFD9E0]/40 text-center">
-              <span className="text-[10px] text-[#8A8291] block">아이템</span>
-              <span className="text-xs font-bold text-coral">원석 팔찌</span>
-            </div>
-            <div className="bg-white p-3 rounded-2xl border border-[#FFD9E0]/40 text-center">
-              <span className="text-[10px] text-[#8A8291] block">길월</span>
-              <span className="text-xs font-bold text-[#FFC24B]">5월</span>
-            </div>
-          </div>
+          <Card variant="soft" className="p-4 text-center">
+            <p className="text-xs text-text-2 font-medium">
+              🔒 전체 리포트에서 나의 행운 컬러, 행운 아이템, 최고의 달을 확인할 수 있습니다.
+            </p>
+          </Card>
         )}
       </section>
 
       {/* 5. Sticky / Big Bottom CTA Card (when locked) */}
       {isLocked && (
-        <div className="bg-white border-2 border-[#FF8AA1] rounded-3xl p-6 sm:p-7 shadow-md text-center mt-3">
-          <div className="inline-flex items-center gap-1.5 bg-coral/10 text-coral px-3 py-0.5 rounded-full text-xs font-bold mb-3">
-            <span>2026 신년 총운 전체 열람</span>
-          </div>
+        <Card className="p-6 sm:p-7 shadow-xs text-center mt-3">
+          <Tag category="fortune" className="mb-3">
+            {year} 신년 총운 전체 열람
+          </Tag>
 
           <h3 className="text-xl font-black text-ink mb-2">
-            2026 나의 총운 전체 리포트 열기
+            {year} 나의 총운 전체 리포트 열기
           </h3>
 
-          <p className="text-xs sm:text-sm text-[#6A5E72] leading-relaxed mb-4">
+          <p className="text-xs sm:text-sm text-text-2 leading-relaxed mb-4">
             심층 5영역 · 12개월 타임라인 · 행운 포인트<br />
             <strong>결제일로부터 90일간 언제든 다시 열람</strong>하세요.
           </p>
 
           {/* Trust elements */}
-          <div className="flex items-center justify-center gap-4 text-[11px] text-[#8A8291] mb-4">
+          <div className="flex items-center justify-center gap-4 text-[11px] text-text-3 mb-4">
             <span className="flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               <span>PortOne 안전결제</span>
@@ -890,58 +890,50 @@ export default function AnnualFortuneClient({
 
           {/* 단건 리포트 안내 카드 — 기간권 UI 동면(D4) */}
           <div className="mb-5 text-left max-w-sm mx-auto">
-            <div className="bg-cream p-3 rounded-2xl border border-[#FFD9E0]/60">
+            <div className="bg-surface-soft p-3 rounded-2xl border border-line">
               <span className="text-[10px] font-extrabold text-coral block mb-0.5">단건 리포트</span>
-              <span className="text-xs font-black text-ink block">2026 총운 1회</span>
-              <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">{annualPrice} · 90일 보관</span>
+              <span className="text-xs font-black text-ink block">{year} 총운 1회</span>
+              <span className="text-[10px] text-text-3 leading-tight block mt-0.5">{annualPrice} · 90일 보관</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-2.5 max-w-sm mx-auto">
-            {/* Primary: 2026 Annual Fortune Single Purchase */}
-            <button
+            {/* Primary: Annual Fortune Single Purchase */}
+            <Button
               type="button"
+              size="lg"
+              fullWidth
               onClick={() => handleOpenCheckout("SINGLE")}
               disabled={isProcessingPayment}
-              className="w-full bg-coral hover:bg-[#ff4766] active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-sm sm:text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
+              isLoading={isProcessingPayment}
+              rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
             >
-              <span>2026 총운 전체 열기 ({annualPrice})</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            {/* [D4] 30일 패스 버튼 동면
-            <button
-              type="button"
-              onClick={() => handleOpenCheckout("PERIOD_PASS")}
-              disabled={isProcessingPayment}
-              className="w-full bg-cream hover:bg-[#FFD9E0]/50 active:scale-[0.97] text-[#6A2C70] border border-[#FFD9E0] py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-150 flex items-center justify-center gap-1.5"
-            >
-              <span>30일 패스 (매일 코치 + 무제한 9,900원) →</span>
-            </button>
-            */}
+              {year} 총운 전체 열기 ({annualPrice})
+            </Button>
 
             <Link
               href={`/${locale}#products`}
-              className="text-xs font-semibold text-[#8A8291] hover:text-ink py-1.5 transition-colors text-center"
+              className="text-xs font-semibold text-text-3 hover:text-ink py-1.5 transition-colors text-center"
             >
               상품 전체 보기 →
             </Link>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Re-calculate with another birth date */}
       <div className="flex justify-center mt-4">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           onClick={() => {
             setData(null);
             setShowInputForm(true);
           }}
-          className="text-xs text-[#8A8291] hover:text-[#6A2C70] font-bold flex items-center gap-1.5 py-2 px-4 rounded-full bg-white/80 hover:bg-white border border-[#FFD9E0]/60 transition-all shadow-2xs active:scale-95"
         >
           <span>🔄 다른 생년월일로 다시 보기</span>
-        </button>
+        </Button>
       </div>
 
       {/* 6. Friendly Disclaimer */}

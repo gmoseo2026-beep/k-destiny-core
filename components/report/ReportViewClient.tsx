@@ -9,6 +9,8 @@ import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { AlertCircle, Lock, Home, Link2, Check } from "lucide-react";
 import { Daeun2027Report, NamingReport, DateSelectionReport } from "@/components/premium";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import type { Premium2027ReportContent } from "@/lib/premium/generate2027";
 import type { PremiumNamingReportContent } from "@/lib/premium/generateNaming";
 import type { PremiumDateSelectionReportContent } from "@/lib/premium/generateDates";
@@ -146,7 +148,7 @@ export default function ReportViewClient({
 
   if (errorCode || !reportData) {
     return (
-      <div className="w-full max-w-md mx-auto bg-white rounded-3xl p-8 border border-plum/10 shadow-sm text-center">
+      <Card className="w-full max-w-md mx-auto p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
           {errorCode === 402 ? <Lock className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
         </div>
@@ -157,25 +159,26 @@ export default function ReportViewClient({
             ? "열람 권한이 없어요"
             : "리포트를 찾을 수 없어요"}
         </h2>
-        <p className="text-sm text-muted mb-6 leading-relaxed">
+        <p className="text-sm text-caption mb-6 leading-relaxed">
           {errorMessage || "결제한 기기에서 열람하거나 로그인해 주세요."}
         </p>
         <div className="flex flex-col gap-2">
-          <button
+          <Button
             type="button"
             onClick={fetchReport}
-            className="w-full py-3.5 bg-coral text-white font-bold rounded-2xl shadow-sm hover:opacity-95 transition-all"
+            size="lg"
+            fullWidth
           >
             다시 시도하기
-          </button>
+          </Button>
           <Link
             href={`/${locale}`}
-            className="w-full py-3 bg-cream text-plum font-bold rounded-2xl hover:bg-cream/80 transition-all text-center text-sm"
+            className="w-full py-3 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-[#F2ECEB] transition-all text-center text-sm border border-line active:scale-[0.96]"
           >
             홈으로 이동
           </Link>
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -207,14 +210,14 @@ export default function ReportViewClient({
           <button
             type="button"
             onClick={handleCopyLink}
-            className="w-full py-3.5 bg-[#1E1726] border border-[#3A2E45] text-[#F6F1EA] font-bold rounded-2xl shadow-xs hover:bg-[#2B1D3A] transition-all flex items-center justify-center gap-2 text-sm"
+            className="w-full py-3.5 bg-[#1E1726] border border-[#3A2E45] text-[#F6F1EA] font-bold rounded-2xl shadow-xs hover:bg-[#2B1D3A] transition-all flex items-center justify-center gap-2 text-sm active:scale-[0.96]"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Link2 className="w-4 h-4 text-[#D9B26A]" />}
             <span>{copied ? "링크가 복사되었어요!" : "리포트 링크 복사하기"}</span>
           </button>
           <Link
             href={`/${locale}`}
-            className="w-full py-3.5 bg-[#14101A] border border-[#3A2E45] text-[#B9AEC4] hover:text-[#F6F1EA] font-bold rounded-2xl transition-all text-center text-sm flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-[#14101A] border border-[#3A2E45] text-[#B9AEC4] hover:text-[#F6F1EA] font-bold rounded-2xl transition-all text-center text-sm flex items-center justify-center gap-2 active:scale-[0.96]"
           >
             <Home className="w-4 h-4" />
             <span>다른 운세·궁합 보러가기</span>
@@ -229,7 +232,7 @@ export default function ReportViewClient({
       {/* Product Name Header */}
       {product && (
         <div className="text-center -mb-2">
-          <span className="text-xs font-bold text-coral bg-coral/10 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-coral-deep bg-coral-soft px-3 py-1 rounded-full">
             {product.name}
           </span>
         </div>
@@ -244,17 +247,19 @@ export default function ReportViewClient({
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2.5 mt-2">
-        <button
+        <Button
           type="button"
           onClick={handleCopyLink}
-          className="w-full py-3.5 bg-white border border-plum/10 text-ink font-bold rounded-2xl shadow-xs hover:bg-cream transition-all flex items-center justify-center gap-2 text-sm"
+          variant="secondary"
+          size="lg"
+          fullWidth
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Link2 className="w-4 h-4 text-coral" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-600 mr-2" /> : <Link2 className="w-4 h-4 text-coral mr-2" />}
           <span>{copied ? "링크가 복사되었어요!" : "리포트 링크 복사하기"}</span>
-        </button>
+        </Button>
         <Link
           href={`/${locale}`}
-          className="w-full py-3.5 bg-cream text-plum font-bold rounded-2xl hover:bg-cream/80 transition-all text-center text-sm flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-[#F2ECEB] transition-all text-center text-sm flex items-center justify-center gap-2 border border-line active:scale-[0.96]"
         >
           <Home className="w-4 h-4" />
           <span>다른 운세·궁합 보러가기</span>

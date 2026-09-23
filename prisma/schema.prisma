@@ -400,3 +400,12 @@ model GeneratedReport {
   @@index([userId])
   @@index([orderId])
 }
+
+// 19. 사이트 누적 지표 (방문자 수 등) — 행 단위 카운터
+model SiteCounter {
+  key       String   @id          // "visitors"
+  value     BigInt   @default(0)
+  startedAt DateTime @default(now()) // 집계 시작 시각(화면에 표시)
+  updatedAt DateTime @updatedAt
+}
+

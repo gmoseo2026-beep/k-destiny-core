@@ -1,96 +1,218 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Link } from "@/i18n/routing";
-import { Shield } from "lucide-react";
-import LoginButton from "./LoginButton";
+import { Link, usePathname } from "@/i18n/routing";
 import { useSession } from "next-auth/react";
-import KongdakMascot from "./KongdakMascot";
+import { Menu, X, User as UserIcon, Shield } from "lucide-react";
+import Image from "next/image";
+import { CATALOG } from "@/lib/catalog";
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Close drawer on path change without cascading effect
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }
+
+  // Check if current page is Home
+  const isHome = pathname === "/" || pathname === "";
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 8);
     };
-    queueMicrotask(handleScroll);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const visibleProducts = CATALOG.filter((p) => !p.isHidden);
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-3 pt-3 pointer-events-none transition-all duration-150">
-      <nav
-        className={`max-w-screen-md mx-auto pointer-events-auto rounded-[20px] transition-all duration-150 px-3.5 sm:px-5 py-2.5 flex items-center justify-between border border-white/55 ${
-          isScrolled
-            ? "bg-cream/85 shadow-[0_8px_32px_rgba(181,71,96,0.15)]"
-            : "bg-cream/65 shadow-[0_6px_24px_rgba(181,71,96,0.10)]"
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-40 transition-colors duration-200 ${
+          isHome
+            ? isScrolled
+              ? "bg-[#FFE3EA]/95 shadow-xs backdrop-blur-md border-b border-line/60"
+              : "bg-[#FFE3EA]"
+            : isScrolled
+            ? "bg-white/95 shadow-xs backdrop-blur-md border-b border-line/60"
+            : "bg-white border-b border-line/40"
         }`}
-        style={{
-          backdropFilter: "blur(16px) saturate(140%)",
-          WebkitBackdropFilter: "blur(16px) saturate(140%)",
-        }}
       >
-        {/* Left: Brand Logo */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 group transition-transform duration-150 active:scale-[0.97]"
-        >
-          <div className="w-7 h-7 sm:w-8 sm:h-8 relative flex items-center justify-center">
-            <KongdakMascot size={32} animate="none" priority={true} />
-          </div>
-          <div className="flex flex-col justify-center">
-            <span className="font-serif font-bold text-base sm:text-lg text-ink leading-none tracking-tight">
+        <div className="max-w-[480px] mx-auto h-14 px-4 flex items-center justify-between">
+          {/* Left: Menu Drawer Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(true)}
+            aria-label="전체 메뉴 열기"
+            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-ink hover:bg-black/5 transition-all duration-150 active:scale-[0.96]"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Center: Brand Mascot + Name */}
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 transition-transform duration-150 active:scale-[0.96]"
+          >
+            <div className="w-7 h-7 relative shrink-0">
+              <Image
+                src="/mascot/transparent/couple_red_thread.webp"
+                alt="콩닥"
+                width={28}
+                height={28}
+                className="object-contain"
+                priority
+              />
+            </div>
+            <span className="font-extrabold text-lg text-ink tracking-tight">
               콩닥
             </span>
-          </div>
-        </Link>
-
-        {/* Right: Clean Text Navigation */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* 2026 Annual Fortune Link */}
-          <Link
-            href="/fortune/annual"
-            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold text-coral hover:bg-coral/10 transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
-          >
-            2026 총운
           </Link>
 
-          {/* Weekly Fortune Link (Desktop / Tablet visible) */}
-          <Link
-            href="/fortune/weekly"
-            className="hidden sm:inline-flex px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-plum hover:bg-cream hover:text-coral transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
-          >
-            이번 주 운세
-          </Link>
+          {/* Right: My / Login Profile */}
+          <div className="flex items-center gap-1">
+            {session && (session.user as { role?: string })?.role === "ADMIN" && (
+              <Link
+                href="/admin"
+                aria-label="관리자 페이지"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-red-600 hover:bg-red-50 transition-all duration-150 active:scale-[0.96]"
+              >
+                <Shield className="w-4 h-4" />
+              </Link>
+            )}
 
-          {/* Products Link */}
-          <Link
-            href="/#products"
-            className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-gray-500 hover:text-foreground hover:bg-black/5 transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
-          >
-            상품안내
-          </Link>
-
-          {/* Admin Link — strictly visible to ADMIN */}
-          {session && (session.user as { role?: string })?.role === "ADMIN" && (
             <Link
-              href="/admin"
-              className="px-2.5 py-1.5 rounded-full text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors duration-150 flex items-center gap-1 whitespace-nowrap active:scale-[0.97]"
+              href={session ? "/me" : "/login"}
+              aria-label={session ? "마이페이지 보관함" : "로그인"}
+              className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center text-ink hover:bg-black/5 transition-all duration-150 active:scale-[0.96]"
             >
-              <Shield className="w-3 h-3 text-red-500" />
-              <span className="hidden md:inline">관리자</span>
+              <UserIcon className="w-5 h-5" />
             </Link>
-          )}
-
-          {/* Login / Profile Button */}
-          <div className="ml-1 sm:ml-1.5">
-            <LoginButton />
           </div>
         </div>
-      </nav>
-    </header>
+      </header>
+
+      {/* Menu Drawer / Sheet */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Overlay Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setIsMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Slide-out Menu Panel */}
+          <div className="relative w-full max-w-[320px] bg-white h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="h-14 px-4 flex items-center justify-between border-b border-line">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/mascot/transparent/couple_red_thread.webp"
+                  alt="콩닥"
+                  width={24}
+                  height={24}
+                  className="object-contain"
+                />
+                <span className="font-extrabold text-base text-ink">전체 메뉴</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(false)}
+                aria-label="메뉴 닫기"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-caption hover:text-ink hover:bg-surface transition-all duration-150 active:scale-[0.96]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Product Links List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Quick Navigation */}
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/compat/new"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-3 bg-coral-soft text-coral-deep rounded-2xl text-xs font-bold text-center active:scale-[0.97]"
+                >
+                  ❤️ 정통 궁합
+                </Link>
+                <Link
+                  href="/fortune/annual"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-3 bg-surface-soft text-ink rounded-2xl text-xs font-bold text-center active:scale-[0.97]"
+                >
+                  📅 2026 총운
+                </Link>
+              </div>
+
+              {/* All Products Grouped */}
+              <div className="pt-2">
+                <h3 className="text-xs font-extrabold text-caption mb-2 px-1">
+                  운세 & 궁합 콘텐츠
+                </h3>
+                <div className="space-y-1">
+                  {visibleProducts.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/products/${p.id}`}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-soft text-ink transition-colors active:scale-[0.98]"
+                    >
+                      <div className="w-7 h-7 relative shrink-0">
+                        <Image
+                          src={p.icon3d}
+                          alt=""
+                          width={28}
+                          height={28}
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold truncate">{p.name}</div>
+                        <div className="text-[10px] text-caption truncate">
+                          {p.gridLabel || p.hook}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-line bg-surface-soft">
+              {session ? (
+                <Link
+                  href="/me"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full py-2.5 bg-white text-ink border border-line rounded-xl font-bold text-xs text-center block shadow-2xs active:scale-[0.97]"
+                >
+                  내 보관함 보기
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full py-2.5 bg-coral text-white rounded-xl font-bold text-xs text-center block shadow-xs active:scale-[0.97]"
+                >
+                  로그인 / 시작하기
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

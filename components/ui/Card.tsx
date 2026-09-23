@@ -2,12 +2,15 @@ import React from 'react';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
+  variant?: 'default' | 'soft';
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className = '', hoverable = false, children, ...props }, ref) => {
-    const baseStyles = 'bg-white rounded-2xl shadow-[0_6px_24px_rgba(181,71,96,0.08)] p-6';
-    const hoverStyles = hoverable ? 'transition-all duration-300 hover:shadow-[0_12px_32px_rgba(181,71,96,0.12)] hover:-translate-y-1 cursor-pointer' : '';
+  ({ className = '', hoverable = false, variant = 'default', children, ...props }, ref) => {
+    const baseStyles = variant === 'soft' 
+      ? 'bg-surface-soft rounded-2xl border border-line p-5 sm:p-6'
+      : 'bg-white rounded-2xl border border-line p-5 sm:p-6 shadow-xs';
+    const hoverStyles = hoverable ? 'transition-all duration-150 hover:bg-surface-soft hover:border-line/80 active:scale-[0.98]' : '';
 
     const classes = [
       baseStyles,

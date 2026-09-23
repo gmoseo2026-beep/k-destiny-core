@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
-import KongdakMascot from "@/components/KongdakMascot";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
@@ -12,6 +12,8 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel } from "@/lib/catalog";
 import StandardReportView from "@/components/report/StandardReportView";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 
@@ -314,20 +316,30 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md md:max-w-3xl flex flex-col gap-6 pb-12 mx-auto">
-      {/* Kongdak Mascot Header */}
+      {/* 3D Product Icon 72px & Title */}
       <div className="flex flex-col items-center justify-center -mb-2">
-        <KongdakMascot size={64} animate={isLoading ? "bounce" : "heartbeat"} />
+        <div className="w-[72px] h-[72px] relative mb-2">
+          <Image
+            src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"}
+            alt=""
+            width={72}
+            height={72}
+            priority
+            className="object-contain drop-shadow-sm"
+          />
+        </div>
+        <h2 className="text-base font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
       </div>
 
       {errorMsg && (
-        <div className="bg-coral/10 border border-coral text-coral p-3.5 rounded-xl text-sm font-semibold text-center">
+        <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
           {errorMsg}
         </div>
       )}
 
       {/* Relation Type Selector */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#FFD9E0]/40">
-        <label className="block text-xs font-bold text-[#8A8291] mb-2">우리의 관계</label>
+      <Card className="p-4">
+        <label className="block text-xs font-bold text-caption mb-2">우리의 관계</label>
         <div className="grid grid-cols-3 gap-2">
           {[
             { key: "love", label: "연인 · 커플", icon: "❤️" },
@@ -338,10 +350,10 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               key={item.key}
               type="button"
               onClick={() => setRelation(item.key as "love" | "crush" | "friend")}
-              className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border ${
+              className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border active:scale-[0.96] ${
                 relation === item.key
-                  ? "bg-gradient-to-br from-[#FF8AA1] to-coral text-white border-transparent shadow-sm"
-                  : "bg-cream text-ink border-[#FFD9E0]/50 hover:bg-[#FFD9E0]/30"
+                  ? "bg-coral text-white border-coral shadow-2xs"
+                  : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
               }`}
             >
               <span>{item.icon}</span>
@@ -349,64 +361,77 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
             </button>
           ))}
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
         {/* Person A (Me) */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center justify-between border-b border-cream pb-2">
+        <Card className="p-5 flex flex-col gap-3.5 h-full">
+          <div className="flex items-center justify-between border-b border-line pb-2">
             <div className="flex items-center gap-2">
               <span className="text-base">👤</span>
               <h3 className="font-bold text-sm text-ink">내 정보</h3>
             </div>
             {initialProfile && (
-              <span className="text-[10px] bg-coral/10 text-coral px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-bold">
                 저장된 프로필 불러옴
               </span>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#8A8291] mb-1">내 이름 또는 닉네임 (선택)</label>
+            <label className="block text-xs font-semibold text-text-2 mb-1">내 이름 또는 닉네임 (선택)</label>
             <input
               type="text"
               value={nameA}
               onChange={(e) => setNameA(e.target.value)}
               placeholder="예: 김콩닥"
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             />
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#8A8291] mb-1">
+              <label className="block text-xs font-semibold text-text-2 mb-1">
                 생년월일 <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearA}
                   onChange={(e) => setYearA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">년도</option>
-                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
                 </select>
                 <select
                   value={monthA}
                   onChange={(e) => setMonthA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">월</option>
-                  {months.map(m => <option key={m} value={m}>{m}</option>)}
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
                 </select>
                 <select
                   value={dayA}
                   onChange={(e) => setDayA(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">일</option>
-                  {Array.from({ length: getDaysInMonth(String(yearA), String(monthA)) }, (_, i) => i + 1).map(d => (
-                    <option key={d} value={d}>{d}</option>
+                  {Array.from(
+                    { length: getDaysInMonth(String(yearA), String(monthA)) },
+                    (_, i) => i + 1
+                  ).map((d) => (
+                    <option key={d} value={d}>
+                      {d}일
+                    </option>
                   ))}
                 </select>
               </div>
@@ -414,23 +439,23 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div className="sm:col-span-1">
-                <label className="block text-xs font-semibold text-[#8A8291] mb-1">성별</label>
+                <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
                 <select
                   value={genderA}
                   onChange={(e) => setGenderA(e.target.value as "F" | "M")}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="F">여성</option>
                   <option value="M">남성</option>
                 </select>
               </div>
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-[#8A8291] mb-1">태어난 시간 (선택)</label>
+                <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
                 <div className="grid grid-cols-3 gap-2">
                   <select
                     value={ampmA}
                     onChange={(e) => setAmpmA(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -440,72 +465,93 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={hourA}
                     onChange={(e) => setHourA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
-                    {hours.map(h => <option key={h} value={h}>{h}시</option>)}
+                    {hours.map((h) => (
+                      <option key={h} value={h}>
+                        {h}시
+                      </option>
+                    ))}
                   </select>
                   <select
                     value={minA}
                     onChange={(e) => setMinA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
-                    {minutes.map(m => <option key={m} value={m}>{m}분</option>)}
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>
+                        {m}분
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Person B (Partner) */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#FFD9E0]/40 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center gap-2 border-b border-cream pb-2">
+        <Card className="p-5 flex flex-col gap-3.5 h-full">
+          <div className="flex items-center gap-2 border-b border-line pb-2">
             <span className="text-base">💖</span>
             <h3 className="font-bold text-sm text-ink">상대방 정보</h3>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#8A8291] mb-1">상대방 이름 또는 애칭 (선택)</label>
+            <label className="block text-xs font-semibold text-text-2 mb-1">상대방 이름 또는 애칭 (선택)</label>
             <input
               type="text"
               value={nameB}
               onChange={(e) => setNameB(e.target.value)}
               placeholder="예: 이설렘"
-              className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
             />
           </div>
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#8A8291] mb-1">
+              <label className="block text-xs font-semibold text-text-2 mb-1">
                 생년월일 <span className="text-coral">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearB}
                   onChange={(e) => setYearB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">년도</option>
-                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
                 </select>
                 <select
                   value={monthB}
                   onChange={(e) => setMonthB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">월</option>
-                  {months.map(m => <option key={m} value={m}>{m}</option>)}
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
                 </select>
                 <select
                   value={dayB}
                   onChange={(e) => setDayB(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="">일</option>
-                  {Array.from({ length: getDaysInMonth(yearB, monthB) }, (_, i) => i + 1).map(d => (
-                    <option key={d} value={d}>{d}</option>
+                  {Array.from(
+                    { length: getDaysInMonth(yearB, monthB) },
+                    (_, i) => i + 1
+                  ).map((d) => (
+                    <option key={d} value={d}>
+                      {d}일
+                    </option>
                   ))}
                 </select>
               </div>
@@ -513,23 +559,23 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div className="sm:col-span-1">
-                <label className="block text-xs font-semibold text-[#8A8291] mb-1">성별</label>
+                <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
                 <select
                   value={genderB}
                   onChange={(e) => setGenderB(e.target.value as "M" | "F")}
-                  className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                 >
                   <option value="M">남성</option>
                   <option value="F">여성</option>
                 </select>
               </div>
               <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-[#8A8291] mb-1">태어난 시간 (선택)</label>
+                <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
                 <div className="grid grid-cols-3 gap-2">
                   <select
                     value={ampmB}
                     onChange={(e) => setAmpmB(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -539,40 +585,42 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                     value={hourB}
                     onChange={(e) => setHourB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
-                    {hours.map(h => <option key={h} value={h}>{h}시</option>)}
+                    {hours.map((h) => (
+                      <option key={h} value={h}>
+                        {h}시
+                      </option>
+                    ))}
                   </select>
                   <select
                     value={minB}
                     onChange={(e) => setMinB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-cream/40 disabled:opacity-50"
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
-                    {minutes.map(m => <option key={m} value={m}>{m}분</option>)}
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>
+                        {m}분
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Submit Button */}
-      <button
+      <Button
         type="submit"
-        disabled={isLoading}
-        className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer disabled:cursor-not-allowed"
+        size="lg"
+        fullWidth
+        isLoading={isLoading}
       >
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span>궁합 점수와 케미 분석 중...</span>
-          </div>
-        ) : (
-          <span>우리 궁합 점수 확인하기 (무료) ✨</span>
-        )}
-      </button>
+        우리 궁합 점수 확인하기 (무료) ✨
+      </Button>
     </form>
   );
 }

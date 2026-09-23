@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
+import { Button } from "@/components/ui/Button";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -92,13 +93,13 @@ export default function GuestCheckoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white max-w-md w-full rounded-3xl p-6 sm:p-7 shadow-xl border border-[#FFD9E0] relative flex flex-col">
+      <div className="bg-white max-w-md w-full rounded-3xl p-6 sm:p-7 shadow-xl border border-line relative flex flex-col">
         {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full transition-colors active:scale-95"
+          className="absolute top-4 right-4 text-text-3 hover:text-ink p-1.5 rounded-full transition-colors active:scale-95"
           aria-label="닫기"
         >
           ✕
@@ -109,15 +110,15 @@ export default function GuestCheckoutModal({
           <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
             <h3 className="text-lg font-black text-ink">{title}</h3>
-            <p className="text-xs text-[#8A8291]">KG이니시스 카드 결제 정보 입력</p>
+            <p className="text-xs text-text-3">KG이니시스 카드 결제 정보 입력</p>
           </div>
         </div>
 
         {/* Order Info Card */}
-        <div className="bg-cream rounded-2xl p-3.5 mb-5 border border-[#FFD9E0]/50 flex justify-between items-center">
+        <div className="bg-surface-soft rounded-2xl p-3.5 mb-5 border border-line flex justify-between items-center">
           <div>
-            <span className="text-xs font-bold text-[#6A2C70] block">{orderName}</span>
-            <span className="text-[11px] text-[#8A8291]">결제 후 즉시 열람 가능</span>
+            <span className="text-xs font-bold text-ink block">{orderName}</span>
+            <span className="text-[11px] text-text-3">결제 후 즉시 열람 가능</span>
           </div>
           <span className="text-base font-black text-coral">{priceLabel}</span>
         </div>
@@ -135,7 +136,7 @@ export default function GuestCheckoutModal({
               onChange={(e) => setFullName(e.target.value)}
               placeholder="예: 홍길동"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-surface-soft border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-text-3"
             />
           </div>
 
@@ -150,7 +151,7 @@ export default function GuestCheckoutModal({
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="01012345678 (- 없이 입력)"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-surface-soft border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-text-3"
             />
           </div>
 
@@ -165,14 +166,14 @@ export default function GuestCheckoutModal({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="kongdak@example.com"
               disabled={isLoading}
-              className="w-full px-3.5 py-2.5 bg-cream/30 border border-[#FFD9E0] rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral transition-all placeholder:text-gray-400"
+              className="w-full px-3.5 py-2.5 bg-surface-soft border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-text-3"
             />
-            <span className="text-[11px] text-[#8A8291] mt-1 block">
+            <span className="text-[11px] text-text-3 mt-1 block">
               결제 내역 및 추후 리포트 다시보기 시 본인 확인용으로 사용됩니다.
             </span>
           </div>
 
-          <label className="flex items-start gap-2.5 cursor-pointer bg-cream/80 rounded-xl p-2.5 border border-[#FFD9E0]/40 text-[11px] text-[#8A8291] leading-relaxed select-none">
+          <label className="flex items-start gap-2.5 cursor-pointer bg-surface-soft rounded-xl p-2.5 border border-line text-[11px] text-text-2 leading-relaxed select-none">
             <input
               type="checkbox"
               required
@@ -192,21 +193,26 @@ export default function GuestCheckoutModal({
           )}
 
           <div className="flex gap-2.5 mt-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors active:scale-95"
+              className="flex-1"
             >
               취소
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={isLoading || !agreedToWithdrawalPolicy}
-              className="flex-2 py-3 bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition-all active:scale-95 disabled:opacity-50"
+              isLoading={isLoading}
+              className="flex-[2]"
             >
               {isLoading ? "결제창 연결 중..." : "결제 진행하기"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -9,14 +9,13 @@ export interface TagProps extends React.HTMLAttributes<HTMLSpanElement> {
 export function Tag({ className = '', category = 'default', children, ...props }: TagProps) {
   const baseStyles = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border';
   
-  // Uses tailwind variables defined in globals.css
   const categoryStyles = {
-    fortune: 'text-cat-fortune border-cat-fortune/30 bg-cat-fortune/5',
-    compat: 'text-cat-compat border-cat-compat/30 bg-cat-compat/5',
-    wealth: 'text-cat-wealth border-cat-wealth/30 bg-cat-wealth/5',
-    reunion: 'text-cat-reunion border-cat-reunion/30 bg-cat-reunion/5',
-    career: 'text-cat-career border-cat-career/30 bg-cat-career/5',
-    default: 'text-gray-600 border-gray-200 bg-gray-50',
+    fortune: 'text-[#5B34D6] border-[#5B34D6]/20 bg-[#F4F0FF]',
+    compat: 'text-coral-deep border-coral/20 bg-coral-soft',
+    wealth: 'text-[#C98A0B] border-[#C98A0B]/20 bg-[#FFF8E6]',
+    reunion: 'text-[#C9362F] border-[#C9362F]/20 bg-[#FFF0EF]',
+    career: 'text-[#2A5FD0] border-[#2A5FD0]/20 bg-[#EFF5FF]',
+    default: 'text-text-2 border-line bg-surface-soft',
   };
 
   const classes = [
