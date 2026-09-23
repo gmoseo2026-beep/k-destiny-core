@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useSearchParams, useParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
-import { rememberUnlockToken } from "@/lib/payments/client";
+import { rememberUnlockToken, rememberOrderToken } from "@/lib/payments/client";
+import { getProduct } from "@/lib/catalog";
+import { trackEvent } from "@/lib/gtag";
 
 function PayCompleteContent() {
-  const sp = useSearchParams();
   const params = useParams();
   const router = useRouter();
   const locale = (params?.locale as string) || "ko";
@@ -17,6 +18,7 @@ function PayCompleteContent() {
   // [SECURITY / H-2] 결제한 궁합으로 곧장 돌려보내기 위한 값(서버 응답에서만 받는다).
   const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
   const [paidProductType, setPaidProductType] = useState<string | null>(null);
+  const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
 
   const ranRef = useRef(false);
 
@@ -42,14 +44,18 @@ function PayCompleteContent() {
     }
 
     if (!paymentId) {
-      setStatus("error");
-      setMsg("잘못된 접근입니다. (주문 번호가 누락되었습니다)");
+      queueMicrotask(() => {
+        setStatus("error");
+        setMsg("잘못된 접근입니다. (주문 번호가 누락되었습니다)");
+      });
       return;
     }
 
     if (code) {
-      setStatus("error");
-      setMsg(message ? `결제 실패: ${message}` : "결제가 취소되었거나 실패했습니다.");
+      queueMicrotask(() => {
+        setStatus("error");
+        setMsg(message ? `결제 실패: ${message}` : "결제가 취소되었거나 실패했습니다.");
+      });
       return;
     }
 
@@ -63,15 +69,30 @@ function PayCompleteContent() {
           // [SECURITY / H-2] 게스트는 세션이 없으므로 서버가 확정해 돌려준 orderId 를
           // 이 기기에 보관해야 리포트 열람 시 소유권을 증명할 수 있다.
           const result = await r.json().catch(() => null);
+          if (result?.catalogId && result?.orderId) {
+            rememberOrderToken(result.catalogId, result.orderId, result.compatId || undefined);
+          }
           if (result?.type === "SINGLE" && result?.compatId && result?.orderId) {
             rememberUnlockToken(result.compatId, result.orderId);
             setPaidCompatId(result.compatId);
+          }
+          if (result?.catalogId) {
+            setPaidCatalogId(result.catalogId);
           }
           if (result?.productType === "ANNUAL") {
             setPaidProductType("ANNUAL");
           }
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
+
+          if (result?.catalogId) {
+            const catItem = getProduct(result.catalogId);
+            trackEvent("purchase_confirmed", {
+              productId: result.catalogId,
+              tier: catItem?.tier || "standard",
+              amount: catItem?.price || 0,
+            });
+          }
         } else {
           const e = await r.json().catch(() => ({}));
           setStatus("error");
@@ -133,9 +154,57 @@ function PayCompleteContent() {
     }
   };
 
+  const handleGoToReport = () => {
+    if (!paidCatalogId) {
+      if (paidProductType === "ANNUAL") {
+        router.replace(`/${locale}/fortune/annual`);
+      } else if (paidCompatId) {
+        router.replace(`/${locale}/compat/${paidCompatId}`);
+      } else if (window.history.length > 2) {
+        router.back();
+      } else {
+        router.push(`/${locale}`);
+      }
+      return;
+    }
+
+    if (paidCatalogId === "compat_basic") {
+      if (paidCompatId) {
+        router.replace(`/${locale}/compat/${paidCompatId}`);
+      } else {
+        router.replace(`/${locale}`);
+      }
+    } else if (paidCatalogId.startsWith("annual_")) {
+      const year = paidCatalogId.replace("annual_", "");
+      router.replace(`/${locale}/fortune/annual?year=${year}`);
+    } else {
+      const compatQuery = paidCompatId ? `&compat=${paidCompatId}` : "";
+      router.replace(`/${locale}/report/new?c=${paidCatalogId}${compatQuery}`);
+    }
+  };
+
+  let buttonText = "리포트 확인하러 가기";
+  if (paidCatalogId?.startsWith("annual_")) {
+    const year = paidCatalogId.replace("annual_", "");
+    buttonText = `${year} 총운 보러 가기`;
+  } else if (paidCatalogId && paidCatalogId !== "compat_basic") {
+    buttonText = "리포트 생성하러 가기";
+  }
+
+  const callbackTarget =
+    paidCatalogId === "compat_basic" && paidCompatId
+      ? `/${locale}/compat/${paidCompatId}`
+      : paidCatalogId?.startsWith("annual_")
+      ? `/${locale}/fortune/annual?year=${paidCatalogId.replace("annual_", "")}`
+      : paidCatalogId
+      ? `/${locale}/report/new?c=${paidCatalogId}${paidCompatId ? `&compat=${paidCompatId}` : ""}`
+      : paidCompatId
+      ? `/${locale}/compat/${paidCompatId}`
+      : `/${locale}/me`;
+
   return (
-    <div className="min-h-screen bg-[#FFF6F1] flex items-center justify-center px-4 py-12">
-      <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-md border border-[#FFD9E0]/60 text-center flex flex-col items-center">
+    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-12">
+      <div className="bg-white max-w-md w-full rounded-3xl p-8 shadow-md border border-coral/20 text-center flex flex-col items-center">
         <div className="mb-6">
           <KongdakMascot
             size={80}
@@ -144,7 +213,7 @@ function PayCompleteContent() {
           />
         </div>
 
-        <h1 className="text-2xl font-black text-[#2B2430] mb-3">
+        <h1 className="text-2xl font-black text-ink mb-3">
           {status === "loading" && "결제 확인 중"}
           {status === "success" && "결제 완료!"}
           {status === "error" && "결제 안내"}
@@ -155,8 +224,8 @@ function PayCompleteContent() {
         </p>
 
         {status === "success" && paidCompatId && (
-          <div className="w-full bg-[#FFF0F3] border border-[#FFD9E0] rounded-2xl p-4 text-left mb-6">
-            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-[#FF5C77]">
+          <div className="w-full bg-[#FFF0F3] border border-coral/20 rounded-2xl p-4 text-left mb-6">
+            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
               <span>비회원 결과 보관 안내</span>
             </div>
@@ -167,14 +236,14 @@ function PayCompleteContent() {
               <button
                 type="button"
                 onClick={handleCopyResultLink}
-                className="flex-1 bg-white border border-[#FFD9E0] text-[#6A2C70] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FFF6F1] transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                className="flex-1 bg-white border border-coral/20 text-plum py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-cream transition-all flex items-center justify-center gap-1.5 active:scale-95 focus-visible:ring-2 ring-coral"
               >
                 <span>{copied ? "✓ 복사 완료!" : "🔗 링크 복사"}</span>
               </button>
               <button
                 type="button"
                 onClick={handleShareKakaoSelf}
-                className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-xl text-xs font-bold shadow-sm hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-95 focus-visible:ring-2 ring-coral"
               >
                 <span>💬 카톡으로 저장</span>
               </button>
@@ -185,27 +254,17 @@ function PayCompleteContent() {
         <div className="w-full flex flex-col gap-3">
           {status === "success" && (
             <button
-              onClick={() => {
-                if (paidProductType === "ANNUAL") {
-                  router.replace(`/${locale}/fortune/annual`);
-                } else if (paidCompatId) {
-                  router.replace(`/${locale}/compat/${paidCompatId}`);
-                } else if (window.history.length > 2) {
-                  router.back();
-                } else {
-                  router.push(`/${locale}`);
-                }
-              }}
-              className="w-full bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all active:scale-95"
+              onClick={handleGoToReport}
+              className="w-full bg-gradient-to-r from-[#FF8AA1] via-coral to-plum text-white py-3.5 rounded-2xl font-bold text-sm shadow-md hover:opacity-95 transition-all active:scale-95 focus-visible:ring-2 ring-coral"
             >
-              {paidProductType === "ANNUAL" ? "2026 총운 보러 가기" : "리포트 확인하러 가기"}
+              {buttonText}
             </button>
           )}
 
-          {status === "success" && paidCompatId && (
+          {status === "success" && (
             <Link
-              href={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/compat/${paidCompatId}`)}`}
-              className="w-full bg-[#FFF6F1] text-[#6A2C70] border border-[#FFD9E0] py-3 rounded-2xl font-bold text-xs hover:bg-[#FFD9E0]/40 transition-all active:scale-95 block text-center"
+              href={`/${locale}/login?callbackUrl=${encodeURIComponent(callbackTarget)}`}
+              className="w-full bg-cream text-plum border border-coral/20 py-3 rounded-2xl font-bold text-xs hover:bg-coral/10 transition-all active:scale-95 block text-center focus-visible:ring-2 ring-coral"
             >
               ✨ 가입하고 내 계정에 평생 보관하기
             </Link>
@@ -213,7 +272,7 @@ function PayCompleteContent() {
 
           <Link
             href={`/${locale}`}
-            className="w-full text-[#8A8291] py-2 font-medium text-xs hover:text-[#6A2C70] transition-colors block text-center"
+            className="w-full text-[#8A8291] py-2 font-medium text-xs hover:text-plum transition-colors block text-center focus-visible:ring-2 ring-coral"
           >
             콩닥 홈으로 가기
           </Link>
@@ -225,8 +284,9 @@ function PayCompleteContent() {
 
 export default function PayCompletePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FFF6F1] flex items-center justify-center p-8 text-[#6A2C70]">로딩 중...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center p-8 text-plum">로딩 중...</div>}>
       <PayCompleteContent />
     </Suspense>
   );
 }
+
