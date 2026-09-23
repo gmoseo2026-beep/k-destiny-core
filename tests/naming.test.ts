@@ -3,6 +3,7 @@ import { radicalFullStrokes, originalStrokes } from "@/lib/premium/naming/stroke
 import { reduce81, fourGrids, allLucky, parityBalanced, soundElement, soundFlowScore } from "@/lib/premium/naming/rules";
 import { buildNamingEngine } from "@/lib/premium/naming/engine";
 import type { ChildNamingInput } from "@/lib/validation/inputs";
+import nameHanjaDataRaw from "@/data/naming/name-hanja.json";
 
 describe("원획", () => {
   it("부수 획수 경계", () => {
@@ -134,4 +135,73 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
     expect(res.insufficient).toBe(false);
     expect(res.child.weakest.length).toBeGreaterThan(0);
   });
+
+  describe("N1: 작명 한자 성별 태그 검증", () => {
+    const charMap = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
+
+    it("지정 한자의 성별 태그 일치 (娟·婷·媛·娥는 ['F'], 雄은 ['M'], 始·如는 ['M','F'])", () => {
+      expect(charMap.get("娟")?.genders).toEqual(["F"]);
+      expect(charMap.get("婷")?.genders).toEqual(["F"]);
+      expect(charMap.get("媛")?.genders).toEqual(["F"]);
+      expect(charMap.get("娥")?.genders).toEqual(["F"]);
+      expect(charMap.get("雄")?.genders).toEqual(["M"]);
+      expect(charMap.get("始")?.genders).toEqual(["M", "F"]);
+      expect(charMap.get("如")?.genders).toEqual(["M", "F"]);
+    });
+
+    it("실데이터 buildNamingEngine 남아(M) 3종 실행 시 모든 한자가 genders에 M 포함", () => {
+      const maleCases: ChildNamingInput[] = [
+        { surnameHangul: "김", surnameHanja: "金", gender: "M", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "밝음"], avoidSyllables: [] },
+        { surnameHangul: "이", surnameHanja: "李", gender: "M", dob: "2025-01-10", time: "09:15", dollim: null, tags: ["강인함", "지혜"], avoidSyllables: [] },
+        { surnameHangul: "박", surnameHanja: "朴", gender: "M", dob: "2026-08-20", time: "18:00", dollim: null, tags: ["귀함", "밝음"], avoidSyllables: [] },
+      ];
+
+      for (const mc of maleCases) {
+        const result = buildNamingEngine(mc);
+        expect(result.names.length).toBeGreaterThan(0);
+        for (const cand of result.names) {
+          const h1 = charMap.get(cand.hanja[0]);
+          const h2 = charMap.get(cand.hanja[1]);
+          expect(h1).toBeDefined();
+          expect(h2).toBeDefined();
+          expect(h1?.genders).toContain("M");
+          expect(h2?.genders).toContain("M");
+        }
+      }
+    });
+
+    it("실데이터 buildNamingEngine 여아(F) 3종 실행 시 모든 한자가 genders에 F 포함", () => {
+      const femaleCases: ChildNamingInput[] = [
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2024-05-15", time: "14:30", dollim: null, tags: ["지혜", "따뜻함"], avoidSyllables: [] },
+        { surnameHangul: "최", surnameHanja: "崔", gender: "F", dob: "2025-03-22", time: "11:20", dollim: null, tags: ["따뜻함", "밝음"], avoidSyllables: [] },
+        { surnameHangul: "정", surnameHanja: "鄭", gender: "F", dob: "2026-11-05", time: "08:45", dollim: null, tags: ["자연", "귀함"], avoidSyllables: [] },
+      ];
+
+      for (const fc of femaleCases) {
+        const result = buildNamingEngine(fc);
+        expect(result.names.length).toBeGreaterThan(0);
+        for (const cand of result.names) {
+          const h1 = charMap.get(cand.hanja[0]);
+          const h2 = charMap.get(cand.hanja[1]);
+          expect(h1).toBeDefined();
+          expect(h2).toBeDefined();
+          expect(h1?.genders).toContain("F");
+          expect(h2?.genders).toContain("F");
+        }
+      }
+    });
+  });
+
+  describe("N2: 훈(뜻) 표기 검증", () => {
+    it("모든 항목의 hun에 '/'가 없다", () => {
+      const withSlash = nameHanjaDataRaw.filter((h) => h.hun.includes("/"));
+      expect(withSlash).toHaveLength(0);
+    });
+
+    it("모든 항목의 hun이 eum으로 끝나지 않는다", () => {
+      const endsWithEum = nameHanjaDataRaw.filter((h) => h.hun.endsWith(h.eum));
+      expect(endsWithEum).toHaveLength(0);
+    });
+  });
 });
+
