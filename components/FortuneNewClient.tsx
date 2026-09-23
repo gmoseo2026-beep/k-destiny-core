@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel } from "@/lib/catalog";
+import { getProduct, priceLabel, CATALOG, isViewableFor } from "@/lib/catalog";
 import { savePendingInput } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
@@ -36,14 +36,29 @@ interface FortuneNewClientProps {
     birthTime?: string | null;
     gender?: string | null;
   } | null;
+  preview?: boolean;
 }
 
-export default function FortuneNewClient({ locale, productId, initialProfile }: FortuneNewClientProps) {
+export default function FortuneNewClient({
+  locale,
+  productId,
+  initialProfile,
+  preview = false,
+}: FortuneNewClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
 
   const currentProductId = productId || "annual_2026";
   const product = getProduct(currentProductId);
+
+  const recommendations = CATALOG.filter((p) =>
+    p.tier === "standard" &&
+    p.target === "individual" &&
+    p.type !== "SET" &&
+    !p.isFree &&
+    p.id !== currentProductId &&
+    isViewableFor(p, preview)
+  ).slice(0, 2);
 
   // Form values
   const initDob = initialProfile?.birthDate?.split("-") || ["", "", ""];
@@ -230,30 +245,26 @@ export default function FortuneNewClient({ locale, productId, initialProfile }: 
         ) : null}
 
         {/* Free Product Recommendations */}
-        {product?.isFree && (
+        {product?.isFree && recommendations.length > 0 && (
           <div className="mt-4 flex flex-col gap-3 text-left">
             <h3 className="font-extrabold text-sm text-ink pl-1">더 깊이 알고 싶다면</h3>
             <div className="grid grid-cols-2 gap-3">
-              <Link
-                href={`/${locale}/products/wealth`}
-                className="bg-white p-4 rounded-2xl border border-plum/10 shadow-xs hover:border-coral transition-colors flex flex-col justify-between"
-              >
-                <div>
-                  <span className="text-xs font-bold text-ink block mb-1">재물운 리포트</span>
-                  <span className="text-[11px] text-muted block">돈이 들어오는 길과 새는 돈 막기</span>
-                </div>
-                <span className="text-xs font-extrabold text-coral mt-3">자세히 보기 →</span>
-              </Link>
-              <Link
-                href={`/${locale}/products/career`}
-                className="bg-white p-4 rounded-2xl border border-plum/10 shadow-xs hover:border-coral transition-colors flex flex-col justify-between"
-              >
-                <div>
-                  <span className="text-xs font-bold text-ink block mb-1">직업·이직 리포트</span>
-                  <span className="text-[11px] text-muted block">나에게 맞는 일의 방식과 환경</span>
-                </div>
-                <span className="text-xs font-extrabold text-coral mt-3">자세히 보기 →</span>
-              </Link>
+              {recommendations.map((rec) => (
+                <Link
+                  key={rec.id}
+                  href={`/${locale}/products/${rec.id}`}
+                  className="bg-white p-4 rounded-2xl border border-plum/10 shadow-xs hover:border-coral transition-colors flex flex-col justify-between"
+                >
+                  <div>
+                    <span className="text-xs font-bold text-ink block mb-1">{rec.name}</span>
+                    <span className="text-[11px] text-muted block line-clamp-2">{rec.description}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs font-black text-coral">{priceLabel(rec)}</span>
+                    <span className="text-[11px] font-bold text-[#8A8291]">자세히 →</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         )}

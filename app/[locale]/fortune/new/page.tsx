@@ -81,7 +81,12 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
       </div>
 
       {/* Form Component */}
-      <FortuneNewClient locale={locale} productId={productId} initialProfile={profile} />
+      <FortuneNewClient
+        locale={locale}
+        productId={productId}
+        initialProfile={profile}
+        preview={preview}
+      />
     </main>
   );
 }
