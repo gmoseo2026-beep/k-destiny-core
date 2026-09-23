@@ -3,17 +3,17 @@
 import React, { useEffect, useState } from "react";
 import KongdakMascot from "@/components/KongdakMascot";
 import FortuneLoading from "@/components/FortuneLoading";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+// [D4] 기간권 구매 UI 동면
+// import { useSession } from "next-auth/react";
+// import { useRouter } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
 import { Sparkles, Calendar, Heart, Coins, ArrowRight, Lock, Bell, CheckCircle2 } from "lucide-react";
 import { subscribeToPush, isPushSubscribed } from "@/lib/push";
-import { requestPortOnePayment } from "@/lib/payments/client";
-
-const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-import InAppBrowserModal from "@/components/InAppBrowserModal";
-import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
+// import { requestPortOnePayment } from "@/lib/payments/client";
+// const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+// import InAppBrowserModal from "@/components/InAppBrowserModal";
+// import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 
 
 interface WeeklyFortuneClientProps {
@@ -45,8 +45,9 @@ interface WeeklyData {
 }
 
 export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneClientProps) {
-  const { data: session } = useSession();
-  const router = useRouter();
+  // [D4] 기간권 구매 UI 동면
+  // const { data: session } = useSession();
+  // const router = useRouter();
 
   const [weeklyData, setWeeklyData] = useState<WeeklyData | null>(null);
   const [dailyData, setDailyData] = useState<DailyData | null>(null);
@@ -58,10 +59,10 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
 
-  // Pass Checkout Modal
-  const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [inAppOpen, setInAppOpen] = useState(false);
+  // [D4] Pass Checkout Modal State 동면
+  // const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+  // const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  // const [inAppOpen, setInAppOpen] = useState(false);
 
   // 마운트 시 실제 브라우저 푸시 구독 상태 복원
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
     }
   };
 
+  /* [D4] 기간권 구매 핸들러 동면
   const handleOpenPassCheckout = () => {
     if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
     if (!session?.user?.id) {
@@ -140,6 +142,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
     }
     setCheckoutModalOpen(true);
   };
+  */
 
   if (loading) {
     return (
@@ -392,63 +395,40 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
         )}
       </section>
 
-      {/* 5. Pass Subscription CTA Card (When Locked) */}
+      {/* 5. Pass Subscription Info (When Locked) */}
       {isLocked && (
-        <div className="bg-white border-2 border-[#FF8AA1] rounded-3xl p-6 sm:p-7 shadow-md text-center mt-2">
+        <div className="bg-white border-2 border-coral/30 rounded-3xl p-6 sm:p-7 shadow-md text-center mt-2">
           <div className="inline-flex items-center gap-1.5 bg-coral/10 text-coral px-3 py-0.5 rounded-full text-xs font-bold mb-3">
-            <span>콩닥 플러스 30일 패스</span>
+            <span>주간 운세 안내</span>
           </div>
 
           <h3 className="text-xl font-black text-ink mb-2">
-            매일 오는 나만의 운세 코치 받기
+            주간 운세는 기존 콩닥 플러스 패스 회원 전용이에요.
           </h3>
 
-          <p className="text-xs sm:text-sm text-[#6A5E72] leading-relaxed mb-4">
-            한 번 보고 끝나는 운세가 아닌, <strong>한 달 내내 매일 챙겨주는 나만의 운세 코치</strong>.<br />
-            매일 데일리 행동 조언 + 매주 데이트 길일 + 2026 총운/궁합 무제한!
+          <p className="text-xs sm:text-sm text-[#6A5E72] leading-relaxed mb-6">
+            현재 주간 운세 및 데일리 코칭은 기존 패스권을 보유하신 회원님께만 제공되고 있어요.
           </p>
 
-          {/* Value Highlights */}
-          <ul className="text-left space-y-2 text-xs text-[#6A2C70] font-bold max-w-xs mx-auto mb-5 bg-cream p-4 rounded-2xl border border-[#FFD9E0]/50">
-            <li className="flex items-center gap-2">
-              <span className="text-coral">✓</span>
-              <span>매일: 오늘의 운세 + 뭘 하면 좋은지 행동 조언</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-coral">✓</span>
-              <span>매주: 월~일 흐름, 좋은 날·조심할 날·연락 타이밍</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-coral">✓</span>
-              <span>+ 2026 총운 · 모든 심층 궁합 30일 무제한 열람</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="text-coral">✓</span>
-              <span>1회 결제 (자동결제 없음 · 9,900원)</span>
-            </li>
-          </ul>
-
-          <div className="max-w-xs mx-auto flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleOpenPassCheckout}
-              disabled={isProcessingPayment}
+          <div className="max-w-xs mx-auto flex flex-col gap-3">
+            <Link
+              href={`/${locale}/fortune/new?productId=annual_2026`}
               className="w-full bg-coral hover:bg-[#ff4766] active:scale-[0.97] text-white py-3.5 px-5 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 flex items-center justify-center gap-2"
             >
-              <span>30일 패스 결제하기 (9,900원)</span>
+              <span>2026 총운 보러 가기</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
             <Link
               href={`/${locale}#products`}
               className="text-xs font-semibold text-[#8A8291] hover:text-ink py-1 transition-colors"
             >
-              상품 안내 전체보기 →
+              전체 상품 보기 →
             </Link>
           </div>
         </div>
       )}
 
-      {/* Pass Checkout Modal */}
+      {/* [D4] 기간권 구매 UI 동면
       <GuestCheckoutModal
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
@@ -476,8 +456,8 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           }
         }}
       />
-      {/* InApp Browser Manual Escape Modal */}
       <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      */}
     </div>
   );
 }
