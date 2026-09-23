@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, X, Copy, Check } from 'lucide-react';
 import { useLocale } from 'next-intl';
+import { trackEvent } from '@/lib/gtag';
 
 interface InAppBrowserModalProps {
   isOpen: boolean;
   onClose: () => void;
+  productId?: string;
 }
 
 const MESSAGES: Record<string, {
@@ -75,10 +77,16 @@ const MESSAGES: Record<string, {
   },
 };
 
-export default function InAppBrowserModal({ isOpen, onClose }: InAppBrowserModalProps) {
+export default function InAppBrowserModal({ isOpen, onClose, productId }: InAppBrowserModalProps) {
   const locale = useLocale();
   const msg = MESSAGES[locale] || MESSAGES.en;
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      trackEvent('inapp_block_shown', { productId: productId || 'unknown' });
+    }
+  }, [isOpen, productId]);
 
   if (!isOpen) return null;
 

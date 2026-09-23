@@ -2,14 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
 import { Shield } from "lucide-react";
 import LoginButton from "./LoginButton";
 import { useSession } from "next-auth/react";
 import KongdakMascot from "./KongdakMascot";
 
 export default function Navbar() {
-  const t = useTranslations("Dashboard");
   const { data: session } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -17,7 +15,7 @@ export default function Navbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 8);
     };
-    handleScroll();
+    queueMicrotask(handleScroll);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -27,8 +25,8 @@ export default function Navbar() {
       <nav
         className={`max-w-screen-md mx-auto pointer-events-auto rounded-[20px] transition-all duration-150 px-3.5 sm:px-5 py-2.5 flex items-center justify-between border border-white/55 ${
           isScrolled
-            ? "bg-[#FFF6F1]/85 shadow-[0_8px_32px_rgba(181,71,96,0.15)]"
-            : "bg-[#FFF6F1]/65 shadow-[0_6px_24px_rgba(181,71,96,0.10)]"
+            ? "bg-cream/85 shadow-[0_8px_32px_rgba(181,71,96,0.15)]"
+            : "bg-cream/65 shadow-[0_6px_24px_rgba(181,71,96,0.10)]"
         }`}
         style={{
           backdropFilter: "blur(16px) saturate(140%)",
@@ -44,7 +42,7 @@ export default function Navbar() {
             <KongdakMascot size={32} animate="none" priority={true} />
           </div>
           <div className="flex flex-col justify-center">
-            <span className="font-serif font-bold text-base sm:text-lg text-[#2B2430] leading-none tracking-tight">
+            <span className="font-serif font-bold text-base sm:text-lg text-ink leading-none tracking-tight">
               콩닥
             </span>
           </div>
@@ -68,16 +66,16 @@ export default function Navbar() {
             이번 주 운세
           </Link>
 
-          {/* Pricing Link */}
+          {/* Products Link */}
           <Link
-            href="/pricing"
+            href="/#products"
             className="px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold text-gray-500 hover:text-foreground hover:bg-black/5 transition-colors duration-150 whitespace-nowrap active:scale-[0.97]"
           >
-            요금안내
+            상품안내
           </Link>
 
           {/* Admin Link — strictly visible to ADMIN */}
-          {session && (session.user as any)?.role === "ADMIN" && (
+          {session && (session.user as { role?: string })?.role === "ADMIN" && (
             <Link
               href="/admin"
               className="px-2.5 py-1.5 rounded-full text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 transition-colors duration-150 flex items-center gap-1 whitespace-nowrap active:scale-[0.97]"

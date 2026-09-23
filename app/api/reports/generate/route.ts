@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { getProduct, isViewable, type CatalogItem } from "@/lib/catalog";
+import { getProduct, isViewableFor, type CatalogItem } from "@/lib/catalog";
+import { canPreview } from "@/lib/preview";
 import { parsePersonInput, type PersonInput } from "@/lib/validation/inputs";
 import { orderGrants } from "@/lib/entitlementRules";
 import { claimGeneration, completeGeneration, failGeneration, type ReportKind } from "@/lib/reports/generationLock";
@@ -84,8 +85,12 @@ export async function POST(req: NextRequest) {
   const orderId = typeof body.orderId === "string" ? body.orderId : null;
   const locale = typeof body.locale === "string" && Object.hasOwn(LOCALE_CONFIG, body.locale) ? body.locale : "ko";
 
+  const session = await getServerSession(authOptions).catch(() => null);
+  const sessionUserId = session?.user?.id ?? null;
+  const preview = canPreview(session?.user?.email);
+
   const product = getProduct(catalogId);
-  if (!isViewable(product)) return err(404, "상품을 찾을 수 없어요.");
+  if (!isViewableFor(product, preview)) return err(404, "상품을 찾을 수 없어요.");
   if (catalogId.startsWith("annual_")) return err(400, "총운은 /api/fortune/annual 을 사용하세요.");
   if (product.type === "SET") return err(400, "세트는 구성 상품별로 요청하세요.");
   if (product.tier !== "standard") return err(400, "지원하지 않는 상품입니다."); // 프리미엄은 Phase 3~4에서 연결
@@ -99,9 +104,6 @@ export async function POST(req: NextRequest) {
   if (product.isFree) kind = "FREE";
   else if (body.kind === "TEASER" || body.kind === "FULL") kind = body.kind;
   else return err(400, "kind 가 필요합니다.");
-
-  const session = await getServerSession(authOptions).catch(() => null);
-  const sessionUserId = session?.user?.id ?? null;
 
   // 1) 권한 판정을 입력 처리보다 먼저 한다 — 미결제자가 계산·AI 비용을 유발하지 못하게
   let orderDbId: string | null = null;

@@ -41,6 +41,12 @@ export function isViewable(p: CatalogItem | undefined): p is CatalogItem {
 export function isSellable(p: CatalogItem | undefined): p is CatalogItem {
   return isViewable(p) && !p.isFree && p.price > 0;
 }
+export function isViewableFor(p: CatalogItem | undefined, preview: boolean): p is CatalogItem {
+  return !!p && (!p.isHidden || preview);
+}
+export function isSellableFor(p: CatalogItem | undefined, preview: boolean): p is CatalogItem {
+  return isViewableFor(p, preview) && !p.isFree && p.price > 0;
+}
 export function formatWon(n: number): string {
   return `${n.toLocaleString("ko-KR")}원`;
 }

@@ -19,8 +19,8 @@ import {
   recallUnlockToken,
   forgetUnlockToken,
   subscribeUnlockToken,
-  BuyerInfo,
 } from "@/lib/payments/client";
+import { getProduct, priceLabel } from "@/lib/catalog";
 
 interface CompatData {
   id: string;
@@ -110,6 +110,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
   const [deepReportError, setDeepReportError] = useState<string | null>(null);
 
+  const compatProduct = getProduct("compat_basic");
+  const compatPrice = compatProduct ? priceLabel(compatProduct) : "6,900원 · 회원 첫 결제 4,900원";
+
   // [SECURITY / H-2] 게스트/단건 구매자의 열람 증명 토큰(orderId).
   // 서버는 이 값을 받아야만 세션 없는 구매자의 소유권을 확인할 수 있다.
   // localStorage 는 클라이언트 전용 외부 저장소이므로 useSyncExternalStore 로 읽는다.
@@ -126,17 +129,15 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const router = useRouter();
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [checkoutType, setCheckoutType] = useState<"SINGLE" | "PERIOD_PASS">("SINGLE");
+  void checkoutType;
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  // Period Pass Selection State
-  const [selectedPlan, setSelectedPlan] = useState<string>("1_MONTH");
 
   // In-app Browser Guard & Notice State
   const [inAppOpen, setInAppOpen] = useState(false);
   const [isInApp, setIsInApp] = useState(false);
 
   useEffect(() => {
-    setIsInApp(isInAppBrowser());
+    queueMicrotask(() => setIsInApp(isInAppBrowser()));
   }, []);
 
   // Score Count-Up Animation (0 -> data.score in 0.8s ease-out + pop + haptic)
@@ -341,9 +342,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       }
       const json: DeepReportContent = await res.json();
       setDeepReport(json);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setDeepReportError(e.message || "오류가 발생했습니다.");
+      setDeepReportError(e instanceof Error ? e.message : "오류가 발생했습니다.");
     } finally {
       setIsLoadingDeepReport(false);
     }
@@ -567,7 +568,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     결정적인 건 잠겨 있어요 — 전체 리포트 열기
                   </span>
                   <span className="text-[10px] font-black text-coral bg-cream border border-[#FFD9E0] px-1.5 py-0.5 rounded-md">
-                    첫 결제 1,900원
+                    {compatPrice}
                   </span>
                 </div>
                 <span className="text-[11px] text-[#8A8291] truncate">
@@ -843,17 +844,12 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </div>
               </div>
 
-              {/* 정직한 가치 비교 카드 */}
-              <div className="grid grid-cols-2 gap-2.5 mb-2 text-left w-full">
+              {/* 단건 리포트 안내 카드 — 기간권 UI 동면(D4) */}
+              <div className="mb-2 text-left w-full">
                 <div className="bg-cream p-3 rounded-2xl border border-[#FFD9E0]/60">
                   <span className="text-[10px] font-extrabold text-coral block mb-0.5">단건 리포트</span>
                   <span className="text-xs font-black text-ink block">심층 궁합 1회</span>
-                  <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">첫 결제가 1,900원 (재구매가 2,900원) · 90일 보관</span>
-                </div>
-                <div className="bg-plum/5 p-3 rounded-2xl border border-plum/20">
-                  <span className="text-[10px] font-extrabold text-plum block mb-0.5">30일 패스</span>
-                  <span className="text-xs font-black text-plum block">매일 코치 + 무제한</span>
-                  <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">매일 데일리 운세 + 모든 궁합/총운 무제한 (9,900원)</span>
+                  <span className="text-[10px] text-[#8A8291] leading-tight block mt-0.5">{compatPrice} · 90일 보관</span>
                 </div>
               </div>
 
@@ -867,13 +863,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 className="w-full bg-coral hover:bg-coral text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all duration-150 active:scale-[0.97] flex flex-col items-center justify-center gap-0.5"
               >
                 <span className="text-sm sm:text-base font-extrabold text-white">
-                  우리 갈등 포인트 & 심층 리포트 열기 · 첫 결제가 1,900원
+                  우리 갈등 포인트 & 심층 리포트 열기
                 </span>
                 <span className="text-[11px] font-medium text-white/80">
-                  (이후 2,900원 · 결제 후 90일간 즉시 열람)
+                  {compatPrice} · 결제 후 90일간 즉시 열람
                 </span>
               </button>
               
+              {/* [D4] 기간권 구매 UI 동면
               <div className="bg-white rounded-2xl p-4 shadow-2xs border border-[#FFD9E0]/60 flex flex-col gap-2.5 mt-2">
                 <div className="flex items-center justify-between">
                   <div className="text-left">
@@ -901,6 +898,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </button>
               </div>
               <p className="text-[11px] text-[#8A8291] mt-1">매일 오늘의 운세 코치 + 매주 데이트 길일 배달 + 2026 총운/궁합 무제한</p>
+              */}
             </div>
           )}
         </div>
@@ -938,25 +936,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         </button>
       </div>
 
-      {/* Guest & Pass Checkout Modal */}
+      {/* Guest Checkout Modal */}
       <GuestCheckoutModal
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title={checkoutType === "SINGLE" ? "심층 궁합 리포트 잠금 해제" : "콩닥 플러스 무제한 이용권"}
-        orderName={
-          checkoutType === "SINGLE"
-            ? "콩닥 심층 궁합 리포트"
-            : selectedPlan === "1_MONTH"
-            ? "콩닥 플러스 1개월 이용권"
-            : "콩닥 플러스 3개월 이용권"
-        }
-        priceLabel={
-          checkoutType === "SINGLE"
-            ? "2,900원 (첫 결제 1,900원)"
-            : selectedPlan === "1_MONTH"
-            ? "9,900원"
-            : "24,900원"
-        }
+        title="심층 궁합 리포트 잠금 해제"
+        orderName={compatProduct?.name || "콩닥 심층 궁합 리포트"}
+        priceLabel={compatPrice}
         initialName={session?.user?.name || ""}
         initialEmail={session?.user?.email || ""}
         initialPhone=""
@@ -964,15 +950,18 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         onSubmit={async (buyer) => {
           try {
             setIsProcessingPayment(true);
-            await requestPortOnePayment({
-              type: checkoutType,
-              planId: checkoutType === "PERIOD_PASS" ? (selectedPlan as "1_MONTH" | "3_MONTHS") : undefined,
+            const res = await requestPortOnePayment({
+              productId: "compat_basic",
               compatId: data.id,
               buyer,
               locale,
             });
-          } catch (e: any) {
-            alert(e.message || "결제 진행 중 오류가 발생했습니다.");
+            if (res.ok) {
+              router.refresh();
+            }
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.";
+            alert(msg);
           } finally {
             setIsProcessingPayment(false);
             setCheckoutModalOpen(false);
@@ -990,9 +979,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 전체 심층 리포트 열기
               </span>
               <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-xs font-extrabold text-ink">첫 결제</span>
-                <span className="text-base sm:text-lg font-black text-coral">1,900원</span>
-                <span className="text-[11px] text-[#8A8291] line-through">2,900원</span>
+                <span className="text-sm sm:text-base font-black text-coral">{compatPrice}</span>
               </div>
             </div>
 

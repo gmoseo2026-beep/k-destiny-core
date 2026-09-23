@@ -1,11 +1,15 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProduct, getAllProducts } from "@/lib/catalog";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getProduct, getAllProducts, isViewableFor, priceLabel } from "@/lib/catalog";
+import { canPreview } from "@/lib/preview";
 import Link from "next/link";
-import { ChevronLeft, Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star, Check } from "lucide-react";
+import { ChevronLeft, LucideIcon, Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import ProductViewTracker from "@/components/ProductViewTracker";
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   Sparkles, User, Calendar, Coins, Briefcase, Heart, Sparkle, Activity, Flame, HeartHandshake, MessageCircleHeart, Undo2, Eye, Gem, Swords, Moon, Users, HeartCrack, Star
 };
 
@@ -15,8 +19,10 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const session = await getServerSession(authOptions).catch(() => null);
+  const preview = canPreview(session?.user?.email);
   const product = getProduct(id);
-  if (!product) return { title: "상품을 찾을 수 없습니다" };
+  if (!product || !isViewableFor(product, preview)) return { title: "상품을 찾을 수 없습니다" };
   
   return {
     title: `${product.name} | 콩닥`,
@@ -26,9 +32,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { locale, id } = await params;
+  const session = await getServerSession(authOptions).catch(() => null);
+  const preview = canPreview(session?.user?.email);
   const product = getProduct(id);
   
-  if (!product) {
+  if (!product || !isViewableFor(product, preview)) {
     notFound();
   }
 
@@ -47,6 +55,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-cream text-ink">
+      <ProductViewTracker productId={product.id} tier={product.tier} />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-white/80 backdrop-blur-md border-b border-plum/10 z-50 flex items-center px-4">
         <Link href={`/${locale}`} className="p-2 -ml-2 text-gray-600 hover:text-ink transition-colors">
@@ -56,6 +65,11 @@ export default async function ProductDetailPage({ params }: PageProps) {
       </header>
 
       <div className="pt-20 pb-32 max-w-md mx-auto px-4">
+        {product.isHidden && preview && (
+          <div className="w-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
+            🔒 미리보기 — 미공개 상품
+          </div>
+        )}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-plum/10 text-center mb-8 relative overflow-hidden">
           {product.isPopular && <div className="absolute top-4 right-4 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">BEST</div>}
           {product.isNew && <div className="absolute top-4 right-4 bg-plum text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">NEW</div>}
@@ -67,16 +81,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <p className="text-gray-500 mb-6">{product.description}</p>
           
           <div className="flex items-center justify-center gap-3">
-            {product.isFree ? (
-              <span className="text-2xl font-bold text-coral">무료</span>
-            ) : (
-              <>
-                <span className="text-2xl font-bold text-coral">{product.price.toLocaleString()}원</span>
-                {product.originalPrice > product.price && (
-                  <span className="text-lg text-gray-400 line-through">{product.originalPrice.toLocaleString()}원</span>
-                )}
-              </>
-            )}
+            <span className="text-xl font-bold text-coral">{priceLabel(product)}</span>
           </div>
         </div>
 
@@ -109,7 +114,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-plum/10 flex flex-col gap-4">
             <div className="flex gap-3">
               <div className="mt-0.5 text-coral"><Check size={20} /></div>
-              <p className="text-sm text-gray-700 leading-relaxed">타고난 명식과 오행 분석을 바탕으로 한 심층 리포트 제공</p>
+              <p className="text-sm text-gray-700 leading-relaxed">태어난 날의 기운을 바탕으로 한 심층 리포트 제공</p>
             </div>
             <div className="flex gap-3">
               <div className="mt-0.5 text-coral"><Check size={20} /></div>

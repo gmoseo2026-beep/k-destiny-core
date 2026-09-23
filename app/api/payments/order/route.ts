@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { getProduct, isSellable, FIRST_PURCHASE_PRICE } from "@/lib/catalog";
+import { getProduct, isSellableFor, FIRST_PURCHASE_PRICE } from "@/lib/catalog";
 import { toStorageKey } from "@/lib/productIdentity";
+import { canPreview } from "@/lib/preview";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -30,8 +31,9 @@ export async function POST(req: NextRequest) {
       if (productId === "ANNUAL_2026") catalogId = "annual_2026";
       else if (!productId && compatId) catalogId = "compat_basic";
 
+      const preview = canPreview(session?.user?.email);
       const catalogItem = getProduct(catalogId);
-      if (!catalogItem || !isSellable(catalogItem)) {
+      if (!catalogItem || !isSellableFor(catalogItem, preview)) {
         return NextResponse.json({ error: "유효하지 않거나 판매할 수 없는 상품입니다." }, { status: 400 });
       }
 
