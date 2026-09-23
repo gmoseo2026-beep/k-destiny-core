@@ -30,6 +30,8 @@ for mcd in male_char_data:
         existing_chars.add(mcd['char'])
 
 CUSTOM_HUN_FIXES = {
+    '台': '별',  # 태풍(颱)과 혼동되는 표기 제거
+    '冬': '겨울',  # 북소리(鼕) 혼입 제거
     '羊': '상서로울·순할',
     '私': '사사로울',
     '壇': '제터',

@@ -381,3 +381,17 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
   });
 });
 
+
+describe("검수 결정 고정(2026-09-23 Claude)", () => {
+  const byChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
+  it("何·齧·拑은 이름 후보가 될 수 없다", () => {
+    for (const ch of ["何", "齧", "拑"]) {
+      const h = byChar.get(ch) ?? { char: ch, hun: "" };
+      expect(isNameWorthy(h), ch).toBe(false);
+    }
+  });
+  it("台는 '별', 冬은 '겨울'로만 표기한다(태풍·북소리 혼입 제거)", () => {
+    expect(byChar.get("台")?.hun).toBe("별");
+    expect(byChar.get("冬")?.hun).toBe("겨울");
+  });
+});
