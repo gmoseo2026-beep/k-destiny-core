@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { radicalFullStrokes, originalStrokes } from "@/lib/premium/naming/strokes";
 import { reduce81, fourGrids, allLucky, parityBalanced, soundElement, soundFlowScore } from "@/lib/premium/naming/rules";
-import { buildNamingEngine } from "@/lib/premium/naming/engine";
+import { buildNamingEngine, isNameWorthy, dueumSourceSyllables } from "@/lib/premium/naming/engine";
 import type { ChildNamingInput } from "@/lib/validation/inputs";
 import nameHanjaDataRaw from "@/data/naming/name-hanja.json";
 
@@ -187,6 +187,77 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
           expect(h2).toBeDefined();
           expect(h1?.genders).toContain("F");
           expect(h2?.genders).toContain("F");
+        }
+      }
+    });
+  });
+
+  describe("두음법칙 대응 음(dueumSourceSyllables)", () => {
+    it("ㅇ+이중모음 계열은 ㄹ·ㄴ 사전 음도 찾는다", () => {
+      expect(dueumSourceSyllables("율")).toEqual(["률", "뉼"]);
+      expect(dueumSourceSyllables("연")).toEqual(["련", "년"]);
+      expect(dueumSourceSyllables("린")).toEqual([]);
+    });
+    it("ㄴ+기타 모음은 ㄹ 사전 음도 찾는다, 그 외는 없음", () => {
+      expect(dueumSourceSyllables("나")).toEqual(["라"]);
+      expect(dueumSourceSyllables("노")).toEqual(["로"]);
+      expect(dueumSourceSyllables("서")).toEqual([]);
+      expect(dueumSourceSyllables("윤")).toEqual(["륜", "뉸"]);
+    });
+    it("사전 음이 '률'인 글자(律)도 '서율'의 후보가 되고, 이름 음은 '율'로 표기된다", () => {
+      // 수리·음양 조건을 확실히 통과하는 획수로 픽스처를 만들어, 두음법칙 조회 경로만 검증한다.
+      const fixtureHanja = [
+        { char: "序", eum: "서", hun: "차례", strokes: 7, element: "wood" as const, genders: ["M", "F"] as ("M" | "F")[], tags: ["귀함"] },
+        { char: "律", eum: "률", hun: "법칙", strokes: 9, element: "wood" as const, genders: ["M", "F"] as ("M" | "F")[], tags: ["귀함"] },
+      ];
+      // s=8(金): 원 7+9=16, 형 8+7=15, 이 8+9=17, 정 24 → 모두 길수, 획수 홀짝 혼합
+      const r = buildNamingEngine(
+        { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [] },
+        { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: fixtureHanja },
+      );
+      expect(r.names).toHaveLength(1);
+      expect(r.names[0].hanja).toEqual(["序", "律"]);
+      expect(r.names[0].eum).toEqual(["서", "율"]);
+    });
+  });
+
+  describe("부적합 글자 제외(isNameWorthy)", () => {
+    const hanjaByChar = new Map(nameHanjaDataRaw.map((h) => [h.char, h]));
+
+    it("뜻이 나쁘거나 이름에 부적합한 글자는 후보가 될 수 없다", () => {
+      for (const ch of ["汰", "殆", "怠", "妓", "娼", "妖", "孀", "憂", "愚", "邪", "淫", "怨"]) {
+        const h = hanjaByChar.get(ch) ?? { char: ch, hun: "" };
+        expect(isNameWorthy(h), ch).toBe(false);
+      }
+    });
+
+    it("확장 영역 한자는 제외, 흔한 이름 한자는 허용", () => {
+      expect(isNameWorthy({ char: "㥥", hun: "기쁠" })).toBe(false);
+      for (const ch of ["泰", "瑞", "賢", "智", "喜", "潤", "娟"]) {
+        const h = hanjaByChar.get(ch);
+        expect(h, ch).toBeDefined();
+        expect(isNameWorthy(h!), ch).toBe(true);
+      }
+    });
+
+    it("실데이터 결과(남·여 각 3건)에 부적합 글자가 없다", () => {
+      const base = { surnameHangul: "김", surnameHanja: "金", time: null, dollim: null, tags: [], avoidSyllables: [] };
+      const cases: ChildNamingInput[] = [
+        { ...base, gender: "M", dob: "2025-03-01" },
+        { ...base, gender: "M", dob: "2024-11-20", time: "08:15" },
+        { ...base, gender: "M", dob: "2023-07-07" },
+        { ...base, gender: "F", dob: "2025-01-15" },
+        { ...base, gender: "F", dob: "2024-06-30", time: "22:40" },
+        { ...base, gender: "F", dob: "2023-12-24" },
+      ];
+      for (const c of cases) {
+        const r = buildNamingEngine(c);
+        expect(r.names.length).toBeGreaterThan(0);
+        for (const n of r.names) {
+          for (const ch of n.hanja) {
+            const h = hanjaByChar.get(ch);
+            expect(h && isNameWorthy(h), `${n.hangul} ${ch}`).toBe(true);
+          }
         }
       }
     });
