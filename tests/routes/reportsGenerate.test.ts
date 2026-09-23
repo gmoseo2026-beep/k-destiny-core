@@ -593,4 +593,38 @@ describe("POST /api/reports/generate route contract tests", () => {
       data: { status: "FAILED" },
     });
   });
+
+  // 15. 회귀: 프리미엄 3종 모두 라우트 분기에 도달해야 한다(과거 택일 id 불일치로 400 이 나던 버그)
+  it("case 15: premium naming and date-pick TEASERs reach their branches (no 400)", async () => {
+    process.env.PREVIEW_EMAILS = "preview@kongdak.kr";
+    session.current = { user: { id: "user_1", email: "preview@kongdak.kr" } };
+
+    const naming = await POST(
+      req({
+        catalogId: "premium_naming",
+        kind: "TEASER",
+        input: {
+          surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null,
+          dollim: null, tags: [], avoidSyllables: [],
+        },
+      })
+    );
+    expect(naming.status).toBe(200);
+    expect((await naming.json()).kind).toBe("TEASER");
+
+    const dates = await POST(
+      req({
+        catalogId: "premium_date_pick",
+        kind: "TEASER",
+        input: {
+          purpose: "WEDDING", start: "2027-04-01", end: "2027-06-30",
+          people: [person, { name: "상대", dob: "1993-08-20", time: null, gender: "M" }],
+          weekdays: [], excludeDates: [],
+        },
+      })
+    );
+    expect(dates.status).toBe(200);
+    expect((await dates.json()).kind).toBe("TEASER");
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
 });

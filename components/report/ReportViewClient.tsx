@@ -196,7 +196,7 @@ export default function ReportViewClient({
             content={reportData.data as PremiumNamingReportContent}
           />
         )}
-        {reportData.catalogId === "premium_date_selection" && (
+        {reportData.catalogId === "premium_date_pick" && (
           <DateSelectionReport
             reportId={reportData.reportId}
             content={reportData.data as PremiumDateSelectionReportContent}

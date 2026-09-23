@@ -5,6 +5,7 @@ import type { CatalogItem } from "@/lib/catalog";
 import { priceLabel } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
 import ProductViewTracker from "@/components/ProductViewTracker";
+import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
 
 // Import static sample previews
 import sample2027 from "@/data/samples/premium_2027_daeun.json";
@@ -19,7 +20,7 @@ interface PremiumProductDetailProps {
 export function PremiumProductDetail({ product, locale }: PremiumProductDetailProps) {
   const is2027 = product.id === "premium_2027_daeun";
   const isNaming = product.id === "premium_naming";
-  const isDates = product.id === "premium_date_selection";
+  const isDates = product.id === "premium_date_pick";
 
   // Product specific content configuration
   const specDetails = is2027
@@ -192,7 +193,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
                     추천 후보 1: {sampleNaming.engine.names[0]?.hangul} ({sampleNaming.engine.names[0]?.hanja.join("")})
                   </p>
                   <p className="text-xs text-[#B9AEC4] leading-relaxed mb-2">
-                    수리점수 {sampleNaming.engine.names[0]?.score}점 · 보완 오행: {sampleNaming.engine.names[0]?.elements.join(" · ")}
+                    수리점수 {sampleNaming.engine.names[0]?.score}점 · 글자의 기운: {sampleNaming.engine.names[0]?.elements.map((e) => ELEMENT_WORD[e as Element] ?? e).join(" · ")}
                   </p>
                   <p className="text-xs text-[#D9B26A] italic">
                     &quot;{sampleNaming.sections.names.names[0]?.oneLine}&quot;

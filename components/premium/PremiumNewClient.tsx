@@ -61,7 +61,7 @@ export function PremiumNewClient({
   const surnameListId = useId();
   const is2027 = product.id === "premium_2027_daeun";
   const isNaming = product.id === "premium_naming";
-  const isDates = product.id === "premium_date_selection";
+  const isDates = product.id === "premium_date_pick";
 
   // In-app browser detection
   const [isInApp, setIsInApp] = useState(false);

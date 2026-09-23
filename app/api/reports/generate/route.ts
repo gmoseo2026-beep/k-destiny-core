@@ -242,7 +242,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (product.id === "premium_date_selection") {
+    if (product.id === "premium_date_pick") {
       const dateInput: DateSelectionInput | null = parseDateSelectionInput(body.input, todayKST());
       if (!dateInput) return err(400, "택일 입력 정보를 확인해 주세요.");
 
