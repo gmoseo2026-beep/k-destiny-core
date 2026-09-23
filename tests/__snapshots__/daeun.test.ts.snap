@@ -1,0 +1,152 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`daeun > 스냅샷(보고서에 값 기재 → Claude 수기 검산) 1`] = `
+{
+  "current": {
+    "endYear": 2031,
+    "ganZhi": "壬午",
+    "index": 3,
+    "label": "넓은 바다와 말의 10년",
+    "startAge": 28,
+    "startYear": 2022,
+  },
+  "cycles": [
+    {
+      "endYear": 2011,
+      "ganZhi": "庚辰",
+      "index": 1,
+      "label": "단단한 바위와 용의 10년",
+      "startAge": 8,
+      "startYear": 2002,
+    },
+    {
+      "endYear": 2021,
+      "ganZhi": "辛巳",
+      "index": 2,
+      "label": "빛나는 보석와 뱀의 10년",
+      "startAge": 18,
+      "startYear": 2012,
+    },
+    {
+      "endYear": 2031,
+      "ganZhi": "壬午",
+      "index": 3,
+      "label": "넓은 바다와 말의 10년",
+      "startAge": 28,
+      "startYear": 2022,
+    },
+    {
+      "endYear": 2041,
+      "ganZhi": "癸未",
+      "index": 4,
+      "label": "촉촉한 단비와 양의 10년",
+      "startAge": 38,
+      "startYear": 2032,
+    },
+    {
+      "endYear": 2051,
+      "ganZhi": "甲申",
+      "index": 5,
+      "label": "큰 나무와 원숭이의 10년",
+      "startAge": 48,
+      "startYear": 2042,
+    },
+    {
+      "endYear": 2061,
+      "ganZhi": "乙酉",
+      "index": 6,
+      "label": "들꽃와 닭의 10년",
+      "startAge": 58,
+      "startYear": 2052,
+    },
+    {
+      "endYear": 2071,
+      "ganZhi": "丙戌",
+      "index": 7,
+      "label": "한낮의 태양와 개의 10년",
+      "startAge": 68,
+      "startYear": 2062,
+    },
+    {
+      "endYear": 2081,
+      "ganZhi": "丁亥",
+      "index": 8,
+      "label": "따뜻한 촛불와 돼지의 10년",
+      "startAge": 78,
+      "startYear": 2072,
+    },
+  ],
+  "domains": {
+    "career": 96,
+    "family": 91,
+    "health": 86,
+    "love": 86,
+    "money": 91,
+    "relationships": 86,
+  },
+  "months": [
+    {
+      "ganZhi": "辛丑",
+      "month": 1,
+      "score": 99,
+    },
+    {
+      "ganZhi": "壬寅",
+      "month": 2,
+      "score": 83,
+    },
+    {
+      "ganZhi": "癸卯",
+      "month": 3,
+      "score": 86,
+    },
+    {
+      "ganZhi": "甲辰",
+      "month": 4,
+      "score": 96,
+    },
+    {
+      "ganZhi": "乙巳",
+      "month": 5,
+      "score": 95,
+    },
+    {
+      "ganZhi": "丙午",
+      "month": 6,
+      "score": 99,
+    },
+    {
+      "ganZhi": "丁未",
+      "month": 7,
+      "score": 99,
+    },
+    {
+      "ganZhi": "戊申",
+      "month": 8,
+      "score": 99,
+    },
+    {
+      "ganZhi": "己酉",
+      "month": 9,
+      "score": 99,
+    },
+    {
+      "ganZhi": "庚戌",
+      "month": 10,
+      "score": 98,
+    },
+    {
+      "ganZhi": "辛亥",
+      "month": 11,
+      "score": 84,
+    },
+    {
+      "ganZhi": "壬子",
+      "month": 12,
+      "score": 85,
+    },
+  ],
+  "strong": true,
+  "yearScore": 90,
+}
+`;
