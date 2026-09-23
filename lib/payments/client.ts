@@ -7,13 +7,15 @@ export interface BuyerInfo {
 }
 
 export interface PayOptions {
-  type: "SINGLE" | "PERIOD_PASS";
-  planId?: "1_MONTH" | "3_MONTHS";
+  productId: string;
   compatId?: string;
-  product?: "ANNUAL_2026";
   buyer: BuyerInfo;
   locale?: string;
 }
+
+export type PayResult =
+  | { ok: true; orderId: string; catalogId: string; compatId: string | null }
+  | { ok: false; reason: "LOGIN_REQUIRED" | "CANCELLED" | "FAILED" };
 
 /**
  * [SECURITY / H-2] 게스트 열람 증명 토큰(orderId) 보관.
@@ -52,10 +54,6 @@ export function rememberUnlockToken(compatId: string, orderId: string): void {
 
 /**
  * [SECURITY / H-4] 서버가 권한을 회수했을 때(환불·만료) 기기에 남은 토큰을 폐기한다.
- *
- * 이 토큰은 "증명 제출용"일 뿐 권한 그 자체가 아니다. 서버는 이미 fail-closed 로
- * 403 을 돌려주고 있으므로 보안상 필수는 아니지만, 무효한 토큰을 들고 열람 버튼을
- * 계속 노출하면 환불받은 사용자가 403 만 반복해서 만나게 된다.
  */
 export function forgetUnlockToken(compatId: string): void {
   if (typeof window === "undefined" || !compatId) return;
@@ -76,24 +74,65 @@ export function recallUnlockToken(compatId: string): string | null {
   }
 }
 
-export async function requestPortOnePayment(opts: PayOptions): Promise<boolean> {
+// ─────────────────────────────────────────────────────────────
+// 주문 단위 열람 토큰 (일반 상품 / 세트 / 총운)
+// ─────────────────────────────────────────────────────────────
+
+const ORDER_TOKEN_PREFIX = "kongdak_order_";
+const orderTokenKey = (catalogId: string, compatId?: string | null) =>
+  ORDER_TOKEN_PREFIX + catalogId + (compatId ? `_${compatId}` : "");
+
+export function rememberOrderToken(catalogId: string, orderId: string, compatId?: string | null): void {
+  if (typeof window === "undefined" || !catalogId || !orderId) return;
+  try {
+    window.localStorage.setItem(orderTokenKey(catalogId, compatId), orderId);
+  } catch {}
+  if (catalogId === "compat_basic" && compatId) {
+    rememberUnlockToken(compatId, orderId);
+  }
+  notifyUnlockTokenChanged();
+}
+
+export function recallOrderToken(catalogId: string, compatId?: string | null): string | null {
+  if (typeof window === "undefined" || !catalogId) return null;
+  try {
+    return window.localStorage.getItem(orderTokenKey(catalogId, compatId));
+  } catch {
+    return null;
+  }
+}
+
+export function forgetOrderToken(catalogId: string, compatId?: string | null): void {
+  if (typeof window === "undefined" || !catalogId) return;
+  try {
+    window.localStorage.removeItem(orderTokenKey(catalogId, compatId));
+  } catch {}
+  if (catalogId === "compat_basic" && compatId) {
+    forgetUnlockToken(compatId);
+  }
+  notifyUnlockTokenChanged();
+}
+
+export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult> {
   // 1) 서버가 주문 생성 (금액은 서버에서 결정)
   const orderRes = await fetch("/api/payments/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      type: opts.type,
-      planId: opts.planId,
+      productId: opts.productId,
       compatId: opts.compatId,
-      product: opts.product,
       email: opts.buyer.email,
     }),
   });
 
+  if (orderRes.status === 401) {
+    return { ok: false, reason: "LOGIN_REQUIRED" };
+  }
+
   const order = await orderRes.json();
   if (!orderRes.ok) {
-    alert(order.error || "주문 생성 실패");
-    return false;
+    alert(order.error || "주문 생성에 실패했습니다.");
+    return { ok: false, reason: "FAILED" };
   }
 
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
@@ -101,17 +140,14 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<boolean> 
 
   if (!storeId || !channelKey) {
     alert("결제 설정(Store ID 또는 Channel Key)이 누락되었습니다.");
-    return false;
+    return { ok: false, reason: "FAILED" };
   }
 
   const locale = opts.locale || "ko";
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
 
-  const orderName = opts.product === "ANNUAL_2026"
-    ? "콩닥 2026 신년 총운 리포트"
-    : opts.type === "SINGLE"
-    ? "콩닥 심층 궁합 리포트"
-    : "콩닥 플러스 이용권";
+  // orderName은 서버 응답의 orderName을 쓴다
+  const orderName = order.orderName || "콩닥 사주 리포트";
 
   // 2) PortOne v2 결제창 호출 (KG이니시스)
   const res = await PortOne.requestPayment({
@@ -132,15 +168,22 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<boolean> 
 
   // 3) PC: 프로미스 반환 (res.code != null 이면 취소/실패). 모바일: redirectUrl로 이동.
   if (res && res.code != null) {
-    alert(`결제 실패: ${res.message || res.code}`);
-    return false;
+    const isCancelled = res.code === "FAILURE_TYPE_CANCELLED" || String(res.message).includes("취소");
+    if (!isCancelled) {
+      alert(`결제 실패: ${res.message || res.code}`);
+    }
+    return { ok: false, reason: isCancelled ? "CANCELLED" : "FAILED" };
   }
 
-  // 4) 서버 결제 검증 (서버가 PortOne getPayment 로만 최종 판정)
-  return await verifyAndCompletePayment(order.orderId);
+  // 4) 서버 결제 검증
+  return await verifyAndCompletePayment(order.orderId, opts.productId, opts.compatId);
 }
 
-export async function verifyAndCompletePayment(paymentId: string): Promise<boolean> {
+export async function verifyAndCompletePayment(
+  paymentId: string,
+  fallbackCatalogId?: string,
+  fallbackCompatId?: string | null
+): Promise<PayResult> {
   try {
     const r = await fetch("/api/payments/complete", {
       method: "POST",
@@ -149,20 +192,26 @@ export async function verifyAndCompletePayment(paymentId: string): Promise<boole
     });
 
     if (r.ok) {
-      // 서버가 확정한 주문 정보로만 열람 토큰을 보관한다(클라가 지어내지 않는다).
       const result = await r.json().catch(() => null);
-      if (result?.type === "SINGLE" && result?.compatId && result?.orderId) {
-        rememberUnlockToken(result.compatId, result.orderId);
-      }
-      window.location.reload();
-      return true;
+      const catalogId = result?.catalogId || fallbackCatalogId || "compat_basic";
+      const compatId = result?.compatId ?? fallbackCompatId ?? null;
+      const orderId = result?.orderId || paymentId;
+
+      rememberOrderToken(catalogId, orderId, compatId);
+      // Note: window.location.reload() 제거. 이동은 호출자가 결정.
+      return {
+        ok: true,
+        orderId,
+        catalogId,
+        compatId,
+      };
     } else {
-      const e = await r.json();
+      const e = await r.json().catch(() => ({}));
       alert(e.error || "결제 확인에 실패했습니다.");
-      return false;
+      return { ok: false, reason: "FAILED" };
     }
-  } catch (err: any) {
+  } catch {
     alert("결제 확인 서버 통신 중 오류가 발생했습니다.");
-    return false;
+    return { ok: false, reason: "FAILED" };
   }
 }
