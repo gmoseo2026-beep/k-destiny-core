@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { getProduct, isViewableFor } from "@/lib/catalog";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
 const TITLE = "상대방 정보 입력 — 콩닥 궁합";
@@ -42,7 +43,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
 
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
-  const product = productId ? getProduct(productId) : null;
+  const product = productId ? await getEffectiveProduct(productId) : null;
   if (product && !isViewableFor(product, preview)) {
     notFound();
   }

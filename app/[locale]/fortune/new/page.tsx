@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { getProduct, isViewableFor } from "@/lib/catalog";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
 const TITLE = "내 사주 정보 입력 — 콩닥";
@@ -38,7 +39,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
 
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
-  const product = productId ? getProduct(productId) : null;
+  const product = productId ? await getEffectiveProduct(productId) : null;
   if (product && !isViewableFor(product, preview)) {
     notFound();
   }
@@ -49,6 +50,11 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
       where: { userId: session.user.id }
     });
   }
+
+  const effectiveCatalog = await getEffectiveCatalog();
+  const visibleIds = effectiveCatalog
+    .filter((p) => isViewableFor(p, preview))
+    .map((p) => p.id);
 
   return (
     <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
@@ -74,6 +80,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
         productId={productId}
         initialProfile={profile}
         preview={preview}
+        visibleIds={visibleIds}
       />
     </main>
   );

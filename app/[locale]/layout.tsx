@@ -38,6 +38,7 @@ import Script from "next/script";
 import { BASE_URL, buildPageMetadata } from "@/lib/seo";
 import InstallPWAButton from "../../components/InstallPWAButton";
 import VisitTracker from "../../components/VisitTracker";
+import { getEffectiveVisibleCatalog } from "@/lib/catalogVisibility";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -164,7 +165,17 @@ export default async function RootLayout({
   // middleware matcher 가 점(.) 포함 경로를 건너뛰므로 /llms.txt 같은 요청이 여기로
   // 바로 떨어진다. 검증이 없으면 locale="llms.txt" 로 홈을 200 렌더(soft-404)한다.
   if (!hasLocale(routing.locales, locale)) notFound();
-  const messages = await getMessages();
+  const [messages, visibleProductsRaw] = await Promise.all([
+    getMessages(),
+    getEffectiveVisibleCatalog(),
+  ]);
+  const visibleProductsForNav = visibleProductsRaw.map((p) => ({
+    id: p.id,
+    name: p.name,
+    icon3d: p.icon3d,
+    gridLabel: p.gridLabel,
+    hook: p.hook,
+  }));
 
   return (
     <html lang={locale}>
@@ -197,7 +208,7 @@ export default async function RootLayout({
             <MaintenanceOverlay />
             <CacheBuster />
             <VisitTracker />
-            <Navbar />
+            <Navbar visibleProducts={visibleProductsForNav} />
             <InstallPWAButton />
             <main className="flex-grow pt-14">
               {children}

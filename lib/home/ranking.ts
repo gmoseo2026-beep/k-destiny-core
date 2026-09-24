@@ -1,4 +1,5 @@
-import { CatalogItem, CATALOG } from "@/lib/catalog";
+import { CatalogItem } from "@/lib/catalog";
+import { getEffectiveVisibleCatalog } from "@/lib/catalogVisibility";
 import { toCatalogId } from "@/lib/productIdentity";
 
 export interface OrderRowForRanking {
@@ -26,7 +27,7 @@ export interface HomeRankingResult {
  */
 export function computeHomeRanking(
   orders: OrderRowForRanking[],
-  visibleProducts: CatalogItem[] = CATALOG.filter((p) => !p.isHidden),
+  visibleProducts: CatalogItem[] = [],
   minThreshold: number = 20
 ): HomeRankingResult {
   const validOrders = orders.filter(
@@ -76,13 +77,34 @@ export function computeHomeRanking(
   };
 }
 
+export interface PrismaClientForRanking {
+  order: {
+    findMany: (args: {
+      where: Record<string, unknown>;
+      select: Record<string, boolean>;
+    }) => Promise<OrderRowForRanking[]>;
+  };
+}
+
 /**
  * DB에서 최근 30일 PAID 주문 조회
  */
-export async function fetchHomeRanking(prismaClient: any): Promise<HomeRankingResult> {
+export async function fetchHomeRanking(
+  prismaClient: unknown,
+  visibleProducts?: CatalogItem[]
+): Promise<HomeRankingResult> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const targetVisibleProducts = visibleProducts ?? (await getEffectiveVisibleCatalog());
   try {
-    const orders = await prismaClient.order.findMany({
+    const client = prismaClient as {
+      order: {
+        findMany: (args: {
+          where: Record<string, unknown>;
+          select: Record<string, boolean>;
+        }) => Promise<OrderRowForRanking[]>;
+      };
+    };
+    const orders = await client.order.findMany({
       where: {
         status: "PAID",
         amount: { gt: 0 },
@@ -99,11 +121,9 @@ export async function fetchHomeRanking(prismaClient: any): Promise<HomeRankingRe
       },
     });
 
-    const visibleProducts = CATALOG.filter((p) => !p.isHidden);
-    return computeHomeRanking(orders, visibleProducts);
+    return computeHomeRanking(orders, targetVisibleProducts);
   } catch (e) {
     console.error("[fetchHomeRanking] Error fetching orders, using fallback:", e);
-    const visibleProducts = CATALOG.filter((p) => !p.isHidden);
-    return computeHomeRanking([], visibleProducts);
+    return computeHomeRanking([], targetVisibleProducts);
   }
 }

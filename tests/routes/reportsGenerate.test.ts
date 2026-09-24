@@ -5,6 +5,7 @@ const db = vi.hoisted(() => ({
   order: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   compatibility: { findUnique: vi.fn() },
   sajuContentDictionary: { findFirst: vi.fn(async () => null) },
+  productVisibility: { findMany: vi.fn(async () => [] as any[]) },
   generatedReport: {
     create: vi.fn(), findUnique: vi.fn(), update: vi.fn(),
     updateMany: vi.fn(async () => ({ count: 1 })),
@@ -24,6 +25,7 @@ vi.mock("@/lib/rateLimiter", () => ({
 }));
 
 import { POST } from "@/app/api/reports/generate/route";
+import { invalidateVisibilityCache } from "@/lib/catalogVisibility";
 
 const req = (body: unknown) =>
   new Request("http://localhost/api/reports/generate", {
@@ -35,6 +37,7 @@ const future = new Date(Date.now() + 86400000);
 const person = { name: "테스트", dob: "1995-03-15", time: "10:30", gender: "F" };
 
 beforeEach(() => {
+  invalidateVisibilityCache();
   vi.clearAllMocks();
   session.current = null;
   process.env.SUBJECT_HASH_SECRET = "x".repeat(32);
@@ -644,6 +647,122 @@ describe("POST /api/reports/generate route contract tests", () => {
       })
     );
     expect(res.status).toBe(400);
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // A11-4 라우트 계약 테스트:
+  // 17. 숨김(오버라이드 hidden) 상품이라도 PAID 주문 + Unlock이 있으면 FULL 200
+  it("case 17: hidden (overridden visible:false) product succeeds for FULL with paid order and unlock", async () => {
+    // wealth를 오버라이드로 숨김 설정
+    db.productVisibility.findMany.mockResolvedValueOnce([
+      { catalogId: "wealth", visible: false, updatedBy: "admin", reason: "임시 숨김", updatedAt: new Date() },
+    ]);
+
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "ord_db_wealth",
+      orderId: "ord_wealth_paid_001",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "FORTUNE",
+      productKey: "wealth",
+      compatId: null,
+      userId: null,
+      unlocks: [{ id: "u_wealth", productType: "FORTUNE", productKey: "wealth", compatId: null, expiresAt: future }],
+    });
+
+    db.generatedReport.create.mockResolvedValueOnce({ id: "rep_wealth_1" });
+
+    gen.generateJson.mockResolvedValueOnce({
+      score: 88,
+      data: {
+        summary: "재물운 요약",
+        details: "상세 내용",
+        actionable_advice: ["조언1", "조언2"],
+      },
+    });
+
+    const res = await POST(
+      req({
+        catalogId: "wealth",
+        kind: "FULL",
+        orderId: "ord_wealth_paid_001",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.kind).toBe("FULL");
+    expect(json.score).toBe(76);
+  });
+
+  // 18. 같은 숨김 상품의 TEASER는 404
+  it("case 18: hidden (overridden visible:false) product returns 404 for TEASER", async () => {
+    db.productVisibility.findMany.mockResolvedValueOnce([
+      { catalogId: "wealth", visible: false, updatedBy: "admin", reason: "임시 숨김", updatedAt: new Date() },
+    ]);
+
+    const res = await POST(
+      req({
+        catalogId: "wealth",
+        kind: "TEASER",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(404);
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // 19. 공개 오버라이드된 상품의 TEASER는 200 (미리보기 세션 없이)
+  it("case 19: overridden visible:true product returns 200 for TEASER without preview session", async () => {
+    // 기본적으로 isHidden: true인 premium_2027_daeun을 visible: true로 공개 오버라이드
+    db.productVisibility.findMany.mockResolvedValueOnce([
+      { catalogId: "premium_2027_daeun", visible: true, updatedBy: "admin", reason: "정식 오픈", updatedAt: new Date() },
+    ]);
+
+    // 세션 없음
+    session.current = null;
+
+    const res = await POST(
+      req({
+        catalogId: "premium_2027_daeun",
+        kind: "TEASER",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.kind).toBe("TEASER");
+    expect(json.score).toBeDefined();
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // 20. B1 회귀: compat 주문으로 wealth FULL은 여전히 403
+  it("case 20: B1 regression - compat order for wealth FULL still returns 403", async () => {
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "ord_db_compat",
+      orderId: "ord_compat_only",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "COMPAT",
+      productKey: "compat_basic",
+      compatId: "cpt_123",
+      userId: null,
+      unlocks: [{ id: "u_compat", productType: "COMPAT", productKey: "compat_basic", compatId: "cpt_123", expiresAt: future }],
+    });
+
+    const res = await POST(
+      req({
+        catalogId: "wealth",
+        kind: "FULL",
+        orderId: "ord_compat_only",
+        input: person,
+      })
+    );
+
+    expect(res.status).toBe(403);
     expect(gen.generateJson).toHaveBeenCalledTimes(0);
   });
 });

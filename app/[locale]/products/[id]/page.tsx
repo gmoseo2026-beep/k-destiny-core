@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { getProduct, getAllProducts, isViewableFor } from "@/lib/catalog";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { StandardProductDetail } from "@/components/product/StandardProductDetail";
 
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
-  const product = getProduct(id);
+  const product = await getEffectiveProduct(id);
   if (!product || !isViewableFor(product, preview)) return { title: "상품을 찾을 수 없습니다" };
 
   return {
@@ -27,7 +28,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const { locale, id } = await params;
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
-  const product = getProduct(id);
+  const product = await getEffectiveProduct(id);
 
   if (!product || !isViewableFor(product, preview)) {
     notFound();
@@ -38,7 +39,8 @@ export default async function ProductDetailPage({ params }: PageProps) {
     return <PremiumProductDetail product={product} locale={locale} />;
   }
 
-  const allProducts = getAllProducts();
+  const effectiveCatalog = await getEffectiveCatalog();
+  const allProducts = effectiveCatalog.filter((p) => !p.isHidden);
 
   return (
     <StandardProductDetail

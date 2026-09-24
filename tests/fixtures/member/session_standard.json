@@ -1,0 +1,11 @@
+{
+  "user": {
+    "name": "테스트",
+    "email": "jieun@example.com",
+    "image": null,
+    "role": "USER",
+    "tier": "FREE",
+    "id": "usr_test_standard_001"
+  },
+  "expires": "2099-12-31T23:59:59.999Z"
+}

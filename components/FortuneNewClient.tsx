@@ -39,6 +39,7 @@ interface FortuneNewClientProps {
     gender?: string | null;
   } | null;
   preview?: boolean;
+  visibleIds?: string[];
 }
 
 export default function FortuneNewClient({
@@ -46,6 +47,7 @@ export default function FortuneNewClient({
   productId,
   initialProfile,
   preview = false,
+  visibleIds,
 }: FortuneNewClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -59,7 +61,7 @@ export default function FortuneNewClient({
     p.type !== "SET" &&
     !p.isFree &&
     p.id !== currentProductId &&
-    isViewableFor(p, preview)
+    (visibleIds ? visibleIds.includes(p.id) : isViewableFor(p, preview))
   ).slice(0, 2);
 
   // Form values

@@ -1,0 +1,30 @@
+[
+  {
+    "orderId": "kd_ord_test_001",
+    "catalogId": "annual_2026",
+    "compatId": null,
+    "expiresAt": "2026-12-31T23:59:59.999Z",
+    "reports": [
+      {
+        "catalogId": "annual_2026",
+        "reportId": null,
+        "status": "ANNUAL_ROUTE",
+        "createdAt": "2026-09-20T10:00:00.000Z"
+      }
+    ]
+  },
+  {
+    "orderId": "kd_ord_test_002",
+    "catalogId": "compat_basic",
+    "compatId": "cpt_test_001",
+    "expiresAt": "2026-11-20T10:00:00.000Z",
+    "reports": [
+      {
+        "catalogId": "compat_basic",
+        "reportId": "rep_test_001",
+        "status": "READY",
+        "createdAt": "2026-09-21T14:30:00.000Z"
+      }
+    ]
+  }
+]

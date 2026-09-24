@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "id": "cpt_test_001",
+      "shareToken": "stk_test_jieun_minsu",
+      "relation": "love",
+      "score": 92,
+      "keywords": ["서로를 채워주는", "단단한 신뢰", "대화가 통하는"],
+      "createdAt": "2026-09-22T15:20:00.000Z",
+      "personA": { "name": "지은", "gender": "F" },
+      "personB": { "name": "민수", "gender": "M" }
+    },
+    {
+      "id": "cpt_test_002",
+      "shareToken": "stk_test_jieun_jun",
+      "relation": "some",
+      "score": 85,
+      "keywords": ["설레는 호기심", "자석 같은 끌림"],
+      "createdAt": "2026-09-18T09:10:00.000Z",
+      "personA": { "name": "지은", "gender": "F" },
+      "personB": { "name": "준우", "gender": "M" }
+    }
+  ]
+}

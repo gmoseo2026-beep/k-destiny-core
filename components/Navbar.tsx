@@ -5,9 +5,20 @@ import { Link, usePathname } from "@/i18n/routing";
 import { useSession } from "next-auth/react";
 import { Menu, X, User as UserIcon, Shield } from "lucide-react";
 import Image from "next/image";
-import { CATALOG } from "@/lib/catalog";
 
-export default function Navbar() {
+export interface NavbarProductItem {
+  id: string;
+  name: string;
+  icon3d: string;
+  gridLabel?: string;
+  hook?: string;
+}
+
+interface NavbarProps {
+  visibleProducts?: NavbarProductItem[];
+}
+
+export default function Navbar({ visibleProducts = [] }: NavbarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,8 +43,6 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const visibleProducts = CATALOG.filter((p) => !p.isHidden);
 
   return (
     <>

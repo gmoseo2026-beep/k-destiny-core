@@ -11,7 +11,7 @@ import HomeRankingView from "@/components/home/HomeRankingView";
 import MoreContentCards from "@/components/home/MoreContentCards";
 import VisitorSection from "@/components/home/VisitorSection";
 import BrandStory from "@/components/home/BrandStory";
-import { getAllProducts, getPremiumProducts } from "@/lib/catalog";
+import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { fetchHomeRanking } from "@/lib/home/ranking";
 import { fetchVisitorCount } from "@/lib/home/visitors";
 import { prisma } from "@/lib/prisma";
@@ -31,18 +31,24 @@ export default async function Home({ params }: PageProps) {
   const { locale } = await params;
   const session = await getServerSession(authOptions);
 
-  const products = getAllProducts();
-  const premiumProducts = getPremiumProducts();
+  const effectiveCatalog = await getEffectiveCatalog();
+  const visibleProducts = effectiveCatalog.filter((p) => !p.isHidden);
+  const products = visibleProducts.filter((p) => p.tier !== "premium");
+  const premiumProducts = visibleProducts.filter((p) => p.tier === "premium");
 
   // 순위 및 방문자 통계 병렬 조회 (안전하게 fallback 포함)
   const [ranking, visitorData] = await Promise.all([
-    fetchHomeRanking(prisma),
+    fetchHomeRanking(prisma, visibleProducts),
     fetchVisitorCount(prisma),
   ]);
 
   return (
     <div className="w-full min-h-screen bg-background text-ink pb-12">
-      {session?.user?.id ? <DashboardView /> : <HomeHero locale={locale} />}
+      {session?.user?.id ? (
+        <DashboardView effectiveProducts={visibleProducts} />
+      ) : (
+        <HomeHero locale={locale} />
+      )}
       <TrustBanner />
       <HomeSearch locale={locale} products={products} />
       <ProductGrid locale={locale} products={products} />

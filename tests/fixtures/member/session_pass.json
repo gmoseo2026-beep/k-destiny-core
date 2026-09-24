@@ -1,0 +1,12 @@
+{
+  "user": {
+    "name": "테스트",
+    "email": "minsu@example.com",
+    "image": null,
+    "role": "USER",
+    "tier": "PREMIUM",
+    "premiumEndDate": "2027-12-31T23:59:59.999Z",
+    "id": "usr_test_pass_002"
+  },
+  "expires": "2099-12-31T23:59:59.999Z"
+}

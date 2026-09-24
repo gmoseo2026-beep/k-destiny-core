@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { getProduct, isViewableFor } from "@/lib/catalog";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { canonicalUrlFor } from "@/lib/seo";
 import { PremiumNewClient } from "@/components/premium/PremiumNewClient";
@@ -14,7 +15,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = getProduct(id);
+  const product = await getEffectiveProduct(id);
   if (!product || product.tier !== "premium") {
     return { title: "상품을 찾을 수 없습니다" };
   }
@@ -31,7 +32,7 @@ export default async function PremiumNewPage({ params }: PageProps) {
   const { locale, id } = await params;
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
-  const product = getProduct(id);
+  const product = await getEffectiveProduct(id);
 
   if (!product || product.tier !== "premium" || !isViewableFor(product, preview)) {
     notFound();

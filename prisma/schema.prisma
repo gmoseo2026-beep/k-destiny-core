@@ -409,3 +409,13 @@ model SiteCounter {
   updatedAt DateTime @updatedAt
 }
 
+// 20. 상품 공개 여부 어드민 오버라이드 — 행이 없으면 lib/catalog.ts 의 isHidden(코드 기본값)을 따른다
+model ProductVisibility {
+  catalogId String   @id
+  visible   Boolean
+  updatedBy String   // 변경한 관리자 userId
+  reason    String
+  updatedAt DateTime @updatedAt
+}
+
+

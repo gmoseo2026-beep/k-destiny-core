@@ -23,7 +23,8 @@ type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } 
 import type { Prisma } from "@prisma/client";
 import type { GenerationConfig } from "@google/generative-ai";
 import { isValidDateString, isValidTimeString } from "@/lib/validation/inputs";
-import { getProduct, isViewableFor } from "@/lib/catalog";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
 type FourPillarsObj = { year: string; month: string; day: string; time: string | null };
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
     else return NextResponse.json({ error: "Invalid product" }, { status: 400 });
 
     const preview = canPreview(session?.user?.email);
-    const product = getProduct(productId);
+    const product = await getEffectiveProduct(productId);
     if (!isViewableFor(product, preview)) {
       return NextResponse.json({ error: "Product not available" }, { status: 404 });
     }

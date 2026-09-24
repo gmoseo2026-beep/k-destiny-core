@@ -13,13 +13,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+interface PageProps {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ compatId?: string }>;
+}
+
 export default async function WeeklyFortunePage({ 
   params,
   searchParams 
-}: { 
-  params: { locale: string },
-  searchParams: { compatId?: string }
-}) {
+}: PageProps) {
   const { locale } = await params;
   const { compatId } = await searchParams;
   const session = await getServerSession(authOptions);

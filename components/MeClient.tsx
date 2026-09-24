@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { getProduct } from "@/lib/catalog";
 import { rememberOrderToken } from "@/lib/payments/client";
 import KongdakMascot from "@/components/KongdakMascot";
@@ -142,19 +142,35 @@ export default function MeClient({ locale }: MeClientProps) {
     <div className="w-full max-w-md flex flex-col items-center">
       {/* Header Profile Summary */}
       <Card className="w-full mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-line pb-3.5 mb-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-coral-soft flex items-center justify-center text-coral-deep font-black text-lg">
               {session.user.name?.[0] || "콩"}
             </div>
             <div>
               <h2 className="text-base font-black text-ink">{session.user.name || "회원"} 님의 보관함</h2>
-              <p className="text-xs text-text-3">{session.user.email}</p>
+              <p className="text-xs text-caption">{session.user.email}</p>
             </div>
           </div>
           <Tag category="compat">
             회원 혜택 적용중
           </Tag>
+        </div>
+        <div className="flex items-center justify-between text-xs font-bold text-caption px-1">
+          <Link
+            href={`/${locale}/onboarding`}
+            className="hover:text-coral transition-colors flex items-center gap-1 active:scale-[0.96]"
+          >
+            <span>내 사주 정보 수정</span>
+            <span>&rarr;</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: `/${locale}` })}
+            className="hover:text-ink transition-colors active:scale-[0.96]"
+          >
+            로그아웃
+          </button>
         </div>
       </Card>
 

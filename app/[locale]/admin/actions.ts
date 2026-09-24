@@ -21,9 +21,10 @@ export async function updateUserRole(userId: string, role: Role) {
     });
     revalidatePath('/[locale]/admin', 'page');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update user role:', error);
-    return { success: false, error: error.message || 'Failed to update role' };
+    const msg = error instanceof Error ? error.message : 'Failed to update role';
+    return { success: false, error: msg };
   }
 }
 
@@ -43,9 +44,10 @@ export async function updateSubscriptionTier(userId: string, tier: SubscriptionT
     });
     revalidatePath('/[locale]/admin', 'page');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update subscription tier:', error);
-    return { success: false, error: error.message || 'Failed to update subscription tier' };
+    const msg = error instanceof Error ? error.message : 'Failed to update subscription tier';
+    return { success: false, error: msg };
   }
 }
 
@@ -58,9 +60,33 @@ export async function updateUsageTokens(userId: string, tokens: number) {
     });
     revalidatePath('/[locale]/admin', 'page');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update usage tokens:', error);
-    return { success: false, error: error.message || 'Failed to update usage tokens' };
+    const msg = error instanceof Error ? error.message : 'Failed to update usage tokens';
+    return { success: false, error: msg };
   }
 }
 
+
+// A3: 게스트 열람 링크는 열람권 그 자체라서, 서버가 감사 로그를 남긴 뒤에만 링크를 돌려준다
+export async function issueGuestViewLink(orderId: string) {
+  try {
+    const admin = await getAdminSessionOrThrow();
+    const order = await prisma.order.findUnique({
+      where: { orderId },
+      select: { orderId: true, userId: true },
+    });
+    if (!order) return { success: false, error: '주문을 찾을 수 없습니다.' };
+    if (order.userId) return { success: false, error: '회원 주문은 보관함에서 열람합니다.' };
+    await logAdminAction({
+      adminUserId: admin.id,
+      action: "GUEST_LINK_COPY",
+      targetType: "ORDER",
+      targetId: orderId,
+    });
+    return { success: true, link: `https://kongdak.kr/ko/pay/complete?paymentId=${order.orderId}` };
+  } catch (error: unknown) {
+    console.error('Failed to issue guest view link:', error);
+    return { success: false, error: '링크 발급에 실패했습니다.' };
+  }
+}

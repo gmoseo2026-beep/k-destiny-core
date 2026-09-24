@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { getProduct, isViewableFor, type CatalogItem } from "@/lib/catalog";
+import { isViewableFor, type CatalogItem } from "@/lib/catalog";
+import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import {
   parsePersonInput,
@@ -119,8 +120,8 @@ export async function POST(req: NextRequest) {
   const sessionUserId = session?.user?.id ?? null;
   const preview = canPreview(session?.user?.email);
 
-  const product = getProduct(catalogId);
-  if (!isViewableFor(product, preview)) return err(404, "상품을 찾을 수 없어요.");
+  const product = await getEffectiveProduct(catalogId);
+  if (!product) return err(404, "상품을 찾을 수 없어요.");
   if (catalogId.startsWith("annual_")) return err(400, "총운은 /api/fortune/annual 을 사용하세요.");
   if (product.type === "SET") return err(400, "세트는 구성 상품별로 요청하세요.");
   if (product.tier !== "standard" && product.tier !== "premium") return err(400, "지원하지 않는 상품입니다.");
@@ -129,6 +130,11 @@ export async function POST(req: NextRequest) {
   if (product.isFree) kind = "FREE";
   else if (body.kind === "TEASER" || body.kind === "FULL") kind = body.kind;
   else return err(400, "kind 가 필요합니다.");
+
+  // A11-4: 공개 판정(isViewableFor)은 TEASER/FREE에만 적용하고, FULL은 Unlock 권한(orderGrants)으로만 판정한다.
+  if (kind !== "FULL" && !isViewableFor(product, preview)) {
+    return err(404, "상품을 찾을 수 없어요.");
+  }
 
   // 1) 권한 판정을 입력 처리보다 먼저 한다 — 미결제자가 계산·AI 비용을 유발하지 못하게
   let orderDbId: string | null = null;

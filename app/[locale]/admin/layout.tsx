@@ -16,13 +16,10 @@ export default async function AdminLayout({
   // Fetch the NextAuth session on the server
   const session = await getServerSession(authOptions);
 
-  // If not logged in → redirect to home
-  if (!session?.user) {
-    redirect(`/${locale}`);
-  }
-
-  // If logged in but NOT ADMIN → redirect to home
-  if (session.user.role !== 'ADMIN') {
+  // 관리자만 통과. 예외는 개발 모드에서 ADMIN_PREVIEW_BYPASS=1 을 명시한 목업 캡처뿐이다(운영에서는 항상 검사).
+  const previewBypass =
+    process.env.NODE_ENV !== 'production' && process.env.ADMIN_PREVIEW_BYPASS === '1';
+  if (!previewBypass && (!session?.user || session.user.role !== 'ADMIN')) {
     redirect(`/${locale}`);
   }
 
