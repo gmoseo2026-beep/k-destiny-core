@@ -20,6 +20,10 @@ describe("ganzhi", () => {
   });
   it("라벨에 한자 없음", () => {
     expect(cycleLabel("庚辰")).toBe("단단한 바위와 용의 10년");
+    // 받침 있는 말 뒤에는 "과"
+    expect(cycleLabel("辛未")).toBe("빛나는 보석과 양의 10년");
+    expect(cycleLabel("甲子")).toBe("큰 나무와 쥐의 10년");
+    expect(cycleLabel("丙寅")).toBe("한낮의 태양과 호랑이의 10년");
   });
   it("알 수 없는 글자는 0점", () => {
     expect(charPoints("wood", "?", true)).toBe(0);

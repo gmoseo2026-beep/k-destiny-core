@@ -98,13 +98,14 @@ export function PremiumNewClient({
   const [surname, setSurname] = useState("김");
   const [surnameHanja, setSurnameHanja] = useState("金");
   const [namingGender, setNamingGender] = useState<"M" | "F">("M");
-  const [namingDobYear, setNamingDobYear] = useState("2026");
-  const [namingDobMonth, setNamingDobMonth] = useState("5");
-  const [namingDobDay, setNamingDobDay] = useState("10");
+  // 아기 생일·시간은 반드시 직접 입력받는다(예시 값이 남아 그대로 제출되면 엉뚱한 이름이 나온다)
+  const [namingDobYear, setNamingDobYear] = useState("");
+  const [namingDobMonth, setNamingDobMonth] = useState("");
+  const [namingDobDay, setNamingDobDay] = useState("");
   const [hasNamingTime, setHasNamingTime] = useState(true);
-  const [namingAmpm, setNamingAmpm] = useState("AM");
-  const [namingHour, setNamingHour] = useState("9");
-  const [namingMin, setNamingMin] = useState("30");
+  const [namingAmpm, setNamingAmpm] = useState("");
+  const [namingHour, setNamingHour] = useState("1");
+  const [namingMin, setNamingMin] = useState("00");
   const [hasDollim, setHasDollim] = useState(false);
   const [dollimSyllable, setDollimSyllable] = useState("");
   const [dollimPosition, setDollimPosition] = useState<1 | 2>(1);
@@ -493,7 +494,7 @@ export function PremiumNewClient({
             {/* Birth Date */}
             <div>
               <label className="block text-xs font-semibold text-[#B9AEC4] mb-1.5">
-                출생일 (예정일) <span className="text-[#D9B26A]">*</span>
+                아기 생일 <span className="text-[#D9B26A]">*</span>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <input
@@ -543,6 +544,7 @@ export function PremiumNewClient({
                     onChange={(e) => setNamingAmpm(e.target.value)}
                     className="bg-[#1E1726] border border-[#3A2E45] rounded-xl px-2 py-2 text-xs text-[#F6F1EA]"
                   >
+                    <option value="">오전/오후</option>
                     <option value="AM">오전</option>
                     <option value="PM">오후</option>
                   </select>
@@ -566,7 +568,7 @@ export function PremiumNewClient({
                   </select>
                 </div>
               ) : (
-                <p className="text-xs text-[#B9AEC4]">출생 시간을 몰라도 삼주를 기반으로 정밀 작명됩니다.</p>
+                <p className="text-xs text-[#B9AEC4]">출생 시간을 몰라도 생일만으로 이름을 지어 드려요.</p>
               )}
             </div>
 

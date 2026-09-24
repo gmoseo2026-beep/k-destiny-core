@@ -77,9 +77,12 @@ describe("POST /api/admin/products/visibility route contract tests", () => {
 
   // 4. 구성품이 숨김인 SET 공개 -> 409
   it("returns 409 when showing a SET whose components are hidden", async () => {
-    // set_this_person 의 구성품: compat_basic(기본 visible), inner_mind(기본 hidden), marriage(기본 hidden)
-    // 오버라이드가 없으면 inner_mind, marriage 가 숨김 상태이므로 SET 공개 불가
-    db.productVisibility.findMany.mockResolvedValueOnce([]);
+    // set_this_person 의 구성품 중 inner_mind, marriage 를 어드민이 숨겨 둔 상태 → SET 공개 불가
+    db.productVisibility.findMany.mockResolvedValueOnce([
+      { catalogId: "set_this_person", visible: false },
+      { catalogId: "inner_mind", visible: false },
+      { catalogId: "marriage", visible: false },
+    ]);
 
     const res = await POST(
       req({ catalogId: "set_this_person", action: "show", reason: "세트 오픈" })
@@ -168,8 +171,12 @@ describe("POST /api/admin/products/visibility route contract tests", () => {
 
   // 8. 정상 reset이 오버라이드를 삭제하고 감사 로그를 남긴다
   it("successfully resets a product visibility override and creates an audit log", async () => {
+    // 어드민이 숨겨 둔 wealth 를 기본값으로 되돌린다(세트들도 숨김 상태라 규칙 위반 없음)
     db.productVisibility.findMany.mockResolvedValueOnce([
-      { catalogId: "wealth", visible: true },
+      { catalogId: "wealth", visible: false },
+      { catalogId: "set_me", visible: false },
+      { catalogId: "set_career", visible: false },
+      { catalogId: "set_2027", visible: false },
     ]);
 
     const res = await POST(
@@ -178,8 +185,8 @@ describe("POST /api/admin/products/visibility route contract tests", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    // wealth 의 코드 기본값은 isHidden: true 이므로 visible 은 false
-    expect(data.visible).toBe(false);
+    // 출시 후 wealth 의 코드 기본값은 공개
+    expect(data.visible).toBe(true);
 
     expect(db.productVisibility.deleteMany).toHaveBeenCalledWith({
       where: { catalogId: "wealth" },

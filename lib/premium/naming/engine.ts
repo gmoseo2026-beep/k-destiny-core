@@ -11,7 +11,8 @@ import blocklistDataRaw from "@/data/naming/blocklist.json";
 import nameExcludeRaw from "@/data/naming/name-exclude.json";
 import ksx1001Raw from "@/data/naming/ksx1001-hanja.json";
 
-// KS X 1001(한국 표준 완성형) 한자 = 국내에서 흔히 쓰고 입력·표시가 쉬운 글자. 후보 정렬에서 우선한다.
+// KS X 1001(한국 표준 완성형) 한자 = 국내에서 흔히 쓰고 입력·표시가 쉬운 글자.
+// 이 밖의 글자(예: 奲)는 벽자라 출생신고·일상 입력이 어렵다 → 후보에서 뺀다(돌림자로 직접 지정한 글자만 예외).
 const KSX1001 = new Set<string>([...ksx1001Raw.chars]);
 
 const NAME_EXCLUDE_CHARS = new Set<string>(nameExcludeRaw.chars);
@@ -165,7 +166,7 @@ export function buildNamingEngine(
 
     const readings = new Set([syllable, ...dueumSourceSyllables(syllable)]);
     const matches = hanjaList
-      .filter((h) => readings.has(h.eum) && h.genders.includes(input.gender) && isNameWorthy(h))
+      .filter((h) => readings.has(h.eum) && h.genders.includes(input.gender) && isNameWorthy(h) && KSX1001.has(h.char))
       .map((h) => ({ ...h, eum: syllable })); // 이름에는 실제로 부르는 음(율)으로 표기
     // 획수가 적은 순으로 고르면 드물고 뜻이 좋지 않은 글자가 앞에 온다(예: 태 → 汰).
     // 표준 완성형(흔한 글자) → 태그 일치 → 데이터 파일 순서(음절별 사용 빈도순) 로 고른다.
@@ -265,7 +266,8 @@ export function buildNamingEngine(
       grids: cand.grids,
       soundSeq: cand.soundSeq,
       elements: cand.elements,
-      score: cand.score,
+      // 순위용 내부 점수(기본 50 + 가점, 100 초과 가능)를 고객용 70~99점으로 환산한다(순서는 그대로)
+      score: Math.min(99, Math.round(70 + (cand.score - 50) * 0.43)),
     });
     if (selected.length === 5) break;
   }

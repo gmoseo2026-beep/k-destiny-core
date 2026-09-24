@@ -39,6 +39,7 @@ const person = { name: "테스트", dob: "1995-03-15", time: "10:30", gender: "F
 beforeEach(() => {
   invalidateVisibilityCache();
   vi.clearAllMocks();
+  db.productVisibility.findMany.mockResolvedValue([]);
   session.current = null;
   process.env.SUBJECT_HASH_SECRET = "x".repeat(32);
   delete process.env.PREVIEW_EMAILS;
@@ -348,6 +349,8 @@ describe("POST /api/reports/generate route contract tests", () => {
 
   // 9. 숨김 상품(wealth) TEASER → 404. V2 적용 후, 세션 이메일이 PREVIEW_EMAILS에 있으면 200.
   it("case 9: hidden product returns 404 without preview, but 200 with PREVIEW_EMAILS session", async () => {
+    // 출시 후 코드 기본값은 전부 공개 → 어드민이 wealth 를 숨긴 상태를 만든다
+    db.productVisibility.findMany.mockResolvedValue([{ catalogId: "wealth", visible: false }]);
     // 9a: No preview session -> 404
     session.current = null;
     delete process.env.PREVIEW_EMAILS;

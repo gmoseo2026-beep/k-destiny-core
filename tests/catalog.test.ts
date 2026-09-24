@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { CATALOG, getProduct, priceLabel, isSellable } from "@/lib/catalog";
+import { CATALOG, getProduct, priceLabel, isSellable, teaserCatalogIdFor } from "@/lib/catalog";
+import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 
 describe("catalog 불변식", () => {
   it("id 유일", () => {
@@ -49,3 +50,19 @@ describe("catalog 불변식", () => {
   });
 });
 
+describe("세트 맛보기 대표 상품", () => {
+  // 서버는 세트 단위 TEASER 를 400 으로 거절한다 → 모든 세트는 생성 가능한 구성 상품으로 맛보기를 만들어야 한다
+  it("모든 세트가 프롬프트 스펙이 있는 같은 대상의 구성 상품을 대표로 가진다", () => {
+    for (const s of CATALOG.filter((c) => c.type === "SET")) {
+      const id = teaserCatalogIdFor(s);
+      const item = getProduct(id);
+      expect(item?.type, s.id).not.toBe("SET");
+      expect(s.items, s.id).toContain(id);
+      expect(item?.target, s.id).toBe(s.target);
+      expect(PRODUCT_SPECS[item!.promptKey], `${s.id}→${id}`).toBeDefined();
+    }
+  });
+  it("단건 상품은 자기 자신", () => {
+    expect(teaserCatalogIdFor(getProduct("wealth")!)).toBe("wealth");
+  });
+});

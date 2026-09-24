@@ -63,7 +63,14 @@ export const BRANCH_ANIMAL: Record<string, string> = {
 };
 export const ELEMENT_WORD: Record<Element, string> = { wood: "나무", fire: "불", earth: "흙", metal: "쇠", water: "물" };
 
-/** 예: "庚辰" → "단단한 바위와 용의 10년" */
+/** 받침이 있으면 "과", 없으면 "와" (예: 보석과, 바위와) */
+function withGwa(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  const hasBatchim = code >= 0 && code <= 11171 && code % 28 !== 0;
+  return `${word}${hasBatchim ? "과" : "와"}`;
+}
+
+/** 예: "庚辰" → "단단한 바위와 용의 10년", "辛未" → "빛나는 보석과 양의 10년" */
 export function cycleLabel(ganZhi: string): string {
-  return `${STEM_IMAGE[ganZhi[0]] ?? "새로운 기운"}와 ${BRANCH_ANIMAL[ganZhi[1]] ?? "시간"}의 10년`;
+  return `${withGwa(STEM_IMAGE[ganZhi[0]] ?? "새로운 기운")} ${BRANCH_ANIMAL[ganZhi[1]] ?? "시간"}의 10년`;
 }

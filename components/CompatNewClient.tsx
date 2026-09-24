@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel } from "@/lib/catalog";
+import { getProduct, priceLabel, teaserCatalogIdFor } from "@/lib/catalog";
 import StandardReportView from "@/components/report/StandardReportView";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { Card } from "@/components/ui/Card";
@@ -203,7 +203,8 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            catalogId: productId,
+            // 세트는 대표 구성 상품의 맛보기(결제·열람은 세트 id 그대로)
+            catalogId: product ? teaserCatalogIdFor(product) : productId,
             kind: "TEASER",
             compatId: json.id,
             locale,
@@ -240,7 +241,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   // Teaser Result View for couple products
   if (teaserResult && product) {
-    const spec = PRODUCT_SPECS[product.promptKey];
+    const spec = PRODUCT_SPECS[getProduct(teaserCatalogIdFor(product))?.promptKey ?? product.promptKey];
     const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
 
     return (

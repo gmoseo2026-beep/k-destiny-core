@@ -1,4 +1,5 @@
 import * as PortOne from "@portone/browser-sdk/v2";
+import { getProduct } from "@/lib/catalog";
 
 export interface BuyerInfo {
   fullName: string;
@@ -82,12 +83,16 @@ const ORDER_TOKEN_PREFIX = "kongdak_order_";
 const orderTokenKey = (catalogId: string, compatId?: string | null) =>
   ORDER_TOKEN_PREFIX + catalogId + (compatId ? `_${compatId}` : "");
 
+// 정통 궁합은 궁합 결과 화면이 unlock 토큰으로 연다 → 정통 궁합이 든 세트 주문도 같은 토큰으로 남긴다
+const opensCompatBasic = (catalogId: string) =>
+  catalogId === "compat_basic" || !!getProduct(catalogId)?.items?.includes("compat_basic");
+
 export function rememberOrderToken(catalogId: string, orderId: string, compatId?: string | null): void {
   if (typeof window === "undefined" || !catalogId || !orderId) return;
   try {
     window.localStorage.setItem(orderTokenKey(catalogId, compatId), orderId);
   } catch {}
-  if (catalogId === "compat_basic" && compatId) {
+  if (opensCompatBasic(catalogId) && compatId) {
     rememberUnlockToken(compatId, orderId);
   }
   notifyUnlockTokenChanged();
@@ -107,7 +112,7 @@ export function forgetOrderToken(catalogId: string, compatId?: string | null): v
   try {
     window.localStorage.removeItem(orderTokenKey(catalogId, compatId));
   } catch {}
-  if (catalogId === "compat_basic" && compatId) {
+  if (opensCompatBasic(catalogId) && compatId) {
     forgetUnlockToken(compatId);
   }
   notifyUnlockTokenChanged();

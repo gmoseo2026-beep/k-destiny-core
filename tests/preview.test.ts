@@ -26,8 +26,8 @@ describe("운영 미리보기 권한 (PREVIEW_EMAILS)", () => {
   });
 
   it("isViewableFor(hidden, false)는 false, (hidden, true)는 true다", () => {
-    const hiddenProduct = getProduct("wealth"); // hidden standard product
-    expect(hiddenProduct).toBeDefined();
+    // 출시 후 코드 기본값은 전부 공개 → 어드민 숨김과 같은 상태를 직접 만든다
+    const hiddenProduct = { ...getProduct("wealth")!, isHidden: true };
     expect(isViewableFor(hiddenProduct, false)).toBe(false);
     expect(isViewableFor(hiddenProduct, true)).toBe(true);
   });
@@ -37,7 +37,7 @@ describe("운영 미리보기 권한 (PREVIEW_EMAILS)", () => {
     expect(freeProduct).toBeDefined();
     expect(isSellableFor(freeProduct, true)).toBe(false);
 
-    const hiddenSellable = getProduct("wealth");
+    const hiddenSellable = { ...getProduct("wealth")!, isHidden: true };
     expect(isSellableFor(hiddenSellable, true)).toBe(true);
     expect(isSellableFor(hiddenSellable, false)).toBe(false);
   });

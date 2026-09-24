@@ -152,7 +152,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Sparkles",
     promptKey: "annual_2027",
     isNew: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -187,7 +186,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Coins",
     promptKey: "wealth_analysis",
     isPopular: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -219,7 +217,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Briefcase",
     promptKey: "career_analysis",
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -251,7 +248,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Heart",
     promptKey: "love_single_analysis",
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -283,7 +279,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Sparkle",
     promptKey: "charm_analysis",
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -315,7 +310,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Activity",
     promptKey: "health_analysis",
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -348,7 +342,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Flame",
     promptKey: "spicy_annual",
     isNew: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -415,7 +408,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "MessageCircleHeart",
     promptKey: "inner_mind",
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -448,7 +440,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Undo2",
     promptKey: "reunion",
     isPopular: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -480,7 +471,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Eye",
     promptKey: "cheating_tendency",
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -512,7 +502,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Gem",
     promptKey: "marriage_compat",
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -544,7 +533,6 @@ export const CATALOG: CatalogItem[] = [
     originalPrice: 6900,
     icon: "Swords",
     promptKey: "conflict_resolution",
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -577,7 +565,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Moon",
     promptKey: "secret_love",
     isNew: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -613,7 +600,6 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "SET",
     items: ["compat_basic", "inner_mind", "marriage"],
     isPopular: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -640,7 +626,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "HeartCrack",
     promptKey: "SET",
     items: ["reunion", "inner_mind", "conflict"],
-    isHidden: true,
     tier: "standard",
     inputKind: "couple",
     accessDays: 90,
@@ -667,7 +652,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "HeartHandshake",
     promptKey: "SET",
     items: ["love_single", "charm"],
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -694,7 +678,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Star",
     promptKey: "SET",
     items: ["annual_2026", "wealth", "career", "health"],
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -722,7 +705,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Briefcase",
     promptKey: "SET",
     items: ["career", "annual_2026"],
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -751,7 +733,6 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "SET",
     items: ["annual_2027", "wealth", "career"],
     isNew: true,
-    isHidden: true,
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
@@ -784,7 +765,6 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "premium_2027_daeun",
     accessDays: 365,
     requiresLogin: true,
-    isHidden: true,
     icon3d: "/icons3d/premium_2027_daeun.webp",
     gridLabel: "10년 대운",
     hook: "10년 인생 대운의 길목에서 만나는 2027년 심층 리포트",
@@ -811,7 +791,6 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "premium_naming",
     accessDays: 365,
     requiresLogin: true,
-    isHidden: true,
     icon3d: "/icons3d/premium_naming.webp",
     gridLabel: "이름 짓기",
     hook: "아이의 사주에 꼭 맞는 축복 가득한 이름 5가지",
@@ -838,7 +817,6 @@ export const CATALOG: CatalogItem[] = [
     promptKey: "premium_date_pick",
     accessDays: 365,
     requiresLogin: true,
-    isHidden: true,
     icon3d: "/icons3d/premium_date_pick.webp",
     gridLabel: "길일 택일",
     hook: "새로운 시작을 가장 좋은 날에 맞이하는 맞춤 택일",
@@ -854,6 +832,15 @@ export const CATALOG: CatalogItem[] = [
 
 export function getProduct(id: string): CatalogItem | undefined {
   return CATALOG.find((p) => p.id === id);
+}
+
+/**
+ * 맛보기(TEASER)를 만들 상품 id. 세트는 서버가 세트 단위 생성을 거절하므로
+ * 여기서 생성 가능한 첫 구성 상품(총운·정통 궁합은 전용 화면이라 제외)을 대표로 쓴다.
+ */
+export function teaserCatalogIdFor(p: CatalogItem): string {
+  if (p.type !== "SET") return p.id;
+  return p.items?.find((id) => !id.startsWith("annual_") && id !== "compat_basic") ?? p.id;
 }
 
 export function getProductsByTarget(target: ProductTarget): CatalogItem[] {

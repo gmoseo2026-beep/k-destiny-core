@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, CATALOG, isViewableFor } from "@/lib/catalog";
+import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor } from "@/lib/catalog";
 import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
@@ -57,6 +57,8 @@ export default function FortuneNewClient({
 
   const currentProductId = productId || "annual_2026";
   const product = getProduct(currentProductId);
+  // 세트는 대표 구성 상품의 맛보기를 보여 준다(결제·열람은 세트 id 그대로)
+  const teaserProduct = product ? getProduct(teaserCatalogIdFor(product)) ?? product : undefined;
 
   const recommendations = CATALOG.filter((p) =>
     p.tier === "standard" &&
@@ -200,7 +202,7 @@ export default function FortuneNewClient({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            catalogId: currentProductId,
+            catalogId: teaserProduct?.id ?? currentProductId,
             kind,
             input: formatted,
             locale,
@@ -232,7 +234,7 @@ export default function FortuneNewClient({
 
   // Result View
   if (resultData) {
-    const spec = product ? PRODUCT_SPECS[product.promptKey] : undefined;
+    const spec = teaserProduct ? PRODUCT_SPECS[teaserProduct.promptKey] : undefined;
     const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
 
     return (

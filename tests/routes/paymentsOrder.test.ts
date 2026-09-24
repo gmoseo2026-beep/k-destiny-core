@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const db = vi.hoisted(() => ({
   order: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
   compatibility: { findUnique: vi.fn() },
+  productVisibility: { findMany: vi.fn(async () => [] as Array<{ catalogId: string; visible: boolean }>) },
 }));
 const session = vi.hoisted(() => ({ current: null as null | { user: { id: string; email?: string; role?: string } } }));
 
@@ -11,6 +12,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn(async () => session.curren
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
 
 import { POST } from "@/app/api/payments/order/route";
+import { invalidateVisibilityCache } from "@/lib/catalogVisibility";
 
 const req = (body: unknown) =>
   new Request("http://localhost/api/payments/order", {
@@ -21,6 +23,8 @@ const req = (body: unknown) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invalidateVisibilityCache();
+  db.productVisibility.findMany.mockResolvedValue([]);
   session.current = null;
   delete process.env.PREVIEW_EMAILS;
 });
@@ -36,6 +40,8 @@ describe("POST /api/payments/order route contract tests", () => {
 
   // 2. 게스트가 wealth 주문 → 400(숨김). V2 미리보기 이메일 세션이면 성공하고 amount는 첫 결제 기준대로 나온다.
   it("case 2: hidden wealth order returns 400 for guest, succeeds with preview session", async () => {
+    // 출시 후 코드 기본값은 전부 공개 → 어드민이 wealth 를 숨긴 상태를 만든다
+    db.productVisibility.findMany.mockResolvedValue([{ catalogId: "wealth", visible: false }]);
     // 2a: Guest -> 400
     const resGuest = await POST(req({ productId: "wealth", email: "guest@example.com" }));
     expect(resGuest.status).toBe(400);

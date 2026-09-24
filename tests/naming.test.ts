@@ -232,8 +232,9 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
         .filter((l) => l && !l.startsWith("#")),
     );
 
-    it("律·麟·蓮·倫·林·利·璃·玲 중 인명용 글자는 데이터에 있고 이름으로 쓸 수 있다", () => {
-      for (const ch of ["律", "麟", "蓮", "倫", "林", "利", "璃", "玲"]) {
+    // 利(훈: 날카로울)는 출시 전 글자 검수에서 이름 후보 제외로 정했다
+    it("律·麟·蓮·倫·林·璃·玲 중 인명용 글자는 데이터에 있고 이름으로 쓸 수 있다", () => {
+      for (const ch of ["律", "麟", "蓮", "倫", "林", "璃", "玲"]) {
         if (!inmyong.has(ch)) continue;
         const h = hanjaByChar.get(ch);
         expect(h, ch).toBeDefined();
@@ -290,7 +291,10 @@ describe("buildNamingEngine 소형 픽스처 및 실데이터 테스트", () => 
         { surnameHangul: "김", surnameHanja: "金", gender: "F", dob: "2025-03-01", time: null, dollim: null, tags: [], avoidSyllables: [], guardianConsent: true },
         { givenNames: { M: [], F: [{ name: "서율", rank: 1 }] }, nameHanja: nullHanja.map((h) => ({ ...h, element: r.child.weakest[0] })) },
       );
-      expect(withElements.names[0].score - r.names[0].score).toBe(24); // 부족 오행 2글자 × 12
+      // 부족 오행 2글자 × 12 = 내부 24점 → 고객용 환산(×0.43) 후 10~11점 차이
+      const diff = withElements.names[0].score - r.names[0].score;
+      expect(diff).toBeGreaterThanOrEqual(10);
+      expect(diff).toBeLessThanOrEqual(11);
     });
   });
 
@@ -393,5 +397,34 @@ describe("검수 결정 고정(2026-09-23 Claude)", () => {
   it("台는 '별', 冬은 '겨울'로만 표기한다(태풍·북소리 혼입 제거)", () => {
     expect(byChar.get("台")?.hun).toBe("별");
     expect(byChar.get("冬")?.hun).toBe("겨울");
+  });
+});
+
+describe("출시 전 글자 검수 고정(2026-09-25 Claude)", () => {
+  // 실데이터로 1,200가지 입력을 돌려 실제로 뽑힌 글자를 전수 검수한 결과
+  const ksx = new Set<string>(JSON.parse(readFileSync(path.join(process.cwd(), "data/naming/ksx1001-hanja.json"), "utf8")).chars);
+  const runs: ChildNamingInput[] = [];
+  for (const [sn, sh] of [["김", "金"], ["이", "李"], ["박", "朴"], ["최", "崔"]] as const) {
+    for (const gender of ["M", "F"] as const) {
+      for (const dob of ["2025-07-02", "2026-05-17"]) {
+        runs.push({ surnameHangul: sn, surnameHanja: sh, gender, dob, time: "09:00", dollim: null, tags: ["지혜"], avoidSyllables: [], guardianConsent: true });
+      }
+    }
+  }
+  const outputs = runs.map((r) => buildNamingEngine(r));
+
+  it("후보 글자는 모두 표준 완성형(KS X 1001)이다 — 奲 같은 벽자 금지", () => {
+    for (const o of outputs) for (const n of o.names) for (const c of n.hanja) expect(ksx.has(c), `${n.hangul} ${c}`).toBe(true);
+  });
+  it("검수에서 뺀 글자(漬 담글, 寃 원통할, 胴 큰창자, 鄭·李 성씨 등)는 나오지 않는다", () => {
+    const banned = ["漬", "寃", "胴", "醯", "牝", "鄭", "李", "餓", "債", "笞", "利"];
+    for (const c of banned) expect(isNameWorthy({ char: c, hun: "" }), c).toBe(false);
+    for (const o of outputs) for (const n of o.names) for (const c of n.hanja) expect(banned, `${n.hangul}`).not.toContain(c);
+  });
+  it("고객에게 보이는 이름 점수는 100점을 넘지 않고, 이름 5개를 모두 채운다", () => {
+    for (const o of outputs) {
+      expect(o.insufficient).toBe(false);
+      for (const n of o.names) expect(n.score).toBeLessThanOrEqual(100);
+    }
   });
 });

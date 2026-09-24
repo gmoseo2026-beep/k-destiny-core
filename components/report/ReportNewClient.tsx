@@ -34,6 +34,8 @@ interface SetItemStatus {
   catalogId: string;
   name: string;
   isAnnual?: boolean;
+  // 전용 화면에서 여는 구성 상품(총운 → 총운 화면, 정통 궁합 → 궁합 결과 화면). 여기서 생성하지 않는다.
+  linkHref?: string;
   status: "PENDING" | "GENERATING" | "READY" | "FAILED";
   reportId?: string;
   error?: string;
@@ -154,11 +156,17 @@ export default function ReportNewClient({
       const itemsList: SetItemStatus[] = product.items.map((itemId) => {
         const itemP = getProduct(itemId);
         const isAnnual = itemId.startsWith("annual_");
+        const linkHref = isAnnual
+          ? `/${locale}/fortune/annual?year=${itemId.replace("annual_", "")}`
+          : itemId === "compat_basic" && compatId
+          ? `/${locale}/compat/${compatId}`
+          : undefined;
         return {
           catalogId: itemId,
           name: itemP?.name || itemId,
           isAnnual,
-          status: isAnnual ? "READY" : "PENDING",
+          linkHref,
+          status: linkHref ? "READY" : "PENDING",
         };
       });
       queueMicrotask(() => setSetItems(itemsList));
@@ -171,7 +179,7 @@ export default function ReportNewClient({
       }
 
       // Generate items (up to 2 parallel)
-      const nonAnnualItems = itemsList.filter((it) => !it.isAnnual);
+      const nonAnnualItems = itemsList.filter((it) => !it.linkHref);
       const runParallel = async () => {
         for (let i = 0; i < nonAnnualItems.length; i += 2) {
           const chunk = nonAnnualItems.slice(i, i + 2);
@@ -223,7 +231,7 @@ export default function ReportNewClient({
         setGenerating(false);
         setErrorMsg(err instanceof Error ? err.message : "리포트 생성 중 오류가 발생했습니다.");
       });
-  }, [checkedOrder, orderId, product, catalogId, generateSingleReport, locale, router]);
+  }, [checkedOrder, orderId, product, catalogId, compatId, generateSingleReport, locale, router]);
 
   // Handle re-entering input if pending input was missing
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -332,16 +340,16 @@ export default function ReportNewClient({
                   <p className="text-xs text-caption">
                     {item.status === "PENDING" && "대기 중"}
                     {item.status === "GENERATING" && "분석 리포트 생성 중..."}
-                    {item.status === "READY" && "생성 완료"}
+                    {item.status === "READY" && (item.linkHref ? "눌러서 바로 볼 수 있어요" : "생성 완료")}
                     {item.status === "FAILED" && (item.error || "생성 실패")}
                   </p>
                 </div>
               </div>
 
               <div>
-                {item.isAnnual ? (
+                {item.linkHref ? (
                   <Link
-                    href={`/${locale}/fortune/annual?year=2026`}
+                    href={item.linkHref}
                     className="px-3.5 py-2 bg-coral text-white text-xs font-bold rounded-xl shadow-2xs hover:opacity-95 transition-all flex items-center gap-1"
                   >
                     <span>열기</span>
