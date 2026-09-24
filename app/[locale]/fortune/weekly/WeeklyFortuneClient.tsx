@@ -120,7 +120,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
       const res = await subscribeToPush();
       if (res.success) {
         setPushSubscribed(true);
-        alert("매일 아침 데일리 운세 알림이 설정되었습니다! 🌅");
+        alert("알림이 켜졌어요. 새 운세 소식이 생기면 알려드릴게요.");
       } else {
         alert(res.error || "알림 권한을 허용해주세요.");
       }
@@ -284,8 +284,8 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
             <Bell className="w-5 h-5" />
           </div>
           <div className="text-left">
-            <h4 className="text-xs sm:text-sm font-bold text-ink">매일 아침 데일리 운세 알림</h4>
-            <p className="text-[11px] text-[#8A8291] mt-0.5">좋은 날·데이트 길일 놓치지 않게 알려드려요</p>
+            <h4 className="text-xs sm:text-sm font-bold text-ink">콩닥 소식 알림</h4>
+            <p className="text-[11px] text-[#8A8291] mt-0.5">새 운세·이벤트 소식이 생기면 알려드려요</p>
           </div>
         </div>
         <button

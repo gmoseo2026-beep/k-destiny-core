@@ -22,6 +22,9 @@ interface ReportNewClientProps {
   initialProfile?: {
     name?: string | null;
     birthDate?: string | null;
+    birthYear?: string | null;
+    birthMonth?: string | null;
+    birthDay?: string | null;
     birthTime?: string | null;
     gender?: string | null;
   } | null;
@@ -61,7 +64,10 @@ export default function ReportNewClient({
   const [needInput, setNeedInput] = useState(false);
 
   // Form state for when pending input is missing
-  const initDob = initialProfile?.birthDate?.split("-") || ["", "", ""];
+  // 저장된 프로필은 birthYear/birthMonth/birthDay 로 나뉘어 있다(birthDate 컬럼은 없음)
+  const initDob = initialProfile?.birthYear
+    ? [initialProfile.birthYear, initialProfile.birthMonth ?? "", initialProfile.birthDay ?? ""]
+    : initialProfile?.birthDate?.split("-") || ["", "", ""];
   const [formValues, setFormValues] = useState<BirthValues>({
     name: initialProfile?.name || "",
     year: initDob[0] || "",

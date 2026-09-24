@@ -32,6 +32,9 @@ interface PremiumNewClientProps {
   initialProfile?: {
     name?: string | null;
     birthDate?: string | null;
+    birthYear?: string | null;
+    birthMonth?: string | null;
+    birthDay?: string | null;
     birthTime?: string | null;
     gender?: string | null;
   } | null;
@@ -76,7 +79,10 @@ export function PremiumNewClient({
   // ─────────────────────────────────────────────────────────────
 
   // Case A: 2027 Person
-  const initDob = initialProfile?.birthDate?.split("-") || ["", "", ""];
+  // 저장된 프로필은 birthYear/birthMonth/birthDay 로 나뉘어 있다(birthDate 컬럼은 없음)
+  const initDob = initialProfile?.birthYear
+    ? [initialProfile.birthYear, initialProfile.birthMonth ?? "", initialProfile.birthDay ?? ""]
+    : initialProfile?.birthDate?.split("-") || ["", "", ""];
   const [personValues, setPersonValues] = useState<BirthValues>({
     name: initialProfile?.name || "",
     year: initDob[0] || "",

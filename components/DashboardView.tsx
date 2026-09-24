@@ -251,7 +251,7 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
         </div>
 
         {/* 3. 바로가기 격자 (총운, 보관함, 패스 회원 조건부 주간운세) */}
-        <div className={`grid gap-3 mt-4 ${isPassActive ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
+        <div className="grid grid-cols-2 gap-3 mt-4">
           {/* 내 2026 총운 */}
           <Link
             href={`/fortune/annual?year=2026`}
@@ -300,15 +300,15 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
             </div>
           </Link>
 
-          {/* 이번 주 운세 (패스 활성 회원만 3번째 칸 노출) */}
+          {/* 이번 주 운세 (패스 활성 회원만, 두 칸 아래 한 줄 가로 카드) */}
           {isPassActive && (
             <Link
               href={`/fortune/weekly`}
               onClick={() => handleCardClick("weekly_fortune")}
-              className="block group"
+              className="block group col-span-2"
             >
-              <div className="h-full rounded-2xl bg-white border border-line p-4 shadow-xs hover:bg-surface-soft transition-all duration-150 active:scale-[0.96] flex flex-col justify-between">
-                <div className="w-11 h-11 rounded-xl bg-surface-soft flex items-center justify-center text-coral mb-2 border border-line/60 text-lg">
+              <div className="rounded-2xl bg-white border border-line p-4 shadow-xs hover:bg-surface-soft transition-all duration-150 active:scale-[0.96] flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-surface-soft flex items-center justify-center text-coral border border-line/60 text-lg shrink-0">
                   ✨
                 </div>
                 <div>
@@ -376,7 +376,7 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
                 </div>
                 <div>
                   <p className="text-xs font-bold text-ink">운세 & 궁합 알림 받기</p>
-                  <p className="text-[11px] text-caption">새로운 운세 소식을 실시간 푸시로 💘</p>
+                  <p className="text-[11px] text-caption">새 운세·이벤트 소식을 알림으로 받아요</p>
                 </div>
               </div>
               <button
@@ -423,10 +423,11 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
                           <span className="text-coral text-[11px]">❤️</span>
                           <span>{item.personB.name}</span>
                         </div>
-                        <div className="text-[11px] text-caption mt-0.5 flex items-center gap-1.5 flex-wrap">
-                          <span>{item.keywords.slice(0, 2).join(" · ")}</span>
-                          <span>•</span>
-                          <span>{new Date(item.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}</span>
+                        <div className="text-[11px] text-caption mt-0.5 truncate">
+                          {item.keywords.slice(0, 2).join(" · ")}
+                        </div>
+                        <div className="text-[10px] text-caption/80 mt-0.5">
+                          {new Date(item.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
                         </div>
                       </div>
                     </div>

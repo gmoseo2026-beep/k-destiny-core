@@ -42,9 +42,12 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
-  const [yearA, setYearA] = useState(initialProfile?.birthYear || "");
-  const [monthA, setMonthA] = useState(initialProfile?.birthMonth || "");
-  const [dayA, setDayA] = useState(initialProfile?.birthDay || "");
+  // 프로필은 "05"처럼 0이 붙어 저장될 수 있다 → 선택 칸 값("5")과 맞추려고 숫자로 정규화
+  const toOptionValue = (v: string | number | null | undefined) =>
+    v === null || v === undefined || v === "" || isNaN(Number(v)) ? "" : String(Number(v));
+  const [yearA, setYearA] = useState(toOptionValue(initialProfile?.birthYear));
+  const [monthA, setMonthA] = useState(toOptionValue(initialProfile?.birthMonth));
+  const [dayA, setDayA] = useState(toOptionValue(initialProfile?.birthDay));
   const [genderA, setGenderA] = useState<"F" | "M">(initialProfile?.gender === "M" ? "M" : "F");
   
   let defaultAmpmA = "";
@@ -59,6 +62,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       if (h > 12) h -= 12;
     } else {
       defaultAmpmA = "AM";
+      if (h === 0) h = 12; // 자정(00시)은 오전 12시
     }
     defaultHourA = h.toString();
   }
