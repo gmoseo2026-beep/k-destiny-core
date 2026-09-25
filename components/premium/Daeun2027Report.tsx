@@ -43,7 +43,7 @@ export function Daeun2027Report({
 
   const tocItems = [
     { id: "sec-01", number: "01", title: "나의 10년 대운 지도" },
-    { id: "sec-02", number: "02", title: "2027 정미년 총평" },
+    { id: "sec-02", number: "02", title: "2027년 총평" },
     { id: "sec-03", number: "03", title: "6대 핵심 분야 분석" },
     { id: "sec-04", number: "04", title: "12개월 월별 흐름" },
     { id: "sec-05", number: "05", title: "분기별 실행 로드맵" },
@@ -89,7 +89,7 @@ export function Daeun2027Report({
       {/* 1. Cover */}
       <PremiumCover
         title="2027 대운 심층 리포트"
-        subtitle="인생 10년의 지도와 정미년의 완전한 청사진"
+        subtitle="인생 10년의 지도와 2027년의 청사진"
         targetName={targetName}
         dateStr={dateStr}
         reportId={reportId}
@@ -107,7 +107,7 @@ export function Daeun2027Report({
       >
         <div className="space-y-6">
           <p className="text-xs sm:text-sm text-[#B9AEC4] leading-relaxed">
-            사주명리학에서 대운(大運)은 10년마다 바뀌는 인생의 계절입니다. 아래는 평생을 관통하는 8개의 10년 주기 지도이며, 현재 지나고 있는 시기가 금빛으로 강조되어 있습니다.
+            대운은 10년마다 바뀌는 인생의 계절이에요. 아래는 평생을 관통하는 8개의 10년 주기 지도이며, 현재 지나고 있는 시기가 금빛으로 강조되어 있습니다.
           </p>
 
           {/* Cycles Horizontal Flow */}
@@ -157,7 +157,7 @@ export function Daeun2027Report({
       <PremiumChapter
         id="sec-02"
         number="02"
-        title="2027 정미년 총평"
+        title="2027년 총평"
         subtitle="10년의 흐름 속에서 2027년이 갖는 위치와 총운 지수"
       >
         <div className="space-y-6 text-left">
@@ -165,7 +165,7 @@ export function Daeun2027Report({
           <div className="bg-[#14101A] border border-[#3A2E45] rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="text-center sm:text-left">
               <span className="text-xs text-[#B9AEC4] uppercase tracking-wider block mb-1">
-                2027 정미(丁未)년 종합 기운 지수
+                2027년 종합 기운 지수
               </span>
               <div className="text-4xl sm:text-5xl font-black font-serif-kr text-transparent bg-clip-text bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C]">
                 {engine.yearScore}점
@@ -536,7 +536,7 @@ export function Daeun2027Report({
           본 리포트는 전통 사주명리학과 천문 절기 데이터를 현대적으로 해석한 자기이해 및 라이프 가이드 콘텐츠입니다. 운세와 사주는 정해진 미래를 단정하는 것이 아니며, 삶의 주체적인 선택과 노력을 돕는 긍정적인 조언으로 활용해 주시기 바랍니다.
         </p>
         <p className="text-[11px] text-[#B9AEC4]/70">
-          구매하신 프리미엄 리포트는 내 보관함에서 1년간 언제든 다시 열람하실 수 있으며, 아래 버튼을 통해 PDF로 평생 보관하실 수 있습니다.
+          구매하신 프리미엄 리포트는 내 보관함에서 1년간 언제든 다시 열람하실 수 있으며, 아래 버튼으로 PDF로 저장해 두시면 따로 소장하실 수 있습니다.
         </p>
       </div>
 

@@ -736,7 +736,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             우리 관계의 진짜 갈등 포인트와<br/>현실적인 연애 조언이 궁금하다면?
           </h4>
           <p className="text-sm text-text-2 mb-6 font-medium">
-            서로에게 끌리는 진짜 이유와 타이밍까지<br/>AI가 분석한 심층 궁합 리포트를 만나보세요.
+            서로에게 끌리는 진짜 이유와 타이밍까지<br/>두 사람의 사주로 풀어낸 심층 궁합 리포트를 만나보세요.
           </p>
           
           {isPremium || unlockToken ? (

@@ -924,7 +924,7 @@ export function PremiumNewClient({
           {teaser2027 && (
             <div className="space-y-3">
               <div className="flex items-baseline justify-between border-b border-[#3A2E45] pb-3">
-                <span className="text-xs text-[#B9AEC4]">2027 정미년 기운 지수</span>
+                <span className="text-xs text-[#B9AEC4]">2027년 기운 지수</span>
                 <span className="text-2xl font-black text-[#D9B26A]">{teaser2027.yearScore}점</span>
               </div>
               <div className="text-sm">
@@ -942,7 +942,7 @@ export function PremiumNewClient({
           {teaserNaming && (
             <div className="space-y-3">
               <div className="text-sm">
-                <span className="text-xs text-[#B9AEC4] block mb-1">아이에게 필요한 오행 기운</span>
+                <span className="text-xs text-[#B9AEC4] block mb-1">아이에게 채워 주면 좋은 기운</span>
                 <p className="font-serif-kr text-[#F6F1EA] font-semibold">{teaserNaming.neededElementDescription}</p>
               </div>
               <div className="bg-[#14101A] p-3.5 rounded-xl border border-[#3A2E45] text-xs flex items-center justify-between">

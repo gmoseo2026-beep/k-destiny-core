@@ -22,7 +22,7 @@ interface NamingReportProps {
 }
 
 function getLuckLabel(num: number): string {
-  return LUCKY_81.has(num) ? "대길(大吉)" : "길(吉)";
+  return LUCKY_81.has(num) ? "아주 좋은 수" : "좋은 수";
 }
 
 function getStrokeYinYang(strokes: { s: number; g1: number; g2: number }): string {
@@ -88,14 +88,14 @@ export function NamingReport({
           <div className="bg-[#14101A] border border-[#D9B26A]/40 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs text-[#B9AEC4] block mb-1">
-                아이의 사주 오행 분석 결과
+                아이의 타고난 기운
               </span>
               <p className="font-serif-kr text-base sm:text-lg font-bold text-[#F3E3BF]">
                 {weakestWords}의 기운을 보완하는 작명
               </p>
             </div>
             <div className="bg-[#1E1726] border border-[#3A2E45] px-3.5 py-1.5 rounded-full text-xs text-[#D9B26A] font-semibold">
-              사주 조화 완벽 보완
+              부족한 기운을 채우는 이름
             </div>
           </div>
 
@@ -107,27 +107,27 @@ export function NamingReport({
           {/* 4 Core Principles Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="bg-[#14101A] border border-[#3A2E45] p-4 rounded-xl space-y-1">
-              <span className="text-[#D9B26A] font-bold block">1. 정통 원획 수리 (元格·亨格·利格·貞格)</span>
+              <span className="text-[#D9B26A] font-bold block">1. 획수의 조화</span>
               <p className="text-[#B9AEC4]">
-                부수의 본래 획수인 원획(原劃)을 기준으로 4격 모두 길(吉)한 수리를 설계합니다.
+                글자의 본래 획수로 계산한 초년·청년·장년·말년 네 가지 숫자가 모두 좋은 수가 되도록 고릅니다.
               </p>
             </div>
             <div className="bg-[#14101A] border border-[#3A2E45] p-4 rounded-xl space-y-1">
-              <span className="text-[#D9B26A] font-bold block">2. 음양 조화 (陰陽調和)</span>
+              <span className="text-[#D9B26A] font-bold block">2. 홀짝 균형</span>
               <p className="text-[#B9AEC4]">
                 글자의 획수가 모두 홀수(양)이거나 짝수(음)로 치우치지 않도록 조화롭게 배합합니다.
               </p>
             </div>
             <div className="bg-[#14101A] border border-[#3A2E45] p-4 rounded-xl space-y-1">
-              <span className="text-[#D9B26A] font-bold block">3. 발음오행 (發音五行)</span>
+              <span className="text-[#D9B26A] font-bold block">3. 부르기 좋은 소리</span>
               <p className="text-[#B9AEC4]">
                 초성과 종성의 한글 소리가 서로 충돌하지 않고 부드럽게 상생하도록 구성합니다.
               </p>
             </div>
             <div className="bg-[#14101A] border border-[#3A2E45] p-4 rounded-xl space-y-1">
-              <span className="text-[#D9B26A] font-bold block">4. 사주 보완 (用神·喜神)</span>
+              <span className="text-[#D9B26A] font-bold block">4. 타고난 기운 보완</span>
               <p className="text-[#B9AEC4]">
-                타고난 사주에서 부족한 오행의 기운을 자원오행(字源五行) 한자로 온전히 채웁니다.
+                아이에게 부족한 기운을 뜻과 뿌리가 그 기운에 닿는 글자로 채웁니다.
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export function NamingReport({
         id="sec-03"
         number="03"
         title="이름의 숫자 (4격 수리표)"
-        subtitle="초년·청년·장년·말년을 관장하는 정통 원격·형격·이격·정격"
+        subtitle="이름 획수로 보는 초년·청년·장년·말년의 흐름"
       >
         <div className="space-y-4 text-left">
           <p className="text-xs text-[#B9AEC4]">
@@ -260,7 +260,7 @@ export function NamingReport({
                     <div className="p-4 border-t border-[#3A2E45] bg-[#1E1726]/40 space-y-3 text-xs">
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                         <div className="bg-[#14101A] p-3 rounded-xl border border-[#3A2E45]">
-                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">원격 (초년운)</span>
+                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">초년운</span>
                           <div className="text-base font-bold text-[#F3E3BF] font-serif-kr">
                             {n.grids.won}획
                           </div>
@@ -269,7 +269,7 @@ export function NamingReport({
                           </span>
                         </div>
                         <div className="bg-[#14101A] p-3 rounded-xl border border-[#3A2E45]">
-                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">형격 (청년운)</span>
+                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">청년운</span>
                           <div className="text-base font-bold text-[#F3E3BF] font-serif-kr">
                             {n.grids.hyeong}획
                           </div>
@@ -278,7 +278,7 @@ export function NamingReport({
                           </span>
                         </div>
                         <div className="bg-[#14101A] p-3 rounded-xl border border-[#3A2E45]">
-                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">이격 (장년운)</span>
+                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">장년운</span>
                           <div className="text-base font-bold text-[#F3E3BF] font-serif-kr">
                             {n.grids.i}획
                           </div>
@@ -287,7 +287,7 @@ export function NamingReport({
                           </span>
                         </div>
                         <div className="bg-[#14101A] p-3 rounded-xl border border-[#3A2E45]">
-                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">정격 (총운/말년)</span>
+                          <span className="text-[11px] text-[#B9AEC4] block mb-0.5">총운 · 말년운</span>
                           <div className="text-base font-bold text-[#F3E3BF] font-serif-kr">
                             {n.grids.jeong}획
                           </div>
@@ -299,7 +299,7 @@ export function NamingReport({
 
                       <div className="flex flex-wrap gap-3 pt-1 text-[11px] text-[#B9AEC4]">
                         <span>획수 음양: <strong className="text-[#F6F1EA]">{getStrokeYinYang(n.strokes)}</strong></span>
-                        <span>발음 오행: <strong className="text-[#F6F1EA]">{getSoundElements(n.soundSeq)}</strong></span>
+                        <span>소리 흐름: <strong className="text-[#F6F1EA]">{getSoundElements(n.soundSeq)}</strong></span>
                       </div>
                     </div>
                   )}
@@ -315,7 +315,7 @@ export function NamingReport({
         id="sec-04"
         number="04"
         title="5선 종합 비교표"
-        subtitle="다섯 가지 이름의 핵심 수리와 보완 오행 한눈에 보기"
+        subtitle="다섯 가지 이름의 획수 풀이와 채워 주는 기운 한눈에 보기"
       >
         <div className="bg-[#14101A] border border-[#3A2E45] rounded-2xl overflow-x-auto text-left text-xs">
           <table className="w-full min-w-[500px]">
@@ -325,7 +325,7 @@ export function NamingReport({
                 <th className="py-3 px-3 font-semibold">이름</th>
                 <th className="py-3 px-3 font-semibold">한자</th>
                 <th className="py-3 px-3 font-semibold text-center">원획</th>
-                <th className="py-3 px-3 font-semibold text-center">총운 (정격)</th>
+                <th className="py-3 px-3 font-semibold text-center">총운</th>
                 <th className="py-3 px-3 font-semibold text-center">음양 배합</th>
               </tr>
             </thead>

@@ -31,11 +31,11 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
   // Product specific content configuration
   const specDetails = is2027
     ? {
-        headline: "인생 10년의 지도와 2027 정미년의 완전한 청사진",
-        volume: "10년 대운 지도 · 6개 분야 심층 분석 · 12개월 월별 운세 · 약 1만 자",
+        headline: "인생 10년의 지도와 2027년의 청사진",
+        volume: "10년 대운 지도 · 6개 분야 심층 분석 · 12개월 월별 운세",
         chapters: [
           { num: "01", title: "나의 10년 대운 지도", desc: "인생 8개 주기 흐름과 현재 대운의 절대적 의미" },
-          { num: "02", title: "2027 정미년 총평", desc: "10년 중 2027년이 갖는 위치와 삶의 나침반" },
+          { num: "02", title: "2027년 총평", desc: "10년 중 2027년이 갖는 위치와 삶의 나침반" },
           { num: "03", title: "6대 핵심 분야 분석", desc: "사랑·재물·직업·건강·관계·가정의 정밀 진단과 Do & Don't" },
           { num: "04", title: "12개월 월별 흐름", desc: "1월부터 12월까지 매달의 기운 테마와 이달의 좋은 날 2선" },
           { num: "05", title: "분기별 실행 로드맵", desc: "사계절에 맞춘 4분기 집중 액션 플랜" },
@@ -48,10 +48,10 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
         headline: "타고난 기운을 완성하는 평생의 선물, 프리미엄 아기 이름",
         volume: "정통 성명학 4대 원칙 · 엄선된 5개 후보작 · 상세 해설 리포트",
         chapters: [
-          { num: "01", title: "작명의 4대 철학과 원칙", desc: "대법원 인명용 한자 원획 수리, 음양 조화, 발음오행, 사주 보완" },
-          { num: "02", title: "사주 오행 분석 결과", desc: "아이의 타고난 기운 중 가장 보완이 필요한 기운 도출" },
+          { num: "01", title: "작명의 4대 철학과 원칙", desc: "대법원 인명용 한자 · 획수의 조화 · 부르기 좋은 소리 · 타고난 기운 보완" },
+          { num: "02", title: "아이의 타고난 기운", desc: "아이의 기운 중 가장 채워 주면 좋은 기운 찾기" },
           { num: "03", title: "추천 이름 5선 심층 해설", desc: "이름별 한 줄 요약, 글자 훈 풀이, 기운의 조화, 소리의 울림" },
-          { num: "04", title: "이름의 숫자 (4격 수리표)", desc: "원격·형격·이격·정격 길흉과 음양 배합 상세표" },
+          { num: "04", title: "이름의 숫자 풀이", desc: "획수로 보는 초년·청년·장년·말년의 흐름과 홀짝 균형표" },
           { num: "05", title: "부모님께 드리는 축복 편지", desc: "새로운 생명을 맞이한 가정에 건네는 진심 어린 축복" },
         ],
         sample: sampleNaming,
@@ -255,26 +255,27 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
               <span className="text-[#D9B26A]">프리미엄</span>
             </div>
             <div className="divide-y divide-[#3A2E45]/60 bg-[#14101A]/60">
-              <div className="grid grid-cols-3 p-3 items-center text-center">
-                <span className="font-medium text-[#B9AEC4]">분석 분량</span>
-                <span className="text-[#B9AEC4]">3~4개 항목</span>
-                <span className="text-[#F3E3BF] font-semibold">1만 자 정밀 분석</span>
-              </div>
-              <div className="grid grid-cols-3 p-3 items-center text-center">
-                <span className="font-medium text-[#B9AEC4]">분석 모델</span>
-                <span className="text-[#B9AEC4]">고속 AI</span>
-                <span className="text-[#F3E3BF] font-semibold">Gemini Pro 엔진</span>
-              </div>
-              <div className="grid grid-cols-3 p-3 items-center text-center">
-                <span className="font-medium text-[#B9AEC4]">보관 기간</span>
-                <span className="text-[#B9AEC4]">30일</span>
-                <span className="text-[#F3E3BF] font-semibold">1년 안전 보관</span>
-              </div>
-              <div className="grid grid-cols-3 p-3 items-center text-center">
-                <span className="font-medium text-[#B9AEC4]">인쇄·PDF</span>
-                <span className="text-[#B9AEC4]">미지원</span>
-                <span className="text-[#F3E3BF] font-semibold">전용 인쇄 스타일 지원</span>
-              </div>
+              {/* 모든 칸은 실제 상품 구성과 일치해야 한다(분량 숫자·모델명 표기 금지) */}
+              {[
+                {
+                  label: "풀이 범위",
+                  standard: "핵심 4개 항목",
+                  premium: is2027 ? "10년 흐름 · 6개 분야 · 12개월" : isNaming ? "이름 5개 · 뜻·획수·소리 풀이" : "길일 3~5개 · 좋은 시간대",
+                },
+                {
+                  label: "풀이 방식",
+                  standard: "생년월일로 보는 핵심 풀이",
+                  premium: is2027 ? "10년 주기와 달마다의 흐름까지 계산" : isNaming ? "인명용 한자를 뜻·획수·소리로 선별" : "전통 택일 기준으로 날짜 선별",
+                },
+                { label: "보관 기간", standard: "90일", premium: "1년" },
+                { label: "소장", standard: "-", premium: "PDF로 저장" },
+              ].map((row) => (
+                <div key={row.label} className="grid grid-cols-3 p-3 items-center text-center gap-1">
+                  <span className="font-medium text-[#B9AEC4]">{row.label}</span>
+                  <span className="text-[#B9AEC4]">{row.standard}</span>
+                  <span className="text-[#F3E3BF] font-semibold">{row.premium}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>

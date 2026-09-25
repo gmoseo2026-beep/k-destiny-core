@@ -21,7 +21,7 @@ export default function PremiumBanner({ locale, premiumProducts }: PremiumBanner
             <span className="text-sm">👑</span>
             <span>KONGDAK PREMIUM</span>
           </div>
-          <span className="text-[11px] text-white/60">평생 보관 심층 리포트</span>
+          <span className="text-[11px] text-white/60">1년 보관 심층 리포트</span>
         </div>
 
         {/* Rows */}

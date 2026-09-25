@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 const STEPS = [
-  { step: 1, label: "기운 계산", desc: "사주 오행 및 대운 주기 정밀 분석 중..." },
+  { step: 1, label: "기운 계산", desc: "타고난 기운과 10년 흐름을 계산하고 있어요..." },
   { step: 2, label: "큰 흐름 도출", desc: "인생 10년의 지도와 중심 기운 해석 중..." },
   { step: 3, label: "세부 풀이", desc: "분야별 맞춤 가이드 및 월별 흐름 생성 중..." },
   { step: 4, label: "마무리", desc: "품격 있는 프리미엄 리포트 제본 중..." },
