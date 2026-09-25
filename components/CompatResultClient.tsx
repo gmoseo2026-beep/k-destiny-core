@@ -23,7 +23,8 @@ import {
   forgetUnlockToken,
   subscribeUnlockToken,
 } from "@/lib/payments/client";
-import { getProduct, priceLabel } from "@/lib/catalog";
+import { getProduct, priceLabel, setsContaining } from "@/lib/catalog";
+import SetUpsell from "@/components/product/SetUpsell";
 
 interface CompatData {
   id: string;
@@ -99,9 +100,11 @@ interface CompatResultClientProps {
   locale: string;
   refToken?: string;
   isPremium?: boolean;
+  /** 공개 판정된 상품 id — 세트 추천에서 숨긴 세트를 빼는 데 쓴다 */
+  visibleIds?: string[];
 }
 
-export default function CompatResultClient({ initialData, locale, refToken, isPremium }: CompatResultClientProps) {
+export default function CompatResultClient({ initialData, locale, refToken, isPremium, visibleIds }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
@@ -133,6 +136,10 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [checkoutType, setCheckoutType] = useState<"SINGLE" | "PERIOD_PASS">("SINGLE");
   void checkoutType;
+  // 결제할 상품: 기본은 정통 궁합, [세트로 보기]를 누르면 그 세트(같은 궁합 그대로)
+  const [checkoutId, setCheckoutId] = useState("compat_basic");
+  const checkoutProduct = getProduct(checkoutId) ?? compatProduct;
+  const upsellSets = setsContaining("compat_basic", visibleIds ?? []);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // In-app Browser Guard & Notice State
@@ -559,6 +566,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
               trackEvent("click_top_cta", { compatId: data.id });
               setCheckoutType("SINGLE");
+              setCheckoutId("compat_basic");
               setCheckoutModalOpen(true);
             }}
             className="w-full mt-4 bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
@@ -853,6 +861,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
                   trackEvent("click_unlock_single", { compatId: data.id });
                   setCheckoutType("SINGLE");
+                  setCheckoutId("compat_basic");
                   setCheckoutModalOpen(true);
                 }}
                 className="w-full bg-coral hover:bg-coral-deep text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(224,36,90,0.25)] transition-all duration-150 active:scale-[0.96] flex flex-col items-center justify-center gap-0.5"
@@ -864,6 +873,22 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   {compatPrice} · 결제 후 90일간 즉시 열람
                 </span>
               </button>
+
+              {upsellSets.length > 0 && (
+                <div className="mt-3">
+                  <SetUpsell
+                    sets={upsellSets.slice(0, 1)}
+                    source="compat_result"
+                    currentId="compat_basic"
+                    onChoose={(set) => {
+                      if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+                      trackEvent("view_paywall", { productId: set.id, tier: set.tier, amountLabel: priceLabel(set) });
+                      setCheckoutId(set.id);
+                      setCheckoutModalOpen(true);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </Card>
@@ -909,9 +934,9 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       <GuestCheckoutModal
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title="심층 궁합 리포트 잠금 해제"
-        orderName={compatProduct?.name || "콩닥 심층 궁합 리포트"}
-        priceLabel={compatPrice}
+        title={checkoutId === "compat_basic" ? "심층 궁합 리포트 잠금 해제" : `${checkoutProduct?.name} 열람`}
+        orderName={checkoutProduct?.name || "콩닥 심층 궁합 리포트"}
+        priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : compatPrice}
         initialName={session?.user?.name || ""}
         initialEmail={session?.user?.email || ""}
         initialPhone=""
@@ -920,18 +945,23 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           try {
             setIsProcessingPayment(true);
             const res = await requestPortOnePayment({
-              productId: "compat_basic",
+              productId: checkoutId,
               compatId: data.id,
               buyer,
               locale,
             });
             if (res.ok) {
               trackEvent("purchase_confirmed", {
-                productId: "compat_basic",
-                tier: compatProduct?.tier || "standard",
+                productId: checkoutId,
+                tier: checkoutProduct?.tier || "standard",
                 amount: res.amount,
               });
-              router.refresh();
+              if (checkoutId === "compat_basic") {
+                router.refresh();
+              } else {
+                // 세트: 구성 리포트를 만드는 화면으로. 정통 궁합은 거기서 이 화면으로 다시 연결된다
+                router.push(`/${locale}/report/new?c=${checkoutId}&compat=${data.id}`);
+              }
             }
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.";
@@ -963,6 +993,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
                 trackEvent("click_sticky_cta", { compatId: data.id });
                 setCheckoutType("SINGLE");
+                setCheckoutId("compat_basic");
                 setCheckoutModalOpen(true);
               }}
               className="bg-coral hover:bg-coral active:scale-[0.96] text-white px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs sm:text-sm shadow-[0_4px_12px_rgba(255,92,119,0.3)] transition-all flex items-center gap-1.5 shrink-0"

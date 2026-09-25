@@ -9,7 +9,8 @@ import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor } from "@/lib/catalog";
+import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
@@ -59,6 +60,10 @@ export default function FortuneNewClient({
   const product = getProduct(currentProductId);
   // 세트는 대표 구성 상품의 맛보기를 보여 준다(결제·열람은 세트 id 그대로)
   const teaserProduct = product ? getProduct(teaserCatalogIdFor(product)) ?? product : undefined;
+  // 결제할 상품: 기본은 이 상품, [세트로 보기]를 누르면 그 세트(입력은 그대로 이어서 쓴다)
+  const [checkoutId, setCheckoutId] = useState(currentProductId);
+  const checkoutProduct = getProduct(checkoutId) ?? product;
+  const upsellSets = product && !product.isFree && product.type !== "SET" ? setsContaining(product.id, visibleIds ?? []) : [];
 
   const recommendations = CATALOG.filter((p) =>
     p.tier === "standard" &&
@@ -130,30 +135,36 @@ export default function FortuneNewClient({
     }
   }, [currentProductId]);
 
-  const handleOpenCheckout = () => {
+  const openCheckoutFor = (id: string) => {
     if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
 
+    const target = getProduct(id) ?? product;
     const formatted = formatBirthInput(formValues);
-    const requiresLogin = product?.requiresLogin ?? (currentProductId.startsWith("annual_"));
+    const requiresLogin = target?.requiresLogin ?? id.startsWith("annual_");
 
     if (requiresLogin && !session?.user?.id) {
-      savePendingInput(currentProductId, formatted);
+      savePendingInput(id, formatted);
       alert("전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.");
-      const currentPath =
-        typeof window !== "undefined"
+      // 세트를 고른 경우 로그인 후 세트 화면으로 돌아와 저장된 입력을 이어 쓴다
+      const returnPath =
+        id !== currentProductId
+          ? `/${locale}/fortune/new?productId=${id}`
+          : typeof window !== "undefined"
           ? window.location.pathname + window.location.search
           : `/${locale}/fortune/new?productId=${currentProductId}`;
-      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(returnPath)}`);
       return;
     }
 
     trackEvent("view_paywall", {
-      productId: currentProductId,
-      tier: product?.tier || "standard",
-      amountLabel: product ? priceLabel(product) : "",
+      productId: id,
+      tier: target?.tier || "standard",
+      amountLabel: target ? priceLabel(target) : "",
     });
+    setCheckoutId(id);
     setCheckoutModalOpen(true);
   };
+  const handleOpenCheckout = () => openCheckoutFor(currentProductId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,6 +322,16 @@ export default function FortuneNewClient({
           </div>
         )}
 
+        {/* 이 운세가 든 세트 — 입력한 정보 그대로 세트로 결제 */}
+        {upsellSets.length > 0 && (
+          <SetUpsell
+            sets={upsellSets.slice(0, 2)}
+            source="fortune_teaser"
+            currentId={currentProductId}
+            onChoose={(set) => openCheckoutFor(set.id)}
+          />
+        )}
+
         {/* In-app Browser Notice Banner */}
         {isInApp && (
           <div
@@ -330,9 +351,9 @@ export default function FortuneNewClient({
         <GuestCheckoutModal
           isOpen={checkoutModalOpen}
           onClose={() => setCheckoutModalOpen(false)}
-          title={`${product?.name || "사주"} 리포트 열람`}
-          orderName={product?.name || "콩닥 사주 리포트"}
-          priceLabel={product ? priceLabel(product) : "6,900원"}
+          title={`${checkoutProduct?.name || "사주"} 리포트 열람`}
+          orderName={checkoutProduct?.name || "콩닥 사주 리포트"}
+          priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : "6,900원"}
           initialName={session?.user?.name || formValues.name || ""}
           initialEmail={session?.user?.email || ""}
           initialPhone=""
@@ -341,24 +362,24 @@ export default function FortuneNewClient({
             try {
               setIsProcessingPayment(true);
               const formatted = formatBirthInput(formValues);
-              savePendingInput(currentProductId, formatted);
+              savePendingInput(checkoutId, formatted);
 
               const res = await requestPortOnePayment({
-                productId: currentProductId,
+                productId: checkoutId,
                 buyer,
                 locale,
               });
 
               if (res.ok) {
                 trackEvent("purchase_confirmed", {
-                  productId: currentProductId,
-                  tier: product?.tier || "standard",
+                  productId: checkoutId,
+                  tier: checkoutProduct?.tier || "standard",
                   amount: res.amount,
                 });
-                if (currentProductId.startsWith("annual_")) {
-                  router.push(`/${locale}/fortune/annual?year=${currentProductId.replace("annual_", "")}`);
+                if (checkoutId.startsWith("annual_")) {
+                  router.push(`/${locale}/fortune/annual?year=${checkoutId.replace("annual_", "")}`);
                 } else {
-                  router.push(`/${locale}/report/new?c=${currentProductId}`);
+                  router.push(`/${locale}/report/new?c=${checkoutId}`);
                 }
               }
             } catch (e: unknown) {

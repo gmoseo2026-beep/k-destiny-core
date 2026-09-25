@@ -5,6 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import CompatResultClient from "@/components/CompatResultClient";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveCatalog } from "@/lib/catalogVisibility";
+import { canPreview } from "@/lib/preview";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
 
 interface PageProps {
@@ -141,6 +144,10 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
     },
   };
 
+  // 정통 궁합이 든 세트 추천용(숨긴 세트는 권하지 않는다)
+  const preview = canPreview(session?.user?.email);
+  const visibleIds = (await getEffectiveCatalog()).filter((p) => isViewableFor(p, preview)).map((p) => p.id);
+
   return (
     <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
       {/* Top Brand Logo */}
@@ -167,6 +174,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
         locale={locale}
         refToken={ref}
         isPremium={isPremium}
+        visibleIds={visibleIds}
       />
     </main>
   );

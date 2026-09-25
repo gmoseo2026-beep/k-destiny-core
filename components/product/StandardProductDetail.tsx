@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel, formatWon } from "@/lib/catalog";
+import { priceLabel, formatWon, separatePrice, setsContaining } from "@/lib/catalog";
+import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
@@ -66,6 +67,10 @@ export function StandardProductDetail({
         p.tier !== "premium"
     )
     .slice(0, 3);
+
+  // 이 상품이 든 세트(공개 중인 것만 — allProducts 는 서버가 공개 판정한 목록)
+  const containingSets =
+    product.type !== "SET" && !product.isFree ? setsContaining(product.id, allProducts.map((p) => p.id)) : [];
 
   // Set items if SET
   const setProducts = product.items
@@ -272,6 +277,12 @@ export function StandardProductDetail({
               <span className="text-2xl font-black text-ink">
                 {product.isFree ? "무료" : formatWon(product.price)}
               </span>
+              {/* 세트: 실제 단건 정가 합계와 비교(취소선·가짜 정가 금지) */}
+              {product.type === "SET" && (
+                <span className="text-xs font-bold text-caption">
+                  따로 사면 {formatWon(separatePrice(product))}
+                </span>
+              )}
               {/* 첫 결제 할인은 표준 단품만(세트 제외) — 서버 주문 규칙과 동일 */}
               {!product.isFree && product.price > 0 && product.tier === "standard" && product.type !== "SET" && (
                 <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">
@@ -296,6 +307,19 @@ export function StandardProductDetail({
             </div>
           )}
         </section>
+
+        {/* 이 상품이 들어 있는 세트 */}
+        {containingSets.length > 0 && (
+          <section className="px-4 pb-5">
+            <SetUpsell
+              sets={containingSets.slice(0, 2)}
+              source="product_detail"
+              title={product.target === "couple" ? "이 궁합이 들어 있는 세트" : "이 운세가 들어 있는 세트"}
+              locale={locale}
+              currentId={product.id}
+            />
+          </section>
+        )}
 
         {/* 4. What's in this report / 세트 구성 */}
         <section className="px-4 py-6 border-t border-line">

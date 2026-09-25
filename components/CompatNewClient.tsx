@@ -9,7 +9,8 @@ import dynamic from "next/dynamic";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, teaserCatalogIdFor } from "@/lib/catalog";
+import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { Card } from "@/components/ui/Card";
@@ -36,9 +37,10 @@ interface CompatNewClientProps {
   refToken?: string;
   productId?: string;
   initialProfile?: InitialProfile | null;
+  visibleIds?: string[];
 }
 
-export default function CompatNewClient({ locale, refToken, productId, initialProfile }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds }: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -116,16 +118,26 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     });
   }, []);
 
-  const handleOpenCheckout = () => {
+  // 결제할 상품: 기본은 이 상품, [세트로 보기]를 누르면 그 세트(같은 궁합 그대로)
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const checkoutProduct = (checkoutId ? getProduct(checkoutId) : null) ?? product;
+  const upsellSets = product && product.type !== "SET" ? setsContaining(product.id, visibleIds ?? []) : [];
+
+  const openCheckoutFor = (id: string) => {
     if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-    if (product) {
+    const target = getProduct(id);
+    if (target) {
       trackEvent("view_paywall", {
-        productId: product.id,
-        tier: product.tier,
-        amountLabel: priceLabel(product),
+        productId: target.id,
+        tier: target.tier,
+        amountLabel: priceLabel(target),
       });
     }
+    setCheckoutId(id);
     setCheckoutModalOpen(true);
+  };
+  const handleOpenCheckout = () => {
+    if (product) openCheckoutFor(product.id);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -263,6 +275,15 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           </button>
         </div>
 
+        {upsellSets.length > 0 && (
+          <SetUpsell
+            sets={upsellSets.slice(0, 2)}
+            source="compat_teaser"
+            currentId={product.id}
+            onChoose={(set) => openCheckoutFor(set.id)}
+          />
+        )}
+
         {isInApp && (
           <div
             onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
@@ -280,9 +301,9 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         <GuestCheckoutModal
           isOpen={checkoutModalOpen}
           onClose={() => setCheckoutModalOpen(false)}
-          title={`${product.name} 열람`}
-          orderName={product.name}
-          priceLabel={priceLabel(product)}
+          title={`${checkoutProduct?.name ?? product.name} 열람`}
+          orderName={checkoutProduct?.name ?? product.name}
+          priceLabel={priceLabel(checkoutProduct ?? product)}
           initialName={session?.user?.name || nameA || ""}
           initialEmail={session?.user?.email || ""}
           initialPhone=""
@@ -290,8 +311,9 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           onSubmit={async (buyer: BuyerInfo) => {
             try {
               setIsProcessingPayment(true);
+              const payId = checkoutProduct?.id ?? product.id;
               const res = await requestPortOnePayment({
-                productId: product.id,
+                productId: payId,
                 compatId: teaserResult.compatId,
                 buyer,
                 locale,
@@ -299,11 +321,11 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
               if (res.ok) {
                 trackEvent("purchase_confirmed", {
-                  productId: product.id,
-                  tier: product.tier,
+                  productId: payId,
+                  tier: checkoutProduct?.tier ?? product.tier,
                   amount: res.amount,
                 });
-                router.push(`/${locale}/report/new?c=${product.id}&compat=${teaserResult.compatId}`);
+                router.push(`/${locale}/report/new?c=${payId}&compat=${teaserResult.compatId}`);
               }
             } catch (e: unknown) {
               alert(e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.");

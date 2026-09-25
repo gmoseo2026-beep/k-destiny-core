@@ -11,6 +11,7 @@ import HomeRankingView from "@/components/home/HomeRankingView";
 import MoreContentCards from "@/components/home/MoreContentCards";
 import VisitorSection from "@/components/home/VisitorSection";
 import BrandStory from "@/components/home/BrandStory";
+import SetRow from "@/components/home/SetRow";
 import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { fetchHomeRanking } from "@/lib/home/ranking";
 import { fetchVisitorCount } from "@/lib/home/visitors";
@@ -52,6 +53,7 @@ export default async function Home({ params }: PageProps) {
       <TrustBanner />
       <HomeSearch locale={locale} products={products} />
       <ProductGrid locale={locale} products={products} />
+      <SetRow locale={locale} products={products} />
       <PremiumBanner locale={locale} premiumProducts={premiumProducts} />
       <HomeRankingView locale={locale} ranking={ranking} />
       <MoreContentCards locale={locale} products={products} />

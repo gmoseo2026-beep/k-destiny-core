@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { isViewableFor } from "@/lib/catalog";
-import { getEffectiveProduct } from "@/lib/catalogVisibility";
+import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
 const TITLE = "상대방 정보 입력 — 콩닥 궁합";
@@ -55,6 +55,9 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
     });
   }
 
+  // 세트 추천에 쓸 공개 상품 id(숨긴 세트는 권하지 않는다)
+  const visibleIds = (await getEffectiveCatalog()).filter((p) => isViewableFor(p, preview)).map((p) => p.id);
+
   return (
     <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
       {product?.isHidden && preview && (
@@ -74,7 +77,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
       </div>
 
       {/* Form Component */}
-      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} />
+      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} visibleIds={visibleIds} />
     </main>
   );
 }
