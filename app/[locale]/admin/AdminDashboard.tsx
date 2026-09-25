@@ -11,6 +11,7 @@ import {
 import Image from 'next/image';
 import { CATALOG } from '@/lib/catalog';
 import { issueGuestViewLink } from './actions';
+import { buildRefundRequestBody } from '@/lib/admin/refundRequest';
 
 // ─── Types ───
 export interface OrderItem {
@@ -538,11 +539,7 @@ export default function AdminDashboard({
       const res = await fetch('/api/admin/orders/refund', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: refundModalOrder.orderId,
-          cancelReason: refundReason.trim(),
-          cancelAmount: cancelAmt,
-        }),
+        body: JSON.stringify(buildRefundRequestBody(refundModalOrder.orderId, refundReason, cancelAmt)),
       });
       const data = await res.json();
       if (!res.ok) {
