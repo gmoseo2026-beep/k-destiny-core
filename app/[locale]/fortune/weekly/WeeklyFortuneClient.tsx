@@ -12,7 +12,7 @@ import { Sparkles, Calendar, Heart, Coins, ArrowRight, Lock, Bell, CheckCircle2 
 import { subscribeToPush, isPushSubscribed } from "@/lib/push";
 // import { requestPortOnePayment } from "@/lib/payments/client";
 // const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-// import InAppBrowserModal from "@/components/InAppBrowserModal";
+// import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 // import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 
 
@@ -456,7 +456,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           }
         }}
       />
-      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
       */}
     </div>
   );

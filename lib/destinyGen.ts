@@ -181,18 +181,24 @@ Make it sound like a very expensive, deeply personal reading by a wise mentor. N
   } else {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
     
-Write a brief, highly intriguing "free preview" compatibility teaser.
+Write a short "free preview" compatibility reading.
 CRITICAL PRINCIPLE:
-- FREE = Score + Atmosphere / Emotion + Curiosity Hook ONLY.
-- PAID = Saju root cause (five elements), specific synergy, conflict trigger / solutions, actionable advice.
+- FREE = Score + Atmosphere / Emotion + ONE everyday clash moment with ONE kind tip.
+- PAID = Root causes, the other clash points, specific synergy, timing, long-term advice.
+
+OUTPUT FORMAT (plain Korean text, exactly these two parts, no markdown, no bullet symbols):
+<Part 1: ONE short paragraph, 2~3 sentences, about the overall vibe and emotional chemistry. Do not end with a cliffhanger.>
+
+[부딪히기 쉬운 순간]
+<Part 2 line 1: ONE sentence describing a concrete everyday situation where these two tend to clash (e.g. 연락 속도, 계획 vs 즉흥, 서운함을 말하는 방식).>
+<Part 2 line 2: ONE sentence with a concrete, kind tip that starts with "이럴 땐".>
 
 RULES:
-1. Length: MUST be exactly ONE short paragraph (2~3 sentences, about 3~4 lines total). Keep it concise!
-2. Focus ONLY on the overall vibe and emotional chemistry of the relationship (e.g., "두 사람이 마주했을 때 느껴지는 따뜻한 온기와 은근한 설렘").
-3. DO NOT explain the why or root causes (NO mentioning metal/wood/fire/water/earth combinations, NO element names).
-4. DO NOT provide relationship advice, conflict solutions, or future timing (these are strictly locked in the paid deep report).
-5. The very last sentence MUST end with an irresistible cliffhanger hook that sparks intense curiosity about what is hidden (e.g., "하지만 두 사람 사이에 숨겨진 진짜 변수와 관계를 지켜낼 결정적인 열쇠는 아직 남아있답니다.").
-6. Absolutely NO Chinese characters (한자) and NO saju technical terms.`;
+1. Keep the whole answer under 6 sentences.
+2. DO NOT explain root causes (NO element names, NO metal/wood/fire/water/earth).
+3. Give exactly ONE clash moment and ONE tip. Do not mention timing, months, or long-term advice (those are in the paid report).
+4. The line "[부딪히기 쉬운 순간]" must appear exactly once, on its own line.
+5. Absolutely NO Chinese characters (한자) and NO saju technical terms.`;
   }
 }
 

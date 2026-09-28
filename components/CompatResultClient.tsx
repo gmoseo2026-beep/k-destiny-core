@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-import InAppBrowserModal from "@/components/InAppBrowserModal";
-import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import {
   requestPortOnePayment,
   recallUnlockToken,
@@ -140,15 +140,28 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [checkoutId, setCheckoutId] = useState("compat_basic");
   const checkoutProduct = getProduct(checkoutId) ?? compatProduct;
   const upsellSets = setsContaining("compat_basic", visibleIds ?? []);
+
+  // 무료 해석 = 케미 한 문단 + "[부딪히기 쉬운 순간]" 무료 공개 1가지(예전 저장본은 표시 없이 한 문단)
+  const FREE_CLASH_MARK = "[부딪히기 쉬운 순간]";
+  const markAt = summary ? summary.indexOf(FREE_CLASH_MARK) : -1;
+  const chemistryText = summary && markAt >= 0 ? summary.slice(0, markAt).trim() : summary ?? "";
+  const clashText = summary && markAt >= 0 ? summary.slice(markAt + FREE_CLASH_MARK.length).trim() : "";
+
+  // 결제창 열기(정통 궁합 또는 세트). 클릭은 인앱 가드보다 먼저 기록해 인앱 사용자의 관심도 잡는다
+  const proceedCompatCheckout = (id: string) => {
+    setCheckoutType("SINGLE");
+    setCheckoutId(id);
+    setCheckoutModalOpen(true);
+  };
+  const openCompatCheckout = (id: string, clickEvent: string) => {
+    trackEvent(clickEvent, { compatId: data.id, productId: id });
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => proceedCompatCheckout(id))) return;
+    proceedCompatCheckout(id);
+  };
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // In-app Browser Guard & Notice State
   const [inAppOpen, setInAppOpen] = useState(false);
-  const [isInApp, setIsInApp] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => setIsInApp(isInAppBrowser()));
-  }, []);
 
   // Score Count-Up Animation (0 -> data.score in 0.8s ease-out + pop + haptic)
   const [displayScore, setDisplayScore] = useState(0);
@@ -563,11 +576,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           <button
             type="button"
             onClick={() => {
-              if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-              trackEvent("click_top_cta", { compatId: data.id });
-              setCheckoutType("SINGLE");
-              setCheckoutId("compat_basic");
-              setCheckoutModalOpen(true);
+              openCompatCheckout("compat_basic", "click_top_cta");
             }}
             className="w-full mt-4 bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
@@ -578,14 +587,11 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors">
-                    결정적인 건 잠겨 있어요 — 전체 리포트 열기
+                    우리가 부딪히는 지점 3가지 보기
                   </span>
-                  <Badge variant="popular">
-                    {compatPrice}
-                  </Badge>
                 </div>
                 <span className="text-[11px] text-text-3 truncate">
-                  갈등 유발 포인트 3가지 & 극복법 · 현실 연애 조언
+                  풀어 가는 법 · 이번 달 애정운 타이밍까지 전체 리포트로
                 </span>
               </div>
             </div>
@@ -594,20 +600,6 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </span>
           </button>
 
-          {/* In-app Browser Notice Banner (인앱 결제 오류 사전 탈출 유도) */}
-          {isInApp && (
-            <div
-              onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-              className="w-full mt-2.5 bg-coral-soft hover:bg-coral/20 border border-coral/30 rounded-2xl p-3 text-xs text-ink flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
-            >
-              <span className="font-semibold text-left">
-                🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
-              </span>
-              <span className="text-[11px] font-bold text-coral shrink-0 underline whitespace-nowrap">
-                외부 브라우저 열기
-              </span>
-            </div>
-          )}
         </>
       )}
 
@@ -633,9 +625,26 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </p>
           </div>
         ) : (
-          <div className="text-sm text-ink leading-relaxed space-y-3 whitespace-pre-line font-medium">
-            {summary}
-          </div>
+          <>
+            <div className="text-sm text-ink leading-relaxed space-y-3 whitespace-pre-line font-medium">
+              {chemistryText}
+            </div>
+            {clashText && (
+              <div className="mt-4 rounded-2xl border border-coral/25 bg-coral-soft p-4 text-left">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    미리 보는 갈등 포인트
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-coral-deep">무료 공개</span>
+                </div>
+                <p className="text-sm font-medium leading-relaxed text-ink whitespace-pre-line">{clashText}</p>
+                <p className="mt-2 text-[11px] leading-snug text-text-2">
+                  다른 갈등 포인트와 풀어 가는 법, 이번 달 애정운 흐름은 전체 리포트에 담겨 있어요.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </Card>
 
@@ -847,30 +856,17 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </div>
               </Card>
 
-              {/* 단건 리포트 안내 카드 — 기간권 UI 동면(D4) */}
-              <div className="mb-2 text-left w-full">
-                <div className="bg-surface-soft p-3 rounded-2xl border border-line">
-                  <span className="text-[10px] font-extrabold text-coral block mb-0.5">단건 리포트</span>
-                  <span className="text-xs font-black text-ink block">심층 궁합 1회</span>
-                  <span className="text-[10px] text-text-3 leading-tight block mt-0.5">{compatPrice} · 90일 보관</span>
-                </div>
-              </div>
-
               <button
                 onClick={() => {
-                  if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-                  trackEvent("click_unlock_single", { compatId: data.id });
-                  setCheckoutType("SINGLE");
-                  setCheckoutId("compat_basic");
-                  setCheckoutModalOpen(true);
+                  openCompatCheckout("compat_basic", "click_unlock_single");
                 }}
                 className="w-full bg-coral hover:bg-coral-deep text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(224,36,90,0.25)] transition-all duration-150 active:scale-[0.96] flex flex-col items-center justify-center gap-0.5"
               >
                 <span className="text-sm sm:text-base font-extrabold text-white">
-                  우리 갈등 포인트 & 심층 리포트 열기
+                  갈등 포인트 3가지 & 심층 리포트 열기
                 </span>
                 <span className="text-[11px] font-medium text-white/90">
-                  {compatPrice} · 결제 후 90일간 즉시 열람
+                  {compatPrice} · 결제 후 바로 열람 · 90일 보관
                 </span>
               </button>
 
@@ -881,10 +877,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     source="compat_result"
                     currentId="compat_basic"
                     onChoose={(set) => {
-                      if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-                      trackEvent("view_paywall", { productId: set.id, tier: set.tier, amountLabel: priceLabel(set) });
-                      setCheckoutId(set.id);
-                      setCheckoutModalOpen(true);
+                      openCompatCheckout(set.id, "click_unlock_set");
                     }}
                   />
                 </div>
@@ -990,11 +983,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <button
               type="button"
               onClick={() => {
-                if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
-                trackEvent("click_sticky_cta", { compatId: data.id });
-                setCheckoutType("SINGLE");
-                setCheckoutId("compat_basic");
-                setCheckoutModalOpen(true);
+                openCompatCheckout("compat_basic", "click_sticky_cta");
               }}
               className="bg-coral hover:bg-coral active:scale-[0.96] text-white px-5 py-2.5 sm:py-3 rounded-2xl font-black text-xs sm:text-sm shadow-[0_4px_12px_rgba(255,92,119,0.3)] transition-all flex items-center gap-1.5 shrink-0"
             >
@@ -1006,7 +995,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       )}
 
       {/* InApp Browser Manual Escape Modal */}
-      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
 
       {/* New Test CTA */}
       <div className="mt-8 text-center">

@@ -6,8 +6,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import InAppBrowserModal from "@/components/InAppBrowserModal";
-import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
@@ -111,11 +111,6 @@ export default function FortuneNewClient({
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [inAppOpen, setInAppOpen] = useState(false);
-  const [isInApp, setIsInApp] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => setIsInApp(isInAppBrowser()));
-  }, []);
 
   // Restore pending input on mount (e.g. after login redirect)
   useEffect(() => {
@@ -136,7 +131,7 @@ export default function FortuneNewClient({
   }, [currentProductId]);
 
   const openCheckoutFor = (id: string) => {
-    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
 
     const target = getProduct(id) ?? product;
     const formatted = formatBirthInput(formValues);
@@ -332,20 +327,6 @@ export default function FortuneNewClient({
           />
         )}
 
-        {/* In-app Browser Notice Banner */}
-        {isInApp && (
-          <div
-            onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-            className="w-full mt-1 bg-coral/10 hover:bg-coral/15 border border-coral/30 rounded-2xl p-3 text-xs text-plum flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
-          >
-            <span className="font-semibold text-left">
-              🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
-            </span>
-            <span className="text-[11px] font-bold text-coral shrink-0 underline whitespace-nowrap">
-              외부 브라우저 열기
-            </span>
-          </div>
-        )}
 
         {/* Checkout Modal */}
         <GuestCheckoutModal
@@ -391,7 +372,7 @@ export default function FortuneNewClient({
           }}
         />
 
-        <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+        <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
       </div>
     );
   }

@@ -9,8 +9,8 @@ import type { CatalogItem } from "@/lib/catalog";
 import { priceLabel } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
-import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
-import InAppBrowserModal from "@/components/InAppBrowserModal";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
 import { trackEvent } from "@/lib/gtag";
@@ -67,12 +67,7 @@ export function PremiumNewClient({
   const isDates = product.id === "premium_date_pick";
 
   // In-app browser detection
-  const [isInApp, setIsInApp] = useState(false);
   const [inAppOpen, setInAppOpen] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => setIsInApp(isInAppBrowser()));
-  }, []);
 
   // ─────────────────────────────────────────────────────────────
   // 1. Form States
@@ -341,7 +336,7 @@ export function PremiumNewClient({
   const consentMissing = isNaming && !guardianConsent;
 
   const handleOpenCheckout = () => {
-    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => handleOpenCheckout())) return;
 
     const payload = getFormattedPayload();
     if (!payload) {
@@ -991,19 +986,6 @@ export function PremiumNewClient({
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 6. In-App Browser Warning Banner */}
       {/* ───────────────────────────────────────────────────────────── */}
-      {isInApp && (
-        <div
-          onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-          className="w-full mb-4 bg-[#D9B26A]/10 hover:bg-[#D9B26A]/15 border border-[#D9B26A]/30 rounded-2xl p-3.5 text-xs text-[#F3E3BF] flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
-        >
-          <span className="font-semibold text-left">
-            🔒 원활한 카드 결제를 위해 메뉴에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
-          </span>
-          <span className="text-[11px] font-bold text-[#D9B26A] shrink-0 underline whitespace-nowrap">
-            외부 브라우저
-          </span>
-        </div>
-      )}
 
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 7. Action / Checkout CTA */}
@@ -1028,7 +1010,7 @@ export function PremiumNewClient({
       </div>
 
       {/* In-app Browser Manual Guidance Modal */}
-      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
 
       {/* Checkout Modal */}
       <GuestCheckoutModal

@@ -10,8 +10,8 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel } from "@/lib/catalog";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-import InAppBrowserModal from "@/components/InAppBrowserModal";
-import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import {
   Lock,
   Heart,
@@ -167,15 +167,10 @@ export default function AnnualFortuneClient({
 
   // In-app Browser Guard & Notice State
   const [inAppOpen, setInAppOpen] = useState(false);
-  const [isInApp, setIsInApp] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => setIsInApp(isInAppBrowser()));
-  }, []);
 
   const handleOpenCheckout = (_product?: "SINGLE" | "PERIOD_PASS") => {
     void _product;
-    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => handleOpenCheckout(_product))) return;
     if (!session?.user?.id) {
       // Save current input to sessionStorage so user doesn't lose it upon returning
       try {
@@ -663,20 +658,6 @@ export default function AnnualFortuneClient({
             </span>
           </button>
 
-          {/* In-app Browser Notice Banner */}
-          {isInApp && (
-            <div
-              onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-              className="w-full bg-coral-soft hover:bg-coral/20 border border-coral/30 rounded-2xl p-3 text-xs text-ink flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
-            >
-              <span className="font-semibold text-left">
-                🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
-              </span>
-              <span className="text-[11px] font-bold text-coral shrink-0 underline whitespace-nowrap">
-                외부 브라우저 열기
-              </span>
-            </div>
-          )}
         </>
       )}
 
@@ -1007,7 +988,7 @@ export default function AnnualFortuneClient({
         }}
       />
       {/* InApp Browser Manual Escape Modal */}
-      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
     </div>
   );
 }

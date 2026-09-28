@@ -132,15 +132,49 @@ export function openInExternalBrowser(targetUrl?: string): boolean {
 
 /**
  * 결제 시작 전 인앱 브라우저 가드.
- * @returns true = 인앱이라 결제를 막았음(호출부는 여기서 return). false = 정상 브라우저(결제 진행).
- * @param onNeedManual 안드/카카오/라인처럼 자동 탈출이 안 되는 iOS 인앱일 때 호출(호출부가 InAppBrowserModal 오픈).
+ *
+ * 예전에는 인앱이면 결제를 막고 외부 브라우저로 튕겼다(방문자의 약 1/4 이 결제 버튼에서 멈춤).
+ * 이제는 선택 창만 띄운다: [여기서 바로 결제하기] 또는 [외부 브라우저로 열기].
+ * 사용자가 "여기서 결제"를 고르면 이 탭에서는 다시 묻지 않고, 막혔던 동작(retry)을 이어서 실행한다.
+ *
+ * @returns true = 선택 창을 띄웠음(호출부는 여기서 return). false = 바로 결제 진행.
+ * @param onNeedChoice 호출부가 결제 선택 창(InAppPaymentChoice)을 여는 함수
+ * @param retry 사용자가 "여기서 결제"를 고르면 이어서 실행할 동작(보통 결제창 열기)
  */
-export function blockPaymentIfInApp(onNeedManual: () => void): boolean {
-  if (!isInAppBrowser()) return false;      // 정상 브라우저 → 결제 진행
-  // 인앱이라 결제가 멈춘 횟수(호출부의 클릭 이벤트는 이 가드 뒤라 잡히지 않는다)
+const INAPP_PAY_OK_KEY = "kd_inapp_pay_ok";
+let inAppPayAllowed = false;
+let pendingRetry: (() => void) | null = null;
+
+function inAppPayAlreadyChosen(): boolean {
+  if (inAppPayAllowed) return true;
+  try {
+    return window.sessionStorage.getItem(INAPP_PAY_OK_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function blockPaymentIfInApp(onNeedChoice: () => void, retry?: () => void): boolean {
+  if (!isInAppBrowser()) return false;        // 정상 브라우저 → 결제 진행
+  if (inAppPayAlreadyChosen()) return false;  // 이미 "여기서 결제"를 고름
+  pendingRetry = retry ?? null;
+  // 인앱이라 선택 창이 뜬 횟수(호출부의 클릭 이벤트는 이 가드 뒤에 있을 수 있다)
   trackEvent("inapp_payment_blocked", { provider: getInAppProvider() ?? "other", ios: isIOS() });
-  const escaped = openInExternalBrowser(window.location.href); // 카카오/라인/안드 → 크롬/사파리로 튕김
-  if (!escaped) onNeedManual();             // iOS 인스타/스레드 등 → 복사 안내 모달
-  return true;                              // 인앱 → 결제 중단
+  onNeedChoice();
+  return true;
+}
+
+/** 선택 창의 [여기서 바로 결제하기]: 이 탭에서는 다시 묻지 않고, 막혔던 결제 동작을 이어서 실행한다. */
+export function continueInAppPayment(): void {
+  inAppPayAllowed = true;
+  try {
+    window.sessionStorage.setItem(INAPP_PAY_OK_KEY, "1");
+  } catch {
+    // 저장소가 막혀도 이 페이지에서는 inAppPayAllowed 로 충분하다
+  }
+  trackEvent("inapp_pay_here", { provider: getInAppProvider() ?? "other", ios: isIOS() });
+  const run = pendingRetry;
+  pendingRetry = null;
+  run?.();
 }
 

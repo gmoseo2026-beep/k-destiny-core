@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
-import InAppBrowserModal from "@/components/InAppBrowserModal";
-import { blockPaymentIfInApp, isInAppBrowser } from "@/lib/inAppBrowser";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
+import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
@@ -110,13 +110,6 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [inAppOpen, setInAppOpen] = useState(false);
-  const [isInApp, setIsInApp] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setIsInApp(isInAppBrowser());
-    });
-  }, []);
 
   // 결제할 상품: 기본은 이 상품, [세트로 보기]를 누르면 그 세트(같은 궁합 그대로)
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
@@ -124,7 +117,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   const upsellSets = product && product.type !== "SET" ? setsContaining(product.id, visibleIds ?? []) : [];
 
   const openCheckoutFor = (id: string) => {
-    if (blockPaymentIfInApp(() => setInAppOpen(true))) return;
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
     const target = getProduct(id);
     if (target) {
       trackEvent("view_paywall", {
@@ -284,19 +277,6 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           />
         )}
 
-        {isInApp && (
-          <div
-            onClick={() => blockPaymentIfInApp(() => setInAppOpen(true))}
-            className="w-full mt-1 bg-coral/10 hover:bg-coral/15 border border-coral/30 rounded-2xl p-3 text-xs text-plum flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-[0.98]"
-          >
-            <span className="font-semibold text-left">
-              🔒 원활한 결제를 위해 오른쪽 위 메뉴(⋮)에서 <strong>‘다른 브라우저로 열기’</strong>를 눌러주세요.
-            </span>
-            <span className="text-[11px] font-bold text-coral shrink-0 underline whitespace-nowrap">
-              외부 브라우저 열기
-            </span>
-          </div>
-        )}
 
         <GuestCheckoutModal
           isOpen={checkoutModalOpen}
@@ -336,7 +316,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           }}
         />
 
-        <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+        <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
       </div>
     );
   }

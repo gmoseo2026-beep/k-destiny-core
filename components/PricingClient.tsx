@@ -10,7 +10,7 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { Sparkles, ArrowRight } from "lucide-react";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-import InAppBrowserModal from "@/components/InAppBrowserModal";
+import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 
 
@@ -313,7 +313,7 @@ export default function PricingClient({ locale }: { locale: string }) {
         }}
       />
       {/* InApp Browser Manual Escape Modal */}
-      <InAppBrowserModal isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
     </div>
   );
 }
