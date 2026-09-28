@@ -150,16 +150,8 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
 
   return (
     <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
-      {/* Top Brand Logo */}
-      <header className="w-full max-w-md flex items-center justify-between mb-2">
-        <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
-            콩
-          </div>
-          <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">kongdak</span>
-          </span>
-        </Link>
+      {/* 상단 내비게이션(Navbar)에 로고가 있으므로 여기서는 '새로 하기'만 둔다 */}
+      <header className="w-full max-w-md flex items-center justify-end mb-2">
         <Link
           href={ref ? `/${locale}/compat/new?ref=${encodeURIComponent(ref)}` : `/${locale}/compat/new`}
           className="text-xs font-bold text-coral bg-white px-3 py-1.5 rounded-full border border-[#FFD9E0] shadow-sm hover:bg-cream active:scale-95 transition-all"

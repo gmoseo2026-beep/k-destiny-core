@@ -114,10 +114,19 @@ export function compatContextBlock(params: {
   const { personA, personB, relation, compatResult } = params;
   const energyA = DAY_MASTER_KOREAN_DESC[personA.dayMaster] || '자연의 기운';
   const energyB = DAY_MASTER_KOREAN_DESC[personB.dayMaster] || '자연의 기운';
+  // 이름을 비우면 저장값이 "나"/"상대방"이라 AI 가 "나님·상대방님"이라고 부른다 → 호칭을 따로 지정한다
+  const defaultA = !personA.name || personA.name === "나";
+  const defaultB = !personB.name || personB.name === "상대방";
+  const nameA = defaultA ? "(이름 없음)" : personA.name;
+  const nameB = defaultB ? "(이름 없음)" : personB.name;
+  const addressRule = defaultA || defaultB
+    ? `
+ADDRESSING (Korean): ${defaultA ? 'Call Person A "당신".' : ""} ${defaultB ? 'Call Person B "그 사람".' : ""} Never write "나님" or "상대방님".`
+    : "";
 
   return `RELATIONSHIP TYPE: ${relation}
-PERSON A (User): Name=${personA.name || "User"}, Gender=${personA.gender}, Natural Energy=${energyA}, Elements Distribution=${JSON.stringify(personA.elementsScore)}
-PERSON B (Partner): Name=${personB.name || "Partner"}, Gender=${personB.gender}, Natural Energy=${energyB}, Elements Distribution=${JSON.stringify(personB.elementsScore)}
+PERSON A (User): Name=${nameA}, Gender=${personA.gender}, Natural Energy=${energyA}, Elements Distribution=${JSON.stringify(personA.elementsScore)}
+PERSON B (Partner): Name=${nameB}, Gender=${personB.gender}, Natural Energy=${energyB}, Elements Distribution=${JSON.stringify(personB.elementsScore)}${addressRule}
 
 DETERMINISTIC COMPATIBILITY RESULT (DO NOT CALCULATE, USE THIS AS FACT):
 - Overall Score: ${compatResult.score} / 100

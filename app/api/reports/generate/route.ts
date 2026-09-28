@@ -33,6 +33,8 @@ import {
   calculateGenericScore, calculateGenericCompatScore,
 } from "@/lib/destinyGen";
 import { PREMIUM_MODELS } from "@/lib/premium/models";
+// 표준 리포트는 생각 예산 0(빠른 응답)으로 만든다 → Pro 는 예산 0 을 거절(400)하므로 Flash 계열만 쓴다
+import { PREMIUM_MODELS as STANDARD_MODELS } from "@/lib/destinyGen";
 import { calculateFourPillars } from "@/lib/saju";
 import { checkRateLimit, checkGlobalAiCap, getClientIp } from "@/lib/rateLimiter";
 import {
@@ -354,14 +356,14 @@ export async function POST(req: NextRequest) {
     let model: string;
     if (mode === "TEASER") {
       const r = await generateJson({
-        label: `teaser:${catalogId}`, prompt, models: PREMIUM_MODELS,
+        label: `teaser:${catalogId}`, prompt, models: STANDARD_MODELS,
         maxOutputTokens: 3072, thinkingBudget: 0, validate: makeStandardTeaserValidator(spec),
       });
       data = pickTeaser(r.data);
       model = r.model;
     } else {
       const r = await generateJson({
-        label: `full:${catalogId}`, prompt, models: PREMIUM_MODELS,
+        label: `full:${catalogId}`, prompt, models: STANDARD_MODELS,
         maxOutputTokens: 6144, thinkingBudget: 0, validate: makeStandardReportValidator(spec),
       });
       data = r.data;

@@ -151,7 +151,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -342,7 +342,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -352,7 +352,7 @@ export async function POST(req: Request) {
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: teaserPrompt }] }],
-          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 1536, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+          generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 3072, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
         });
         lastResult = result;
         resultText = result.response.text();
@@ -409,7 +409,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
       });
       lastResult = result;
       resultText = result.response.text();
@@ -419,7 +419,7 @@ export async function POST(req: Request) {
       const model = genAI.getGenerativeModel({ model: modelName });
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
+        generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 8192, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 } } as unknown as GenerationConfig,
       });
       lastResult = result;
       resultText = result.response.text();

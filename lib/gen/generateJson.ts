@@ -26,7 +26,8 @@ export async function generateJson<T>(o: GenerateJsonOptions<T>): Promise<{ data
           topP: 0.9,
           maxOutputTokens: o.maxOutputTokens,
           responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: o.thinkingBudget },
+          // Pro 계열은 생각 예산 0 을 400(Budget 0 is invalid)으로 거절한다 → 최소 128 로 올린다
+          thinkingConfig: { thinkingBudget: /pro/i.test(modelName) ? Math.max(128, o.thinkingBudget) : o.thinkingBudget },
         };
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: o.prompt }] }],

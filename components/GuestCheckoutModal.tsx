@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
+import { useSession } from "next-auth/react";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -39,6 +40,19 @@ export default function GuestCheckoutModal({
   const [phoneNumber, setPhoneNumber] = useState(initialPhone);
   const [agreedToWithdrawalPolicy, setAgreedToWithdrawalPolicy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { data: session } = useSession();
+
+  // 비회원은 정가가 청구된다 → 결제창에서는 청구 금액만 보이고, 첫 결제 할인은 로그인 안내로 분리한다
+  const FIRST_TAG = " · 회원 첫 결제 ";
+  const isGuest = !session?.user;
+  const hasFirstDiscount = priceLabel.includes(FIRST_TAG);
+  const shownPrice = isGuest && hasFirstDiscount ? priceLabel.split(FIRST_TAG)[0] : priceLabel;
+  const firstPrice = hasFirstDiscount ? priceLabel.split(FIRST_TAG)[1] : null;
+  const loginHref = (() => {
+    if (typeof window === "undefined") return "/ko/login";
+    const locale = window.location.pathname.split("/")[1] || "ko";
+    return `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+  })();
 
   useEffect(() => {
     if (isOpen) {
@@ -49,12 +63,15 @@ export default function GuestCheckoutModal({
         setAgreedToWithdrawalPolicy(false);
         setErrorMsg(null);
       });
+      trackEvent("checkout_open", { productId: productId || orderName || "unknown", guest: !session?.user });
       trackEvent("view_paywall", {
         productId: productId || orderName || "unknown",
         tier: tier || "standard",
         amountLabel: priceLabel,
       });
     }
+    // 모달이 열릴 때 한 번만 기록한다(세션 로딩으로 다시 기록하지 않음)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialName, initialEmail, initialPhone, productId, tier, orderName, priceLabel]);
 
   if (!isOpen) return null;
@@ -120,8 +137,19 @@ export default function GuestCheckoutModal({
             <span className="text-xs font-bold text-ink block">{orderName}</span>
             <span className="text-[11px] text-text-3">결제 후 즉시 열람 가능</span>
           </div>
-          <span className="text-base font-black text-coral">{priceLabel}</span>
+          <span className="text-base font-black text-coral">{shownPrice}</span>
         </div>
+
+        {isGuest && firstPrice && (
+          <a
+            href={loginHref}
+            onClick={() => trackEvent("checkout_login_hint_click", { productId: productId || orderName || "unknown" })}
+            className="-mt-3 mb-5 flex items-center justify-between gap-2 rounded-xl border border-coral/30 bg-coral-soft px-3.5 py-2.5 text-xs font-bold text-coral-deep active:scale-[0.98] transition-all"
+          >
+            <span>회원가입·로그인하면 첫 결제는 {firstPrice}</span>
+            <span className="shrink-0 underline">로그인하기 →</span>
+          </a>
+        )}
 
         {/* Guest Input Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">

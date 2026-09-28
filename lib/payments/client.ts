@@ -1,5 +1,6 @@
 import * as PortOne from "@portone/browser-sdk/v2";
 import { getProduct } from "@/lib/catalog";
+import { trackEvent } from "@/lib/gtag";
 
 export interface BuyerInfo {
   fullName: string;
@@ -136,9 +137,12 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
 
   const order = await orderRes.json();
   if (!orderRes.ok) {
+    trackEvent("payment_failed", { productId: opts.productId, stage: "order", code: String(orderRes.status) });
     alert(order.error || "주문 생성에 실패했습니다.");
     return { ok: false, reason: "FAILED" };
   }
+  // 결제창을 여는 시점(GA4 표준 이벤트). 서버가 정한 금액으로 기록한다.
+  trackEvent("begin_checkout", { productId: opts.productId, value: order.amount, currency: "KRW" });
 
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
   const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
@@ -174,6 +178,11 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   // 3) PC: 프로미스 반환 (res.code != null 이면 취소/실패). 모바일: redirectUrl로 이동.
   if (res && res.code != null) {
     const isCancelled = res.code === "FAILURE_TYPE_CANCELLED" || String(res.message).includes("취소");
+    trackEvent(isCancelled ? "payment_cancelled" : "payment_failed", {
+      productId: opts.productId,
+      stage: "pg",
+      code: String(res.code).slice(0, 60),
+    });
     if (!isCancelled) {
       alert(`결제 실패: ${res.message || res.code}`);
     }
@@ -205,6 +214,8 @@ export async function verifyAndCompletePayment(
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
       rememberOrderToken(catalogId, orderId, compatId);
+      // GA4 표준 구매 이벤트 — 매출이 보고서에 잡히게 한다(같은 transaction_id 는 GA4 가 중복 제거)
+      trackEvent("purchase", { transaction_id: orderId, value: amount, currency: "KRW", productId: catalogId });
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.
       return {
         ok: true,

@@ -1,3 +1,5 @@
+import { trackEvent } from "@/lib/gtag";
+
 /**
  * In-App Browser Detection Utility
  * 
@@ -135,6 +137,8 @@ export function openInExternalBrowser(targetUrl?: string): boolean {
  */
 export function blockPaymentIfInApp(onNeedManual: () => void): boolean {
   if (!isInAppBrowser()) return false;      // 정상 브라우저 → 결제 진행
+  // 인앱이라 결제가 멈춘 횟수(호출부의 클릭 이벤트는 이 가드 뒤라 잡히지 않는다)
+  trackEvent("inapp_payment_blocked", { provider: getInAppProvider() ?? "other", ios: isIOS() });
   const escaped = openInExternalBrowser(window.location.href); // 카카오/라인/안드 → 크롬/사파리로 튕김
   if (!escaped) onNeedManual();             // iOS 인스타/스레드 등 → 복사 안내 모달
   return true;                              // 인앱 → 결제 중단
