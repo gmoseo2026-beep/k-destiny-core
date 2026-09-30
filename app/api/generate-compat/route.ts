@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { genAI, FREE_MODELS, PREMIUM_MODELS, LOCALE_CONFIG, compatContextBlock, buildCompatPrompt } from "@/lib/destinyGen";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 import prisma from "@/lib/prisma";
+import { logGeneration, errorCode } from "@/lib/reports/genLog";
 
 export async function POST(req: NextRequest) {
+  const tStart = Date.now();
   try {
     const body = await req.json();
     const { compatId, shareToken, locale = "ko", isPremium = false } = body;
@@ -37,6 +39,7 @@ export async function POST(req: NextRequest) {
     if (isPremium && compat.premiumKo) {
       return new NextResponse(compat.premiumKo, { status: 200 });
     } else if (!isPremium && compat.summaryKo) {
+      void logGeneration({ catalogId: "compat_basic", kind: "SUMMARY", ok: true, cached: true });
       return new NextResponse(compat.summaryKo, { status: 200 });
     }
 
@@ -86,10 +89,12 @@ export async function POST(req: NextRequest) {
       data: isPremium ? { premiumKo: resultText } : { summaryKo: resultText }
     });
 
+    if (!isPremium) void logGeneration({ catalogId: "compat_basic", kind: "SUMMARY", ok: true, ms: Date.now() - tStart });
     return new NextResponse(resultText, { status: 200 });
 
   } catch (error) {
     console.error("[generate-compat] Error:", error);
+    void logGeneration({ catalogId: "compat_basic", kind: "SUMMARY", ok: false, ms: Date.now() - tStart, error: errorCode(error) });
     return NextResponse.json({ error: "Failed to generate compatibility reading" }, { status: 500 });
   }
 }

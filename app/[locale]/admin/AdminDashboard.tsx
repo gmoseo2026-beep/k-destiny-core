@@ -164,6 +164,11 @@ export interface DashboardStats {
     failCount: number;
     failRate: number;
     avgAttempts: number;
+    /** log = 생성 기록표(모든 경로), legacy = 기존 결제 리포트 저장본만 */
+    source?: "log" | "legacy";
+    since?: string | null;
+    byKind?: { kind: string; label: string; ok: number; fail: number }[];
+    recentFailures?: { productName: string; kindLabel: string; error: string; createdAt: string }[];
   };
   visitors: {
     count: number;
@@ -592,21 +597,21 @@ export default function AdminDashboard({
       )}
 
       {/* 헤더 */}
-      <header className="bg-white border-b border-line/60 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77]">
+      {/* 레이아웃 상단 바가 이미 고정돼 있어 여기서는 고정하지 않는다(휴대폰에서 겹침·줄바꿈 깨짐 방지) */}
+      <header className="bg-white border-b border-line/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 shrink-0 rounded-xl bg-[#FF5C77]/10 flex items-center justify-center text-[#FF5C77]">
               <Shield className="w-5 h-5" />
             </div>
-            <div>
-              <h1 className="text-base font-extrabold text-ink flex items-center gap-2">
-                콩닥 통합 운영 어드민
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface text-caption">Phase A</span>
-              </h1>
-              <p className="text-[11px] font-medium text-caption">21종 전 상품 · 세트 · 리포트 실패 관리 · 공개 스위치</p>
+            <div className="min-w-0">
+              <h1 className="text-base font-extrabold text-ink truncate">콩닥 운영 어드민</h1>
+              <p className="hidden sm:block text-[11px] font-medium text-caption truncate">
+                주문 · 리포트 생성 · 수동 발급 · 지표 · 상품 공개 · 회원 · 감사 로그
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
             <span className="text-xs font-semibold text-caption">관리자 모드</span>
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           </div>
@@ -1028,6 +1033,54 @@ export default function AdminDashboard({
                 <p className="text-xl font-black text-ink mt-1">{stats.reportHealth.avgAttempts}회</p>
               </div>
             </div>
+            <p className="text-[11px] text-caption -mt-3 px-1">
+              {stats.reportHealth.source === "log"
+                ? `모든 생성 경로(미리보기·결제 리포트·궁합 결과·무료 해석·오늘의 운세) 기준, 저장본 재사용 제외 · 기록 시작 ${formatDate(stats.reportHealth.since ?? null)}`
+                : "생성 기록이 아직 없어 결제 리포트 저장본 기준으로 보여 줍니다(배포 후부터 모든 경로가 기록됩니다)."}
+            </p>
+
+            {/* 종류별 생성 결과 + 최근 실패 */}
+            {stats.reportHealth.byKind && stats.reportHealth.byKind.length > 0 && (
+              <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-line bg-surface/40">
+                  <h3 className="font-extrabold text-sm text-ink">종류별 생성 결과 (최근 7일)</h3>
+                </div>
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
+                    <tr><th className="py-2.5 px-4">종류</th><th className="py-2.5 px-4">성공</th><th className="py-2.5 px-4">실패</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/40">
+                    {stats.reportHealth.byKind.map((k) => (
+                      <tr key={k.kind}>
+                        <td className="py-2.5 px-4 font-bold text-ink">{k.label}</td>
+                        <td className="py-2.5 px-4 text-emerald-600 font-bold">{k.ok}</td>
+                        <td className={`py-2.5 px-4 font-bold ${k.fail > 0 ? "text-rose-600" : "text-caption"}`}>{k.fail}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {stats.reportHealth.recentFailures && stats.reportHealth.recentFailures.length > 0 && (
+              <div className="bg-white rounded-2xl border border-rose-200 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-rose-100 bg-rose-50/50">
+                  <h3 className="font-extrabold text-sm text-rose-700">최근 생성 실패 (최근 7일, 최대 20건)</h3>
+                  <p className="text-[11px] text-caption">고객이 오류 화면을 본 경우입니다. 같은 상품이 반복되면 확인이 필요해요.</p>
+                </div>
+                <ul className="divide-y divide-line/40 text-xs">
+                  {stats.reportHealth.recentFailures.map((f, i) => (
+                    <li key={i} className="px-4 py-2.5 flex items-center justify-between gap-2">
+                      <span className="min-w-0">
+                        <span className="font-bold text-ink">{f.productName}</span>
+                        <span className="text-caption"> · {f.kindLabel}</span>
+                        {f.error && <span className="block text-[11px] text-caption truncate">{f.error}</span>}
+                      </span>
+                      <span className="shrink-0 text-[11px] text-caption">{formatDate(f.createdAt, true)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* 실패/지연 리포트 목록 */}
             <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
@@ -1333,7 +1386,9 @@ export default function AdminDashboard({
               <div className="p-4 border-b border-line bg-surface/40 flex items-center justify-between">
                 <div>
                   <h3 className="font-extrabold text-sm text-ink">미리보기(TEASER) → 결제(PAID) 전환율</h3>
-                  <p className="text-[11px] text-caption">* 최근 30일 기준 단순 비율 비교 (대략적 지표)</p>
+                  <p className="text-[11px] text-caption">
+                    * 최근 30일 · 미리보기 수는 미리보기를 본 횟수(다시 본 것 포함) · 정통 궁합은 무료 궁합 결과 생성 수 · 세트 미리보기는 대표 구성 상품에 합산
+                  </p>
                 </div>
               </div>
               <div className="overflow-x-auto">

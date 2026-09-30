@@ -26,6 +26,7 @@ import { isValidDateString, isValidTimeString } from "@/lib/validation/inputs";
 import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
+import { logGeneration, errorCode, type GenLogKind } from "@/lib/reports/genLog";
 
 type FourPillarsObj = { year: string; month: string; day: string; time: string | null };
 type ElementsScoreMap = Record<string, number>;
@@ -36,6 +37,10 @@ const YEAR_CONTEXT: Record<number, string> = {
 };
 
 export async function POST(req: Request) {
+  // 어드민 생성 기록용(개인정보 없음)
+  const tStart = Date.now();
+  let logCatalog = "annual_2026";
+  let logKind: GenLogKind = "TEASER";
   try {
     let session = null;
     try {
@@ -55,6 +60,7 @@ export async function POST(req: Request) {
     const locale = typeof body.locale === "string" ? body.locale : "ko";
 
     const productId = typeof body.productId === "string" ? body.productId : "annual_2026";
+    logCatalog = productId;
     let year = 2026;
     if (productId === "annual_2026") year = 2026;
     else if (productId === "annual_2027") year = 2027;
@@ -212,6 +218,7 @@ export async function POST(req: Request) {
         isGuest: true,
       };
 
+      void logGeneration({ catalogId: logCatalog, kind: "TEASER", ok: true, ms: Date.now() - tStart });
       return NextResponse.json({
         success: true,
         data: teaserData,
@@ -291,6 +298,7 @@ export async function POST(req: Request) {
       const fullContent = existing.content as unknown as AnnualFortuneContent;
       if (isUnlocked) {
         console.log(`[annual-timing] mode=full cache=hit genMs=0 model=cache`);
+        void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, cached: true });
         return NextResponse.json({
           success: true,
           data: { ...fullContent, locked: false },
@@ -391,6 +399,7 @@ export async function POST(req: Request) {
         locked: true,
       };
 
+      void logGeneration({ catalogId: logCatalog, kind: "TEASER", ok: true, ms: Date.now() - tStart });
       return NextResponse.json({
         success: true,
         data: teaserData,
@@ -399,6 +408,7 @@ export async function POST(req: Request) {
     }
 
     // 6. 결제 완료 회원: 전체 리포트 생성 및 DB 캐시 저장
+    logKind = "FULL";
     const t0 = Date.now();
     const prompt = buildAnnualFortunePrompt(contextBlock, year, toneGuide);
 
@@ -451,12 +461,14 @@ export async function POST(req: Request) {
     const savedContent = annualFortune.content as unknown as AnnualFortuneContent;
 
     // 7. Return full content to entitled user
+    void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, ms: Date.now() - tStart });
     return NextResponse.json({
       success: true,
       data: { ...savedContent, locked: false },
       locked: false,
     });
   } catch (error: unknown) {
+    void logGeneration({ catalogId: logCatalog, kind: logKind, ok: false, ms: Date.now() - tStart, error: errorCode(error) });
     console.error("[annual-fortune POST] Error:", error);
     return NextResponse.json(
       { error: "총운을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." },

@@ -5,6 +5,7 @@ import { CATALOG, FIRST_PURCHASE_PRICE, getProduct } from "@/lib/catalog";
 import { toCatalogId } from "@/lib/productIdentity";
 import { resolveHidden } from "@/lib/catalogVisibility";
 import { fetchVisitorCount } from "@/lib/home/visitors";
+import { teaserCatalogFromCacheKey } from "@/lib/reports/genLog";
 
 // 이메일 마스킹 헬퍼 (A2, A8)
 function maskEmail(email: string | null | undefined): string {
@@ -19,14 +20,13 @@ function maskEmail(email: string | null | undefined): string {
 
 async function loadAdminDashboardData() {
   const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-
-  const weekStart = new Date(todayStart);
-  weekStart.setDate(weekStart.getDate() - 7);
-
-  const monthStart = new Date(todayStart);
-  monthStart.setDate(monthStart.getDate() - 30);
+  // 한국 시간 자정 기준(서버는 UTC 라 예전엔 "오늘"이 오전 9시에 바뀌었다)
+  const KST_MS = 9 * 60 * 60 * 1000;
+  const kstNow = new Date(now.getTime() + KST_MS);
+  const todayStart = new Date(Date.UTC(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate()) - KST_MS);
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const weekStart = new Date(todayStart.getTime() - 7 * DAY_MS);
+  const monthStart = new Date(todayStart.getTime() - 30 * DAY_MS);
 
   const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
 
@@ -141,14 +141,14 @@ async function loadAdminDashboardData() {
       take: 30,
     }),
 
-    // 9. 최근 30일 TEASER 생성 건수 집계 (캐시 키 프리픽스별)
+    // 9. 최근 30일 미리보기 저장본(생성 기록표 도입 전 기간 보완용) — cacheKey = TEASER|FREE:<상품>:<해시>…
     prisma.generatedReport.findMany({
       where: {
-        kind: "TEASER",
+        kind: { in: ["TEASER", "FREE"] },
         createdAt: { gte: monthStart },
       },
-      select: { cacheKey: true },
-      take: 1000,
+      select: { cacheKey: true, createdAt: true },
+      take: 5000,
     }),
 
     // 10. 최근 7일 FULL 생성 성공/실패 집계
@@ -167,6 +167,29 @@ async function loadAdminDashboardData() {
     prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
     prisma.user.count({ where: { premiumEndDate: { gt: now } } }),
   ]);
+
+  // 생성 기록표(ReportGenLog): 모든 생성 경로의 성공·실패·미리보기 수. 도입 전 기간은 기존 표로 보완한다.
+  const [firstLog, genByKind7d, teaserLogs30d, recentFailures, compatRows30d] = await Promise.all([
+    prisma.reportGenLog.findFirst({ orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
+    prisma.reportGenLog.groupBy({
+      by: ["kind", "ok"],
+      where: { createdAt: { gte: weekStart }, cached: false },
+      _count: { _all: true },
+    }),
+    prisma.reportGenLog.groupBy({
+      by: ["catalogId"],
+      where: { createdAt: { gte: monthStart }, kind: { in: ["TEASER", "FREE", "COMPAT"] } },
+      _count: { _all: true },
+    }),
+    prisma.reportGenLog.findMany({
+      where: { createdAt: { gte: weekStart }, ok: false },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { catalogId: true, kind: true, error: true, createdAt: true },
+    }),
+    prisma.compatibility.findMany({ where: { createdAt: { gte: monthStart } }, select: { createdAt: true }, take: 10000 }),
+  ]);
+  const logStart = firstLog?.createdAt ?? now;
 
   // 궁합 요약 매핑 (PII 원문 제외, 점수 및 이름 앞글자만)
   const compatIds = Array.from(new Set(orders.map((o) => o.compatId).filter(Boolean))) as string[];
@@ -314,7 +337,8 @@ async function loadAdminDashboardData() {
       refundAmount += o.amount;
     }
 
-    const orderReports = reportsByOrderId.get(o.orderId) || [];
+    // 리포트 cacheKey 는 FULL:<Order.id>:<상품> (주문번호 kd_ord… 가 아니라 DB id)
+    const orderReports = reportsByOrderId.get(o.id) || [];
     const firstViewedAt = orderReports.find((r) => r.firstViewedAt)?.firstViewedAt;
 
     return {
@@ -377,13 +401,18 @@ async function loadAdminDashboardData() {
 
   // TEASER -> PAID 전환 집계 (상품별)
   const teaserCountMap: Record<string, number> = {};
+  const addTeaser = (catId: string, n: number) => {
+    teaserCountMap[catId] = (teaserCountMap[catId] || 0) + n;
+  };
+  // (1) 생성 기록표 도입 후: 미리보기를 본 횟수(같은 사람이 다시 본 것 포함)
+  for (const g of teaserLogs30d) addTeaser(g.catalogId, g._count._all);
+  // (2) 도입 전: 저장된 미리보기(사람별 1건) + 정통 궁합 무료 결과 생성 수
   for (const t of teaserCountGroup) {
-    const parts = t.cacheKey.split(":");
-    if (parts.length >= 3 && parts[0] === "TEASER") {
-      const catId = parts[2];
-      teaserCountMap[catId] = (teaserCountMap[catId] || 0) + 1;
-    }
+    if (t.createdAt >= logStart) continue;
+    const catId = teaserCatalogFromCacheKey(t.cacheKey);
+    if (catId) addTeaser(catId, 1);
   }
+  addTeaser("compat_basic", compatRows30d.filter((c) => c.createdAt < logStart).length);
 
   const teaserToPaidList = CATALOG.map((p) => {
     const tCount = teaserCountMap[p.id] || 0;
@@ -416,6 +445,24 @@ async function loadAdminDashboardData() {
     }
   }
   const avgAttempts = attemptsCount > 0 ? Number((totalAttemptsSum / attemptsCount).toFixed(1)) : 1;
+
+  // 생성 기록표 기준(모든 경로, 저장본 재사용 제외). 기록이 없으면 기존 FULL 저장본 기준으로 보여 준다.
+  const KIND_LABEL: Record<string, string> = {
+    TEASER: "유료 상품 미리보기", FREE: "무료 상품", FULL: "결제 리포트", COMPAT: "궁합 결과",
+    SUMMARY: "궁합 무료 해석", DAILY: "오늘의 운세",
+  };
+  const byKind = new Map<string, { ok: number; fail: number }>();
+  for (const g of genByKind7d) {
+    const cur = byKind.get(g.kind) || { ok: 0, fail: 0 };
+    if (g.ok) cur.ok += g._count._all;
+    else cur.fail += g._count._all;
+    byKind.set(g.kind, cur);
+  }
+  const hasGenLogs = byKind.size > 0;
+  const logOk = [...byKind.values()].reduce((a, b) => a + b.ok, 0);
+  const logFail = [...byKind.values()].reduce((a, b) => a + b.fail, 0);
+  const healthOk = hasGenLogs ? logOk : fullSuccessCount;
+  const healthFail = hasGenLogs ? logFail : fullFailCount;
 
   // 전체 상품 목록 + 오버라이드 상태 (A9)
   const formattedProducts = CATALOG.map((p) => {
@@ -513,13 +560,19 @@ async function loadAdminDashboardData() {
     },
     teaserToPaid: teaserToPaidList,
     reportHealth: {
-      successCount: fullSuccessCount,
-      failCount: fullFailCount,
-      failRate:
-        fullSuccessCount + fullFailCount > 0
-          ? Math.round((fullFailCount / (fullSuccessCount + fullFailCount)) * 100)
-          : 0,
+      successCount: healthOk,
+      failCount: healthFail,
+      failRate: healthOk + healthFail > 0 ? Math.round((healthFail / (healthOk + healthFail)) * 100) : 0,
       avgAttempts,
+      source: (hasGenLogs ? "log" : "legacy") as "log" | "legacy",
+      since: firstLog ? firstLog.createdAt.toISOString() : null,
+      byKind: [...byKind.entries()].map(([kind, v]) => ({ kind, label: KIND_LABEL[kind] ?? kind, ok: v.ok, fail: v.fail })),
+      recentFailures: recentFailures.map((f) => ({
+        productName: getProduct(f.catalogId)?.name ?? (f.catalogId === "daily" ? "오늘의 운세" : f.catalogId),
+        kindLabel: KIND_LABEL[f.kind] ?? f.kind,
+        error: f.error ?? "",
+        createdAt: f.createdAt.toISOString(),
+      })),
     },
     visitors: {
       count: visitorData.count,

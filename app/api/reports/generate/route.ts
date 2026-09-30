@@ -46,6 +46,7 @@ import { generate2027Report } from "@/lib/premium/generate2027";
 import { generateNamingReport } from "@/lib/premium/generateNaming";
 import { generateDatesReport } from "@/lib/premium/generateDates";
 import surnamesRaw from "@/data/naming/surnames.json";
+import { logGeneration, errorCode } from "@/lib/reports/genLog";
 
 const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
   Object.entries(surnamesRaw as Record<string, Array<{ hanja: string }>>).map(([hangul, arr]) => [
@@ -104,6 +105,7 @@ async function markViewed(reportId: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const t0 = Date.now();
   let body: Record<string, unknown>;
   try {
     const b: unknown = await req.json();
@@ -162,6 +164,7 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildDaeun2027Teaser(p);
+        void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "TEASER", score: teaser.yearScore, data: teaser }, { headers: NO_STORE });
       }
 
@@ -184,6 +187,7 @@ export async function POST(req: NextRequest) {
           return err(503, "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요.");
         }
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, cached: true });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score: env.score, data: env.data }, { headers: NO_STORE });
       }
       if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING", reportId: claim.reportId }, { status: 202, headers: NO_STORE });
@@ -195,9 +199,11 @@ export async function POST(req: NextRequest) {
         const envelope: ReportEnvelope = { version: 1, score, data: content };
         await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, PREMIUM_MODELS[0]);
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score, data: content }, { headers: NO_STORE });
       } catch (e) {
         await failGeneration(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: false, ms: Date.now() - t0, error: errorCode(e) });
         console.error(`[reports/generate] premium 2027 failed`, e);
         return err(500, "리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
       }
@@ -209,6 +215,7 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildNamingTeaser(namingInput);
+        void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "TEASER", score: 0, data: teaser }, { headers: NO_STORE });
       }
 
@@ -231,6 +238,7 @@ export async function POST(req: NextRequest) {
           return err(503, "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요.");
         }
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, cached: true });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score: env.score, data: env.data }, { headers: NO_STORE });
       }
       if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING", reportId: claim.reportId }, { status: 202, headers: NO_STORE });
@@ -242,9 +250,11 @@ export async function POST(req: NextRequest) {
         const envelope: ReportEnvelope = { version: 1, score, data: content };
         await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, PREMIUM_MODELS[0]);
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score, data: content }, { headers: NO_STORE });
       } catch (e) {
         await failGeneration(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: false, ms: Date.now() - t0, error: errorCode(e) });
         console.error(`[reports/generate] premium naming failed`, e);
         return err(500, "리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
       }
@@ -256,6 +266,7 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildDateSelectionTeaser(dateInput);
+        void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "TEASER", score: 0, data: teaser }, { headers: NO_STORE });
       }
 
@@ -278,6 +289,7 @@ export async function POST(req: NextRequest) {
           return err(503, "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요.");
         }
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, cached: true });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score: env.score, data: env.data }, { headers: NO_STORE });
       }
       if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING", reportId: claim.reportId }, { status: 202, headers: NO_STORE });
@@ -296,9 +308,11 @@ export async function POST(req: NextRequest) {
         const envelope: ReportEnvelope = { version: 1, score, data: content };
         await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, PREMIUM_MODELS[0]);
         await markViewed(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: true, ms: Date.now() - t0 });
         return NextResponse.json({ kind: "FULL", reportId: claim.reportId, score, data: content }, { headers: NO_STORE });
       } catch (e) {
         await failGeneration(claim.reportId);
+        void logGeneration({ catalogId, kind: "FULL", ok: false, ms: Date.now() - t0, error: errorCode(e) });
         console.error(`[reports/generate] premium dates failed`, e);
         return err(500, "리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
       }
@@ -343,6 +357,7 @@ export async function POST(req: NextRequest) {
       return err(503, "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요.");
     }
     if (kind === "FULL") await markViewed(claim.reportId);
+    void logGeneration({ catalogId, kind, ok: true, cached: true });
     return NextResponse.json({ kind, reportId: claim.reportId, score: env.score, data: env.data }, { headers: NO_STORE });
   }
   if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING", reportId: claim.reportId }, { status: 202, headers: NO_STORE });
@@ -372,9 +387,11 @@ export async function POST(req: NextRequest) {
     const envelope: ReportEnvelope = { version: 1, score: subject.score, data };
     await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, model);
     if (kind === "FULL") await markViewed(claim.reportId);
+    void logGeneration({ catalogId, kind, ok: true, ms: Date.now() - t0 });
     return NextResponse.json({ kind, reportId: claim.reportId, score: subject.score, data }, { headers: NO_STORE });
   } catch (e) {
     await failGeneration(claim.reportId);
+    void logGeneration({ catalogId, kind, ok: false, ms: Date.now() - t0, error: errorCode(e) });
     console.error(`[reports/generate] ${kind} ${catalogId} failed`, e);
     return err(500, "리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
   }

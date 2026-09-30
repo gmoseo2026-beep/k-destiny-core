@@ -4,10 +4,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { genAI, PREMIUM_MODELS, LOCALE_CONFIG, compatContextBlock, buildCompatPrompt, repairJSON } from "@/lib/destinyGen";
 import { isEntitled } from "@/lib/entitlement";
 import prisma from "@/lib/prisma";
+import { logGeneration, errorCode } from "@/lib/reports/genLog";
 
 type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
 
 export async function POST(req: NextRequest) {
+  const tStart = Date.now();
   try {
     const session = await getServerSession(authOptions);
     const body = await req.json();
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
 
     if (existingReport) {
       console.log(`[deep-report-timing] cache=hit genMs=0 dbMs=0 model=cache`);
+      void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: true, cached: true });
       return NextResponse.json(existingReport.content, { status: 200 });
     }
 
@@ -100,6 +103,7 @@ export async function POST(req: NextRequest) {
       const fr = lastResult?.response?.candidates?.[0]?.finishReason;
       console.error(`[deep-report parse-fail] finishReason=${fr} textLen=${resultText?.length ?? 0}`);
       console.error("Failed to parse JSON from AI response:", resultText);
+      void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: false, ms: Date.now() - tStart, error: "parse_fail" });
       return NextResponse.json({ error: "Failed to generate valid deep report JSON" }, { status: 500 });
     }
 
@@ -114,10 +118,12 @@ export async function POST(req: NextRequest) {
     const tDone = Date.now();
     console.log(`[deep-report-timing] cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${modelName}`);
 
+    void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: true, ms: Date.now() - tStart });
     return NextResponse.json(parsedJson, { status: 200 });
 
   } catch (error) {
     console.error("[deep-report] Error:", error);
+    void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: false, ms: Date.now() - tStart, error: errorCode(error) });
     return NextResponse.json({ error: "Failed to generate deep report" }, { status: 500 });
   }
 }

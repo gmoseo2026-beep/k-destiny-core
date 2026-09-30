@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { calculateFourPillars } from "@/lib/saju";
 import { calculateCompatibility } from "@/lib/compatibility";
 import prisma from "@/lib/prisma";
+import { logGeneration } from "@/lib/reports/genLog";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 
 // 생년월일(YYYY-MM-DD) 유효성 및 미래 날짜 검증
@@ -164,6 +165,9 @@ export async function POST(req: NextRequest) {
         sourceCompatId,
       },
     });
+
+    // 정통 궁합 무료 결과 = 정통 궁합의 "미리보기"(어드민 전환율 집계용)
+    void logGeneration({ catalogId: "compat_basic", kind: "COMPAT", ok: true });
 
     return NextResponse.json({
       id: compat.id,

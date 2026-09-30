@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
+import { logGeneration, errorCode } from "@/lib/reports/genLog";
 import {
   genAI,
   PREMIUM_MODELS,
@@ -24,6 +25,7 @@ function getTodayKSTStr(): string {
 }
 
 export async function POST(req: Request) {
+  const tStart = Date.now();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -58,6 +60,7 @@ export async function POST(req: Request) {
 
     if (existing) {
       console.log(`[daily-timing] cache=hit userId=${userId} date=${todayStr}`);
+      void logGeneration({ catalogId: "daily", kind: "DAILY", ok: true, cached: true });
       return NextResponse.json({
         success: true,
         data: existing.content,
@@ -171,6 +174,7 @@ export async function POST(req: Request) {
           content: jsonResult as any,
         },
       });
+      void logGeneration({ catalogId: "daily", kind: "DAILY", ok: true, ms: Date.now() - tStart });
       return NextResponse.json({ success: true, data: saved.content });
     } catch (e) {
       if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
@@ -181,6 +185,7 @@ export async function POST(req: Request) {
     }
   } catch (error: any) {
     console.error("[daily-fortune POST] Error:", error);
+    void logGeneration({ catalogId: "daily", kind: "DAILY", ok: false, ms: Date.now() - tStart, error: errorCode(error) });
     return NextResponse.json(
       { error: "오늘의 데일리 운세를 불러오지 못했습니다. 잠시 후 다시 시도해주세요." },
       { status: 500 }
