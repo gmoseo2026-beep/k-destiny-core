@@ -1,11 +1,12 @@
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import HomeHero from "@/components/home/HomeHero";
+import HomeHeroCompact from "@/components/home/HomeHeroCompact";
+import HomeExplore from "@/components/home/HomeExplore";
+import HomeStickyCta from "@/components/home/HomeStickyCta";
 import DashboardView from "@/components/DashboardView";
 import TrustBanner from "@/components/home/TrustBanner";
 import HomeSearch from "@/components/home/HomeSearch";
-import ProductGrid from "@/components/home/ProductGrid";
 import PremiumBanner from "@/components/home/PremiumBanner";
 import HomeRankingView from "@/components/home/HomeRankingView";
 import MoreContentCards from "@/components/home/MoreContentCards";
@@ -16,6 +17,7 @@ import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { fetchHomeRanking } from "@/lib/home/ranking";
 import { fetchVisitorCount } from "@/lib/home/visitors";
 import { prisma } from "@/lib/prisma";
+import { buildExploreTabs } from "@/lib/home/explore";
 
 export const revalidate = 60;
 
@@ -36,6 +38,9 @@ export default async function Home({ params }: PageProps) {
   const visibleProducts = effectiveCatalog.filter((p) => !p.isHidden);
   const products = visibleProducts.filter((p) => p.tier !== "premium");
   const premiumProducts = visibleProducts.filter((p) => p.tier === "premium");
+  const explore = buildExploreTabs(visibleProducts);
+  const exploreTotal = visibleProducts.filter((p) => p.type !== "SET").length;
+  const isMember = Boolean(session?.user?.id);
 
   // 순위 및 방문자 통계 병렬 조회 (안전하게 fallback 포함)
   const [ranking, visitorData] = await Promise.all([
@@ -44,21 +49,23 @@ export default async function Home({ params }: PageProps) {
   ]);
 
   return (
-    <div className="w-full min-h-screen bg-background text-ink pb-12">
-      {session?.user?.id ? (
+    <div className={`w-full min-h-screen bg-background text-ink ${isMember ? "pb-12" : "pb-28"}`}>
+      {/* 첫 화면: 무엇이 있는지(탭·추천·격자·프리미엄)를 먼저 보여 준다 */}
+      {isMember ? (
         <DashboardView effectiveProducts={visibleProducts} />
       ) : (
-        <HomeHero locale={locale} />
+        <HomeHeroCompact total={exploreTotal} />
       )}
-      <TrustBanner />
-      <HomeSearch locale={locale} products={products} />
-      <ProductGrid locale={locale} products={products} />
+      <HomeExplore locale={locale} tabs={explore.tabs} picks={explore.picks} />
       <SetRow locale={locale} products={products} />
       <PremiumBanner locale={locale} premiumProducts={premiumProducts} />
       <HomeRankingView locale={locale} ranking={ranking} />
+      <TrustBanner />
+      <HomeSearch locale={locale} products={products} />
       <MoreContentCards locale={locale} products={products} />
       <VisitorSection count={visitorData.count} startedAt={visitorData.startedAt} />
       <BrandStory />
+      {!isMember && <HomeStickyCta locale={locale} />}
     </div>
   );
 }

@@ -13,6 +13,8 @@ const ALLOWED_FILES = new Set([
   // Core catalog & resolver
   path.normalize("lib/catalog.ts"),
   path.normalize("lib/catalogVisibility.ts"),
+  // 홈 탐색 탭: 서버가 공개 판정한 목록을 받아 거른다
+  path.normalize("lib/home/explore.ts"),
 
   // Server Pages using effectiveCatalog / effectiveProduct
   path.normalize("app/[locale]/products/[id]/page.tsx"),
