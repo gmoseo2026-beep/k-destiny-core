@@ -125,7 +125,8 @@ def main():
         sys.exit(1)
 
     print("\nBuild SUCCESS. Restarting PM2...")
-    run_cmd(client, "cd /root/k-destiny-core && pm2 restart all --update-env 2>&1")
+    # 웹 앱만 재시작한다. `restart all` 은 일부러 멈춰 둔 k-destiny-autopilot(Hermes)까지 되살린다.
+    run_cmd(client, "cd /root/k-destiny-core && pm2 restart k-destiny --update-env 2>&1")
     run_cmd(client, "sleep 4 && curl -sI http://localhost:3000/en 2>&1 | head -1")
 
     # 5. POST-DEPLOY VERIFICATION — prove the NEW code is actually serving.
