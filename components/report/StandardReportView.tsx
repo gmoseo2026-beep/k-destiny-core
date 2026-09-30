@@ -18,6 +18,8 @@ interface StandardReportViewProps {
   score: number;
   data: StandardReport | StandardTeaser;
   lockedSpecs?: LockedSectionInfo[];
+  /** 티저의 잠긴 칸을 누르면 결제 안내를 연다(없으면 누를 수 없는 카드) */
+  onLockedClick?: () => void;
 }
 
 function isFullReport(mode: "teaser" | "full", data: StandardReport | StandardTeaser): data is StandardReport {
@@ -29,6 +31,7 @@ export default function StandardReportView({
   score,
   data,
   lockedSpecs = [],
+  onLockedClick,
 }: StandardReportViewProps) {
   if (isFullReport(mode, data)) {
     return (
@@ -149,11 +152,9 @@ export default function StandardReportView({
       <div className="flex flex-col gap-3">
         {(teaser.hooks || []).map((hook, idx) => {
           const specTitle = lockedSpecs[idx]?.title || `심층 분석 ${idx + 2}`;
-          return (
-            <div
-              key={idx}
-              className="bg-surface-soft rounded-2xl p-4 border border-line flex items-center justify-between gap-3 text-left"
-            >
+          // 훅 문장은 궁금증을 만드는 핵심이라 한 줄로 자르지 않고 두 줄까지 보여 준다
+          const body = (
+            <>
               <div className="flex flex-col gap-1 min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-ink truncate">{specTitle}</span>
@@ -161,13 +162,28 @@ export default function StandardReportView({
                     잠금
                   </Badge>
                 </div>
-                <p className="text-xs text-caption leading-snug truncate">
+                <p className="text-xs text-text-2 leading-snug line-clamp-2">
                   {hook}
                 </p>
               </div>
               <div className="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center shrink-0 shadow-2xs">
                 <Lock className="w-4 h-4 text-coral" />
               </div>
+            </>
+          );
+          const cls = "bg-surface-soft rounded-2xl p-4 border border-line flex items-center justify-between gap-3 text-left";
+          return onLockedClick ? (
+            <button
+              key={idx}
+              type="button"
+              onClick={onLockedClick}
+              className={`${cls} w-full transition-all hover:border-coral/40 active:scale-[0.98]`}
+            >
+              {body}
+            </button>
+          ) : (
+            <div key={idx} className={cls}>
+              {body}
             </div>
           );
         })}

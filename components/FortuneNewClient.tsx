@@ -14,6 +14,7 @@ import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
+import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
@@ -264,7 +265,7 @@ export default function FortuneNewClient({
     const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
 
     return (
-      <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-12">
+      <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
         <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>
 
         {resultData.isAnnual && resultData.annualData ? (
@@ -297,6 +298,14 @@ export default function FortuneNewClient({
             score={resultData.score}
             data={resultData.reportData}
             lockedSpecs={lockedSpecs}
+            onLockedClick={
+              product && !product.isFree
+                ? () => {
+                    trackTeaserUnlock(product.id, "locked_card");
+                    handleOpenCheckout();
+                  }
+                : undefined
+            }
           />
         ) : null}
 
@@ -326,15 +335,12 @@ export default function FortuneNewClient({
         )}
 
         {/* Paid Teaser CTA */}
-        {!product?.isFree && !resultData.isAnnual && (
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={handleOpenCheckout}
-              className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all"
-            >
-              전체 리포트 열기 ({product ? priceLabel(product) : ""})
-            </button>
-          </div>
+        {product && !product.isFree && !resultData.isAnnual && (
+          <TeaserUnlockPanel
+            product={product}
+            lockedTitles={lockedSpecs.map((s) => s.title)}
+            onUnlock={handleOpenCheckout}
+          />
         )}
 
         {/* 이 운세가 든 세트 — 입력한 정보 그대로 세트로 결제 */}

@@ -12,6 +12,7 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
+import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -281,23 +282,24 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
 
     return (
-      <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-12">
+      <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
         <h2 className="text-2xl font-bold tracking-tight">우리의 {product.name} 미리보기</h2>
         <StandardReportView
           mode="teaser"
           score={teaserResult.score}
           data={teaserResult.data}
           lockedSpecs={lockedSpecs}
+          onLockedClick={() => {
+            trackTeaserUnlock(product.id, "locked_card");
+            handleOpenCheckout();
+          }}
         />
 
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={handleOpenCheckout}
-            className="w-full bg-coral hover:bg-coral active:scale-[0.97] text-white py-4 px-6 rounded-2xl font-bold text-base shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all"
-          >
-            전체 리포트 열기 ({priceLabel(product)})
-          </button>
-        </div>
+        <TeaserUnlockPanel
+          product={product}
+          lockedTitles={lockedSpecs.map((s) => s.title)}
+          onUnlock={handleOpenCheckout}
+        />
 
         {upsellSets.length > 0 && (
           <SetUpsell
