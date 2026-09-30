@@ -64,15 +64,17 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
         </div>
       )}
 
-      {/* Hero Title */}
-      <div className="w-full max-w-md text-center mb-6">
-        <h1 className="text-2xl font-black text-ink tracking-tight">
-          내 사주 정보 입력
-        </h1>
-        <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
-          가장 정확한 사주 풀이를 위해 생년월일을 입력해주세요 ✨
-        </p>
-      </div>
+      {/* Hero Title — 저장된 사주로 바로 미리보기(auto=1)일 땐 입력 안내가 결과 위에 남지 않게 숨긴다 */}
+      {!(auto === "1" && profile) && (
+        <div className="w-full max-w-md text-center mb-6">
+          <h1 className="text-2xl font-black text-ink tracking-tight">
+            내 사주 정보 입력
+          </h1>
+          <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
+            가장 정확한 사주 풀이를 위해 생년월일을 입력해주세요 ✨
+          </p>
+        </div>
+      )}
 
       {/* Form Component */}
       <FortuneNewClient

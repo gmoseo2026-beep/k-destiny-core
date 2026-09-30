@@ -169,7 +169,8 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
     .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99))
     .slice(0, 3);
 
-  const displayedHistory = showAllHistory ? historyItems : historyItems.slice(0, 5);
+  // 기본은 가장 최근 1개만 펼쳐 두고, 나머지는 [펼치기]로 본다(기록이 쌓이면 화면이 너무 길어짐)
+  const displayedHistory = showAllHistory ? historyItems : historyItems.slice(0, 1);
 
   // 지난 궁합 이어보기: 같은 두 사람으로 바로 볼 수 있는 커플 상품(공개 중인 것만)
   const CONTINUE_IDS = ["inner_mind", "secret_love", "marriage", "reunion"];
@@ -387,7 +388,7 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
           </div>
         )}
 
-        {/* 5. 지난 궁합 기록 (원형 배지, 하트, 5개 초과 시 더 보기) */}
+        {/* 5. 지난 궁합 기록 (최근 1개 + 접힌 나머지) */}
         <div className="mt-6 rounded-2xl bg-white border border-line p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-ink">지난 궁합 기록</h3>
@@ -431,14 +432,14 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
                     <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-1 group-hover:text-coral transition-all duration-150 shrink-0" />
                   </Link>
                   {continueProducts.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 border-t border-line/70 px-3 py-2">
-                      <span className="text-[10px] font-bold text-caption mr-0.5">이어보기</span>
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap border-t border-line/70 px-3 py-2">
+                      <span className="shrink-0 text-[10px] font-bold text-caption mr-0.5">이어보기</span>
                       {continueProducts.map((p) => (
                         <Link
                           key={p.id}
                           href={`/compat/new?productId=${p.id}&from=${item.id}`}
                           onClick={() => trackEvent("compat_continue_click", { productId: p.id })}
-                          className="rounded-full bg-coral-soft px-2.5 py-1 text-[11px] font-bold text-coral-deep active:scale-[0.96] transition-all"
+                          className="shrink-0 rounded-full bg-coral-soft px-2.5 py-1 text-[11px] font-bold text-coral-deep active:scale-[0.96] transition-all"
                         >
                           {p.gridLabel || p.name}
                         </Link>
@@ -449,13 +450,17 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
                 ))}
               </div>
 
-              {historyItems.length > 5 && (
+              {historyItems.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => setShowAllHistory(!showAllHistory)}
-                  className="w-full mt-3 py-2 text-center text-xs font-bold text-caption hover:text-coral flex items-center justify-center gap-1 transition-colors duration-150"
+                  aria-expanded={showAllHistory}
+                  onClick={() => {
+                    if (!showAllHistory) trackEvent("compat_history_expand", { count: historyItems.length });
+                    setShowAllHistory(!showAllHistory);
+                  }}
+                  className="w-full mt-3 py-2.5 rounded-xl bg-surface-soft text-center text-xs font-bold text-ink hover:text-coral flex items-center justify-center gap-1 transition-colors duration-150 active:scale-[0.98]"
                 >
-                  <span>{showAllHistory ? "접기" : `더 보기 (${historyItems.length - 5}개 더)`}</span>
+                  <span>{showAllHistory ? "접기" : `지난 궁합 ${historyItems.length - 1}개 더 펼치기`}</span>
                   {showAllHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
               )}
