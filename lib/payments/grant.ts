@@ -1,9 +1,12 @@
 import prisma from "@/lib/prisma";
 import { getProduct } from "@/lib/catalog";
 import { toCatalogId } from "@/lib/productIdentity";
+import { sendTelegramMessage } from "@/lib/telegram";
 
 export async function applyPaidOrder(orderId: string, providerTxId?: string) {
-  return await prisma.$transaction(async (tx) => {
+  // 결제 알림은 트랜잭션 커밋 후에만 보낸다(롤백된 결제를 "매출"로 알리지 않도록). PII 없음.
+  let notice: string | null = null;
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { orderId } });
     if (!order) return { ok: false, reason: "no_order" };
 
@@ -28,6 +31,7 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
 
       const catalogId = toCatalogId(pType, pKey, cId) ?? "";
       const accessDays = getProduct(catalogId)?.accessDays ?? 90;
+      notice = `💰 <b>새 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: ${getProduct(catalogId)?.name ?? catalogId}\n• 주문번호: <code>${orderId}</code>`;
       const expiresAt = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000);
 
       if (pType && pKey) {
@@ -57,6 +61,7 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
       }
     } else if (order.type === "PERIOD_PASS" && order.userId) {
       const months = order.planId === "1_MONTH" ? 1 : order.planId === "3_MONTHS" ? 3 : 0;
+      notice = `💰 <b>새 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: 기간권 ${order.planId ?? ""}\n• 주문번호: <code>${orderId}</code>`;
       if (months > 0) {
         const user = await tx.user.findUnique({ where: { id: order.userId }, select: { premiumEndDate: true } });
         const now = new Date();
@@ -71,6 +76,11 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
 
     return { ok: true };
   });
+
+  if (notice) {
+    sendTelegramMessage(notice).catch((e) => console.error("[applyPaidOrder] Telegram notify failed:", e));
+  }
+  return result;
 }
 
 

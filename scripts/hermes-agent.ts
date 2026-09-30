@@ -131,10 +131,9 @@ async function compositeImage(overlayText: string): Promise<string> {
   // Ensure output directory exists
   if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  // Get image dimensions
-  const metadata = await sharp(bgPath).metadata();
-  const imgWidth = metadata.width || 1080;
-  const imgHeight = metadata.height || 1080;
+  // typography settings for 1080x1080 output
+  const imgWidth = 1080;
+  const imgHeight = 1080;
 
   // Typography settings
   const fontSize = Math.round(imgWidth * 0.055); // ~5.5% of width
