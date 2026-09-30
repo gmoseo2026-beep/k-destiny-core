@@ -44,6 +44,8 @@ interface FortuneNewClientProps {
   } | null;
   preview?: boolean;
   visibleIds?: string[];
+  /** 회원 화면 "내 정보로 바로 보기": 저장된 사주 정보로 입력 화면 없이 바로 미리보기 */
+  autoPreview?: boolean;
 }
 
 export default function FortuneNewClient({
@@ -52,6 +54,7 @@ export default function FortuneNewClient({
   initialProfile,
   preview = false,
   visibleIds,
+  autoPreview = false,
 }: FortuneNewClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -161,6 +164,9 @@ export default function FortuneNewClient({
   };
   const handleOpenCheckout = () => openCheckoutFor(currentProductId);
 
+  const handleSubmitRef = React.useRef<((e: React.FormEvent) => Promise<void>) | null>(null);
+  const autoRanRef = React.useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -237,6 +243,20 @@ export default function FortuneNewClient({
       setIsLoading(false);
     }
   };
+
+  // 최신 handleSubmit 을 ref 에 둔다(아래 자동 미리보기가 쓴다). 이 이펙트가 자동 실행 이펙트보다 먼저 돈다.
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  });
+
+  // 저장된 사주 정보가 있으면 입력 화면을 건너뛰고 바로 미리보기(한 번만)
+  useEffect(() => {
+    if (!autoPreview || autoRanRef.current || !initialProfile) return;
+    if (!formValues.year || !formValues.month || !formValues.day) return;
+    autoRanRef.current = true;
+    trackEvent("quick_preview_auto", { productId: currentProductId });
+    void handleSubmitRef.current?.({ preventDefault() {} } as React.FormEvent);
+  }, [autoPreview, initialProfile, formValues.year, formValues.month, formValues.day, currentProductId]);
 
   // Result View
   if (resultData) {

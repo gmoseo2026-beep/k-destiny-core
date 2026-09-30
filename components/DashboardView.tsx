@@ -7,6 +7,10 @@ import Image from "next/image";
 import { ArrowRight, ChevronDown, ChevronUp, Bell, Calendar } from "lucide-react";
 import { subscribeToPush } from "@/lib/push";
 import { CatalogItem, priceLabel } from "@/lib/catalog";
+import DailyFortuneCard from "@/components/member/DailyFortuneCard";
+import QuickPreviewRow from "@/components/member/QuickPreviewRow";
+import FirstPurchaseCard from "@/components/member/FirstPurchaseCard";
+import { trackEvent } from "@/lib/gtag";
 
 const noopSubscribe = () => () => {};
 const readNotifPermission = (): string =>
@@ -167,6 +171,12 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
 
   const displayedHistory = showAllHistory ? historyItems : historyItems.slice(0, 5);
 
+  // 지난 궁합 이어보기: 같은 두 사람으로 바로 볼 수 있는 커플 상품(공개 중인 것만)
+  const CONTINUE_IDS = ["inner_mind", "secret_love", "marriage", "reunion"];
+  const continueProducts = CONTINUE_IDS.map((id) => allProducts.find((p) => p.id === id)).filter(
+    (p): p is CatalogItem => !!p,
+  );
+
   return (
     <div className="w-full max-w-[480px] mx-auto px-4 py-8 relative">
       {claimToast && (
@@ -216,6 +226,9 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
           </div>
         </div>
 
+        {/* 오늘의 운세(매일 새로) — 회원이 매일 올 이유 */}
+        <DailyFortuneCard isPassActive={isPassActive} />
+
         {/* 2. 주 행동 카드: 흰 카드 + line 테두리 + 커플 두근이 3D 88px */}
         <div className="rounded-2xl bg-white border border-line p-5 shadow-xs">
           <div className="flex items-center justify-between gap-4">
@@ -250,7 +263,10 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
           </div>
         </div>
 
-        {/* 3. 바로가기 격자 (총운, 보관함, 패스 회원 조건부 주간운세) */}
+        {/* 내 정보로 바로 보기(입력 없이 무료 미리보기) */}
+        <QuickPreviewRow products={allProducts} />
+
+        {/* 3. 바로가기 격자 (총운, 보관함) — 주간 운세는 오늘의 운세 카드에서 이어진다 */}
         <div className="grid grid-cols-2 gap-3 mt-4">
           {/* 내 2026 총운 */}
           <Link
@@ -300,29 +316,10 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
             </div>
           </Link>
 
-          {/* 이번 주 운세 (패스 활성 회원만, 두 칸 아래 한 줄 가로 카드) */}
-          {isPassActive && (
-            <Link
-              href={`/fortune/weekly`}
-              onClick={() => handleCardClick("weekly_fortune")}
-              className="block group col-span-2"
-            >
-              <div className="rounded-2xl bg-white border border-line p-4 shadow-xs hover:bg-surface-soft transition-all duration-150 active:scale-[0.96] flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-surface-soft flex items-center justify-center text-coral border border-line/60 text-lg shrink-0">
-                  ✨
-                </div>
-                <div>
-                  <h3 className="text-xs sm:text-sm font-extrabold text-ink group-hover:text-coral transition-colors duration-150">
-                    이번 주 종합 운세
-                  </h3>
-                  <p className="text-[11px] text-caption font-medium mt-0.5 leading-snug">
-                    매주 월요일 주간 흐름
-                  </p>
-                </div>
-              </div>
-            </Link>
-          )}
         </div>
+
+        {/* 회원 첫 결제 혜택(아직 결제 전인 회원만) */}
+        <FirstPurchaseCard />
 
         {/* 4. 이어서 보면 좋은 리포트 (가로 카드 3개) */}
         {recommendedReports.length > 0 && (
@@ -407,11 +404,11 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
             <>
               <div className="space-y-2.5 mt-3">
                 {displayedHistory.map((item) => (
+                  <div key={item.id} className="rounded-xl border border-line bg-white">
                   <Link
-                    key={item.id}
                     href={`/compat/${item.shareToken}`}
                     onClick={() => handleCardClick(`history_${item.id}`)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white border border-line hover:bg-surface-soft hover:border-coral/30 transition-all duration-150 active:scale-[0.96] group"
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-surface-soft transition-all duration-150 active:scale-[0.98] group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-full bg-coral flex items-center justify-center text-white font-black text-xs shrink-0 shadow-2xs">
@@ -433,6 +430,22 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
                     </div>
                     <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-1 group-hover:text-coral transition-all duration-150 shrink-0" />
                   </Link>
+                  {continueProducts.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 border-t border-line/70 px-3 py-2">
+                      <span className="text-[10px] font-bold text-caption mr-0.5">이어보기</span>
+                      {continueProducts.map((p) => (
+                        <Link
+                          key={p.id}
+                          href={`/compat/new?productId=${p.id}&from=${item.id}`}
+                          onClick={() => trackEvent("compat_continue_click", { productId: p.id })}
+                          className="rounded-full bg-coral-soft px-2.5 py-1 text-[11px] font-bold text-coral-deep active:scale-[0.96] transition-all"
+                        >
+                          {p.gridLabel || p.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  </div>
                 ))}
               </div>
 

@@ -42,7 +42,7 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
   };
 
   return (
-    <section className="w-full max-w-[480px] mx-auto px-4 pt-3" aria-label="사주 풀이 둘러보기">
+    <section id="explore" className="w-full max-w-[480px] mx-auto px-4 pt-3 scroll-mt-16" aria-label="사주 풀이 둘러보기">
       {/* 카테고리 탭 */}
       <div ref={tabsRef} role="tablist" aria-label="분류" className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1 scroll-mt-16">
         {tabs.map((t) => (

@@ -7,6 +7,7 @@ import { isSellableFor, FIRST_PURCHASE_PRICE } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { canPreview } from "@/lib/preview";
+import { isFirstPurchaseEligible } from "@/lib/payments/firstPurchase";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -67,11 +68,7 @@ export async function POST(req: NextRequest) {
       let amount = catalogItem.price;
       const sessionUserId = session?.user?.id ?? null;
       if (sessionUserId && catalogItem.tier === "standard" && catalogItem.type !== "SET") {
-        const anyPaid = await prisma.order.findFirst({
-          where: { userId: sessionUserId, status: "PAID", provider: { not: "admin_manual" }, amount: { gt: 0 } },
-          select: { id: true },
-        });
-        if (!anyPaid) amount = Math.min(amount, FIRST_PURCHASE_PRICE);
+        if (await isFirstPurchaseEligible(sessionUserId)) amount = Math.min(amount, FIRST_PURCHASE_PRICE);
       }
 
       const { productType, productKey } = toStorageKey(catalogItem.id);

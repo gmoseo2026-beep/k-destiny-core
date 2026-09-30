@@ -12,7 +12,7 @@ import {
   repairJSON,
   DailyFortuneContent,
 } from "@/lib/destinyGen";
-import { isEntitled } from "@/lib/entitlement";
+import { Prisma } from "@prisma/client";
 
 type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
 
@@ -34,26 +34,8 @@ export async function POST(req: Request) {
     }
     const userId = session.user.id;
 
-    // 1. Check pass entitlement (ADMIN / SUBSCRIPTION only — 단건 결제자 미제공)
-    const entitlement = await isEntitled({
-      userId,
-      role: session.user.role,
-      tier: session.user.tier,
-    });
-    const isPassMember =
-      entitlement.entitled &&
-      (entitlement.reason === "ADMIN" || entitlement.reason === "SUBSCRIPTION");
-
-    if (!isPassMember) {
-      return NextResponse.json(
-        {
-          error: "콩닥 플러스 패스(30일 이용권) 회원 전용 매일 운세 코치 서비스입니다.",
-          reason: entitlement.reason,
-          locked: true,
-        },
-        { status: 403 }
-      );
-    }
+    // 1. 오늘의 운세는 로그인 회원 누구나(사주 정보 저장 필요). 예전에는 30일 패스 전용이었다.
+    //    비용: 회원·날짜별 1회 생성 후 userDailyFortune 에 저장해 재사용한다.
 
     let body: any = {};
     try {
@@ -89,7 +71,7 @@ export async function POST(req: Request) {
 
     if (!userProfile) {
       return NextResponse.json(
-        { error: "사주 프로필이 없습니다. 프로필을 먼저 등록해주세요." },
+        { error: "사주 프로필이 없습니다. 프로필을 먼저 등록해주세요.", needProfile: true },
         { status: 400 }
       );
     }
@@ -141,7 +123,8 @@ export async function POST(req: Request) {
           temperature: 0.7,
           topP: 0.9,
           topK: 40,
-          maxOutputTokens: 768,
+          maxOutputTokens: 1024,
+          responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget: 0 },
         } as any,
       });
@@ -157,7 +140,8 @@ export async function POST(req: Request) {
           temperature: 0.7,
           topP: 0.9,
           topK: 40,
-          maxOutputTokens: 768,
+          maxOutputTokens: 1024,
+          responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget: 0 },
         } as any,
       });
@@ -178,19 +162,23 @@ export async function POST(req: Request) {
     // 결정론적 점수 주입
     jsonResult.dayScore = fixedScore;
 
-    // 7. DB 캐시 저장
-    const saved = await prisma.userDailyFortune.create({
-      data: {
-        userId,
-        date: todayStr,
-        content: jsonResult as any,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: saved.content,
-    });
+    // 7. DB 캐시 저장 — 같은 회원의 동시 요청이면 먼저 저장된 것을 돌려준다
+    try {
+      const saved = await prisma.userDailyFortune.create({
+        data: {
+          userId,
+          date: todayStr,
+          content: jsonResult as any,
+        },
+      });
+      return NextResponse.json({ success: true, data: saved.content });
+    } catch (e) {
+      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) throw e;
+      const row = await prisma.userDailyFortune.findUnique({
+        where: { userId_date: { userId, date: todayStr } },
+      });
+      return NextResponse.json({ success: true, data: row?.content ?? jsonResult });
+    }
   } catch (error: any) {
     console.error("[daily-fortune POST] Error:", error);
     return NextResponse.json(

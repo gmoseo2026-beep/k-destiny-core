@@ -30,12 +30,12 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ productId?: string }>;
+  searchParams: Promise<{ productId?: string; auto?: string }>;
 }
 
 export default async function FortuneNewPage({ params, searchParams }: PageProps) {
   const { locale } = await params;
-  const { productId } = await searchParams;
+  const { productId, auto } = await searchParams;
 
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
@@ -81,6 +81,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
         initialProfile={profile}
         preview={preview}
         visibleIds={visibleIds}
+        autoPreview={auto === "1"}
       />
     </main>
   );

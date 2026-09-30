@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
@@ -38,9 +38,11 @@ interface CompatNewClientProps {
   productId?: string;
   initialProfile?: InitialProfile | null;
   visibleIds?: string[];
+  /** 회원 화면 "지난 궁합 이어보기": 이미 만든 궁합으로 입력 없이 바로 이 상품 미리보기 */
+  fromCompatId?: string;
 }
 
-export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId }: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -132,6 +134,35 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   const handleOpenCheckout = () => {
     if (product) openCheckoutFor(product.id);
   };
+
+  // 지난 궁합 이어보기: 두 사람 정보를 다시 넣지 않고 기존 궁합(compatId)으로 맛보기를 만든다
+  const [continuing, setContinuing] = useState(Boolean(fromCompatId && isSpecialCouple));
+  useEffect(() => {
+    if (!fromCompatId || !isSpecialCouple || !product) return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/reports/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ catalogId: teaserCatalogIdFor(product), kind: "TEASER", compatId: fromCompatId, locale }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
+        if (!alive) return;
+        trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "compat_continue" });
+        setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+      } catch (err) {
+        if (!alive) return;
+        setErrorMsg(err instanceof Error ? `${err.message} 두 사람 정보를 입력해 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
+      } finally {
+        if (alive) setContinuing(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [fromCompatId, isSpecialCouple, product, locale]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,6 +348,16 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         />
 
         <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
+      </div>
+    );
+  }
+
+  if (continuing) {
+    return (
+      <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 py-16 text-center">
+        <Image src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"} alt="" width={72} height={72} className="object-contain animate-pulse" />
+        <p className="text-sm font-bold text-ink">지난 궁합으로 {product?.name} 미리보기를 만들고 있어요</p>
+        <p className="text-xs text-caption">두 사람 정보를 다시 넣지 않아도 돼요</p>
       </div>
     );
   }
