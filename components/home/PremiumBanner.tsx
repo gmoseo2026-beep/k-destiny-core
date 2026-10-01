@@ -28,6 +28,7 @@ export default function PremiumBanner({ locale, premiumProducts }: PremiumBanner
         <div className="space-y-3">
           {visiblePremium.map((product) => (
             <Link
+              prefetch
               key={product.id}
               href={`/${locale}/products/${product.id}`}
               className="group flex items-center justify-between gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-150 active:scale-[0.97]"

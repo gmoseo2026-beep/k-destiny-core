@@ -39,12 +39,14 @@ export default function HomeHero({ locale }: HomeHeroProps) {
       {/* CTAs */}
       <div className="w-full max-w-xs flex flex-col gap-2.5 mt-5">
         <Link
+          prefetch
           href={`/${locale}/compat/new`}
           className="w-full h-13 sm:h-14 bg-coral hover:bg-coral-deep text-white font-bold text-base rounded-2xl shadow-[0_8px_20px_rgba(224,36,90,0.25)] flex items-center justify-center transition-all duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 ring-coral"
         >
           우리 궁합 무료로 보기
         </Link>
         <Link
+          prefetch
           href={`/${locale}/fortune/annual`}
           className="w-full h-11 bg-white/90 hover:bg-white text-plum-deep border border-line font-bold text-sm rounded-2xl shadow-xs flex items-center justify-center transition-all duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 ring-plum-deep"
         >

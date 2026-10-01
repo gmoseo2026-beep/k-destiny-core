@@ -73,6 +73,7 @@ export default function HomeSearch({ locale, products }: HomeSearchProps) {
           {filteredResults.length > 0 ? (
             filteredResults.map((product) => (
               <Link
+                prefetch
                 key={product.id}
                 href={`/${locale}/products/${product.id}`}
                 onClick={() => setIsOpen(false)}

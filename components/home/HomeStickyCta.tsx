@@ -25,6 +25,7 @@ export default function HomeStickyCta({ locale }: { locale: string }) {
       }`}
     >
       <Link
+        prefetch
         href={`/${locale}/compat/new`}
         tabIndex={footerVisible ? -1 : 0}
         onClick={() => trackEvent("home_card_click", { section: "sticky_cta", position: 1, productId: "compat_basic", tab: "-" })}

@@ -26,6 +26,7 @@ export default function HomeRankingView({ locale, ranking }: HomeRankingViewProp
       <div className="space-y-2.5">
         {ranking.items.map(({ product, rank }) => (
           <Link
+            prefetch
             key={product.id}
             href={`/${locale}/products/${product.id}`}
             className="group flex items-center gap-3 p-3.5 rounded-2xl bg-white hover:bg-surface-soft border border-line transition-all duration-150 active:scale-[0.97]"

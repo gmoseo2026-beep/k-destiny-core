@@ -76,6 +76,7 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
           <div className="grid grid-cols-2 gap-2">
             {picks.map((p, i) => (
               <Link
+                prefetch
                 key={p.id}
                 href={`/${locale}/products/${p.id}`}
                 onClick={() => click("pick", i + 1, p.id)}
@@ -103,6 +104,7 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
         <div className="mt-3 space-y-2">
           {tab.items.map((p, i) => (
             <Link
+              prefetch
               key={p.id}
               href={`/${locale}/products/${p.id}`}
               onClick={() => click("premium_list", i + 1, p.id)}
@@ -125,6 +127,7 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
               const badge = badgeFor(p);
               return (
                 <Link
+                  prefetch
                   key={p.id}
                   href={`/${locale}/products/${p.id}`}
                   onClick={() => click("grid", i + 1, p.id)}

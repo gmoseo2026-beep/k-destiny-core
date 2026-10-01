@@ -80,6 +80,7 @@ export default function SetUpsell({ sets, source, title, onChoose, locale, curre
             </button>
           ) : (
             <Link
+              prefetch
               key={set.id}
               href={`/${locale ?? "ko"}/products/${set.id}`}
               className={cardClass}

@@ -30,6 +30,7 @@ export default function SetRow({ locale, products }: SetRowProps) {
           const items = (set.items ?? []).map((id) => getProduct(id)).filter((p): p is CatalogItem => !!p);
           return (
             <Link
+              prefetch
               key={set.id}
               href={`/${locale}/products/${set.id}`}
               className="group shrink-0 w-[168px] snap-start rounded-2xl bg-white hover:bg-surface-soft border border-line p-3.5 flex flex-col justify-between gap-3 transition-all duration-150 active:scale-[0.96]"

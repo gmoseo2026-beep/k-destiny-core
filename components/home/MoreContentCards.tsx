@@ -69,6 +69,7 @@ export default function MoreContentCards({ locale, products }: MoreContentCardsP
       <div className="flex gap-3 overflow-x-auto snap-x no-scrollbar pb-2 -mx-4 px-4">
         {cards.map((card) => (
           <Link
+            prefetch
             key={card.id}
             href={card.href}
             className="group shrink-0 w-[150px] h-[164px] snap-start rounded-2xl bg-surface-soft hover:bg-[#F5EFEF] border border-line p-3.5 flex flex-col justify-between transition-all duration-150 active:scale-[0.96]"

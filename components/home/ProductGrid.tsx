@@ -41,6 +41,7 @@ export default function ProductGrid({ locale, products }: ProductGridProps) {
 
           return (
             <Link
+              prefetch
               key={product.id}
               href={`/${locale}/products/${product.id}`}
               className="group relative flex flex-col items-center p-2 rounded-2xl bg-white hover:bg-surface-soft border border-line/70 transition-all duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 ring-coral text-center"

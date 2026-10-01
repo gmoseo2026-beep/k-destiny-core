@@ -147,6 +147,7 @@ export function StandardProductDetail({
       {/* 1. Header (Sticky) */}
       <header className="fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-md border-b border-line z-50 flex items-center justify-between px-4 max-w-[480px] mx-auto">
         <Link
+          prefetch
           href={`/${locale}`}
           className="p-2 -ml-2 text-ink hover:text-coral transition-colors"
           aria-label="뒤로가기"
@@ -154,6 +155,7 @@ export function StandardProductDetail({
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <Link
+          prefetch
           href={`/${locale}`}
           className="flex items-center gap-1.5 font-bold text-base text-ink"
         >
@@ -463,6 +465,7 @@ export function StandardProductDetail({
             <div className="space-y-2.5">
               {relatedProducts.map((rel) => (
                 <Link
+                  prefetch
                   key={rel.id}
                   href={`/${locale}/products/${rel.id}`}
                   className="group flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-surface-soft border border-line transition-all active:scale-[0.97]"
@@ -501,7 +504,7 @@ export function StandardProductDetail({
 
       {/* 8. Fixed Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-line z-40 max-w-[480px] mx-auto shadow-lg">
-        <Link href={nextPath} className="block w-full">
+        <Link prefetch href={nextPath} className="block w-full">
           <Button
             size="lg"
             fullWidth
