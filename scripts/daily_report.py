@@ -1,33 +1,33 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════════════════════╗
-║  K-Destiny Daily Report → Telegram                          ║
+║  콩닥(kongdak) Daily Report → Telegram                      ║
 ║  Runs via Hermes Agent cron or standalone                    ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Collects:
-  1. Server metrics (CPU / RAM / Disk)
-  2. PM2 process status
-  3. Nginx visitor stats (today)
-  4. Revenue stats (daily / weekly / monthly) from PostgreSQL
-  5. API call stats
-  6. Error log summary
+Collects (집계 숫자만 — 개인정보 없음):
+  1. 매출·주문 (Order 기준, 한국 날짜)
+  2. 퍼널 (궁합 생성 → 미리보기 → 결제)
+  3. 유입 (nginx 로그: 사람 방문 기기 추정, 유입 경로)
+  4. 서버 상태 / PM2 / 에러 로그
 
 Sends a formatted report to the CEO via Telegram Bot API.
 
 Usage:
-  python3 /root/k-destiny-core/scripts/daily_report.py          # one-shot
-  hermes cron add "0 9 * * *" "python3 /root/k-destiny-core/scripts/daily_report.py"
+  python3 /root/k-destiny-core/scripts/daily_report.py            # 보고서 발송
+  python3 /root/k-destiny-core/scripts/daily_report.py --dry-run  # 화면 출력만
+  cron: 55 23 * * *  (자정 로그 교체 전에 하루치를 집계)
 """
 
-import os, sys, json, subprocess, re, urllib.request, urllib.parse
+import os, sys, json, subprocess, re, html, urllib.request, urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 
 # ── Config ──────────────────────────────────────────────────────────
 DOTENV_PATH = Path("/root/k-destiny-core/.env.local")
 PM2_LOG_DIR = Path("/root/.pm2/logs")
-NGINX_LOG   = Path("/var/log/nginx/access.log")
+NGINX_LOGS  = [Path("/var/log/nginx/access.log.1"), Path("/var/log/nginx/access.log")]
+DRY_RUN     = "--dry-run" in sys.argv
 
 def load_env():
     """Load .env.local key=value pairs into os.environ"""
@@ -112,144 +112,153 @@ def get_pm2_status() -> str:
     except Exception as e:
         return f"⚙️ <b>PM2 프로세스</b>\n  ❌ 조회 실패: {e}"
 
-# ── 3. Nginx Visitors ───────────────────────────────────────────────
+# ── 3. 유입 (nginx) ─────────────────────────────────────────────────
+BOT_RE = re.compile(r"bot|crawl|spider|facebookexternalhit|meta-external|curl|python|go-http|wget|headless|preview|scan|zgrab|okhttp|axios|expanse|censys", re.I)
+ASSET_RE = re.compile(r"/_next/|\.(png|jpe?g|webp|svg|ico|js|css|woff2?|txt|xml|json)(\?|$)")
+LINE_RE = re.compile(r'\[(\d+/\w+/\d+):[^\]]+\] "(\S+) (\S+) [^"]*" (\d+) \S+ "[^"]*" "([^"]*)"')
+
 def get_visitor_stats() -> str:
+    """Cloudflare 뒤라 IP 가 전부 CF 주소다 → 브라우저 정보(UA)로 방문 기기 수를 추정한다."""
     today = datetime.now().strftime("%d/%b/%Y")
-    
-    # Total requests today
-    total = run(f'grep -c "{today}" {NGINX_LOG} 2>/dev/null || echo 0')
-    
-    # Unique IPs today
-    unique_ips = run(f'grep "{today}" {NGINX_LOG} 2>/dev/null | awk \'{{print $1}}\' | sort -u | wc -l')
-    
-    # API calls today
-    api_calls = run(f'grep "{today}" {NGINX_LOG} 2>/dev/null | grep -c "/api/"')
-    
-    # Generate-destiny calls
-    destiny_calls = run(f'grep "{today}" {NGINX_LOG} 2>/dev/null | grep -c "generate-destiny"')
-    
-    # Top 5 pages
-    top_pages = run(
-        f'grep "{today}" {NGINX_LOG} 2>/dev/null '
-        f'| awk \'{{print $7}}\' '
-        f'| grep -v "\\." '
-        f'| grep -v "_next" '
-        f'| sort | uniq -c | sort -rn | head -5 '
-        f'| awk \'{{printf "    %s  %s\\n", $1, $2}}\''
-    )
-
+    devices, views, src = set(), 0, {}
+    for log in NGINX_LOGS:
+        if not log.exists():
+            continue
+        try:
+            with open(log, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    if today not in line:
+                        continue
+                    m = LINE_RE.search(line)
+                    if not m:
+                        continue
+                    _, method, path, _, ua = m.groups()
+                    if method != "GET" or BOT_RE.search(ua) or ASSET_RE.search(path):
+                        continue
+                    if not (path == "/" or path.startswith("/ko")) or "_rsc=" in path:
+                        continue
+                    views += 1
+                    devices.add(ua)
+                    if "utm_source=" in path:
+                        s = re.search(r"utm_source=([^&]+)", path).group(1)
+                        paid = "utm_medium=paid" in path
+                        key = f"{s}{' 광고' if paid else ''}"
+                        src[key] = src.get(key, 0) + 1
+        except Exception:
+            continue
+    src_lines = "".join(f"\n    {k}: {v}회" for k, v in sorted(src.items(), key=lambda x: -x[1])[:5])
     return (
-        f"👥 <b>오늘의 트래픽</b>\n"
-        f"  • 총 요청: {total}\n"
-        f"  • 순방문자 (Unique IP): {unique_ips}\n"
-        f"  • API 호출: {api_calls}\n"
-        f"  • 사주 분석 요청: {destiny_calls}\n"
-        f"  📊 인기 페이지:\n{top_pages or '    (없음)'}"
+        f"👥 <b>오늘의 유입</b>\n"
+        f"  • 방문 기기(추정): {len(devices)}대\n"
+        f"  • 페이지 조회: {views}회\n"
+        f"  • 링크별 도착:{src_lines or ' (없음)'}"
     )
 
-# ── 4. Revenue Stats ────────────────────────────────────────────────
+# ── 4. 매출·퍼널 (DB) ───────────────────────────────────────────────
+def won(n) -> str:
+    return f"{int(n or 0):,}원"
+
 def get_revenue_stats() -> str:
     try:
-        # Use Node.js + pg to query DB (Prisma config uses .env)
-        raw = run("cd /root/k-destiny-core && node scripts/query_revenue.js 2>/dev/null", timeout=15)
-        # The output may contain dotenvx injection logs before JSON, extract only JSON
-        json_start = raw.find('{')
-        if json_start == -1:
-            return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: no JSON in output"
-        raw = raw[json_start:]
-        
-        if raw.startswith('{"error'):
-            err_data = json.loads(raw)
-            return f"💰 <b>매출 현황</b>\n  ❌ DB 조회 실패: {err_data.get('error', 'unknown')}"
-        
-        data = json.loads(raw)
-        
-        def fmt_usd(cents: int) -> str:
-            return f"${cents / 100:.2f}" if cents else "$0.00"
-        
+        raw = run("cd /root/k-destiny-core && node scripts/query_revenue.js 2>/dev/null", timeout=40)
+        line = next((l for l in reversed(raw.splitlines()) if l.startswith("REPORT_JSON:")), None)
+        if not line:
+            return "💰 <b>매출</b>\n  ❌ DB 조회 실패: 결과 없음"
+        d = json.loads(line[len("REPORT_JSON:"):])
+        if d.get("error"):
+            return f"💰 <b>매출</b>\n  ❌ DB 조회 실패: {d['error'][:120]}"
+
+        prod = "".join(f"\n    {p['k']}: {p['cnt']}건 · {won(p['total'])}" for p in d.get("products", []))
+        g = d.get("gen", {})
+        previews = (g.get("teaser") or 0)
+        paid_cnt = d["today"]["cnt"]
+        rate = f"{paid_cnt / previews * 100:.1f}%" if previews else "-"
         return (
-            f"💰 <b>매출 현황</b>\n"
-            f"  📅 오늘: {fmt_usd(data['dailyRevenue'])} ({data['dailyPremium']}건 프리미엄)\n"
-            f"  📅 주간(7일): {fmt_usd(data['weeklyRevenue'])}\n"
-            f"  📅 월간: {fmt_usd(data['monthlyRevenue'])}\n"
-            f"  📦 오늘 개별 리포트: {data['dailyReports']}건 (총 {data['totalReports']}건)\n"
-            f"  ─────────────────\n"
-            f"  👤 총 회원: {data['totalUsers']}명\n"
-            f"  ⭐ 프리미엄 회원: {data['totalPremium']}명"
+            f"💰 <b>매출</b>\n"
+            f"  • 오늘: {won(d['today']['total'])} ({paid_cnt}건)\n"
+            f"  • 최근 7일: {won(d['week']['total'])} ({d['week']['cnt']}건)\n"
+            f"  • 이번 달: {won(d['month']['total'])} ({d['month']['cnt']}건)"
+            f"{prod}\n"
+            f"  • 오늘 취소: {d.get('canceled', 0)}건 · 결제 미완료: {d.get('pending', 0)}건\n\n"
+            f"🧭 <b>오늘의 퍼널</b>\n"
+            f"  • 궁합 생성: {d.get('compat', 0)}건\n"
+            f"  • 유료 미리보기: {previews}건 · 무료 리포트: {g.get('free') or 0}건\n"
+            f"  • 결제: {paid_cnt}건 (미리보기 대비 {rate})\n"
+            f"  • 생성 실패: {g.get('failed') or 0}건\n"
+            f"  • 신규 가입: {d['users']['today']}명 (누적 {d['users']['total']}명)"
         )
     except Exception as e:
-        return f"💰 <b>매출 현황</b>\n  ❌ 조회 실패: {e}"
+        return f"💰 <b>매출</b>\n  ❌ 조회 실패: {e}"
 
 # ── 5. Error Log Summary ────────────────────────────────────────────
+NOISE = re.compile(r"Server Action|nextjs\.org|ignore-listed")
+ERR_STATE = PM2_LOG_DIR / ".daily_report_errlines"
+
 def get_error_summary() -> str:
+    """PM2 에러 로그엔 시각이 없다 → 지난 보고 이후 새로 쌓인 줄만 센다(이미 해결된 옛 에러를 되풀이하지 않도록)."""
     error_log = PM2_LOG_DIR / "k-destiny-error.log"
     if not error_log.exists():
         return "🚨 <b>에러 로그</b>\n  ✅ 에러 로그 없음"
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    
-    # Count errors in last 24 hours (rough: last 200 lines)
-    recent = run(f'tail -200 {error_log} | grep -c "Error\\|error\\|ERR\\|FATAL" 2>/dev/null || echo 0')
-    
-    # Get last 3 unique error patterns
-    last_errors = run(
-        f'tail -100 {error_log} '
-        f'| grep -i "error\\|ERR" '
-        f'| sed "s/.*Error: //" '
-        f'| sort -u '
-        f'| tail -3 '
-        f'| head -3'
-    )
-    
-    # Autopilot errors
-    autopilot_log = PM2_LOG_DIR / "k-destiny-autopilot-error.log"
-    autopilot_errs = "0"
-    if autopilot_log.exists():
-        autopilot_errs = run(f'tail -50 {autopilot_log} | grep -c "Error\\|error\\|ERR" 2>/dev/null || echo 0')
-    
-    error_lines = ""
-    if last_errors:
-        for line in last_errors.split('\n')[:3]:
-            clean = line.strip()[:80]
-            if clean:
-                error_lines += f"\n    ⚠️ {clean}"
-    
+    try:
+        lines = error_log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception as e:
+        return f"🚨 <b>에러 로그</b>\n  ❌ 읽기 실패: {e}"
+
+    try:
+        prev = int(ERR_STATE.read_text().strip())
+    except Exception:
+        prev = len(lines)  # 첫 실행: 과거 누적분은 건너뛴다
+    if prev > len(lines):
+        prev = 0  # 로그가 비워졌다
+    fresh = [l for l in lines[prev:] if not NOISE.search(l)]
+    if not DRY_RUN:
+        try:
+            ERR_STATE.write_text(str(len(lines)))
+        except Exception:
+            pass
+
+    errs = [l for l in fresh if re.search(r"Error|ERR|FATAL", l)]
+    db_limit = sum("EMAXCONNSESSION" in l for l in fresh)
+    counts = {}
+    for l in errs:
+        key = re.sub(r".*Error: ?", "", l).strip()[:80]
+        if key:
+            counts[key] = counts.get(key, 0) + 1
+    top = "".join(f"\n    ⚠️ {n}회 {html.escape(k)}" for k, n in sorted(counts.items(), key=lambda x: -x[1])[:3])
+    if not errs:
+        return "🚨 <b>에러 로그</b>\n  ✅ 지난 보고 이후 새 에러 없음"
     return (
-        f"🚨 <b>에러 로그</b>\n"
-        f"  • k-destiny 최근 에러: {recent}건\n"
-        f"  • autopilot 최근 에러: {autopilot_errs}건"
-        f"{error_lines if error_lines else ''}"
+        f"🚨 <b>에러 로그</b> (지난 보고 이후)\n"
+        f"  • 에러: {len(errs)}건 · DB 연결 한도 초과: {db_limit}건"
+        f"{top}"
     )
 
 # ── Main Pipeline ────────────────────────────────────────────────────
 def main():
     now = datetime.now()
     header = (
-        f"📊 <b>K-Destiny 일일 보고서</b>\n"
-        f"📅 {now.strftime('%Y-%m-%d %H:%M KST')}\n"
-        f"{'─' * 30}"
+        f"📊 <b>콩닥 일일 보고서</b>\n"
+        f"📅 {now.strftime('%Y-%m-%d %H:%M')} (한국 시간)\n"
+        f"{'─' * 24}"
     )
-    
+
     sections = [
         header,
+        get_revenue_stats(),
+        get_visitor_stats(),
         get_server_metrics(),
         get_pm2_status(),
-        get_visitor_stats(),
-        get_revenue_stats(),
         get_error_summary(),
     ]
-    
-    footer = (
-        f"\n{'─' * 30}\n"
-        f"🤖 Hermes Agent 자동 보고\n"
-        f"💡 <i>hermes chat</i>으로 추가 질문 가능"
-    )
-    sections.append(footer)
-    
+    sections.append(f"{'─' * 24}\n🤖 콩닥 운영 자동 보고 · 궁금한 건 이 대화방에서 바로 물어보세요")
+
     report = "\n\n".join(sections)
     print(report)
     print(f"\n{'=' * 40}")
-    send_telegram(report)
+    if DRY_RUN:
+        print("(dry-run: 텔레그램 발송 생략)")
+    else:
+        send_telegram(report)
 
 if __name__ == "__main__":
     main()
