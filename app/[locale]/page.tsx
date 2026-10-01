@@ -18,6 +18,7 @@ import { fetchHomeRanking } from "@/lib/home/ranking";
 import { fetchVisitorCount } from "@/lib/home/visitors";
 import { prisma } from "@/lib/prisma";
 import { buildExploreTabs } from "@/lib/home/explore";
+import { swrCached } from "@/lib/swrCache";
 
 export const revalidate = 60;
 
@@ -42,10 +43,10 @@ export default async function Home({ params }: PageProps) {
   const exploreTotal = visibleProducts.filter((p) => p.type !== "SET").length;
   const isMember = Boolean(session?.user?.id);
 
-  // 순위 및 방문자 통계 병렬 조회 (안전하게 fallback 포함)
+  // 순위 및 방문자 통계 (안전하게 fallback 포함). 읽어 둔 값을 바로 쓰고 1분마다 뒤에서 새로 읽는다 — 홈이 먼 DB를 기다리지 않게.
   const [ranking, visitorData] = await Promise.all([
-    fetchHomeRanking(prisma, visibleProducts),
-    fetchVisitorCount(prisma),
+    swrCached("home:ranking", 60_000, () => fetchHomeRanking(prisma, visibleProducts)),
+    swrCached("home:visitors", 60_000, () => fetchVisitorCount(prisma)),
   ]);
 
   return (

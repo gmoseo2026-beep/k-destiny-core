@@ -40,9 +40,33 @@ export function invalidateVisibilityCache(): void {
   cacheExpiresAt = 0;
 }
 
+async function loadEffectiveCatalog(): Promise<CatalogItem[]> {
+  const rowsPromise = prisma.productVisibility.findMany({
+    select: { catalogId: true, visible: true },
+  });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("ProductVisibility DB timeout (1500ms)")), 1500);
+  });
+  const rows = await Promise.race([rowsPromise, timeoutPromise]).finally(() => clearTimeout(timer));
+
+  const overrideMap = new Map<string, boolean>();
+  for (const r of rows) {
+    overrideMap.set(r.catalogId, r.visible);
+  }
+  return CATALOG.map((item) => ({
+    ...item,
+    isHidden: resolveHidden(item, overrideMap),
+  }));
+}
+
+let refreshing: Promise<void> | null = null;
+
 /**
- * DB의 ProductVisibility 오버라이드를 반영한 유효 카탈로그 목록 반환 (캐시 30초)
- * DB 오류 발생 시 코드 기본값으로 안전하게 폴백한다.
+ * DB의 ProductVisibility 오버라이드를 반영한 유효 카탈로그 목록 반환.
+ * - 30초 안: 메모리 값 그대로
+ * - 30초 지남: 이전 값을 바로 돌려주고 뒤에서 새로 읽는다(페이지가 먼 DB를 기다리지 않게)
+ * - 값이 아직 없음(서버 시작 직후·어드민 변경 직후): DB를 기다린다. 실패하면 코드 기본값으로 폴백.
  */
 export async function getEffectiveCatalog(): Promise<CatalogItem[]> {
   const now = Date.now();
@@ -50,37 +74,36 @@ export async function getEffectiveCatalog(): Promise<CatalogItem[]> {
     return cachedCatalog;
   }
 
+  if (!prisma?.productVisibility?.findMany) {
+    return CATALOG.map((item) => ({ ...item, isHidden: item.isHidden ?? false }));
+  }
+
+  if (cachedCatalog) {
+    if (!refreshing) {
+      // 실패해도 매 요청마다 다시 시도하지 않게 만료 시각을 먼저 민다
+      cacheExpiresAt = now + CACHE_TTL_MS;
+      refreshing = loadEffectiveCatalog()
+        .then((effective) => {
+          cachedCatalog = effective;
+          cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+        })
+        .catch((error) => {
+          console.warn("[getEffectiveCatalog] 뒤에서 새로 고침 실패, 이전 값을 유지합니다:", error);
+        })
+        .finally(() => {
+          refreshing = null;
+        });
+    }
+    return cachedCatalog;
+  }
+
   try {
-    if (!prisma?.productVisibility?.findMany) {
-      return CATALOG.map((item) => ({ ...item, isHidden: item.isHidden ?? false }));
-    }
-
-    const rowsPromise = prisma.productVisibility.findMany({
-      select: { catalogId: true, visible: true },
-    });
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => reject(new Error("ProductVisibility DB timeout (1500ms)")), 1500);
-    });
-    const rows = await Promise.race([rowsPromise, timeoutPromise]).finally(() => clearTimeout(timer));
-
-    const overrideMap = new Map<string, boolean>();
-    for (const r of rows) {
-      overrideMap.set(r.catalogId, r.visible);
-    }
-
-    const effective = CATALOG.map((item) => ({
-      ...item,
-      isHidden: resolveHidden(item, overrideMap),
-    }));
-
+    const effective = await loadEffectiveCatalog();
     cachedCatalog = effective;
-    cacheExpiresAt = now + CACHE_TTL_MS;
+    cacheExpiresAt = Date.now() + CACHE_TTL_MS;
     return effective;
   } catch (error) {
     console.warn("[getEffectiveCatalog] DB 조회 실패, 코드 기본값으로 폴백합니다:", error);
-    // DB 실패 시 기존 캐시가 있으면 그것을, 없으면 코드 기본값 복제본 반환
-    if (cachedCatalog) return cachedCatalog;
     return CATALOG.map((item) => ({ ...item, isHidden: item.isHidden ?? false }));
   }
 }

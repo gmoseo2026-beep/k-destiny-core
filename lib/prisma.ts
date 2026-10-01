@@ -12,9 +12,16 @@ const pool =
   new Pool({
     connectionString: `${process.env.DATABASE_URL}`,
     max: Number(process.env.DB_POOL_MAX) || 8,
-    idleTimeoutMillis: 10_000,
+    // 서버(프랑스)↔DB(미국) 재연결에 1초 가까이 걸린다 → 쉬는 연결을 10분간 살려 둔다
+    idleTimeoutMillis: 600_000,
+    keepAlive: true,
     connectionTimeoutMillis: 10_000,
   });
+
+// 쉬는 연결이 풀러 쪽에서 끊기면 pg 가 pool 에 error 를 던진다. 받아 주지 않으면 프로세스가 죽는다.
+if (!globalForPrisma.pgPool) {
+  pool.on('error', (err) => console.warn('[pg pool] idle client error:', err.message));
+}
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaPg(pool) });
 
