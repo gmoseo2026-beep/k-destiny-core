@@ -17,30 +17,18 @@ const CHROME = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like 
 
 beforeEach(() => vi.unstubAllGlobals());
 
-describe("인앱 브라우저 결제 선택", () => {
-  it("일반 브라우저는 선택 창 없이 바로 결제", async () => {
+describe("인앱 브라우저 결제", () => {
+  it("일반 브라우저는 바로 결제", async () => {
     const m = await load(CHROME);
     const choice = vi.fn();
     expect(m.blockPaymentIfInApp(choice, vi.fn())).toBe(false);
     expect(choice).not.toHaveBeenCalled();
   });
 
-  it("인앱이면 선택 창을 띄우고 결제를 멈춘다(외부 브라우저로 강제 이동하지 않음)", async () => {
+  it("인앱에서도 선택 창 없이 바로 결제한다(결제 직전 이탈 방지)", async () => {
     const m = await load(IG_IOS);
     const choice = vi.fn();
-    const retry = vi.fn();
-    expect(m.blockPaymentIfInApp(choice, retry)).toBe(true);
-    expect(choice).toHaveBeenCalledTimes(1);
-    expect(retry).not.toHaveBeenCalled();
-  });
-
-  it("[여기서 바로 결제하기]를 고르면 막혔던 결제를 이어서 열고, 이후엔 다시 묻지 않는다", async () => {
-    const m = await load(IG_IOS);
-    const retry = vi.fn();
-    m.blockPaymentIfInApp(vi.fn(), retry);
-    m.continueInAppPayment();
-    expect(retry).toHaveBeenCalledTimes(1);
-    const choice = vi.fn();
+    expect(m.isInAppBrowser()).toBe(true);
     expect(m.blockPaymentIfInApp(choice, vi.fn())).toBe(false);
     expect(choice).not.toHaveBeenCalled();
   });

@@ -5,6 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -41,6 +42,9 @@ export default function GuestCheckoutModal({
   const [agreedToWithdrawalPolicy, setAgreedToWithdrawalPolicy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
+  const [inApp] = useState(() => isInAppBrowser());
+  const [showCopy, setShowCopy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // 비회원은 정가가 청구된다 → 결제창에서는 청구 금액만 보이고, 첫 결제 할인은 로그인 안내로 분리한다
   const FIRST_TAG = " · 회원 첫 결제 ";
@@ -75,6 +79,21 @@ export default function GuestCheckoutModal({
   }, [isOpen, initialName, initialEmail, initialPhone, productId, tier, orderName, priceLabel]);
 
   if (!isOpen) return null;
+
+  const handleExternal = () => {
+    trackEvent("inapp_open_external", { from: "checkout_modal" });
+    // 카톡·라인·안드로이드는 바로 외부 브라우저로 연다. 아이폰 인스타·스레드는 링크 복사 안내로.
+    if (!openInExternalBrowser(window.location.href)) setShowCopy(true);
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+    } catch {
+      // 복사가 막힌 인앱이면 위 메뉴 안내만으로 진행한다
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,6 +261,28 @@ export default function GuestCheckoutModal({
               {isLoading ? "결제창 연결 중..." : "결제 진행하기"}
             </Button>
           </div>
+
+          {/* 인앱 브라우저(인스타·스레드 등): 결제는 바로 진행하되, 카드 앱에서 못 돌아오는 경우를 위한 보조 길 */}
+          {inApp && (
+            <div className="text-center text-[11px] text-text-3 leading-relaxed">
+              {!showCopy ? (
+                <button type="button" onClick={handleExternal} className="underline underline-offset-2">
+                  결제가 넘어가지 않으면 다른 브라우저로 열기
+                </button>
+              ) : (
+                <div className="rounded-xl bg-surface-soft p-3 text-left text-text-2">
+                  오른쪽 위 메뉴(⋯)에서 <strong className="text-ink">외부 브라우저로 열기</strong>를 누르거나, 링크를 복사해 Safari에 붙여 넣어 주세요.
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="mt-2 w-full rounded-lg border border-line bg-white py-2 font-bold text-ink"
+                  >
+                    {copied ? "복사했어요" : "현재 링크 복사하기"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>
