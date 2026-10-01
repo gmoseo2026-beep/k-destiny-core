@@ -1,5 +1,6 @@
 "use client";
 
+import { SerifFont } from "@/components/premium/SerifFont";
 import React, { useState, useEffect, useMemo, useId } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -370,6 +371,7 @@ export function PremiumNewClient({
 
   return (
     <div className="w-full max-w-lg mx-auto pb-16">
+      <SerifFont />
       {/* Top Header */}
       <div className="flex items-center justify-between mb-6">
         <Link

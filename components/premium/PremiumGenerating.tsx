@@ -1,5 +1,6 @@
 "use client";
 
+import { SerifFont } from "@/components/premium/SerifFont";
 import React, { useEffect, useState } from "react";
 
 const STEPS = [
@@ -36,6 +37,7 @@ export function PremiumGenerating({ onTimeout }: PremiumGeneratingProps) {
 
   return (
     <div className="py-16 px-6 max-w-md mx-auto text-center">
+      <SerifFont />
       {/* Animated glowing gem */}
       <div className="relative w-24 h-24 mx-auto mb-8">
         <div className="absolute inset-0 rounded-full bg-[#D9B26A]/20 blur-xl animate-pulse" />

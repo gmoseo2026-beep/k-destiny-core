@@ -1,3 +1,4 @@
+import { SerifFont } from "@/components/premium/SerifFont";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
@@ -72,6 +73,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
 
   return (
     <main className="min-h-screen bg-[#14101A] text-[#F6F1EA] pb-32">
+      <SerifFont />
       <ProductViewTracker productId={product.id} tier={product.tier} />
 
       {/* Top sticky navigation */}

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Cinzel, Noto_Sans_KR, Noto_Sans_JP, Noto_Serif_KR } from "next/font/google";
+import { Inter, Cinzel } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 
@@ -38,6 +38,8 @@ import Script from "next/script";
 import { BASE_URL, buildPageMetadata } from "@/lib/seo";
 import InstallPWAButton from "../../components/InstallPWAButton";
 import VisitTracker from "../../components/VisitTracker";
+import NavProgress from "../../components/NavProgress";
+import { Suspense } from "react";
 import { getEffectiveVisibleCatalog } from "@/lib/catalogVisibility";
 
 const inter = Inter({
@@ -52,26 +54,10 @@ const cinzel = Cinzel({
   display: "swap",
 });
 
-const notoSansKR = Noto_Sans_KR({
-  variable: "--font-ko",
-  preload: false,
-  display: "swap",
-  weight: ["400", "500", "700"],
-});
-
-const notoSansJP = Noto_Sans_JP({
-  variable: "--font-ja",
-  preload: false,
-  display: "swap",
-  weight: ["400", "500", "700"],
-});
-
-const notoSerifKR = Noto_Serif_KR({
-  variable: "--font-serif-kr",
-  preload: false,
-  display: "swap",
-  weight: ["500", "700"],
-});
+// 글꼴 메모(2026-10-01): Noto Sans KR / Noto Sans JP / Noto Serif KR 를 여기서 불러오면 모든 페이지가
+// 글꼴 정의 약 1,000개(CSS 670KB)를 화면을 그리기 전에 받아야 했다. 본문은 Pretendard 라 Noto Sans KR 은
+// 쓰이지 않았고, 일본어(동면)는 기기 기본 글꼴로 충분하다. Noto Serif KR 은 프리미엄 화면에서만 쓰므로
+// components/premium/SerifFont.tsx 가 프리미엄 화면에서만 불러온다.
 
 // SEO note: canonical / hreflang / title / description now live in lib/seo.ts
 // and are declared per route. This layout supplies metadata for the locale
@@ -200,7 +186,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
       </head>
       <body
-        className={`${pretendard.variable} ${inter.variable} ${cinzel.variable} ${notoSansKR.variable} ${notoSansJP.variable} ${notoSerifKR.variable} antialiased bg-background text-foreground`}
+        className={`${pretendard.variable} ${inter.variable} ${cinzel.variable} antialiased bg-background text-foreground`}
       >
         <Analytics />
         <NextIntlClientProvider messages={messages}>
@@ -208,6 +194,10 @@ export default async function RootLayout({
             <MaintenanceOverlay />
             <CacheBuster />
             <VisitTracker />
+            {/* useSearchParams 를 쓰므로 Suspense 로 감싼다 */}
+            <Suspense fallback={null}>
+              <NavProgress />
+            </Suspense>
             <Navbar visibleProducts={visibleProductsForNav} />
             <InstallPWAButton />
             <main className="flex-grow pt-14">

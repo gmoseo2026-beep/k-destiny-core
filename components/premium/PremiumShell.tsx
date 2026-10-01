@@ -1,3 +1,4 @@
+import { SerifFont } from "@/components/premium/SerifFont";
 import React from "react";
 
 interface PremiumShellProps {
@@ -13,6 +14,7 @@ export function PremiumShell({ children, className = "" }: PremiumShellProps) {
         boxShadow: "0 25px 50px -12px rgba(20, 16, 26, 0.7), 0 0 40px rgba(217, 178, 106, 0.08)",
       }}
     >
+      <SerifFont />
       {children}
     </article>
   );

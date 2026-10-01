@@ -96,7 +96,7 @@
 
   --font-sans: var(--font-pretendard), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-serif: var(--font-cinzel);
-  --font-serif-kr: var(--font-serif-kr);
+  --font-serif-kr: "Noto Serif KR", serif;
 }
 
 body {
@@ -115,7 +115,7 @@ html:lang(ko) body {
 }
 
 html:lang(ja) {
-  --font-sans: var(--font-ja), var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 html:lang(ja) body {
   font-family: var(--font-sans);
@@ -244,7 +244,8 @@ button:active, [role="button"]:active {
 }
 
 .font-serif-kr {
-  font-family: var(--font-serif-kr), "Noto Serif KR", serif;
+  /* 글꼴 CSS 는 components/premium/SerifFont.tsx 가 프리미엄 화면에서만 불러온다 */
+  font-family: "Noto Serif KR", serif;
 }
 
 @media print {
@@ -266,3 +267,12 @@ button:active, [role="button"]:active {
   }
 }
 
+
+/* 링크를 누른 직후의 상단 진행 표시 (components/NavProgress.tsx) */
+@keyframes nav-progress-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.nav-progress-bar {
+  animation: nav-progress-slide 0.9s ease-in-out infinite;
+}
