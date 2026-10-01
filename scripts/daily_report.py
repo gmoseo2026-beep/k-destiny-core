@@ -118,9 +118,11 @@ ASSET_RE = re.compile(r"/_next/|\.(png|jpe?g|webp|svg|ico|js|css|woff2?|txt|xml|
 LINE_RE = re.compile(r'\[(\d+/\w+/\d+):[^\]]+\] "(\S+) (\S+) [^"]*" (\d+) \S+ "[^"]*" "([^"]*)"')
 
 def get_visitor_stats() -> str:
-    """Cloudflare 뒤라 IP 가 전부 CF 주소다 → 브라우저 정보(UA)로 방문 기기 수를 추정한다."""
+    """Cloudflare 뒤라 IP 가 전부 CF 주소다 → 브라우저 정보(UA)로 방문 기기 수를 추정한다.
+    페이지만 받아 가는 자동 접속이 많아, 화면이 실제로 실행돼야 나가는 요청(/api/visit·/api/auth/session)을
+    보낸 기기만 '실제 방문'으로 센다(GA4 사용자 수와 비슷하게 맞는다)."""
     today = datetime.now().strftime("%d/%b/%Y")
-    devices, views, src = set(), 0, {}
+    loaded, real, views, src = set(), set(), 0, {}
     for log in NGINX_LOGS:
         if not log.exists():
             continue
@@ -133,12 +135,17 @@ def get_visitor_stats() -> str:
                     if not m:
                         continue
                     _, method, path, _, ua = m.groups()
-                    if method != "GET" or BOT_RE.search(ua) or ASSET_RE.search(path):
+                    if BOT_RE.search(ua):
+                        continue
+                    if path.startswith("/api/visit") or path.startswith("/api/auth/session"):
+                        real.add(ua)
+                        continue
+                    if method != "GET" or ASSET_RE.search(path):
                         continue
                     if not (path == "/" or path.startswith("/ko")) or "_rsc=" in path:
                         continue
                     views += 1
-                    devices.add(ua)
+                    loaded.add(ua)
                     if "utm_source=" in path:
                         s = re.search(r"utm_source=([^&]+)", path).group(1)
                         paid = "utm_medium=paid" in path
@@ -146,11 +153,12 @@ def get_visitor_stats() -> str:
                         src[key] = src.get(key, 0) + 1
         except Exception:
             continue
+    visitors = loaded & real
     src_lines = "".join(f"\n    {k}: {v}회" for k, v in sorted(src.items(), key=lambda x: -x[1])[:5])
     return (
         f"👥 <b>오늘의 유입</b>\n"
-        f"  • 방문 기기(추정): {len(devices)}대\n"
-        f"  • 페이지 조회: {views}회\n"
+        f"  • 실제 방문(추정): {len(visitors)}명\n"
+        f"  • 자동 접속 포함 기기: {len(loaded)}대 · 페이지 조회 {views}회\n"
         f"  • 링크별 도착:{src_lines or ' (없음)'}"
     )
 
