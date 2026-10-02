@@ -19,10 +19,10 @@ export default function HomeHeroCompact({ total }: { total: number }) {
         </div>
         <div className="min-w-0">
           <h1 className="text-lg font-extrabold text-ink tracking-tight leading-snug text-balance">
-            궁합부터 속궁합, 매운맛 운세까지
+            그 사람 속마음부터 둘만의 속궁합까지
           </h1>
           <p className="text-xs font-semibold text-coral-deep mt-0.5">
-            사주 풀이 {total}가지 · 모두 무료 미리보기
+            생년월일만 넣으면 30초 · {total}가지 무료 미리보기
           </p>
         </div>
       </div>

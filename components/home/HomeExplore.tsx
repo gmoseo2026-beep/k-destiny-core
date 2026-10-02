@@ -16,7 +16,7 @@ interface HomeExploreProps {
   picks: CatalogItem[];
 }
 
-const PICK_BADGE: Record<string, string> = { secret_love: "19", spicy_annual: "팩폭 주의" };
+const PICK_BADGE: Record<string, string> = { secret_love: "19", inner_mind: "속마음", cheating: "냉정 주의", spicy_annual: "팩폭 주의" };
 
 function badgeFor(p: CatalogItem): { text: string; cls: string } | null {
   if (p.id === "secret_love") return { text: "19", cls: "bg-plum-deep text-[#F2D08F]" };

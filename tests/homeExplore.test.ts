@@ -17,7 +17,7 @@ describe("홈 탐색 탭", () => {
     const { tabs, picks } = buildExploreTabs(visible.map((p) => ({ ...p, isHidden: hidden.has(p.id) })));
     for (const t of tabs) for (const p of t.items) expect(hidden.has(p.id), `${t.id}:${p.id}`).toBe(false);
     expect(tabs.find((t) => t.id === "money")).toBeUndefined();
-    expect(picks.map((p) => p.id)).toEqual(["spicy_annual"]);
+    expect(picks.map((p) => p.id)).toEqual(["inner_mind", "cheating", "spicy_annual"]);
   });
 
   it("두근이 추천은 속궁합·매운맛 총운이고, 탭 순서는 인기→연애·궁합→나→돈·일→프리미엄", () => {

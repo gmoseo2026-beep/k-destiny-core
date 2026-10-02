@@ -105,7 +105,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/free_personality.webp",
     gridLabel: "성격·기질",
-    hook: "내 안에 숨어 있던 진짜 내 모습을 가만히 들여다봐요",
+    hook: "남들이 보는 나와 진짜 나, 얼마나 다를까요?",
     subtitle: "남들이 보는 나와 내가 느끼는 진짜 나는 얼마나 다를까?",
     recommendFor: [
       "남들이 보는 나와 내가 느끼는 나의 차이가 궁금한 분",
@@ -139,7 +139,7 @@ export const CATALOG: CatalogItem[] = [
     passCovered: true,
     icon3d: "/icons3d/annual_2026.webp",
     gridLabel: "2026 총운",
-    hook: "2026년 한 해, 나에게 찾아올 소중한 기회와 흐름을 짚어드려요",
+    hook: "올해 남은 달, 잡아야 할 때와 피해야 할 때가 따로 있어요",
     subtitle: "올 한 해 나를 기다리는 행운과 조심해야 할 순간은 언제일까?",
     recommendFor: [
       "2026년 한 해 동안 나에게 찾아올 주요 흐름이 궁금한 분",
@@ -205,7 +205,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/wealth.webp",
     gridLabel: "재물운",
-    hook: "내 주머니를 채워줄 기운과 돈이 모이는 타이밍을 알아봐요",
+    hook: "버는 만큼 왜 안 모일까요? 돈이 새는 구멍을 찾아 드려요",
     subtitle: "나에게 돈이 들어오는 길과 새는 구멍은 어디에 있을까?",
     recommendFor: [
       "돈이 모이지 않고 쉽게 새어나간다고 느끼는 분",
@@ -216,7 +216,7 @@ export const CATALOG: CatalogItem[] = [
     pointDesc: {
       wealth_capacity: "내가 담을 수 있는 재물의 그릇과 타고난 소비 성향",
       income_path: "직장 월급, 부업, 투자 중 나에게 더 맞는 길",
-      spending_habit: "무심코 반복하던 지출 패턴을 끊어내는 법",
+      spending_habit: "유독 지갑이 열리는 순간이 언제인지 콕 집어서",
       yearly_flow: "앞으로 1년 동안 분기별로 찾아올 재물 흐름"
     }
   },
@@ -236,7 +236,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/career.webp",
     gridLabel: "취업·이직",
-    hook: "내가 가장 빛날 수 있는 자리와 이직의 타이밍을 찾아드려요",
+    hook: "지금 자리가 맞는 걸까요, 옮길 때일까요?",
     subtitle: "지금 일터가 내게 맞을까, 새로운 도전의 타이밍은 언제일까?",
     recommendFor: [
       "지금 직장에서 이직을 고민하고 계신 분",
@@ -267,7 +267,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/love_single.webp",
     gridLabel: "연애·인연",
-    hook: "마음이 통하는 인연이 언제쯤 내 곁으로 다가올까요?",
+    hook: "왜 늘 비슷한 사람에게 끌리고, 비슷하게 끝날까요?",
     subtitle: "설레는 인연은 언제, 어디서, 어떤 모습으로 다가올까?",
     recommendFor: [
       "언제쯤 마음에 쏙 드는 인연을 만날지 기다려지는 분",
@@ -298,7 +298,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/charm.webp",
     gridLabel: "매력·도화",
-    hook: "나도 미처 몰랐던 사람들의 시선을 사로잡는 나만의 매력",
+    hook: "사람들이 나에게 끌리는 진짜 이유, 나만 몰라요",
     subtitle: "남들의 눈에 비치는 나의 독보적인 매력 포인트는 무엇일까?",
     recommendFor: [
       "나만의 독보적인 분위기와 매력을 알고 싶은 분",
@@ -308,9 +308,9 @@ export const CATALOG: CatalogItem[] = [
     featuredOrder: 10,
     pointDesc: {
       others_view: "주변 사람들이 나를 볼 때 가장 먼저 느끼는 매력",
-      hidden_charm: "알면 알수록 빠져드는 나만의 숨은 반전 매력",
+      hidden_charm: "가까워져야 드러나는, 상대가 빠져드는 반전",
       best_moment: "사람들 사이에서 내 존재감이 가장 빛나는 순간",
-      bad_habit: "매력을 반감시킬 수 있어 주의해야 할 사소한 습관"
+      bad_habit: "호감을 식게 만드는 버릇, 돌려 말하지 않고"
     }
   },
   {
@@ -361,7 +361,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/mascot/transparent/expr_2_flame.webp",
     gridLabel: "매운맛 총운",
-    hook: "돌려 말하지 않고 뼈를 때리는 두근이의 현실 조언",
+    hook: "듣기 좋은 말은 뺐어요. 올해 내 발목을 잡는 한 가지",
     subtitle: "달콤한 위로보다 내 뼈를 때려줄 현실적인 조언이 필요하다면?",
     recommendFor: [
       "듣기 좋은 말보다 솔직하고 현실적인 팩폭이 필요한 분",
@@ -396,7 +396,7 @@ export const CATALOG: CatalogItem[] = [
     passCovered: true,
     icon3d: "/mascot/transparent/couple_red_thread.webp",
     gridLabel: "정통 궁합",
-    hook: "두근이가 살짝 재 본 우리 둘의 마음",
+    hook: "우리, 끌리는 걸까요 잘 맞는 걸까요?",
     subtitle: "두 사람의 타고난 기운이 만났을 때 생기는 설렘과 온도는?",
     recommendFor: [
       "지금 썸을 타거나 연애 중인 우리 사이가 궁금한 분",
@@ -427,8 +427,8 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/inner_mind.webp",
     gridLabel: "그 사람 속마음",
-    hook: "겉으로는 차마 말하지 못한 그 사람의 속마음이 궁금할 때",
-    subtitle: "알쏭달쏭한 태도 뒤에 숨겨진 그 사람의 진짜 생각은 무엇일까?",
+    hook: "연락은 하는데 마음은 모르겠는 그 사람, 진짜 속은?",
+    subtitle: "겉으로 하는 말과 속으로 하는 생각, 얼마나 다를까?",
     recommendFor: [
       "그 사람의 알쏭달쏭한 태도 때문에 밤잠 설치는 분",
       "표현하지 않는 상대방의 진짜 감정을 알고 싶은 분",
@@ -436,10 +436,10 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 7,
     pointDesc: {
-      view_on_me: "그 사람이 나를 바라보고 느끼는 솔직한 시선",
-      hidden_mind: "겉으로 표현하지 못하고 마음속에 담아둔 생각",
-      anxiety: "관계에서 그 사람이 남몰래 불안해하거나 망설이는 부분",
-      open_mind: "그 사람의 마음 문을 스르륵 열어주는 다정한 대화법"
+      view_on_me: "그 사람이 나에게 끌리는 점과 부담스러워하는 점",
+      hidden_mind: "겉으로 하는 말과 속으로 하는 생각이 갈리는 지점",
+      anxiety: "그 사람이 관계에서 물러서게 되는 순간",
+      open_mind: "마음을 열게 하는 말과 닫아 버리게 하는 말"
     }
   },
   {
@@ -459,8 +459,8 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/reunion.webp",
     gridLabel: "재회운",
-    hook: "끝난 인연일까, 아직 이어져 있을까? 다시 만날 가능성을 살펴봐요",
-    subtitle: "헤어진 우리, 다시 연락해도 될까? 다시 이어질 여지가 남아있을까?",
+    hook: "먼저 연락해도 될까요, 참아야 할까요?",
+    subtitle: "다시 연락해도 될까? 희망 고문 없이 냉정하게 봐요",
     recommendFor: [
       "헤어진 연인에게 아직 미련과 마음이 남아 있는 분",
       "먼저 연락해도 될지, 상대방 연락을 기다려야 할지 고민인 분",
@@ -468,17 +468,17 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 8,
     pointDesc: {
-      real_reason: "겉으로 드러난 핑계 뒤에 숨겨진 진짜 이별의 이유",
-      possibility: "두 사람 사이에 아직 남아 있는 감정과 재회 가능성",
-      timing: "상대방의 마음이 열리는 적절한 연락 타이밍과 방법",
-      important: "재회 자체보다 더 중요한, 서로를 위한 마음가짐"
+      real_reason: "겉으로 댄 이유 말고, 속에서 쌓여 온 진짜 이유",
+      possibility: "여지가 있는 부분과 없는 부분을 나눠서 냉정하게",
+      timing: "연락이 역효과 나는 때와 해 볼 만한 때, 첫마디의 결",
+      important: "다시 만나도 똑같이 끝나지 않으려면 먼저 정리할 것"
     }
   },
   {
     id: "cheating",
     type: "COMPAT",
     name: "바람기 분석",
-    description: "그 사람의 숨겨진 바람기와 연애 성향",
+    description: "그 사람의 연애 본색과 마음이 흔들리는 순간",
     category: "cat-reunion",
     target: "couple",
     price: LAUNCH_PRICE,
@@ -490,8 +490,8 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/cheating.webp",
     gridLabel: "바람기 분석",
-    hook: "그 사람의 마음에 흔들림이 생기는 순간과 연애 패턴을 짚어봐요",
-    subtitle: "그 사람의 숨겨진 유혹 취약점과 관계를 단단히 지키는 법은?",
+    hook: "그 사람 마음이 흔들리는 순간은 따로 있어요",
+    subtitle: "그 사람이 흔들리기 쉬운 순간과, 내가 지켜야 할 선은?",
     recommendFor: [
       "상대방의 사교성과 바람기 성향이 불안하게 느껴지는 분",
       "연인과의 신뢰를 다지기 위해 미리 주의점을 알고 싶은 분",
@@ -499,10 +499,10 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 11,
     pointDesc: {
-      tendency: "그 사람이 연애할 때 나타나는 본래의 애정 성향",
-      weak_moment: "마음이 다른 곳으로 흔들리기 쉬운 상황과 타이밍",
-      strengthen: "둘 사이의 믿음과 신뢰를 한층 더 단단하게 만드는 법",
-      my_rule: "불안해하지 않고 나 자신을 지키며 대처하는 현명한 기준"
+      tendency: "한 사람에게 머무는 힘이 강한지 약한지, 그 사람의 원래 성향",
+      weak_moment: "어떤 상황·어떤 유형 앞에서 틈이 생기는지",
+      strengthen: "이 사람에게 통하는 방식과 오히려 멀어지게 하는 대응",
+      my_rule: "불안에 끌려다니지 않고 내가 정해 둘 기준"
     }
   },
   {
@@ -521,7 +521,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/marriage.webp",
     gridLabel: "결혼 궁합",
-    hook: "연애를 넘어 평생을 함께할 동반자로서 우리는 어떨까요?",
+    hook: "연애는 좋았는데, 같이 살아도 괜찮을까요?",
     subtitle: "연애와는 또 다른 결혼 생활, 둘이 함께하면 더 행복할까?",
     recommendFor: [
       "결혼을 진지하게 고민하고 있거나 준비 중인 커플",
@@ -530,10 +530,10 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 9,
     pointDesc: {
-      basic: "연애를 넘어 평생을 함께할 동반자로서의 기본 궁합",
-      practical: "경제관념, 집안일, 가족 관계 등 현실적인 조화도",
-      crisis: "결혼 생활에서 부딪히기 쉬운 위기의 지점과 예방법",
-      promise: "함께 오래오래 사랑하며 살아가기 위해 나눌 약속"
+      basic: "연애 때는 안 보이다가 한집에 살면 드러나는 차이",
+      practical: "돈·집안일·가족 중 둘이 가장 크게 부딪힐 곳",
+      crisis: "위기가 오는 지점과 그때 각자 하기 쉬운 실수",
+      promise: "이 두 사람에게만 필요한 약속"
     }
   },
   {
@@ -552,7 +552,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/conflict.webp",
     gridLabel: "갈등과 해법",
-    hook: "우리가 자주 부딪히는 이유와 서로를 편안하게 해주는 해법",
+    hook: "우리는 왜 늘 같은 걸로 싸울까요?",
     subtitle: "사소한 일로 자주 싸우는 우리, 어떻게 풀어가야 할까?",
     recommendFor: [
       "사소한 일로 자주 다투어 마음이 지친 커플",
@@ -571,7 +571,7 @@ export const CATALOG: CatalogItem[] = [
     id: "secret_love",
     type: "COMPAT",
     name: "은밀한 속궁합",
-    description: "누구에게도 말 못할 두 사람만의 비밀스러운 궁합",
+    description: "누구에게도 말 못 한, 둘만 있을 때의 끌림과 주도권",
     category: "cat-compat",
     target: "couple",
     price: LAUNCH_PRICE,
@@ -584,8 +584,8 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/secret_love.webp",
     gridLabel: "속궁합",
-    hook: "두 사람만의 숨겨진 케미와 은밀한 끌림의 온도를 확인해요",
-    subtitle: "말로는 꺼내기 쑥스러웠던 둘만의 은밀한 케미는 어떨까?",
+    hook: "둘 중 누가 먼저 달아오르고, 누가 더 오래 탈까요?",
+    subtitle: "둘만 있을 때, 누가 먼저 다가가고 누가 주도권을 쥘까?",
     recommendFor: [
       "서로의 숨겨진 밤의 취향과 케미가 궁금한 분",
       "스킨십과 친밀감을 더욱 높이고 싶은 커플",
@@ -593,10 +593,10 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 13,
     pointDesc: {
-      temperature: "두 사람 사이에 흐르는 정서적·신체적 친밀감의 온도",
-      expression: "애정을 표현하고 교감할 때의 선호와 스타일",
-      fulfill: "서로에게서 채워지는 감정적 만족과 특별한 유대감",
-      keep_flutter: "익숙해진 연인 사이에서도 처음의 설렘을 지키는 비결"
+      temperature: "누가 먼저 달아오르고 누가 늦게 불붙는지, 둘의 온도 차",
+      expression: "누가 리드하는지, 각자 좋아하는 속도와 어긋나는 지점",
+      fulfill: "낮과 다른 밤의 얼굴, 서로 말하지 못한 바람",
+      keep_flutter: "권태가 오는 지점과 다시 달아오르게 하는 행동"
     }
   },
 

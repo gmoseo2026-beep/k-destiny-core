@@ -10,10 +10,11 @@ export interface ExploreTab {
 }
 
 // 두근이 추천(큐레이션). 실제 판매 순위가 아니므로 화면에 "인기 1위" 같은 순위 표현을 쓰지 않는다.
-export const PICK_IDS = ["secret_love", "spicy_annual"] as const;
+export const PICK_IDS = ["secret_love", "inner_mind", "cheating", "spicy_annual"] as const;
 
 const TAB_IDS: Record<Exclude<ExploreTabId, "premium">, readonly string[]> = {
-  popular: ["compat_basic", "inner_mind", "reunion", "cheating", "annual_2026", "love_single", "wealth", "free_personality"],
+  // 추천 카드(PICK_IDS)에 이미 나온 상품은 여기서 뺀다
+  popular: ["compat_basic", "reunion", "love_single", "marriage", "annual_2026", "wealth", "charm", "free_personality"],
   love: ["compat_basic", "inner_mind", "secret_love", "marriage", "reunion", "cheating", "conflict", "love_single", "charm"],
   me: ["free_personality", "annual_2026", "annual_2027", "spicy_annual", "health"],
   money: ["wealth", "career"],
