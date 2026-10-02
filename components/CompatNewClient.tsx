@@ -13,6 +13,7 @@ import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/li
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
+import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -109,6 +110,9 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     reportId?: string;
   } | null>(null);
 
+  // 오늘의 무료 미리보기 한도를 넘김 → 미리보기 대신 결제 안내(궁합은 이미 만들어져 있어 바로 결제 가능)
+  const [limitHit, setLimitHit] = useState<{ compatId: string; limit: number } | null>(null);
+
   const { data: session } = useSession();
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -149,6 +153,10 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           body: JSON.stringify({ catalogId: teaserCatalogIdFor(product), kind: "TEASER", compatId: fromCompatId, locale }),
         });
         const json = await res.json();
+        if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
+          if (alive) setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3 });
+          return;
+        }
         if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
         if (!alive) return;
         trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "compat_continue" });
@@ -249,6 +257,11 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         });
 
         const genJson = await genRes.json();
+        if (genRes.status === 429 && genJson.code === "PREVIEW_LIMIT") {
+          setLimitHit({ compatId: json.id, limit: genJson.limit ?? 3 });
+          setIsLoading(false);
+          return;
+        }
         if (!genRes.ok) throw new Error(genJson.error || "리포트 생성 중 오류가 발생했습니다.");
 
         trackEvent("teaser_created", { productId, tier: product?.tier || "standard" });
@@ -277,29 +290,41 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   };
 
   // Teaser Result View for couple products
-  if (teaserResult && product) {
+  if ((teaserResult || limitHit) && product) {
     const spec = PRODUCT_SPECS[getProduct(teaserCatalogIdFor(product))?.promptKey ?? product.promptKey];
     const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
+    const payCompatId = (teaserResult?.compatId ?? limitHit?.compatId) as string;
 
     return (
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
-        <h2 className="text-2xl font-bold tracking-tight">우리의 {product.name} 미리보기</h2>
-        <StandardReportView
-          mode="teaser"
-          score={teaserResult.score}
-          data={teaserResult.data}
-          lockedSpecs={lockedSpecs}
-          onLockedClick={() => {
-            trackTeaserUnlock(product.id, "locked_card");
-            handleOpenCheckout();
-          }}
-        />
+        {teaserResult ? (
+          <>
+            <h2 className="text-2xl font-bold tracking-tight">우리의 {product.name} 미리보기</h2>
+            <StandardReportView
+              mode="teaser"
+              score={teaserResult.score}
+              data={teaserResult.data}
+              lockedSpecs={lockedSpecs}
+              onLockedClick={() => {
+                trackTeaserUnlock(product.id, "locked_card");
+                handleOpenCheckout();
+              }}
+            />
 
-        <TeaserUnlockPanel
-          product={product}
-          lockedTitles={lockedSpecs.map((s) => s.title)}
-          onUnlock={handleOpenCheckout}
-        />
+            <TeaserUnlockPanel
+              product={product}
+              lockedTitles={lockedSpecs.map((s) => s.title)}
+              onUnlock={handleOpenCheckout}
+            />
+          </>
+        ) : (
+          <PreviewLimitPanel
+            product={product}
+            sectionTitles={(spec?.sections ?? []).map((s) => s.title)}
+            limit={limitHit?.limit ?? 3}
+            onUnlock={handleOpenCheckout}
+          />
+        )}
 
         {upsellSets.length > 0 && (
           <SetUpsell
@@ -327,7 +352,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               const payId = checkoutProduct?.id ?? product.id;
               const res = await requestPortOnePayment({
                 productId: payId,
-                compatId: teaserResult.compatId,
+                compatId: payCompatId,
                 buyer,
                 locale,
               });
@@ -338,7 +363,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
                   tier: checkoutProduct?.tier ?? product.tier,
                   amount: res.amount,
                 });
-                router.push(`/${locale}/report/new?c=${payId}&compat=${teaserResult.compatId}`);
+                router.push(`/${locale}/report/new?c=${payId}&compat=${payCompatId}`);
               }
             } catch (e: unknown) {
               alert(e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.");

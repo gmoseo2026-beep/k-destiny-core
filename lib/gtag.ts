@@ -9,6 +9,8 @@
  *   purchase_confirmed { product }         — entitlement poll succeeded
  *   click_unlock_teaser { productId, source } — 맛보기 화면 결제 버튼(source: inline | sticky | locked_card)
  *     맛보기 퍼널 = teaser_created → click_unlock_teaser → checkout_open → purchase_confirmed
+ *   preview_limit_view { productId }       — 하루 무료 미리보기 한도를 넘겨 결제 안내가 대신 뜬 횟수(클릭은 click_unlock_teaser source=limit)
+ *   checkout_submit / checkout_validation_error { field } — 결제창에서 진행을 누름 / 어느 칸에서 막혔는지
  * 
  * Kongdak Phase A 바이럴 퍼널 (확정 정의 — 이 이름 외에는 쓰지 말 것):
  *   compat_created     { relation, has_ref }        — 궁합 생성. has_ref=true 면 공유 유입자의 생성

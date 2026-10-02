@@ -47,6 +47,7 @@ import { generateNamingReport } from "@/lib/premium/generateNaming";
 import { generateDatesReport } from "@/lib/premium/generateDates";
 import surnamesRaw from "@/data/naming/surnames.json";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
+import { checkPreviewQuota, PREVIEW_DAILY_LIMIT } from "@/lib/previewLimit";
 
 const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
   Object.entries(surnamesRaw as Record<string, Array<{ hanja: string }>>).map(([hangul, arr]) => [
@@ -346,6 +347,25 @@ export async function POST(req: NextRequest) {
     : kind === "FREE" ? `FREE:${catalogId}:${subject.subjectHash}`
     : `TEASER:${catalogId}:${subject.subjectHash}:${compatId ?? "-"}`;
 
+  // 유료 상품 무료 미리보기는 기기당 하루 PREVIEW_DAILY_LIMIT 개까지(같은 미리보기 다시 보기는 제외).
+  // 한도에 닿으면 화면이 미리보기 대신 결제 안내를 보여 준다(code: PREVIEW_LIMIT).
+  let previewCookie: string | undefined;
+  if (kind === "TEASER" && !preview) {
+    const quota = checkPreviewQuota(req, cacheKey);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: `무료 미리보기는 하루 ${PREVIEW_DAILY_LIMIT}개까지 볼 수 있어요.`, code: "PREVIEW_LIMIT", limit: PREVIEW_DAILY_LIMIT },
+        { status: 429, headers: NO_STORE },
+      );
+    }
+    previewCookie = quota.setCookie;
+  }
+  const ok = (payload: Record<string, unknown>, status = 200) => {
+    const res = NextResponse.json(payload, { status, headers: NO_STORE });
+    if (previewCookie) res.headers.append("Set-Cookie", previewCookie);
+    return res;
+  };
+
   const claim = await claimGeneration({
     cacheKey, kind, catalogId, orderId: orderDbId, userId: sessionUserId, compatId, subjectHash: subject.subjectHash,
   });
@@ -358,9 +378,9 @@ export async function POST(req: NextRequest) {
     }
     if (kind === "FULL") await markViewed(claim.reportId);
     void logGeneration({ catalogId, kind, ok: true, cached: true });
-    return NextResponse.json({ kind, reportId: claim.reportId, score: env.score, data: env.data }, { headers: NO_STORE });
+    return ok({ kind, reportId: claim.reportId, score: env.score, data: env.data });
   }
-  if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING", reportId: claim.reportId }, { status: 202, headers: NO_STORE });
+  if (claim.state === "BUSY") return ok({ status: "GENERATING", reportId: claim.reportId }, 202);
   if (claim.state === "GAVE_UP") return err(409, "리포트 생성에 반복 실패했어요. 고객센터로 문의해 주세요.");
 
   try {
@@ -388,7 +408,7 @@ export async function POST(req: NextRequest) {
     await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, model);
     if (kind === "FULL") await markViewed(claim.reportId);
     void logGeneration({ catalogId, kind, ok: true, ms: Date.now() - t0 });
-    return NextResponse.json({ kind, reportId: claim.reportId, score: subject.score, data }, { headers: NO_STORE });
+    return ok({ kind, reportId: claim.reportId, score: subject.score, data });
   } catch (e) {
     await failGeneration(claim.reportId);
     void logGeneration({ catalogId, kind, ok: false, ms: Date.now() - t0, error: errorCode(e) });

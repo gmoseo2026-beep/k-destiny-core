@@ -15,6 +15,7 @@ import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
+import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
@@ -110,6 +111,8 @@ export default function FortuneNewClient({
     annualData?: AnnualTeaserData;
     reportData?: StandardReport | StandardTeaser;
     reportId?: string;
+    /** 오늘의 무료 미리보기 한도를 넘김(값 = 하루 한도). 미리보기 대신 결제 안내를 보여 준다 */
+    previewLimit?: number;
   } | null>(null);
 
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -223,6 +226,10 @@ export default function FortuneNewClient({
         });
 
         const json = await res.json();
+        if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
+          setResultData({ isAnnual: false, score: 0, previewLimit: json.limit ?? 3 });
+          return;
+        }
         if (!res.ok) throw new Error(json.error || "결과 생성 중 오류가 발생했습니다.");
 
         trackEvent(kind === "FREE" ? "report_generated" : "teaser_created", {
@@ -266,9 +273,16 @@ export default function FortuneNewClient({
 
     return (
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
-        <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>
+        {!resultData.previewLimit && <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>}
 
-        {resultData.isAnnual && resultData.annualData ? (
+        {resultData.previewLimit && product ? (
+          <PreviewLimitPanel
+            product={product}
+            sectionTitles={(spec?.sections ?? []).map((s) => s.title)}
+            limit={resultData.previewLimit}
+            onUnlock={handleOpenCheckout}
+          />
+        ) : resultData.isAnnual && resultData.annualData ? (
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-plum/10 text-left">
             <div className="text-4xl font-black text-coral text-center mb-4">
               {resultData.annualData.yearScore}점
@@ -335,7 +349,7 @@ export default function FortuneNewClient({
         )}
 
         {/* Paid Teaser CTA */}
-        {product && !product.isFree && !resultData.isAnnual && (
+        {product && !product.isFree && !resultData.isAnnual && !resultData.previewLimit && (
           <TeaserUnlockPanel
             product={product}
             lockedTitles={lockedSpecs.map((s) => s.title)}
@@ -360,7 +374,7 @@ export default function FortuneNewClient({
           onClose={() => setCheckoutModalOpen(false)}
           title={`${checkoutProduct?.name || "사주"} 리포트 열람`}
           orderName={checkoutProduct?.name || "콩닥 사주 리포트"}
-          priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : "6,900원"}
+          priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : "4,900원"}
           initialName={session?.user?.name || formValues.name || ""}
           initialEmail={session?.user?.email || ""}
           initialPhone=""
