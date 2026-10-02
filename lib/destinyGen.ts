@@ -134,7 +134,7 @@ DETERMINISTIC COMPATIBILITY RESULT (DO NOT CALCULATE, USE THIS AS FACT):
 - Breakdown: ${JSON.stringify(compatResult.breakdown)}
 
 YOUR TASK:
-Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. Use the Core Keywords as your guiding theme.`;
+Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. The Core Keywords are internal labels for background only: never quote or paraphrase them in the output.`;
 }
 
 export interface DeepReportContent {
@@ -153,23 +153,40 @@ export interface DeepReportContent {
   };
 }
 
+/**
+ * 정통 궁합(무료 해석·유료 심층 리포트) 공통 규칙(2026-10-02).
+ * 예전에는 "wise mentor" 한 줄뿐이라 점수와 상관없이 "천생연분·찰떡궁합" 덕담이 나왔다.
+ * 말투는 다정하게 두되, 엇갈리는 지점은 분명히 말하게 한다.
+ */
+const COMPAT_SHARPNESS_RULES = `VOICE: 두 사람을 오래 지켜본 다정한 언니·누나의 말투. 따뜻하지만 듣기 좋은 말만 하지 않는다.
+SHARPNESS RULES:
+- 판정하지 않는다. Overall Score 가 85 미만이면 "천생연분", "찰떡궁합", "완벽한 조화" 같은 말을 쓰지 않는다. 85 이상이어도 그 말로 문장을 끝내지 않는다.
+- Overall Score 가 75 미만이면 좋은 점만큼 신경 쓸 점을 같은 무게로 쓴다.
+- Core Keywords 는 배경 참고일 뿐이다. 그 단어("다정한 짝꿍", "서로의 부족함을 채워주는" 등 포함)를 그대로든 바꿔서든 옮기지 않는다.
+- "누가 · 언제 · 무엇을" 이 드러나는 장면으로 쓴다. 두 사람 중 누구의 버릇인지 분명히 지목한다.
+- 같은 비유·별명을 두 번 쓰지 않는다. 자연물 비유(산·바다·나무·불꽃 등)는 전체를 통틀어 두 번까지만 쓰고 나머지는 사람의 행동으로 쓴다.
+- "~할 수 있어요", "~일 거예요"를 연달아 쓰지 않는다. 일반론("서로 배려하세요", "솔직하게 대화하세요")으로 채우지 않는다.
+- 오락·자기이해를 위한 풀이다. 미래를 단정적으로 예언하지 않는다.`;
+
 export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string): string {
   if (isPremium) {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
-    
-Write a deeply insightful, premium compatibility report. You MUST output your response strictly as a JSON object matching the following TypeScript interface:
+
+${COMPAT_SHARPNESS_RULES}
+
+Write a deeply personal, premium compatibility report. You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
 \`\`\`typescript
 interface DeepReportContent {
-  coreDynamic: string;          // 우리 관계의 핵심 에너지 (2~3문장)
-  strengths: string[];          // 우리가 가진 시너지 강점 3가지
-  cautions: string[];           // 서로 주의해야 할 점 3가지
+  coreDynamic: string;          // 우리 관계의 핵심 (2~3문장). 판정이 아니라, 이 둘 사이에서 실제로 벌어지는 일을 한 장면으로. 첫 문장은 대담한 관찰.
+  strengths: string[];          // 강점 3가지. 각각 "누가 무엇을 할 때 어떤 일이 생기는지" 구체적으로. 서로 다른 내용.
+  cautions: string[];           // 주의할 점 3가지. 돌려 말하지 않는다. 각각 누구의 어떤 버릇인지 지목하고, 방치하면 생기는 일까지.
   conflictsAndSolutions: {
-    trigger: string;            // 갈등 유발 포인트 (말투, 연락, 고집 등)
-    solution: string;           // 현명하게 푸는 구체적 대처법
-  }[];                          // exactly 3 items
-  actionableAdvice: string;     // 오래가기 위한 현실적인 연애 조언
-  monthlyFortune: string;       // 이번 달 두 사람의 애정운 흐름
+    trigger: string;            // 갈등이 시작되는 실제 상황(말투·연락·약속·돈 등). 누가 어떤 말이나 행동을 할 때인지.
+    solution: string;           // 그 자리에서 쓸 수 있는 실제 문장이나 행동. 일반론 금지.
+  }[];                          // exactly 3 items, 서로 다른 상황
+  actionableAdvice: string;     // 이 두 사람에게만 해당하는 조언. 다른 커플에게도 통하는 말이면 다시 쓴다.
+  monthlyFortune: string;       // 이번 달 두 사람의 애정 흐름. 단정하지 않고 "~하기 쉬운 때"로. 조심할 순간 하나 포함.
   idealMatchEnergy: {           // [매칭 빌드업] 나와 가장 잘 맞는 이상형 기운 (Based on Person A's elemental needs)
     energyName: string;         // e.g. "포근하고 든든한 흙 기운"
     traits: string;             // 이런 성향의 사람이 나의 부족한 점을 채워줍니다
@@ -177,20 +194,22 @@ interface DeepReportContent {
 }
 \`\`\`
 
-Make it sound like a very expensive, deeply personal reading by a wise mentor. No generic filler. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms. Output ONLY the JSON block. Do NOT include markdown code fences (like \`\`\`json). Return raw valid JSON.`;
+No generic filler. Remember: absolutely NO Chinese characters (한자) and NO saju technical terms. Output ONLY the JSON block. Do NOT include markdown code fences (like \`\`\`json). Return raw valid JSON.`;
   } else {
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
-    
+
+${COMPAT_SHARPNESS_RULES}
+
 Write a short "free preview" compatibility reading.
 CRITICAL PRINCIPLE:
-- FREE = Score + Atmosphere / Emotion + ONE everyday clash moment with ONE kind tip.
+- FREE = Score + the texture of this pair + ONE everyday clash moment with ONE kind tip.
 - PAID = Root causes, the other clash points, specific synergy, timing, long-term advice.
 
 OUTPUT FORMAT (plain Korean text, exactly these two parts, no markdown, no bullet symbols):
-<Part 1: ONE short paragraph, 2~3 sentences, about the overall vibe and emotional chemistry. Do not end with a cliffhanger.>
+<Part 1: ONE short paragraph, 2~3 sentences. 첫 문장은 이 두 사람에 대한 대담하고 구체적인 관찰. 좋은 점 하나와 엇갈리는 결 하나를 함께 쓴다. 마지막 문장은 둘 사이에 아직 풀리지 않은 것 하나를 짚으며 끝낸다. "~인연입니다", "~관계예요", "~잘 맞아요" 같은 평가·덕담으로 끝내면 안 된다. (좋은 끝맺음 예: "다만 서운함을 먼저 삼키는 쪽이 늘 같은 사람이라는 건, 둘 다 아직 말하지 않았어요.")>
 
 [부딪히기 쉬운 순간]
-<Part 2 line 1: ONE sentence describing a concrete everyday situation where these two tend to clash (e.g. 연락 속도, 계획 vs 즉흥, 서운함을 말하는 방식).>
+<Part 2 line 1: ONE sentence describing a concrete everyday situation where these two tend to clash (e.g. 연락 속도, 계획 vs 즉흥, 서운함을 말하는 방식). 누가 어떻게 하는지 지목한다.>
 <Part 2 line 2: ONE sentence with a concrete, kind tip that starts with "이럴 땐".>
 
 RULES:
