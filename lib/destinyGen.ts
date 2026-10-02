@@ -278,6 +278,19 @@ export interface AnnualFortuneContent {
   luckyPoints: { color: string; item: string; month: number }; // 행운 포인트
 }
 
+/**
+ * 연간 총운 공통 규칙(2026-10-02). 예전에는 "warm, encouraging mentor" 한 줄이라 다섯 분야가 모두
+ * 비슷한 응원으로 끝났다. 다정한 말투는 두되, 낮은 분야와 조심할 달을 숨기지 않게 한다.
+ */
+const ANNUAL_SHARPNESS_RULES = `VOICE: 한 해 계획을 같이 짜 주는 솔직한 선배. 다정하지만 듣기 좋은 말만 하지 않는다.
+SHARPNESS RULES:
+- 다섯 분야를 모두 좋게 쓰지 않는다. 점수가 가장 낮은 분야는 낮다고 분명히 말하고, 왜 조심해야 하는지 이 사람의 버릇과 연결해 쓴다.
+- 분야마다 "잡을 기회 하나"와 "이 사람이 스스로 놓치기 쉬운 지점 하나"를 함께 쓴다.
+- 분야·달마다 다른 내용을 쓴다. 같은 비유·표현·조언을 두 번 쓰지 않는다. 자연물 비유는 전체에서 두 번까지만.
+- "누가 · 언제 · 무엇을" 이 드러나는 구체적인 행동으로 쓴다. "~할 수 있어요", "~일 거예요"를 연달아 쓰지 않는다. 일반론("긍정적으로 생각하세요", "건강을 챙기세요")으로 채우지 않는다.
+- 한 해 전체를 "최고의 해", "대박" 같은 판정으로 부르지 않는다. headline 은 이 사람의 올해를 그린 한 줄.
+- 오락·자기이해를 위한 풀이다. 미래를 단정적으로 예언하지 않는다("~하기 쉬운 때", "~에 유리한 흐름"으로 쓴다). "~을 만나는 해예요", "~이 기다리고 있어요", "~하게 될 거예요"처럼 일이 일어난다고 예고하는 문장은 쓰지 않는다.`;
+
 export function buildAnnualFortunePrompt(contextBlock: string, year: number, toneGuide: string): string {
   return `${STYLE_GUIDE}
 
@@ -287,14 +300,16 @@ TONE: ${toneGuide}
 
 ${contextBlock}
 
-Write a deeply insightful, warm, and engaging annual fortune reading for the entire year of ${year}.
+${ANNUAL_SHARPNESS_RULES}
+
+Write a deeply personal annual fortune reading for the entire year of ${year}.
 You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
 \`\`\`typescript
 interface AnnualFortuneContent {
   yearScore: number;                   // 0~100 overall score for the year ${year}
-  headline: string;                    // One-line punchy summary in warm Kongdak mascot tone (두근이 톤)
-  summary: string;                     // General overview of the year (2~3 sentences, friendly and grounded)
+  headline: string;                    // One-line punchy line about THIS person's year (15~28자). Not a verdict.
+  summary: string;                     // 2~3 sentences. 첫 문장은 대담한 관찰. 올해 가장 힘이 실리는 곳과 가장 조심할 곳을 함께.
   sections: {
     love: { score: number; text: string };          // Love / Romance luck (0~100 score, detailed paragraph)
     money: { score: number; text: string };         // Wealth / Financial luck (0~100 score, detailed paragraph)
@@ -304,7 +319,7 @@ interface AnnualFortuneContent {
   };
   monthlyHighlights: Array<{
     month: number;                     // 1 to 12
-    note: string;                      // 1~2 sentence highlight or key opportunity/caution for this month
+    note: string;                      // 1~2 sentences. 이달에 할 일 또는 조심할 일을 구체적으로. 12개 중 최소 3개 달은 조심할 달로 쓴다. 달마다 다른 내용.
   }>;                                  // Exactly 12 items (month 1 through 12)
   luckyPoints: {
     color: string;                     // Lucky color name in Korean (e.g. 따뜻한 코랄, 싱그러운 올리브 그린 등)
@@ -315,7 +330,7 @@ interface AnnualFortuneContent {
 \`\`\`
 
 Requirements:
-1. Make it sound deeply personal, warm, encouraging, and insightful like a wise, empathetic mentor.
+1. Make it sound deeply personal. Follow VOICE and SHARPNESS RULES above: warm, but honest about weak areas and risky months.
 2. Give practical, grounded advice rather than deterministic doom or absolute guarantees (entertaining and reflective purpose).
 3. Ensure monthlyHighlights covers all 12 months (from month 1 to month 12).
 4. Absolutely NO Chinese characters (한자) and NO saju technical terms (e.g. no 일간, 천간, 지지, 십신, 오행 directly mentioned).
@@ -353,6 +368,8 @@ TONE: ${toneGuide}
 
 ${contextBlock}
 
+${ANNUAL_SHARPNESS_RULES}
+
 Write an irresistible, curiosity-inducing teaser preview for the annual fortune reading for the year ${year}.
 CRITICAL GOAL: Spark intense curiosity and a desire to read the full report. 
 Do NOT give away the complete answers or conclusions. Instead, write punchy cliffhanger "hooks" that stop right before the revelation.
@@ -369,11 +386,11 @@ interface AnnualTeaser {
   headline: string;                    // One-line punchy mascot headline (두근이 톤)
   summary: string;                     // 2~3 sentences overview of the year's vibe and emotion only. NO concrete conclusions (NO specific timing or solutions). Leave deep curiosity.
   hooks: {                             // Exactly 1 sentence per area. Must cut off right before the conclusion (cliffhanger).
-    love?: string;                      // e.g. "2026년, 당신에게 운명 같은 인연이 찾아오는 결정적 시기가 정해져 있어요 —"
-    money?: string;                     // e.g. "큰 재물이 움직일 뜻밖의 타이밍이 올해 숨어 있어요 —"
-    career?: string;                    // e.g. "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —"
-    health?: string;                    // e.g. "올해 특별히 에너지를 충전하고 지켜야 할 중요한 순간이 있어요 —"
-    relationship?: string;              // e.g. "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —"
+    love?: string;                      // 이 사람의 연애 버릇 하나를 짚고, 올해 그 버릇이 문제가 되는 순간이 있다는 데서 끊는다
+    money?: string;                     // 이 사람이 돈을 쓰거나 놓치는 방식 하나를 짚고, 올해 그게 드러나는 때가 있다는 데서 끊는다
+    career?: string;                    // 이 사람의 일하는 방식 하나를 짚고, 올해 갈림길이 되는 판단이 있다는 데서 끊는다
+    health?: string;                    // 이 사람이 무리하는 방식 하나를 짚고, 올해 유독 조심할 때가 있다는 데서 끊는다
+    relationship?: string;              // 이 사람이 사람을 대하는 방식 하나를 짚고, 올해 달라지는 관계가 있다는 데서 끊는다
   };
   freeSection: {                       // Write ONE FULL detailed section for free preview (e.g., love or money)
     type: "love" | "money" | "career" | "health" | "relationship";
@@ -388,7 +405,10 @@ interface AnnualTeaser {
 \`\`\`
 
 Requirements:
-1. Generate ONE full section in \`freeSection\` with full details (no cliffhangers).
+1. Generate ONE section in \`freeSection\` with real details. Its last sentence must point at something still unresolved in another area instead of closing with encouragement.
+1-1. hooks must not promise events ("인연이 찾아옵니다", "기회가 옵니다"). They say that something specific exists and stop before telling what it is.
+1-2. Write each hook from THIS person's data so that two different people get different hooks. 문장 구조도 hook 마다 다르게 쓴다. 각 hook 은 40~70자.
+1-3. summary must not end with encouragement ("단단하게 만들어 줄 거예요" 등). End it on the tension of this year.
 2. For the OTHER 4 sections, write an intriguing 1-sentence cliffhanger in \`hooks\` that stops right before the answer. Do not write a hook for the section you chose for \`freeSection\`.
 3. NEVER give full conclusions, definitive dates, or detailed action solutions in summary or hooks (except the \`freeSection\`).
 3. In teasers.bestMonth, always hide the actual number with '●' (e.g. "●월" or "올해 가장 운이 트이는 달은 ●월").
