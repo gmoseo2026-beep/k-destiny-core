@@ -170,7 +170,8 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     customer: {
       fullName: opts.buyer.fullName,
       email: opts.buyer.email,
-      phoneNumber: opts.buyer.phoneNumber,
+      // 모바일 결제는 휴대폰 번호를 받지 않는다(KG이니시스: PC 결제에서만 필수)
+      ...(opts.buyer.phoneNumber ? { phoneNumber: opts.buyer.phoneNumber } : {}),
     },
     redirectUrl,
   });

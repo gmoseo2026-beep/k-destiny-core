@@ -45,6 +45,10 @@ export default function GuestCheckoutModal({
   const [inApp] = useState(() => isInAppBrowser());
   const [showCopy, setShowCopy] = useState(false);
   const [copied, setCopied] = useState(false);
+  // KG이니시스는 모바일 결제에서 이름만 필수다(휴대폰·이메일은 PC 결제에서만 필수 — 포트원 V2 문서).
+  // 모바일에서는 입력 칸을 이메일 하나로 줄인다. 이메일은 결제 후 다시 볼 때 본인 확인에 쓴다.
+  const [isMobile] = useState(() => typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
+  const [consentNudge, setConsentNudge] = useState(false);
 
   // 비회원은 정가가 청구된다 → 결제창에서는 청구 금액만 보이고, 첫 결제 할인은 로그인 안내로 분리한다
   const FIRST_TAG = " · 회원 첫 결제 ";
@@ -66,6 +70,7 @@ export default function GuestCheckoutModal({
         setPhoneNumber(initialPhone);
         setAgreedToWithdrawalPolicy(false);
         setErrorMsg(null);
+        setConsentNudge(false);
       });
       trackEvent("checkout_open", { productId: productId || orderName || "unknown", guest: !session?.user });
       trackEvent("view_paywall", {
@@ -103,27 +108,36 @@ export default function GuestCheckoutModal({
     const trimmedEmail = email.trim();
     // 숫자만 남기기
     const cleanPhone = phoneNumber.replace(/[^0-9]/g, "");
+    const pid = productId || orderName || "unknown";
+    const fail = (field: string, msg: string) => {
+      trackEvent("checkout_validation_error", { productId: pid, field });
+      setErrorMsg(msg);
+    };
 
-    if (!trimmedName || trimmedName.length < 2) {
-      setErrorMsg("이름을 2자 이상 입력해주세요.");
-      return;
+    if (!isMobile && (!trimmedName || trimmedName.length < 2)) {
+      return fail("name", "이름을 2자 이상 입력해주세요.");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setErrorMsg("올바른 이메일 주소를 입력해주세요. (리포트 열람 확인용)");
-      return;
+      return fail("email", "이메일 주소를 확인해 주세요. 결제한 리포트를 다시 볼 때 필요해요.");
     }
 
-    if (!cleanPhone || cleanPhone.length < 10 || cleanPhone.length > 11) {
-      setErrorMsg("휴대폰 번호를 정확히 입력해주세요. (예: 01012345678)");
-      return;
+    if (!isMobile && (!cleanPhone || cleanPhone.length < 10 || cleanPhone.length > 11)) {
+      return fail("phone", "휴대폰 번호를 정확히 입력해주세요. (예: 01012345678)");
     }
 
+    if (!agreedToWithdrawalPolicy) {
+      setConsentNudge(true);
+      return fail("consent", "아래 안내에 체크하면 바로 결제로 넘어가요.");
+    }
+
+    trackEvent("checkout_submit", { productId: pid, guest: !session?.user, mobile: isMobile });
     await onSubmit({
-      fullName: trimmedName,
+      // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
+      fullName: trimmedName.length >= 2 ? trimmedName : "콩닥 고객",
       email: trimmedEmail,
-      phoneNumber: cleanPhone,
+      phoneNumber: isMobile ? "" : cleanPhone,
     });
   };
 
@@ -146,7 +160,7 @@ export default function GuestCheckoutModal({
           <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
             <h3 className="text-lg font-black text-ink">{title}</h3>
-            <p className="text-xs text-text-3">KG이니시스 카드 결제 정보 입력</p>
+            <p className="text-xs text-text-3">KG이니시스 안전결제 · 결제 후 바로 열람</p>
           </div>
         </div>
 
@@ -159,19 +173,10 @@ export default function GuestCheckoutModal({
           <span className="text-base font-black text-coral">{shownPrice}</span>
         </div>
 
-        {isGuest && firstPrice && (
-          <a
-            href={loginHref}
-            onClick={() => trackEvent("checkout_login_hint_click", { productId: productId || orderName || "unknown" })}
-            className="-mt-3 mb-5 flex items-center justify-between gap-2 rounded-xl border border-coral/30 bg-coral-soft px-3.5 py-2.5 text-xs font-bold text-coral-deep active:scale-[0.98] transition-all"
-          >
-            <span>회원가입·로그인하면 첫 결제는 {firstPrice}</span>
-            <span className="shrink-0 underline">로그인하기 →</span>
-          </a>
-        )}
-
         {/* Guest Input Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
+          {!isMobile && (
+            <>
           <div>
             <label className="block text-xs font-bold text-ink mb-1">
               주문자 이름 <span className="text-coral">*</span>
@@ -179,6 +184,7 @@ export default function GuestCheckoutModal({
             <input
               type="text"
               required
+              autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="예: 홍길동"
@@ -194,6 +200,8 @@ export default function GuestCheckoutModal({
             <input
               type="tel"
               required
+              autoComplete="tel"
+              inputMode="numeric"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="01012345678 (- 없이 입력)"
@@ -202,6 +210,9 @@ export default function GuestCheckoutModal({
             />
           </div>
 
+            </>
+          )}
+
           <div>
             <label className="block text-xs font-bold text-ink mb-1">
               이메일 주소 <span className="text-coral">*</span>
@@ -209,6 +220,8 @@ export default function GuestCheckoutModal({
             <input
               type="email"
               required
+              autoComplete="email"
+              inputMode="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="kongdak@example.com"
@@ -216,16 +229,22 @@ export default function GuestCheckoutModal({
               className="w-full px-3.5 py-2.5 bg-surface-soft border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-text-3"
             />
             <span className="text-[11px] text-text-3 mt-1 block">
-              결제 내역 및 추후 리포트 다시보기 시 본인 확인용으로 사용됩니다.
+              결제한 리포트를 다시 볼 때 본인 확인에만 써요.
             </span>
           </div>
 
-          <label className="flex items-start gap-2.5 cursor-pointer bg-surface-soft rounded-xl p-2.5 border border-line text-[11px] text-text-2 leading-relaxed select-none">
+          <label
+            className={`flex items-start gap-2.5 cursor-pointer rounded-xl p-2.5 border text-[11px] text-text-2 leading-relaxed select-none transition-colors ${
+              consentNudge && !agreedToWithdrawalPolicy ? "border-coral bg-coral-soft" : "border-line bg-surface-soft"
+            }`}
+          >
             <input
               type="checkbox"
-              required
               checked={agreedToWithdrawalPolicy}
-              onChange={(e) => setAgreedToWithdrawalPolicy(e.target.checked)}
+              onChange={(e) => {
+                setAgreedToWithdrawalPolicy(e.target.checked);
+                if (e.target.checked) setErrorMsg(null);
+              }}
               className="mt-0.5 rounded text-coral focus:ring-coral"
             />
             <span>
@@ -254,13 +273,24 @@ export default function GuestCheckoutModal({
               type="submit"
               variant="primary"
               size="md"
-              disabled={isLoading || !agreedToWithdrawalPolicy}
+              disabled={isLoading}
               isLoading={isLoading}
               className="flex-[2]"
             >
-              {isLoading ? "결제창 연결 중..." : "결제 진행하기"}
+              {isLoading ? "결제창 연결 중..." : `${shownPrice} 결제하기`}
             </Button>
           </div>
+
+          {isGuest && firstPrice && (
+            <a
+              href={loginHref}
+              onClick={() => trackEvent("checkout_login_hint_click", { productId: productId || orderName || "unknown" })}
+              className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-text-3"
+            >
+              <span>회원가입·로그인하면 첫 결제는 {firstPrice}</span>
+              <span className="shrink-0 underline">로그인하기 →</span>
+            </a>
+          )}
 
           {/* 인앱 브라우저(인스타·스레드 등): 결제는 바로 진행하되, 카드 앱에서 못 돌아오는 경우를 위한 보조 길 */}
           {inApp && (
