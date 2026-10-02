@@ -20,7 +20,7 @@ export default function HomeStickyCta({ locale }: { locale: string }) {
   return (
     <div
       aria-hidden={footerVisible}
-      className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-line px-4 pt-2.5 pb-[calc(10px+env(safe-area-inset-bottom,0px))] transition-transform duration-200 ${
+      className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-line px-4 pt-2.5 pb-safe-bar transition-transform duration-200 ${
         footerVisible ? "translate-y-full" : "translate-y-0"
       }`}
     >

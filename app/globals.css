@@ -276,3 +276,13 @@ button:active, [role="button"]:active {
 .nav-progress-bar {
   animation: nav-progress-slide 0.9s ease-in-out infinite;
 }
+
+/* 하단 고정 바의 아래 여백.
+   env(safe-area-inset-bottom) 은 아이폰 홈 막대를 피하려는 값인데, Android 16 인앱 웹뷰(스레드·인스타)는
+   이 값을 90px 넘게 알려 줘서 버튼 아래에 큰 흰 띠가 생겼다(2026-10-02). 아이폰(WebKit)에서만, 상한 34px 로 쓴다. */
+.pb-safe-bar { padding-bottom: 10px; }
+.pb-safe-sheet { padding-bottom: 20px; }
+@supports (-webkit-touch-callout: none) {
+  .pb-safe-bar { padding-bottom: calc(10px + min(env(safe-area-inset-bottom, 0px), 34px)); }
+  .pb-safe-sheet { padding-bottom: calc(20px + min(env(safe-area-inset-bottom, 0px), 34px)); }
+}

@@ -57,7 +57,7 @@ export default function InAppPaymentChoice({ isOpen, onClose }: InAppPaymentChoi
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 p-3" role="dialog" aria-modal="true" aria-labelledby="inapp-pay-title">
       <button type="button" aria-label="닫기" className="absolute inset-0 cursor-default" onClick={onClose} />
-      <div className="relative w-full max-w-[420px] rounded-3xl bg-white p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))] shadow-xl">
+      <div className="relative w-full max-w-[420px] rounded-3xl bg-white p-5 pb-safe-sheet shadow-xl">
         <h2 id="inapp-pay-title" className="text-base font-black text-ink">결제 방법을 골라 주세요</h2>
         <p className="mt-1 text-xs text-caption leading-relaxed">
           지금은 앱 안 브라우저예요. 이 화면에서 바로 결제할 수 있어요.
