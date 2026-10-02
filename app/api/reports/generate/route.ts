@@ -20,7 +20,7 @@ import { claimGeneration, completeGeneration, failGeneration, type ReportKind } 
 import { generateJson } from "@/lib/gen/generateJson";
 import { PRODUCT_SPECS, buildStandardPrompt } from "@/lib/prompts/productSpecs";
 import { makeStandardReportValidator, makeStandardTeaserValidator, readEnvelope, type ReportEnvelope } from "@/lib/reports/standard";
-import { pickTeaser } from "@/lib/reports/teaser";
+import { pickTeaser, clipTeaserForView } from "@/lib/reports/teaser";
 import {
   personSubject,
   coupleSubject,
@@ -366,6 +366,13 @@ export async function POST(req: NextRequest) {
     return res;
   };
 
+  // 미리보기는 무료 본문을 앞 절반만 내보낸다(저장본은 전체 그대로). 무료 상품·결제 리포트는 손대지 않는다.
+  const viewData = (d: unknown): unknown => {
+    if (kind !== "TEASER") return d;
+    const t = pickTeaser(d);
+    return t ? clipTeaserForView(t) : d;
+  };
+
   const claim = await claimGeneration({
     cacheKey, kind, catalogId, orderId: orderDbId, userId: sessionUserId, compatId, subjectHash: subject.subjectHash,
   });
@@ -378,7 +385,7 @@ export async function POST(req: NextRequest) {
     }
     if (kind === "FULL") await markViewed(claim.reportId);
     void logGeneration({ catalogId, kind, ok: true, cached: true });
-    return ok({ kind, reportId: claim.reportId, score: env.score, data: env.data });
+    return ok({ kind, reportId: claim.reportId, score: env.score, data: viewData(env.data) });
   }
   if (claim.state === "BUSY") return ok({ status: "GENERATING", reportId: claim.reportId }, 202);
   if (claim.state === "GAVE_UP") return err(409, "리포트 생성에 반복 실패했어요. 고객센터로 문의해 주세요.");
@@ -408,7 +415,7 @@ export async function POST(req: NextRequest) {
     await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, model);
     if (kind === "FULL") await markViewed(claim.reportId);
     void logGeneration({ catalogId, kind, ok: true, ms: Date.now() - t0 });
-    return ok({ kind, reportId: claim.reportId, score: subject.score, data });
+    return ok({ kind, reportId: claim.reportId, score: subject.score, data: viewData(data) });
   } catch (e) {
     await failGeneration(claim.reportId);
     void logGeneration({ catalogId, kind, ok: false, ms: Date.now() - t0, error: errorCode(e) });

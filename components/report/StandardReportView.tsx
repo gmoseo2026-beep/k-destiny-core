@@ -145,6 +145,32 @@ export default function StandardReportView({
           <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
             {teaser.freeSection.body}
           </div>
+          {/* 뒷부분은 서버가 잘라서 보내지 않는다 → 실제 글 대신 흐린 자리 표시만 그린다 */}
+          {teaser.freeSection.clipped && (
+            <div className="relative mt-1">
+              <p aria-hidden className="select-none text-sm leading-relaxed text-ink blur-[5px]">
+                이어지는 이야기는 전체 리포트에서 볼 수 있어요. 두 번째 문단에는 지금까지의 흐름이 어디로 이어지는지,
+                그리고 그 안에서 눈여겨볼 장면이 무엇인지가 담겨 있어요. 여기까지 읽었다면 뒷이야기도 궁금하실 거예요.
+              </p>
+              <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-b from-white/10 via-white/70 to-white pb-1">
+                {onLockedClick ? (
+                  <button
+                    type="button"
+                    onClick={onLockedClick}
+                    className="flex items-center gap-1.5 rounded-full border border-coral/40 bg-white px-4 py-2 text-xs font-extrabold text-coral-deep shadow-sm transition-all active:scale-[0.97]"
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    이어서 읽기
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-caption">
+                    <Lock className="h-3.5 w-3.5" />
+                    이어지는 내용은 전체 리포트에서
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </ReportSection>
       )}
 

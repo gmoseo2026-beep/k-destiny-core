@@ -13,7 +13,8 @@ export interface StandardReport {
 export interface StandardTeaser {
   headline: string;
   summary: string;
-  freeSection: { key: string; title: string; body: string };
+  /** clipped: 화면용으로 본문 뒷부분을 잘라 냈다(clipTeaserForView) */
+  freeSection: { key: string; title: string; body: string; clipped?: boolean };
   hooks: string[];
 }
 
