@@ -41,8 +41,11 @@ export function makeStandardReportValidator(spec: ProductPromptSpec) {
 export function makeStandardTeaserValidator(spec: ProductPromptSpec) {
   return (v: unknown): v is StandardTeaser => {
     const t = pickTeaser(v);
-    return !!t && t.freeSection.key === spec.sections[0].key && isStr(t.freeSection.body)
-      && t.hooks.length === spec.sections.length - 1 && t.hooks.every(isStr);
+    if (!t || t.freeSection.key !== spec.sections[0].key || !isStr(t.freeSection.body)) return false;
+    if (t.hooks.length !== spec.sections.length - 1 || !t.hooks.every(isStr)) return false;
+    // 잠긴 칸 문구가 무료로 보여 준 문장을 되풀이하면 다시 만든다(미리보기만으로 이야기가 끝나 버린다)
+    const shown = `${t.headline} ${t.summary} ${t.freeSection.body}`.replace(/\s+/g, "");
+    return t.hooks.every((h) => !shown.includes(h.replace(/\s+/g, "").replace(/[.!?。]+$/, "")));
   };
 }
 

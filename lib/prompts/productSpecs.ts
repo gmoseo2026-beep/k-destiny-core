@@ -174,6 +174,28 @@ export function scoreBand(score: number): string {
   return "조심할 부분이 큰 시기, 그래도 방법은 있음";
 }
 
+/**
+ * 미리보기(TEASER) 전용 규칙.
+ * hooks 는 잠긴 섹션(2~4번째) 카드에 한 줄씩 보이는 문구다. 예전에는 규칙이 없어 AI 가 summary 문장을 그대로
+ * 되풀이했고("…완벽하게 맞춰지는 관계입니다"), 미리보기만 읽어도 이야기가 끝난 것처럼 보였다(2026-10-02).
+ */
+function teaserRules(spec: ProductPromptSpec): string {
+  const locked = spec.sections.slice(1).map((s, i) => `  hooks[${i}] ↔ "${s.title}"`).join("\n");
+  return `TEASER RULES:
+- headline·summary·freeSection 은 첫 섹션까지의 이야기만 한다. 관계나 사람 전체에 대한 최종 평가("천생연분", "찰떡궁합", "잘 맞는 인연이에요" 등)를 쓰지 않는다. headline 은 두 사람(이 사람)의 결을 그린 한 줄이지 판정이 아니다.
+- freeSection.body 의 마지막 문장은 다음 섹션에서 이어질 이야기를 궁금하게 남긴다(결론·덕담으로 끝내지 않는다). "섹션", "다음 장", "살펴볼게요" 같은 안내 말투 없이, 아직 풀리지 않은 물음으로 끝낸다.
+- hooks 는 잠긴 섹션에 순서대로 하나씩 대응한다:
+${locked}
+- 각 hook 은 그 섹션에서 밝혀질 "이 사람(이 두 사람)만의 구체적인 발견"이 있다는 것만 알리고, 답은 말하지 않는다.
+- 각 hook 은 45~75자 한 문장. 위 사주 데이터에서 나온 구체적인 단서 하나(누가 먼저인지, 어느 순간인지, 무엇이 엇갈리는지 등)를 넣되 결과는 가린다.
+- hooks 3개 중 최소 1개는 조심할 지점·엇갈리는 순간을 다룬다(겁주지 않고, 단정적 예언 없이).
+- headline·summary·freeSection 에 쓴 문장이나 비유를 hooks 에 다시 쓰지 않는다. 칭찬·결론 문장 금지.
+- hooks 는 "~가 있어요 / ~이 따로 있어요"처럼 지금 있는 것을 말한다. "~하게 될 거예요" 같은 앞일 예고는 쓰지 않는다.
+- 좋은 예: "둘 중 한 사람이 먼저 서운함을 삼키는 쪽이에요. 그게 쌓이는 순간이 따로 있어요"
+- 나쁜 예: "두 분은 서로를 채워 주는 찰떡궁합이에요" (결론을 말해 버림)
+`;
+}
+
 export function buildStandardPrompt(
   spec: ProductPromptSpec,
   contextBlock: string,
@@ -206,6 +228,6 @@ ${sectionsText}
 GUARDRAILS:
 ${spec.guardrails.map((g) => `- ${g}`).join("\n")}
 LENGTH: 섹션 body 는 각 350~550자, 2문단. 섹션마다 구체적인 장면이나 행동을 최소 1개 포함. "~할 수 있어요"류의 흐릿한 문장 반복 금지. 상투적 멘토 말투 금지.
-${outputFormat}
+${mode === "TEASER" ? teaserRules(spec) : ""}${outputFormat}
 Output ONLY the JSON object.`.trim();
 }
