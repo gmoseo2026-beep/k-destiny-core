@@ -14,6 +14,7 @@ import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
+import { saveLastCouple, loadLastCouple, saveLastPerson, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -173,6 +174,82 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     };
   }, [fromCompatId, isSpecialCouple, product, locale]);
 
+  // 방금 입력한 두 사람(같은 탭 안에서만 기억). 상품을 바꿀 때마다 처음부터 다시 넣지 않게 한다.
+  const [lastCouple, setLastCouple] = useState<LastCouple | null>(null);
+  useEffect(() => {
+    const last = loadLastCouple();
+    const split = (p: LastPerson) => {
+      const [y, m, d] = p.dob.split("-");
+      let ampm = "", hour = "1", min = "0";
+      if (p.time) {
+        const [hStr, mStr] = p.time.split(":");
+        let h = parseInt(hStr, 10);
+        ampm = h >= 12 ? "PM" : "AM";
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        hour = String(h);
+        min = String(parseInt(mStr, 10) || 0);
+      }
+      return { y, m: String(parseInt(m, 10)), d: String(parseInt(d, 10)), ampm, hour, min };
+    };
+    if (!last) {
+      // 궁합은 처음이지만 방금 개인 운세에서 내 정보를 넣었다면 그것만 채운다
+      const me = loadLastPerson();
+      if (me && !initialProfile) {
+        const a = split(me);
+        queueMicrotask(() => {
+          if (me.name && me.name !== "나") setNameA(me.name);
+          setYearA(a.y); setMonthA(a.m); setDayA(a.d); setGenderA(me.gender);
+          setAmpmA(a.ampm); setHourA(a.hour); setMinA(a.min);
+        });
+      }
+      return;
+    }
+    queueMicrotask(() => {
+      setLastCouple(last);
+      // 내 정보: 저장된 프로필(회원)이 있으면 그쪽이 우선
+      if (!initialProfile) {
+        const a = split(last.a);
+        if (last.a.name && last.a.name !== "나") setNameA(last.a.name);
+        setYearA(a.y); setMonthA(a.m); setDayA(a.d); setGenderA(last.a.gender);
+        setAmpmA(a.ampm); setHourA(a.hour); setMinA(a.min);
+      }
+      const b = split(last.b);
+      if (last.b.name && last.b.name !== "상대방") setNameB(last.b.name);
+      setYearB(b.y); setMonthB(b.m); setDayB(b.d); setGenderB(last.b.gender);
+      setAmpmB(b.ampm); setHourB(b.hour); setMinB(b.min);
+      setRelation(last.relation);
+    });
+    // 마운트 때 한 번만 복원한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 방금 만든 궁합(compatId)으로 입력 없이 이 상품의 미리보기를 연다
+  const previewWithLastCouple = async () => {
+    if (!lastCouple || !product) return;
+    setErrorMsg(null);
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/reports/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ catalogId: teaserCatalogIdFor(product), kind: "TEASER", compatId: lastCouple.compatId, locale }),
+      });
+      const json = await res.json();
+      if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
+        setLimitHit({ compatId: lastCouple.compatId, limit: json.limit ?? 3 });
+        return;
+      }
+      if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
+      trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "last_couple" });
+      setTeaserResult({ compatId: lastCouple.compatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? `${err.message} 아래에 두 사람 정보를 확인하고 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -236,6 +313,16 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       if (!res.ok || !json.shareToken) {
         throw new Error(json.error || "궁합 계산 중 오류가 발생했습니다.");
       }
+
+      // 다음 상품에서 다시 입력하지 않도록 이 탭에만 기억해 둔다(서버 저장 없음)
+      saveLastCouple({
+        compatId: json.id,
+        relation,
+        a: { name: payload.personA.name, dob: dobA, time: finalTimeA, gender: genderA },
+        b: { name: payload.personB.name, dob: dobB, time: finalTimeB, gender: genderB },
+      });
+      // 개인 운세에서도 내 정보를 이어 쓴다
+      saveLastPerson({ name: payload.personA.name, dob: dobA, time: finalTimeA, gender: genderA });
 
       // GA4 측정 이벤트 발사
       trackEvent("compat_created", {
@@ -409,6 +496,29 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       {errorMsg && (
         <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
           {errorMsg}
+        </div>
+      )}
+
+      {/* 방금 본 두 사람으로 입력 없이 이 상품 미리보기 */}
+      {lastCouple && isSpecialCouple && product && (
+        <div className="rounded-2xl border border-coral/30 bg-coral-soft p-4 text-center">
+          <p className="text-xs font-bold text-coral-deep">
+            방금 본 두 사람
+            {lastCouple.a.name !== "나" || lastCouple.b.name !== "상대방" ? ` (${lastCouple.a.name} · ${lastCouple.b.name})` : ""}
+            의 정보가 남아 있어요
+          </p>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => {
+              trackEvent("last_couple_preview_click", { productId: product.id });
+              void previewWithLastCouple();
+            }}
+            className="mt-2.5 w-full rounded-2xl bg-coral py-3.5 text-sm font-extrabold text-white shadow-[0_4px_12px_rgba(255,92,119,0.25)] transition-all active:scale-[0.97] disabled:opacity-60"
+          >
+            {isLoading ? "미리보기를 만들고 있어요…" : `다시 입력 없이 ${product.name} 보기`}
+          </button>
+          <p className="mt-2 text-[11px] text-caption">다른 사람으로 보려면 아래에서 고쳐 주세요</p>
         </div>
       )}
 

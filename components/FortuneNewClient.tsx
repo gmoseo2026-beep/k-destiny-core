@@ -11,7 +11,7 @@ import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
-import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
+import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
@@ -103,6 +103,8 @@ export default function FortuneNewClient({
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // 방금 입력한 정보를 불러와 채웠는지(안내 문구용)
+  const [prefilled, setPrefilled] = useState(false);
 
   // Result state
   const [resultData, setResultData] = useState<{
@@ -134,7 +136,22 @@ export default function FortuneNewClient({
           setFormValues(restored);
         });
       }
+      return;
     }
+    // 방금 다른 운세에서 넣은 정보가 있으면 이어서 쓴다(저장된 프로필이 있으면 그쪽이 우선)
+    if (initialProfile?.birthYear || initialProfile?.birthDate) return;
+    const last = loadLastPerson();
+    if (last) {
+      const restored = parseBirthInput(last);
+      if (restored.year && restored.month && restored.day) {
+        queueMicrotask(() => {
+          setFormValues(restored);
+          setPrefilled(true);
+        });
+      }
+    }
+    // 마운트·상품 변경 때만 복원한다(프로필은 서버가 내려준 고정값)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProductId]);
 
   const openCheckoutFor = (id: string) => {
@@ -184,6 +201,7 @@ export default function FortuneNewClient({
 
     try {
       const formatted = formatBirthInput(formValues);
+      saveLastPerson(formatted);
 
       if (currentProductId.startsWith("annual_")) {
         // Annual route
@@ -452,6 +470,11 @@ export default function FortuneNewClient({
           {initialProfile && (
             <span className="text-[10px] bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-bold">
               저장된 프로필 불러옴
+            </span>
+          )}
+          {!initialProfile && prefilled && (
+            <span className="text-[10px] bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-bold">
+              방금 입력한 정보 불러옴
             </span>
           )}
         </div>
