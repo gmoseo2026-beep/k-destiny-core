@@ -37,7 +37,7 @@ describe("catalog 불변식", () => {
     // 기념가가 회원 첫 결제가와 같으면 "회원 첫 결제" 문구를 붙이지 않는다
     expect(priceLabel(getProduct("wealth")!)).toBe("4,900원");
     expect(hasFirstPurchaseDiscount(getProduct("wealth")!)).toBe(false);
-    expect(priceLabel(getProduct("set_love")!)).toBe("9,900원");
+    expect(priceLabel(getProduct("set_love")!)).toBe("7,900원");
     expect(priceLabel(getProduct("free_personality")!)).toBe("무료");
   });
   it("무료 상품은 판매 불가", () => {
@@ -81,11 +81,11 @@ describe("세트 맛보기 대표 상품", () => {
 
 describe("세트 추천·가격 비교", () => {
   const allIds = CATALOG.map((c) => c.id);
-  it("따로 사는 것보다 싸지 않은 세트는 권하지 않는다(비교 문구가 거짓이 되지 않게)", () => {
-    // 단품 기념가(4,900원)로 일부 세트는 따로 사는 쪽이 같거나 더 싸졌다 → 추천·비교 문구에서 뺀다.
-    // 세트 가격을 다시 정하면 이 목록이 비어야 한다.
-    const notCheaper = CATALOG.filter((c) => c.type === "SET" && separatePrice(c) <= c.price).map((c) => c.id);
-    expect(notCheaper.sort()).toEqual(["set_2027", "set_career", "set_love"]);
+  it("모든 세트는 따로 사는 것보다 싸다(비교 문구가 거짓이 되지 않게)", () => {
+    // 단품 기념가(4,900원)에 맞춰 세트 가격도 다시 정했다(2026-10-02): 2종 7,900 · 3~4종 12,900 · 2027 세트 11,900
+    for (const s of CATALOG.filter((c) => c.type === "SET")) {
+      expect(separatePrice(s) - s.price, s.id).toBeGreaterThanOrEqual(1800);
+    }
     for (const c of CATALOG) {
       for (const s of setsContaining(c.id, allIds)) expect(separatePrice(s), s.id).toBeGreaterThan(s.price);
     }
@@ -93,12 +93,13 @@ describe("세트 추천·가격 비교", () => {
   it("따로 사면 금액은 실제 단건 가격의 합", () => {
     expect(separatePrice(getProduct("set_me")!)).toBe(4 * 4900);
     expect(separatePrice(getProduct("set_love")!)).toBe(2 * 4900);
-    expect(getProduct("set_love")!.price).toBe(9900);
-    expect(getProduct("set_career")!.price).toBe(9900);
+    expect(getProduct("set_love")!.price).toBe(7900);
+    expect(getProduct("set_career")!.price).toBe(7900);
+    expect(getProduct("set_2027")!.price).toBe(11900);
   });
   it("재물운이 든 세트를 아끼는 금액 큰 순으로 찾고, 숨긴 세트는 빼며, 세트 자신은 추천하지 않는다", () => {
-    expect(setsContaining("wealth", allIds).map((s) => s.id)).toEqual(["set_me"]);
-    expect(setsContaining("wealth", allIds.filter((id) => id !== "set_me")).map((s) => s.id)).toEqual([]);
+    expect(setsContaining("wealth", allIds).map((s) => s.id)).toEqual(["set_me", "set_2027"]);
+    expect(setsContaining("wealth", allIds.filter((id) => id !== "set_me")).map((s) => s.id)).toEqual(["set_2027"]);
     expect(setsContaining("set_me", allIds)).toEqual([]);
     expect(setsContaining("compat_basic", allIds).map((s) => s.id)).toEqual(["set_this_person"]);
   });

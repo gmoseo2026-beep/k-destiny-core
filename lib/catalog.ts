@@ -661,8 +661,8 @@ export const CATALOG: CatalogItem[] = [
     description: "연애운과 인연 + 타고난 매력",
     category: "cat-compat",
     target: "individual",
-    price: 9900,
-    originalPrice: 9900,
+    price: 7900,
+    originalPrice: 7900,
     icon: "HeartHandshake",
     promptKey: "SET",
     items: ["love_single", "charm"],
@@ -714,8 +714,8 @@ export const CATALOG: CatalogItem[] = [
     description: "취업이직운 + 2026년 총운",
     category: "cat-career",
     target: "individual",
-    price: 9900,
-    originalPrice: 9900,
+    price: 7900,
+    originalPrice: 7900,
     icon: "Briefcase",
     promptKey: "SET",
     items: ["career", "annual_2026"],
@@ -741,8 +741,8 @@ export const CATALOG: CatalogItem[] = [
     description: "2027년 신년운 + 재물 + 취업",
     category: "cat-fortune",
     target: "individual",
-    price: 16900,
-    originalPrice: 16900,
+    price: 11900,
+    originalPrice: 11900,
     icon: "Sparkles",
     promptKey: "SET",
     items: ["annual_2027", "wealth", "career"],
@@ -859,7 +859,7 @@ export function separatePrice(p: CatalogItem): number {
  * visibleIds 는 서버가 공개 판정(resolver)으로 내려준 id 목록 — 숨긴 세트를 권하지 않는다.
  */
 export function setsContaining(catalogId: string, visibleIds: readonly string[]): CatalogItem[] {
-  // 따로 사는 것보다 싸지 않은 세트는 권하지 않는다(단품 기념가로 역전될 수 있다)
+  // 따로 사는 것보다 싸지 않은 세트는 권하지 않는다(가격을 바꾸다 역전되는 경우의 안전장치)
   return CATALOG.filter((p) => p.type === "SET" && p.items?.includes(catalogId) && visibleIds.includes(p.id) && separatePrice(p) > p.price)
     .sort((a, b) => separatePrice(b) - b.price - (separatePrice(a) - a.price) || (b.items?.length ?? 0) - (a.items?.length ?? 0));
 }
