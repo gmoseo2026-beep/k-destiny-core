@@ -271,7 +271,8 @@ async function loadAdminDashboardData() {
     }
 
     const originalPrice = prod?.originalPrice || prod?.price || o.amount;
-    const isFirstDiscount = !isManual && o.amount === FIRST_PURCHASE_PRICE && originalPrice > o.amount;
+    // 첫 결제 할인 = 그 상품의 현재 판매가보다 싸게 결제된 4,900원(기념가로 모두 4,900원이면 해당 없음)
+    const isFirstDiscount = !isManual && o.amount === FIRST_PURCHASE_PRICE && (prod?.price ?? originalPrice) > o.amount;
 
     const oTime = new Date(o.createdAt).getTime();
 

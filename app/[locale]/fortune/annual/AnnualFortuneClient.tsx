@@ -94,7 +94,7 @@ export default function AnnualFortuneClient({
   const [error, setError] = useState<string | null>(null);
 
   const annualProduct = getProduct(`annual_${year}`);
-  const annualPrice = annualProduct ? priceLabel(annualProduct) : "6,900원 · 회원 첫 결제 4,900원";
+  const annualPrice = annualProduct ? priceLabel(annualProduct) : "4,900원";
 
   // Input form state (for guests or users without profile)
   const [showInputForm, setShowInputForm] = useState(!initialHasProfile);

@@ -117,7 +117,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [deepReportError, setDeepReportError] = useState<string | null>(null);
 
   const compatProduct = getProduct("compat_basic");
-  const compatPrice = compatProduct ? priceLabel(compatProduct) : "6,900원 · 회원 첫 결제 4,900원";
+  const compatPrice = compatProduct ? priceLabel(compatProduct) : "4,900원";
 
   // [SECURITY / H-2] 게스트/단건 구매자의 열람 증명 토큰(orderId).
   // 서버는 이 값을 받아야만 세션 없는 구매자의 소유권을 확인할 수 있다.

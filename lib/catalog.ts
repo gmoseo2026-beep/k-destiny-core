@@ -43,6 +43,20 @@ export interface CatalogItem {
 }
 
 export const FIRST_PURCHASE_PRICE = 4900; // 사장님 결정 D3: 회원 첫 결제 1회
+// 오픈 기념가(2026-10-02 사장님 결정): 표준 단품은 회원·비회원 모두 4,900원. 정가(originalPrice) 6,900원은 취소선으로 보여 준다.
+// 비회원에게만 6,900원을 받고 "회원은 4,900원"이라고 안내하던 방식이 결제 직전 이탈을 만들었다.
+// 기념가를 끝낼 때는 이 값을 6900 으로 되돌리면 회원 첫 결제 할인 안내가 다시 살아난다.
+export const LAUNCH_PRICE = 4900;
+
+/** 취소선으로 보여 줄 정가. 지금 가격보다 높을 때만 값이 있다. */
+export function listPrice(p: CatalogItem): number | null {
+  return !p.isFree && p.originalPrice > p.price ? p.originalPrice : null;
+}
+
+/** 회원 첫 결제 할인이 실제로 더 싼 상품인가(기념가가 이미 그 가격이면 안내하지 않는다). */
+export function hasFirstPurchaseDiscount(p: CatalogItem): boolean {
+  return !p.isFree && p.tier === "standard" && p.type !== "SET" && p.price > FIRST_PURCHASE_PRICE;
+}
 
 export function isViewable(p: CatalogItem | undefined): p is CatalogItem {
   return !!p && !p.isHidden;
@@ -63,7 +77,7 @@ export function formatWon(n: number): string {
 /** 화면 가격 표기의 유일한 출처(감사 B2). 서버 order route 의 계산 규칙과 반드시 같아야 한다. */
 export function priceLabel(p: CatalogItem): string {
   if (p.isFree) return "무료";
-  if (p.tier === "standard" && p.type !== "SET") {
+  if (hasFirstPurchaseDiscount(p)) {
     return `${formatWon(p.price)} · 회원 첫 결제 ${formatWon(FIRST_PURCHASE_PRICE)}`;
   }
   return formatWon(p.price);
@@ -113,7 +127,7 @@ export const CATALOG: CatalogItem[] = [
     description: "2026년 한 해의 흐름과 월별 운세, 조심해야 할 점",
     category: "cat-fortune",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Calendar",
     promptKey: "annual_2026",
@@ -147,7 +161,7 @@ export const CATALOG: CatalogItem[] = [
     description: "남들보다 한 발 앞서 준비하는 2027년의 흐름",
     category: "cat-fortune",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Sparkles",
     promptKey: "annual_2027",
@@ -181,7 +195,7 @@ export const CATALOG: CatalogItem[] = [
     description: "나의 타고난 재물 그릇과 돈이 들어오는 시기",
     category: "cat-wealth",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Coins",
     promptKey: "wealth_analysis",
@@ -213,7 +227,7 @@ export const CATALOG: CatalogItem[] = [
     description: "나에게 맞는 직업과 올해의 이동수",
     category: "cat-career",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Briefcase",
     promptKey: "career_analysis",
@@ -244,7 +258,7 @@ export const CATALOG: CatalogItem[] = [
     description: "나의 연애 스타일과 진짜 인연이 나타나는 시기",
     category: "cat-compat",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Heart",
     promptKey: "love_single_analysis",
@@ -275,7 +289,7 @@ export const CATALOG: CatalogItem[] = [
     description: "사주로 보는 나의 치명적인 매력 포인트",
     category: "cat-compat",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Sparkle",
     promptKey: "charm_analysis",
@@ -306,7 +320,7 @@ export const CATALOG: CatalogItem[] = [
     description: "타고난 체질과 각별히 주의해야 할 건강 포인트",
     category: "cat-fortune",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Activity",
     promptKey: "health_analysis",
@@ -337,7 +351,7 @@ export const CATALOG: CatalogItem[] = [
     description: "돌려 말하지 않는 두근이의 매운맛 현실 조언",
     category: "cat-reunion",
     target: "individual",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Flame",
     promptKey: "spicy_annual",
@@ -371,7 +385,7 @@ export const CATALOG: CatalogItem[] = [
     description: "두 사람의 타고난 기운으로 보는 우리 궁합 점수",
     category: "cat-compat",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "HeartHandshake",
     promptKey: "compat_basic",
@@ -404,7 +418,7 @@ export const CATALOG: CatalogItem[] = [
     description: "말하지 않는 그 사람의 진짜 속마음",
     category: "cat-compat",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "MessageCircleHeart",
     promptKey: "inner_mind",
@@ -435,7 +449,7 @@ export const CATALOG: CatalogItem[] = [
     description: "헤어진 우리, 다시 만날 수 있을까요?",
     category: "cat-reunion",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Undo2",
     promptKey: "reunion",
@@ -467,7 +481,7 @@ export const CATALOG: CatalogItem[] = [
     description: "그 사람의 숨겨진 바람기와 연애 성향",
     category: "cat-reunion",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Eye",
     promptKey: "cheating_tendency",
@@ -498,7 +512,7 @@ export const CATALOG: CatalogItem[] = [
     description: "연애를 넘어 결혼 상대로서의 우리는 어떨까?",
     category: "cat-compat",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Gem",
     promptKey: "marriage_compat",
@@ -529,7 +543,7 @@ export const CATALOG: CatalogItem[] = [
     description: "우리가 자주 싸우는 진짜 이유와 풀어 가는 방법",
     category: "cat-reunion",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Swords",
     promptKey: "conflict_resolution",
@@ -560,7 +574,7 @@ export const CATALOG: CatalogItem[] = [
     description: "누구에게도 말 못할 두 사람만의 비밀스러운 궁합",
     category: "cat-compat",
     target: "couple",
-    price: 6900,
+    price: LAUNCH_PRICE,
     originalPrice: 6900,
     icon: "Moon",
     promptKey: "secret_love",
@@ -845,7 +859,8 @@ export function separatePrice(p: CatalogItem): number {
  * visibleIds 는 서버가 공개 판정(resolver)으로 내려준 id 목록 — 숨긴 세트를 권하지 않는다.
  */
 export function setsContaining(catalogId: string, visibleIds: readonly string[]): CatalogItem[] {
-  return CATALOG.filter((p) => p.type === "SET" && p.items?.includes(catalogId) && visibleIds.includes(p.id))
+  // 따로 사는 것보다 싸지 않은 세트는 권하지 않는다(단품 기념가로 역전될 수 있다)
+  return CATALOG.filter((p) => p.type === "SET" && p.items?.includes(catalogId) && visibleIds.includes(p.id) && separatePrice(p) > p.price)
     .sort((a, b) => separatePrice(b) - b.price - (separatePrice(a) - a.price) || (b.items?.length ?? 0) - (a.items?.length ?? 0));
 }
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Lock, ArrowRight, Check } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
-import { priceLabel, type CatalogItem } from "@/lib/catalog";
+import { priceLabel, listPrice, formatWon, type CatalogItem } from "@/lib/catalog";
 
 /**
  * 맛보기(티저) 화면의 결제 안내 — 본문 아래 안내 카드 + 화면 하단 고정 바.
@@ -14,7 +14,7 @@ import { priceLabel, type CatalogItem } from "@/lib/catalog";
  * GA4: click_unlock_teaser { productId, source: "inline" | "sticky" | "locked_card" }
  *   퍼널 = teaser_created → click_unlock_teaser → checkout_open → purchase_confirmed
  */
-export type TeaserUnlockSource = "inline" | "sticky" | "locked_card";
+export type TeaserUnlockSource = "inline" | "sticky" | "locked_card" | "limit";
 
 export function trackTeaserUnlock(productId: string, source: TeaserUnlockSource) {
   trackEvent("click_unlock_teaser", { productId, source });
@@ -32,6 +32,7 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
   const label = priceLabel(product);
   const [price, firstPrice] = label.includes(FIRST_TAG) ? label.split(FIRST_TAG) : [label, null];
   const lockedCount = lockedTitles.length;
+  const strike = listPrice(product);
 
   // 하단 고정 바는 안내 카드에 닿기 전까지만 보인다(카드와 버튼 중복·하단 고지 가림 방지)
   const cardRef = useRef<HTMLDivElement>(null);
@@ -89,6 +90,12 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
 
         <div className="mt-4 flex items-end justify-between gap-2">
           <div>
+            {strike && (
+              <span className="mb-0.5 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-text-3 line-through">{formatWon(strike)}</span>
+                <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">오픈 기념가</span>
+              </span>
+            )}
             <span className="block text-2xl font-black text-ink">{price}</span>
             {firstPrice && <span className="text-[11px] font-bold text-coral-deep">회원 첫 결제는 {firstPrice}</span>}
           </div>

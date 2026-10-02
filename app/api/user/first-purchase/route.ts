@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { FIRST_PURCHASE_PRICE } from "@/lib/catalog";
+import { CATALOG, FIRST_PURCHASE_PRICE, hasFirstPurchaseDiscount } from "@/lib/catalog";
 import { isFirstPurchaseEligible } from "@/lib/payments/firstPurchase";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -10,6 +10,8 @@ const NO_STORE = { "Cache-Control": "no-store" };
 export async function GET() {
   const session = await getServerSession(authOptions).catch(() => null);
   if (!session?.user?.id) return NextResponse.json({ eligible: false }, { status: 401, headers: NO_STORE });
-  const eligible = await isFirstPurchaseEligible(session.user.id);
+  // 기념가가 이미 첫 결제가와 같으면 "회원 첫 결제" 안내를 띄울 이유가 없다
+  const anyDiscount = CATALOG.some(hasFirstPurchaseDiscount);
+  const eligible = anyDiscount && (await isFirstPurchaseEligible(session.user.id));
   return NextResponse.json({ eligible, price: FIRST_PURCHASE_PRICE }, { headers: NO_STORE });
 }

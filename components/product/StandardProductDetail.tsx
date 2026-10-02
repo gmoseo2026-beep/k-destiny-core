@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel, formatWon, separatePrice, setsContaining } from "@/lib/catalog";
+import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, hasFirstPurchaseDiscount } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
@@ -279,14 +279,21 @@ export function StandardProductDetail({
               <span className="text-2xl font-black text-ink">
                 {product.isFree ? "무료" : formatWon(product.price)}
               </span>
-              {/* 세트: 실제 단건 정가 합계와 비교(취소선·가짜 정가 금지) */}
-              {product.type === "SET" && (
+              {/* 오픈 기념가: 실제로 받던 정가만 취소선으로 보여 준다(가짜 정가 금지) */}
+              {listPrice(product) && (
+                <>
+                  <span className="text-sm font-bold text-text-3 line-through">{formatWon(listPrice(product)!)}</span>
+                  <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">오픈 기념가</span>
+                </>
+              )}
+              {/* 세트: 실제 단건 가격 합계와 비교. 따로 사는 게 더 싸면 보여 주지 않는다 */}
+              {product.type === "SET" && separatePrice(product) > product.price && (
                 <span className="text-xs font-bold text-caption">
                   따로 사면 {formatWon(separatePrice(product))}
                 </span>
               )}
               {/* 첫 결제 할인은 표준 단품만(세트 제외) — 서버 주문 규칙과 동일 */}
-              {!product.isFree && product.price > 0 && product.tier === "standard" && product.type !== "SET" && (
+              {hasFirstPurchaseDiscount(product) && (
                 <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">
                   회원 첫 결제 4,900원
                 </span>

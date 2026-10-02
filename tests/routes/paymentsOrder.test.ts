@@ -59,7 +59,7 @@ describe("POST /api/payments/order route contract tests", () => {
   });
 
   // 3. 회원이고 과거 PAID 0건 → amount 4,900. 1건 이상 → 6,900.
-  it("case 3: member with 0 paid orders gets 4,900; with 1+ paid orders gets 6,900", async () => {
+  it("case 3: 오픈 기념가 — member pays 4,900 whether or not they bought before", async () => {
     session.current = { user: { id: "user_regular", email: "user@example.com" } };
     db.compatibility.findUnique.mockResolvedValue({ id: "c1" });
 
@@ -72,18 +72,18 @@ describe("POST /api/payments/order route contract tests", () => {
     const bodyFirst = await resFirst.json();
     expect(bodyFirst.amount).toBe(4900);
 
-    // 3b: 1+ paid orders -> 6900
+    // 3b: 1+ paid orders -> 기념가 그대로 4900 (예전: 6900)
     db.order.findFirst.mockResolvedValueOnce({ id: "prev_paid" });
     db.order.create.mockImplementationOnce(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_repeat" }));
 
     const resRepeat = await POST(req({ productId: "compat_basic", compatId: "c1" }));
     expect(resRepeat.status).toBe(200);
     const bodyRepeat = await resRepeat.json();
-    expect(bodyRepeat.amount).toBe(6900);
+    expect(bodyRepeat.amount).toBe(4900);
   });
 
-  // 4. 게스트는 항상 정가(6,900. 공개 상품 compat_basic 기준)
-  it("case 4: guest is always charged full price (6,900 for compat_basic)", async () => {
+  // 4. 게스트도 오픈 기념가(4,900. 공개 상품 compat_basic 기준) — 서버가 정한 금액만 청구
+  it("case 4: guest is charged the launch price (4,900 for compat_basic), never a client-supplied amount", async () => {
     session.current = null;
     db.compatibility.findUnique.mockResolvedValueOnce({ id: "c1" });
     db.order.create.mockImplementationOnce(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_guest" }));
@@ -98,7 +98,7 @@ describe("POST /api/payments/order route contract tests", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.amount).toBe(6900);
+    expect(body.amount).toBe(4900);
   });
 
   // 5. requiresLogin 상품(annual_2026) 게스트 → 401 LOGIN_REQUIRED

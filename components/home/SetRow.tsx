@@ -51,7 +51,9 @@ export default function SetRow({ locale, products }: SetRowProps) {
               </div>
               <div>
                 <div className="text-sm font-black text-coral">{formatWon(set.price)}</div>
-                <div className="text-[10px] text-caption">따로 사면 {formatWon(separatePrice(set))}</div>
+                {separatePrice(set) > set.price && (
+                  <div className="text-[10px] text-caption">따로 사면 {formatWon(separatePrice(set))}</div>
+                )}
               </div>
             </Link>
           );
