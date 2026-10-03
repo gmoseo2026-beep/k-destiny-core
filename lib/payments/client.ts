@@ -127,7 +127,8 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     body: JSON.stringify({
       productId: opts.productId,
       compatId: opts.compatId,
-      email: opts.buyer.email,
+      // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
+      ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
     }),
   });
 
@@ -169,8 +170,8 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     payMethod: "CARD",
     customer: {
       fullName: opts.buyer.fullName,
-      email: opts.buyer.email,
-      // 모바일 결제는 휴대폰 번호를 받지 않는다(KG이니시스: PC 결제에서만 필수)
+      // 모바일 결제는 이메일·휴대폰 번호를 받지 않는다(KG이니시스: PC 결제에서만 필수)
+      ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
       ...(opts.buyer.phoneNumber ? { phoneNumber: opts.buyer.phoneNumber } : {}),
     },
     redirectUrl,

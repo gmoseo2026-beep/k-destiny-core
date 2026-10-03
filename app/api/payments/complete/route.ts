@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
         productType: order.productType ?? null,
         productKey: order.productKey ?? null,
         catalogId: toCatalogId(order.productType, order.productKey, order.compatId),
+        // 비회원이 이메일 없이 결제한 경우(모바일) → 결제 완료 화면이 이메일을 선택으로 받는다
+        needsEmail: !order.userId && !order.email,
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );

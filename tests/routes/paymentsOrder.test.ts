@@ -118,6 +118,18 @@ describe("POST /api/payments/order route contract tests", () => {
     expect(body.amount).toBe(4900);
   });
 
+  // 5-1. 비회원 이메일은 선택(2026-10-03 모바일 결제 모달에서 이메일 칸 제거)
+  it("case 5-1: guest checkout works without an email; a malformed email is still rejected", async () => {
+    session.current = null;
+    db.order.create.mockImplementationOnce(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_no_email" }));
+    const res = await POST(req({ productId: "wealth" }));
+    expect(res.status).toBe(200);
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.email).toBeNull();
+
+    const bad = await POST(req({ productId: "wealth", email: "not-an-email" }));
+    expect(bad.status).toBe(400);
+  });
+
   // 6. 무료 상품 → 400, 없는 productId → 400
   it("case 6: free product or nonexistent productId returns 400", async () => {
     // Free product (free_personality)

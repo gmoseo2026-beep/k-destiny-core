@@ -56,12 +56,14 @@ export async function POST(req: NextRequest) {
 
       let parsedEmail = session?.user?.email || null;
       if (!session?.user?.id) {
-        if (!email || typeof email !== "string") {
-          return NextResponse.json({ error: "Email is required for guest checkout" }, { status: 400 });
-        }
-        parsedEmail = email.trim().toLowerCase();
-        if (!isValidEmail(parsedEmail)) {
-          return NextResponse.json({ error: "유효하지 않은 이메일 형식입니다." }, { status: 400 });
+        // 비회원 이메일은 선택이다(2026-10-03). 모바일 결제는 이메일 없이 바로 결제창으로 간다 —
+        // 이메일 입력 칸에서 결제 모달을 연 사람의 2/3 가 나갔다. 열람 증명은 주문번호이고,
+        // 이메일은 결제 완료 화면에서 선택으로 받는다(/api/payments/contact). 보냈다면 형식은 검사한다.
+        if (typeof email === "string" && email.trim()) {
+          parsedEmail = email.trim().toLowerCase();
+          if (!isValidEmail(parsedEmail)) {
+            return NextResponse.json({ error: "유효하지 않은 이메일 형식입니다." }, { status: 400 });
+          }
         }
       }
 

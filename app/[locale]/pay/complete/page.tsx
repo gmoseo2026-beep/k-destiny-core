@@ -21,6 +21,10 @@ function PayCompleteContent() {
   const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
   const [paidProductType, setPaidProductType] = useState<string | null>(null);
   const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
+  // 이메일 없이 결제한 비회원(모바일): 결제가 끝난 뒤에 이메일을 선택으로 받는다
+  const [emailOrderId, setEmailOrderId] = useState<string | null>(null);
+  const [emailValue, setEmailValue] = useState("");
+  const [emailState, setEmailState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const ranRef = useRef(false);
 
@@ -81,6 +85,9 @@ function PayCompleteContent() {
           if (result?.catalogId) {
             setPaidCatalogId(result.catalogId);
           }
+          if (result?.needsEmail && result?.orderId) {
+            setEmailOrderId(result.orderId);
+          }
           if (result?.productType === "ANNUAL") {
             setPaidProductType("ANNUAL");
           }
@@ -108,6 +115,23 @@ function PayCompleteContent() {
   }, []);
 
   const [copied, setCopied] = useState(false);
+
+  const handleSaveEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailOrderId || emailState === "saving") return;
+    setEmailState("saving");
+    try {
+      const res = await fetch("/api/payments/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: emailOrderId, email: emailValue.trim() }),
+      });
+      setEmailState(res.ok ? "saved" : "error");
+      if (res.ok) trackEvent("checkout_email_saved", { productId: paidCatalogId || "unknown" });
+    } catch {
+      setEmailState("error");
+    }
+  };
 
   const handleCopyResultLink = async () => {
     if (!paidCompatId) return;
@@ -264,6 +288,32 @@ function PayCompleteContent() {
             <p className="text-xs text-text-2 leading-relaxed">
               결제한 리포트는 지금 이 브라우저에 보관됐어요. 같은 브라우저에서는 홈의 &lsquo;결제한 리포트&rsquo;에서 다시 열 수 있고, 다른 기기에서도 보려면 아래 &lsquo;가입하고 보관하기&rsquo;를 눌러 주세요.
             </p>
+          </Card>
+        )}
+
+        {status === "success" && emailOrderId && (
+          <Card variant="soft" className="w-full p-4 text-left mb-6">
+            <p className="mb-1 text-xs font-bold text-ink">영수증·문의용 이메일 (선택)</p>
+            {emailState === "saved" ? (
+              <p className="text-xs text-text-2">저장했어요. 결제 문의가 있을 때 이 이메일로 확인해 드릴게요.</p>
+            ) : (
+              <form onSubmit={handleSaveEmail} className="flex items-center gap-2">
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={emailValue}
+                  onChange={(e) => setEmailValue(e.target.value)}
+                  placeholder="kongdak@example.com"
+                  className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-coral/40"
+                />
+                <Button type="submit" variant="secondary" size="sm" disabled={emailState === "saving" || !emailValue.trim()}>
+                  저장
+                </Button>
+              </form>
+            )}
+            {emailState === "error" && <p className="mt-1.5 text-[11px] text-red-500">이메일 주소를 확인해 주세요.</p>}
+            <p className="mt-1.5 text-[11px] text-text-3">남기지 않아도 리포트는 바로 볼 수 있어요.</p>
           </Card>
         )}
 
