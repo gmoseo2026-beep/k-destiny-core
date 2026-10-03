@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import CompatNewClient from "@/components/CompatNewClient";
 import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
+import { sectionOutlines } from "@/lib/prompts/sectionOutline";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -90,7 +91,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
       </div>
 
       {/* Form Component */}
-      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} visibleIds={visibleIds} fromCompatId={from} />
+      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} visibleIds={visibleIds} fromCompatId={from} sectionOutlines={sectionOutlines()} />
     </main>
   );
 }

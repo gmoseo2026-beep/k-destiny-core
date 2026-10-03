@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import FortuneNewClient from "@/components/FortuneNewClient";
 import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
+import { sectionOutlines } from "@/lib/prompts/sectionOutline";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -97,6 +98,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
         preview={preview}
         visibleIds={visibleIds}
         autoPreview={auto === "1"}
+        sectionOutlines={sectionOutlines()}
       />
     </main>
   );

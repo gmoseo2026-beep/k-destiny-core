@@ -9,7 +9,7 @@ import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, hasFir
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
-import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
+import type { SectionOutline } from "@/lib/prompts/sectionOutline";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag, type TagCategory } from "@/components/ui/Tag";
@@ -37,6 +37,8 @@ interface StandardProductDetailProps {
   locale: string;
   preview?: boolean;
   allProducts: CatalogItem[];
+  /** 섹션 제목·소개(서버가 sectionOutlineFor 로 만들어 넘긴다. 프롬프트 원문은 넘기지 않는다) */
+  sections?: SectionOutline[];
 }
 
 export function StandardProductDetail({
@@ -44,6 +46,7 @@ export function StandardProductDetail({
   locale,
   preview,
   allProducts,
+  sections,
 }: StandardProductDetailProps) {
   const [toast, setToast] = useState<string | null>(null);
 
@@ -87,9 +90,8 @@ export function StandardProductDetail({
   let featurePoints: FeaturePoint[] = [];
 
   if (product.type !== "SET") {
-    const spec = PRODUCT_SPECS[product.promptKey];
-    if (spec?.sections) {
-      featurePoints = spec.sections.map((s) => ({
+    if (sections?.length) {
+      featurePoints = sections.map((s) => ({
         title: s.title,
         desc: s.guide || product.pointDesc?.[s.key] || "",
       }));

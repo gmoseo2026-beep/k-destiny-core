@@ -15,7 +15,7 @@ import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import { saveLastCouple, loadLastCouple, saveLastPerson, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
-import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
+import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -43,9 +43,11 @@ interface CompatNewClientProps {
   visibleIds?: string[];
   /** 회원 화면 "지난 궁합 이어보기": 이미 만든 궁합으로 입력 없이 바로 이 상품 미리보기 */
   fromCompatId?: string;
+  /** 상품별 섹션 제목(서버가 넘김 — 프롬프트 원문은 클라이언트로 가져오지 않는다) */
+  sectionOutlines?: SectionOutlineMap;
 }
 
-export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId, sectionOutlines = {} }: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -370,8 +372,8 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   // Teaser Result View for couple products
   if ((teaserResult || limitHit) && product) {
-    const spec = PRODUCT_SPECS[getProduct(teaserCatalogIdFor(product))?.promptKey ?? product.promptKey];
-    const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
+    const outline = sectionOutlines[getProduct(teaserCatalogIdFor(product))?.promptKey ?? product.promptKey] ?? [];
+    const lockedSpecs = outline.slice(1).map((s) => ({ key: s.key, title: s.title }));
     const payCompatId = (teaserResult?.compatId ?? limitHit?.compatId) as string;
 
     return (
@@ -399,7 +401,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         ) : (
           <PreviewLimitPanel
             product={product}
-            sectionTitles={(spec?.sections ?? []).map((s) => s.title)}
+            sectionTitles={outline.map((s) => s.title)}
             limit={limitHit?.limit ?? 3}
             onUnlock={handleOpenCheckout}
           />

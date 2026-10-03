@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useSyncExternalStore } from "r
 import { trackEvent } from "@/lib/gtag";
 import KongdakMascot from "@/components/KongdakMascot";
 import FortuneLoading from "@/components/FortuneLoading";
-import { DeepReportContent } from "@/lib/destinyGen";
+import type { DeepReportContent } from "@/lib/destinyGen";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

@@ -7,6 +7,7 @@ import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibilit
 import { canPreview } from "@/lib/preview";
 import { StandardProductDetail } from "@/components/product/StandardProductDetail";
 import { canonicalUrlFor, productShareMeta } from "@/lib/seo";
+import { sectionOutlineFor } from "@/lib/prompts/sectionOutline";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -53,6 +54,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       locale={locale}
       preview={preview}
       allProducts={allProducts}
+      sections={sectionOutlineFor(product.promptKey)}
     />
   );
 }

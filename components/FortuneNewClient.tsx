@@ -17,7 +17,7 @@ import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/c
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
-import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
+import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
 import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { Card } from "@/components/ui/Card";
@@ -59,6 +59,8 @@ interface FortuneNewClientProps {
   visibleIds?: string[];
   /** 회원 화면 "내 정보로 바로 보기": 저장된 사주 정보로 입력 화면 없이 바로 미리보기 */
   autoPreview?: boolean;
+  /** 상품별 섹션 제목(서버가 넘김 — 프롬프트 원문은 클라이언트로 가져오지 않는다) */
+  sectionOutlines?: SectionOutlineMap;
 }
 
 export default function FortuneNewClient({
@@ -68,6 +70,7 @@ export default function FortuneNewClient({
   preview = false,
   visibleIds,
   autoPreview = false,
+  sectionOutlines = {},
 }: FortuneNewClientProps) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -276,8 +279,8 @@ export default function FortuneNewClient({
 
   // Result View
   if (resultData) {
-    const spec = teaserProduct ? PRODUCT_SPECS[teaserProduct.promptKey] : undefined;
-    const lockedSpecs = spec?.sections?.slice(1).map((s) => ({ key: s.key, title: s.title })) || [];
+    const outline = (teaserProduct && sectionOutlines[teaserProduct.promptKey]) || [];
+    const lockedSpecs = outline.slice(1).map((s) => ({ key: s.key, title: s.title }));
 
     return (
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
@@ -286,7 +289,7 @@ export default function FortuneNewClient({
         {resultData.previewLimit && product ? (
           <PreviewLimitPanel
             product={product}
-            sectionTitles={(spec?.sections ?? []).map((s) => s.title)}
+            sectionTitles={outline.map((s) => s.title)}
             limit={resultData.previewLimit}
             onUnlock={handleOpenCheckout}
           />

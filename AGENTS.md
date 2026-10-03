@@ -29,6 +29,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 4. **커밋/푸시 전 스테이지 diff에서 시크릿 스캔**(`sk-`, `password=`, `DEPLOY_PASS=`, `BEGIN … PRIVATE KEY` 등). 발견 시 STOP → 환경변수로 전환.
 5. **유출된 시크릿은 즉시 로테이션.** 파일 삭제로 끝 아님(git 히스토리에 남음).
 6. **배포는 `python scripts/safe_deploy.py`로만.** `npm run build`를 `tail`로 파이프 금지(exit code 은폐). 실패 빌드 위에 PM2 재시작 금지. `Deploy VERIFIED` 확인 후에만 성공 보고.
+7. **의존성을 바꾸면 `npm run lock:sync`**(서버와 같은 npm 10.9.8 로 package-lock 재생성) 후 커밋. 서버는 `npm ci` 만 하고 실패하면 배포를 멈춘다.
+8. **클라이언트 컴포넌트(`"use client"`)는 `lib/prompts/*`·`lib/destinyGen`·`lib/premium/generate*`·`lib/gen/*` 를 타입으로만 import.** 섹션 제목 등은 서버 페이지가 `lib/prompts/sectionOutline` 으로 만들어 props 로 넘긴다(프롬프트 원문이 브라우저로 새는 것 방지, `tests/clientPromptLeak.test.ts`).
 
 ## 3. 기술 스택 / 재사용
 - Next.js 15(App Router, 위 주의문 준수) · TypeScript(strict) · Supabase · Prisma · next-intl(ko 주력, en/ja 동면).
