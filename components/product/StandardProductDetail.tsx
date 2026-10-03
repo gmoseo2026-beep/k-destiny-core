@@ -188,7 +188,7 @@ export function StandardProductDetail({
 
         {/* 2. Banner 270px */}
         <section
-          className={`relative w-full h-[270px] bg-gradient-to-b ${gradientClass} flex flex-col items-center justify-center text-center overflow-hidden px-4`}
+          className={`relative w-full min-h-[270px] py-6 bg-gradient-to-b ${gradientClass} flex flex-col items-center justify-center text-center overflow-hidden px-4`}
         >
           {/* Heart SVG Pattern (14% Opacity) */}
           <svg
@@ -214,7 +214,7 @@ export function StandardProductDetail({
           </svg>
 
           {/* 3D Icon 190px */}
-          <div className="relative w-[150px] h-[150px] sm:w-[190px] sm:h-[190px] mb-1 z-10 transition-transform duration-300 hover:scale-105">
+          <div className="relative w-[120px] h-[120px] sm:w-[170px] sm:h-[170px] mb-1 z-10 transition-transform duration-300 hover:scale-105">
             <Image
               src={product.icon3d}
               alt=""
@@ -225,9 +225,12 @@ export function StandardProductDetail({
             />
           </div>
 
-          {/* 38px 900 White Title */}
-          <h1 className="relative z-10 text-[30px] sm:text-[36px] font-black text-white leading-tight tracking-tight drop-shadow-sm">
+          {/* 상품 이름 대신 질문을 크게(2026-10-03): 분류명은 답이 궁금하지 않다 */}
+          <span className="relative z-10 mb-2 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
             {product.name}
+          </span>
+          <h1 className="relative z-10 max-w-[22ch] text-[24px] sm:text-[30px] font-black text-white leading-snug tracking-tight drop-shadow-sm break-keep">
+            {product.hook || product.name}
           </h1>
         </section>
 

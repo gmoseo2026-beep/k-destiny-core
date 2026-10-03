@@ -3,7 +3,7 @@
  * No-ops when GA isn't loaded (NEXT_PUBLIC_GA_ID unset) or on the server.
  *
  * 결제 퍼널 공통 이벤트:
- *   view_paywall     { source }            — locked section rendered
+ *   view_paywall     { productId?, source } — 결제 안내가 실제로 화면에 보임(useSeenOnce, 2026-10-03 통일). 클릭·모달은 checkout_open
  *   unlock_click     { source, product }   — paywall CTA pressed
  *   begin_checkout   { product }           — 결제 창 열림
  *   purchase_confirmed { product }         — entitlement poll succeeded
@@ -18,7 +18,7 @@
  *   share_created      { shareToken, type }         — 실제 공유 실행 (type: 'kakao' | 'link')
  *   share_visit        { sourceCompatId, path }     — 공유 링크(?ref=)를 통한 유입
  *   share_card_created { shareToken, format }       — 스토리 카드 생성. 진단용, K 계산에서 제외
- *   view_paywall       { source }                   — 심층 궁합 티저 노출(관심도)
+ *   view_paywall       { source }                   — 결제 안내가 화면에 보임(관심도)
  *
  * K = compat_created(has_ref=true) ÷ share_created
  * share_card_created 는 분모에 넣지 않는다(카드 생성 ≠ 공유 실행).

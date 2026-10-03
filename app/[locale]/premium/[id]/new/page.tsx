@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
-import { canonicalUrlFor } from "@/lib/seo";
+import { canonicalUrlFor, productShareMeta } from "@/lib/seo";
 import { PremiumNewClient } from "@/components/premium/PremiumNewClient";
 
 interface PageProps {
@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${product.name} 정보 입력 | 콩닥 프리미엄`,
     description: product.description,
     alternates: { canonical },
+    ...productShareMeta(product, canonical),
   };
 }
 

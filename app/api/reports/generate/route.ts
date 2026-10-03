@@ -393,7 +393,22 @@ export async function POST(req: NextRequest) {
   try {
     const toneGuide = LOCALE_CONFIG[locale].toneGuide;
     const mode = kind === "TEASER" ? "TEASER" : "FULL";
-    const prompt = buildStandardPrompt(spec, subject.contextBlock, subject.score, mode, toneGuide);
+    // 전체 리포트는 이 사람이 본 미리보기(잠긴 칸 문구·열린 질문)에 답한다
+    let promised: { hooks?: string[]; unsaid?: string } | undefined;
+    if (mode === "FULL") {
+      try {
+        const seen = await prisma.generatedReport.findUnique({
+          where: { cacheKey: `TEASER:${catalogId}:${subject.subjectHash}:${compatId ?? "-"}` },
+          select: { content: true },
+        });
+        const env = seen?.content ? readEnvelope(seen.content) : null;
+        const t = env ? pickTeaser(env.data) : null;
+        if (t) promised = { hooks: t.hooks, unsaid: t.unsaid };
+      } catch {
+        // 미리보기를 못 찾으면 약속 없이 만든다(리포트 자체는 막지 않는다)
+      }
+    }
+    const prompt = buildStandardPrompt(spec, subject.contextBlock, subject.score, mode, toneGuide, promised);
     let data: unknown;
     let model: string;
     if (mode === "TEASER") {

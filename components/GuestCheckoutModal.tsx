@@ -22,6 +22,14 @@ interface GuestCheckoutModalProps {
   isLoading?: boolean;
 }
 
+// 이니시스 상점에 켜져 있는 간편결제(사장님 확인 2026-10-03). 수단을 바꾸면 여기도 고친다.
+const PAY_METHODS = [
+  { label: "카카오페이", className: "bg-[#FEE500] text-[#191919]" },
+  { label: "네이버페이", className: "bg-[#03C75A] text-white" },
+  { label: "삼성페이", className: "bg-[#1428A0] text-white" },
+  { label: "신용·체크카드", className: "bg-surface-soft text-text-2 border border-line" },
+] as const;
+
 export default function GuestCheckoutModal({
   isOpen,
   onClose,
@@ -73,11 +81,6 @@ export default function GuestCheckoutModal({
         setConsentNudge(false);
       });
       trackEvent("checkout_open", { productId: productId || orderName || "unknown", guest: !session?.user });
-      trackEvent("view_paywall", {
-        productId: productId || orderName || "unknown",
-        tier: tier || "standard",
-        amountLabel: priceLabel,
-      });
     }
     // 모달이 열릴 때 한 번만 기록한다(세션 로딩으로 다시 기록하지 않음)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,7 +163,7 @@ export default function GuestCheckoutModal({
           <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
             <h3 className="text-lg font-black text-ink">{title}</h3>
-            <p className="text-xs text-text-3">KG이니시스 안전결제 · 결제 후 바로 열람</p>
+            <p className="text-xs text-text-3">간편결제 가능 · 결제 후 바로 열람</p>
           </div>
         </div>
 
@@ -279,6 +282,18 @@ export default function GuestCheckoutModal({
             >
               {isLoading ? "결제창 연결 중..." : `${shownPrice} 결제하기`}
             </Button>
+          </div>
+
+          {/* 간편결제는 이니시스 결제창 안에서 고른다. 결제창을 열기 전에는 손님이 알 수 없어 여기서 미리 알린다. */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
+              {PAY_METHODS.map((m) => (
+                <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
+                  {m.label}
+                </span>
+              ))}
+            </div>
+            <p className="text-[11px] text-text-3">다음 화면(KG이니시스 안전결제)에서 골라요</p>
           </div>
 
           {isGuest && firstPrice && (

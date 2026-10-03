@@ -6,7 +6,7 @@ import { ReportSection } from "@/components/ui/ReportSection";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { StandardReport, StandardTeaser } from "@/lib/reports/standard";
-import { Lock, Sparkles, CheckCircle2, XCircle, Heart } from "lucide-react";
+import { Lock, Sparkles, CheckCircle2, XCircle, Heart, MessageCircleQuestion } from "lucide-react";
 
 interface LockedSectionInfo {
   key: string;
@@ -149,8 +149,8 @@ export default function StandardReportView({
           {teaser.freeSection.clipped && (
             <div className="relative mt-1">
               <p aria-hidden className="select-none text-sm leading-relaxed text-ink blur-[5px]">
-                이어지는 이야기는 전체 리포트에서 볼 수 있어요. 두 번째 문단에는 지금까지의 흐름이 어디로 이어지는지,
-                그리고 그 안에서 눈여겨볼 장면이 무엇인지가 담겨 있어요. 여기까지 읽었다면 뒷이야기도 궁금하실 거예요.
+                이 뒤에는 왜 그런지, 그리고 그 장면이 언제 다시 돌아오는지가 이어져요. 마지막 문단에는 그때 무엇을 하면
+                되는지까지 적혀 있어요. 여기까지 읽고 고개를 끄덕였다면, 다음 문단이 바로 그 답이에요.
               </p>
               <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-b from-white/10 via-white/70 to-white pb-1">
                 {onLockedClick ? (
@@ -172,6 +172,27 @@ export default function StandardReportView({
             </div>
           )}
         </ReportSection>
+      )}
+
+      {/* 답을 숨긴 질문 — 무료는 질문까지, 답은 전체 리포트(2026-10-03) */}
+      {teaser.unsaid && (
+        <div className="rounded-2xl border border-coral/30 bg-coral-soft p-4 text-left">
+          <span className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
+            <MessageCircleQuestion className="h-3.5 w-3.5" />
+            아직 모르는 것 하나
+          </span>
+          <p className="text-[15px] font-bold leading-relaxed text-ink">{teaser.unsaid}</p>
+          {onLockedClick && (
+            <button
+              type="button"
+              onClick={onLockedClick}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-coral py-3 text-sm font-bold text-white transition-all active:scale-[0.96]"
+            >
+              <Lock className="h-3.5 w-3.5" />
+              답 보기
+            </button>
+          )}
+        </div>
       )}
 
       {/* 3 Locked Sections (Hook only, NO full body DOM, surface-soft bg) */}

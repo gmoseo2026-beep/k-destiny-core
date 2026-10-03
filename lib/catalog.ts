@@ -29,7 +29,7 @@ export interface CatalogItem {
   tier: ProductTier;
   inputKind: InputKind;
   accessDays: number;       // Unlock 유효기간(일). 표준 90, 프리미엄 365
-  requiresLogin?: boolean;  // 결제에 로그인 필수 (annual_*, 총운 포함 세트, 프리미엄)
+  requiresLogin?: boolean;  // 결제에 로그인 필수. 2026-10-03부터 해당 상품 없음(비회원은 주문번호 토큰으로 열람)
   passCovered?: boolean;    // 레거시 기간권 보유자 열람 허용 (compat_basic, annual_*)
 
   // T2 신규 필드
@@ -135,7 +135,6 @@ export const CATALOG: CatalogItem[] = [
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
-    requiresLogin: true,
     passCovered: true,
     icon3d: "/icons3d/annual_2026.webp",
     gridLabel: "2026 총운",
@@ -169,11 +168,10 @@ export const CATALOG: CatalogItem[] = [
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
-    requiresLogin: true,
     passCovered: true,
     icon3d: "/icons3d/annual_2027.webp",
     gridLabel: "2027 신년",
-    hook: "남들보다 한 걸음 먼저 2027년의 새로운 바람을 준비해요",
+    hook: "2027년, 나는 무엇을 시작하고 무엇을 끊어야 할까요?",
     subtitle: "한 발 앞서 내다보는 2027년의 새로운 기운은 어떨까?",
     recommendFor: [
       "남들보다 한 해 일찍 미래를 준비하고 싶은 분",
@@ -329,7 +327,7 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/health.webp",
     gridLabel: "건강운",
-    hook: "지치기 쉬운 계절, 내 몸이 보내는 작은 신호들을 미리 챙겨요",
+    hook: "유독 지치는 계절이 따로 있다면, 그게 언제일까요?",
     subtitle: "타고난 체질과 올 한 해 각별히 챙겨야 할 건강 포인트는?",
     recommendFor: [
       "평소 쉽게 피로하거나 특정 부위가 약하다고 느끼는 분",
@@ -695,7 +693,6 @@ export const CATALOG: CatalogItem[] = [
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
-    requiresLogin: true,
     icon3d: "/icons3d/set_me.webp",
     gridLabel: "나 종합 세트",
     hook: "총운·재물·커리어·건강까지 나를 위한 종합 가이드",
@@ -722,7 +719,6 @@ export const CATALOG: CatalogItem[] = [
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
-    requiresLogin: true,
     icon3d: "/icons3d/career.webp",
     gridLabel: "취업 세트",
     hook: "나에게 딱 맞는 커리어 방향과 올 한 해의 이동수",
@@ -750,7 +746,6 @@ export const CATALOG: CatalogItem[] = [
     tier: "standard",
     inputKind: "person",
     accessDays: 90,
-    requiresLogin: true,
     icon3d: "/icons3d/annual_2027.webp",
     gridLabel: "2027 세트",
     hook: "2027년을 미리 준비하는 신년 종합 리포트",
@@ -778,10 +773,9 @@ export const CATALOG: CatalogItem[] = [
     icon: "Crown",
     promptKey: "premium_2027_daeun",
     accessDays: 365,
-    requiresLogin: true,
     icon3d: "/icons3d/premium_2027_daeun.webp",
     gridLabel: "10년 대운",
-    hook: "10년 인생 대운의 길목에서 만나는 2027년 심층 리포트",
+    hook: "10년 흐름 속에서 2027년은 오르막일까요, 쉬어 가는 해일까요?",
     subtitle: "10년의 거대한 대운 속에서 2027년은 어디쯤 위치해 있을까?",
     recommendFor: [
       "10년 대운의 거대한 흐름 속에서 내 인생을 조망하고 싶은 분",
@@ -804,7 +798,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "Baby",
     promptKey: "premium_naming",
     accessDays: 365,
-    requiresLogin: true,
     icon3d: "/icons3d/premium_naming.webp",
     gridLabel: "이름 짓기",
     hook: "아이의 사주에 꼭 맞는 축복 가득한 이름 5가지",
@@ -830,7 +823,6 @@ export const CATALOG: CatalogItem[] = [
     icon: "CalendarHeart",
     promptKey: "premium_date_pick",
     accessDays: 365,
-    requiresLogin: true,
     icon3d: "/icons3d/premium_date_pick.webp",
     gridLabel: "길일 택일",
     hook: "새로운 시작을 가장 좋은 날에 맞이하는 맞춤 택일",

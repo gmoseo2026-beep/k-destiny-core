@@ -98,8 +98,12 @@ describe("Standard Report & Teaser Validators", () => {
     const goodTeaser = {
       ...badTeaser,
       hooks: ["훅 1번 대기 중—", "훅 2번 대기 중—", "훅 3번 대기 중—"],
+      unsaid: "첫인상 뒤에 숨긴 마음 하나, 누가 먼저 꺼낼까요?",
     };
     expect(validator(goodTeaser)).toBe(true);
+    // 2026-10-03: 답을 숨긴 질문(unsaid)이 없거나 무료 본문을 되풀이하면 다시 만든다
+    expect(validator({ ...goodTeaser, unsaid: undefined })).toBe(false);
+    expect(validator({ ...goodTeaser, unsaid: "첫인상에 대한 설명입니다." })).toBe(false);
   });
 
   it("readEnvelope 는 버전 없는 데이터({headline:'Test'})에 null 을 반환한다", () => {

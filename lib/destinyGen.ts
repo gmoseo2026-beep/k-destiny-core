@@ -6,6 +6,7 @@
  * so we generate ONLY that on the hot path and defer the full locked sections
  * to /api/generate-destiny/sections (called after unlock, off the critical path).
  */
+import { COMPAT_FREE_MARKS } from "@/lib/compatFreeText";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // IMPORTANT: GEMINI_API_KEY MUST be the key of the BILLING-ENABLED project
@@ -168,11 +169,20 @@ SHARPNESS RULES:
 - "~할 수 있어요", "~일 거예요"를 연달아 쓰지 않는다. 일반론("서로 배려하세요", "솔직하게 대화하세요")으로 채우지 않는다.
 - 오락·자기이해를 위한 풀이다. 미래를 단정적으로 예언하지 않는다.`;
 
-export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string): string {
+export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string, openQuestion?: string | null): string {
   if (isPremium) {
+    // 무료 화면이 약속한 답(2026-10-03): 잠금 목록 첫 줄 "먼저 서운함을 삼키는 쪽" + 무료 해석의 열린 질문
+    const promised = `PROMISED ANSWERS (the free preview told the reader these are inside — answer them plainly, by name):
+- cautions[0] 은 두 사람 중 서운함을 먼저 삼키는 쪽이 누구인지 이름(또는 지정된 호칭)으로 지목하고, 그대로 두면 생기는 일까지 쓴다.${
+      openQuestion
+        ? `\n- The free preview ended with this open question: "${openQuestion.replace(/"/g, "'")}". coreDynamic 의 첫 두 문장에서 이 질문에 직접 답한다(누가·왜). 질문 문장을 그대로 반복하지 않는다.`
+        : ""
+    }`;
     return `${STYLE_GUIDE}\n\n${STRICT_NO_HANJA_RULE}\n\nTONE: ${toneGuide}\n\n${contextBlock}
 
 ${COMPAT_SHARPNESS_RULES}
+
+${promised}
 
 Write a deeply personal, premium compatibility report. You MUST output your response strictly as a JSON object matching the following TypeScript interface:
 
@@ -201,22 +211,23 @@ No generic filler. Remember: absolutely NO Chinese characters (한자) and NO sa
 ${COMPAT_SHARPNESS_RULES}
 
 Write a short "free preview" compatibility reading.
-CRITICAL PRINCIPLE:
-- FREE = Score + the texture of this pair + ONE everyday clash moment with ONE kind tip.
-- PAID = Root causes, the other clash points, specific synergy, timing, long-term advice.
+CRITICAL PRINCIPLE (2026-10-03): FREE makes them ask the question, PAID gives the answer.
+- FREE = two everyday scenes that make the reader think "어떻게 알았지?" + ONE thing still unsaid between them, left open.
+- PAID = why it happens, who gives in first, the clash points and what to say, timing, advice.
+- The free part must NOT conclude, judge the match, give a tip, or explain a cause.
 
-OUTPUT FORMAT (plain Korean text, exactly these two parts, no markdown, no bullet symbols):
-<Part 1: ONE short paragraph, 2~3 sentences. 첫 문장은 이 두 사람에 대한 대담하고 구체적인 관찰. 좋은 점 하나와 엇갈리는 결 하나를 함께 쓴다. 마지막 문장은 둘 사이에 아직 풀리지 않은 것 하나를 짚으며 끝낸다. "~인연입니다", "~관계예요", "~잘 맞아요" 같은 평가·덕담으로 끝내면 안 된다. (좋은 끝맺음 예: "다만 서운함을 먼저 삼키는 쪽이 늘 같은 사람이라는 건, 둘 다 아직 말하지 않았어요.")>
-
-[부딪히기 쉬운 순간]
-<Part 2 line 1: ONE sentence describing a concrete everyday situation where these two tend to clash (e.g. 연락 속도, 계획 vs 즉흥, 서운함을 말하는 방식). 누가 어떻게 하는지 지목한다.>
-<Part 2 line 2: ONE sentence with a concrete, kind tip that starts with "이럴 땐".>
+OUTPUT FORMAT (plain Korean text, exactly these lines, no markdown, no bullet symbols):
+${COMPAT_FREE_MARKS.scenes}
+<line 1: ONE sentence. 두 사람이 함께 있을 때 실제로 벌어지는 일상 장면 하나(연락, 약속 잡기, 다툰 뒤, 선물, 돈 쓰는 법 등). 누가 무엇을 하는지 이름(또는 지정된 호칭)으로 지목한다. 평가·덕담 없이 장면만.>
+<line 2: ONE sentence. line 1 과 다른 주제의 장면 하나. 같은 방식으로.>
+${COMPAT_FREE_MARKS.unsaid}
+<line 3: ONE sentence. 둘 사이에 아직 말하지 않은 것 하나를 짚는다. "둘 중 한 사람", "어느 순간", "한 가지"처럼 답이 있다는 것은 분명히 말하되 그 답(누가·언제·무엇)은 가린 채 끝낸다. "~모를 수 있어요", "~모를 때가 있어요"처럼 흐릿하게 끝내지 않는다. 추상어(자유, 성장, 진정한 마음 등) 대신 구체적인 행동 하나(연락 답장, 약속 취소, 질투, 돈, 스킨십, 서운함을 삼키기 등)를 쓴다. 형식: "둘 중 한 사람은 [구체적인 행동]할 때마다 [속으로 하는 일]하는데, 그게 누구인지는 아직 말하지 않았어요." — 대괄호를 이 두 사람의 데이터로 채우고, 다른 문장 구조를 써도 된다.>
 
 RULES:
-1. Keep the whole answer under 6 sentences.
-2. DO NOT explain root causes (NO element names, NO metal/wood/fire/water/earth).
-3. Give exactly ONE clash moment and ONE tip. Do not mention timing, months, or long-term advice (those are in the paid report).
-4. The line "[부딪히기 쉬운 순간]" must appear exactly once, on its own line.
+1. Exactly 3 sentences in total, each 25~60 Korean characters. 모두 해요체("~해요", "~예요")로 쓴다. "~습니다"체 금지.
+2. No advice ("이럴 땐", "~해 보세요"), no conclusion, no judging the match ("잘 맞아요", "인연이에요").
+3. DO NOT explain root causes (NO element names, NO metal/wood/fire/water/earth). Do not mention months or timing.
+4. Each of the two marker lines must appear exactly once, on its own line, exactly as given.
 5. Absolutely NO Chinese characters (한자) and NO saju technical terms.`;
   }
 }

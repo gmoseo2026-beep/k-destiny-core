@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import KongdakMascot from "@/components/KongdakMascot";
 import FortuneLoading from "@/components/FortuneLoading";
 import dynamic from "next/dynamic";
-import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+import { requestPortOnePayment, BuyerInfo, recallOrderToken } from "@/lib/payments/client";
+import { grantingCatalogIds } from "@/lib/productIdentity";
+import { loadLastPerson } from "@/lib/reportHandoff";
 import { getProduct, priceLabel } from "@/lib/catalog";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
@@ -73,6 +74,39 @@ interface AnnualFortuneData {
   isGuest?: boolean;
 }
 
+/** 이 기기에 남은 결제 증명(총운 단품 또는 총운이 든 세트). 비회원 전체 열람에 쓴다. */
+function findGuestOrderToken(year: number): string | null {
+  for (const id of grantingCatalogIds(`annual_${year}`)) {
+    const t = recallOrderToken(id);
+    if (t) return t;
+  }
+  return null;
+}
+
+interface GuestAnnualInput {
+  dob: string;
+  time: string | null;
+  gender: "F" | "M";
+  name: string;
+}
+
+/** 결제 전에 입력한 생년월일(같은 탭). 없으면 null → 입력 폼을 보여 준다. */
+function loadGuestAnnualInput(): GuestAnnualInput | null {
+  try {
+    const stored = sessionStorage.getItem("kongdak_guest_fortune_input");
+    if (stored) {
+      const p = JSON.parse(stored) as Partial<GuestAnnualInput>;
+      if (typeof p.dob === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.dob) && (p.gender === "F" || p.gender === "M")) {
+        return { dob: p.dob, time: p.time ?? null, gender: p.gender, name: p.name || "나" };
+      }
+    }
+  } catch {
+    // ignore
+  }
+  const last = loadLastPerson();
+  return last ? { dob: last.dob, time: last.time, gender: last.gender, name: last.name || "나" } : null;
+}
+
 const SECTION_CONFIG = [
   { key: "love", title: "연애 & 애정운", icon: Heart, color: "text-coral", bg: "bg-coral/10" },
   { key: "money", title: "재물 & 금전운", icon: Coins, color: "text-[#FFC24B]", bg: "bg-[#FFC24B]/10" },
@@ -87,7 +121,6 @@ export default function AnnualFortuneClient({
   initialHasProfile = false,
 }: AnnualFortuneClientProps) {
   const { data: session } = useSession();
-  const router = useRouter();
 
   const [data, setData] = useState<AnnualFortuneData | null>(null);
   const [loading, setLoading] = useState(initialHasProfile);
@@ -188,14 +221,51 @@ export default function AnnualFortuneClient({
       } catch {
         // ignore
       }
-
-      alert(`${year} 총운 전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.`);
-      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/fortune/annual`;
-      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
-      return;
     }
     setCheckoutModalOpen(true);
   };
+
+  /** 비회원 전체 총운: 생성 중(202)이면 잠시 기다렸다 다시 묻는다. */
+  const fetchGuestFull = useCallback(async (input: GuestAnnualInput, orderId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const res = await fetch("/api/fortune/annual", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...input, locale, productId: `annual_${year}`, orderId }),
+        });
+        if (res.status === 202) {
+          await new Promise((r) => setTimeout(r, 3000));
+          continue;
+        }
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || `${year} 총운을 불러오지 못했습니다.`);
+        setData(json.data);
+        setShowInputForm(false);
+        return;
+      }
+      throw new Error("리포트를 준비하는 데 시간이 걸리고 있어요. 잠시 후 새로고침해 주세요.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `${year} 총운을 불러오는데 실패했습니다.`);
+    } finally {
+      setLoading(false);
+    }
+  }, [locale, year]);
+
+  // 결제를 마치고 돌아온 비회원: 이 기기의 결제 증명 + 입력값으로 바로 전체 총운을 연다
+  const guestAutoRef = React.useRef(false);
+  useEffect(() => {
+    if (session?.user?.id || guestAutoRef.current) return;
+    const orderId = findGuestOrderToken(year);
+    const input = orderId ? loadGuestAnnualInput() : null;
+    if (!orderId || !input) return;
+    guestAutoRef.current = true;
+    queueMicrotask(() => {
+      void fetchGuestFull(input, orderId);
+    });
+  }, [session?.user?.id, year, fetchGuestFull]);
 
   const fetchFortune = useCallback(async () => {
     try {
@@ -267,6 +337,13 @@ export default function AnnualFortuneClient({
         }));
       } catch {
         // ignore
+      }
+
+      // 결제한 비회원이 입력을 다시 한 경우 → 맛보기 대신 전체 총운
+      const paidOrderId = session?.user?.id ? null : findGuestOrderToken(year);
+      if (paidOrderId) {
+        await fetchGuestFull({ dob, time: finalTime, gender, name: name.trim() || "나" }, paidOrderId);
+        return;
       }
 
       const res = await fetch("/api/fortune/annual", {
@@ -976,7 +1053,17 @@ export default function AnnualFortuneClient({
                 tier: annualProduct?.tier || "standard",
                 amount: res.amount,
               });
-              fetchFortune();
+              if (session?.user?.id) {
+                fetchFortune();
+              } else {
+                const input = loadGuestAnnualInput();
+                if (input) {
+                  void fetchGuestFull(input, res.orderId);
+                } else {
+                  setData(null);
+                  setShowInputForm(true);
+                }
+              }
             }
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.";

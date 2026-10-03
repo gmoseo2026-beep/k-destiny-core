@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { genAI, PREMIUM_MODELS, LOCALE_CONFIG, compatContextBlock, buildCompatPrompt, repairJSON } from "@/lib/destinyGen";
+import { parseCompatFreeText } from "@/lib/compatFreeText";
 import { isEntitled } from "@/lib/entitlement";
 import prisma from "@/lib/prisma";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
@@ -69,7 +70,10 @@ export async function POST(req: NextRequest) {
       compatResult: { score, keywords, breakdown }
     });
 
-    const prompt = buildCompatPrompt(true, contextBlock, toneGuide);
+    // 무료 화면이 열어 둔 질문(아직 말하지 않은 것)에 유료가 반드시 답하게 한다
+    const free = parseCompatFreeText(compat.summaryKo);
+    const openQuestion = free?.kind === "scenes" ? free.unsaid : null;
+    const prompt = buildCompatPrompt(true, contextBlock, toneGuide, openQuestion);
 
     // Call Gemini
     const t0 = Date.now();

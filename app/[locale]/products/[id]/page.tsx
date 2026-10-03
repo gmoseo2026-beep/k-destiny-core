@@ -6,6 +6,7 @@ import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { StandardProductDetail } from "@/components/product/StandardProductDetail";
+import { canonicalUrlFor, productShareMeta } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -18,9 +19,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const product = await getEffectiveProduct(id);
   if (!product || !isViewableFor(product, preview)) return { title: "상품을 찾을 수 없습니다" };
 
+  // 공유 카드: 홈 카드가 아니라 이 상품의 질문(hook)이 크게 보이게 한다. og:url 도 이 상품 주소로.
+  const url = canonicalUrlFor(`/products/${product.id}`);
   return {
     title: `${product.name} | 콩닥`,
     description: product.description,
+    alternates: { canonical: url },
+    ...productShareMeta(product, url),
   };
 }
 

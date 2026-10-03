@@ -27,9 +27,39 @@ import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { logGeneration, errorCode, type GenLogKind } from "@/lib/reports/genLog";
+import { orderGrants } from "@/lib/entitlementRules";
+import { claimGeneration, completeGeneration, failGeneration } from "@/lib/reports/generationLock";
+import { readEnvelope } from "@/lib/reports/standard";
+import { personSubject } from "@/lib/reports/subjectKey";
+import { clipHalf } from "@/lib/reports/teaser";
+
+/** 총운 미리보기의 무료 본문도 앞 절반만(2026-10-03 무료=질문, 유료=답). 뒷부분은 응답에서 뺀다. */
+function clipAnnualFree<T extends { text?: string }>(fs: T): T & { clipped?: boolean } {
+  if (!fs || typeof fs.text !== "string") return fs;
+  const { text, clipped } = clipHalf(fs.text);
+  return { ...fs, text, clipped };
+}
 
 type FourPillarsObj = { year: string; month: string; day: string; time: string | null };
 type ElementsScoreMap = Record<string, number>;
+
+/** 1순위 모델 실패 시 2순위로 한 번 더 시도한다(회원 경로와 같은 설정). */
+async function runAnnualModel(prompt: string, maxOutputTokens: number): Promise<{ text: string; modelName: string }> {
+  const config = {
+    temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens, responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 0 },
+  } as unknown as GenerationConfig;
+  for (const [i, modelName] of PREMIUM_MODELS.slice(0, 2).entries()) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: config });
+      return { text: result.response.text(), modelName };
+    } catch (e) {
+      if (i === 1) throw e;
+      console.warn(`[annual-fortune guest-full] ${modelName} failed, falling back`, e);
+    }
+  }
+  throw new Error("no model available");
+}
 
 const YEAR_CONTEXT: Record<number, string> = {
   2026: "2026년 병오년 - 붉은 말의 해",
@@ -78,8 +108,10 @@ export async function POST(req: Request) {
     //    - 유료 4개 영역, 12개월 타임라인, 행운포인트 서버 원천 삭제
     // ─────────────────────────────────────────────────────────────
     if (!userId) {
+      // 결제한 비회원: 추측 불가한 주문번호(orderId)를 소유 증명으로 제시한다(표준 상품과 같은 규칙).
+      const guestOrderId = typeof body.orderId === "string" && body.orderId ? body.orderId : null;
       const clientIp = getClientIp(req);
-      const rateCheck = await checkChatRateLimit(clientIp);
+      const rateCheck = guestOrderId ? { allowed: true } : await checkChatRateLimit(clientIp);
       if (!rateCheck.allowed) {
         return NextResponse.json(
           { error: "요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요." },
@@ -145,6 +177,77 @@ export async function POST(req: Request) {
       });
       contextBlock += `\nTARGET YEAR: ${year} (${YEAR_CONTEXT[year]})\n`;
 
+      const toneGuideGuest = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
+
+      // 3-1) 결제한 비회원: 전체 총운. 계정 대신 주문에 묶어 GeneratedReport 에 보관한다.
+      if (guestOrderId) {
+        logKind = "FULL";
+        const order = await prisma.order.findUnique({ where: { orderId: guestOrderId }, include: { unlocks: true } });
+        if (!order) return NextResponse.json({ error: "열람 권한이 없어요." }, { status: 403 });
+        const grant = orderGrants(order, {
+          catalogId: productId,
+          compatId: null,
+          now: new Date(),
+          sessionUserId: null,
+          presentedOrderId: guestOrderId,
+        });
+        if (!grant.ok) {
+          return grant.reason === "NOT_PAID"
+            ? NextResponse.json({ error: "결제가 완료되지 않았어요." }, { status: 402 })
+            : NextResponse.json({ error: "열람 권한이 없어요." }, { status: 403 });
+        }
+
+        const claim = await claimGeneration({
+          cacheKey: `FULL:${order.id}:${productId}`,
+          kind: "FULL",
+          catalogId: productId,
+          orderId: order.id,
+          userId: null,
+          compatId: null,
+          subjectHash: personSubject({ name, dob, time: time || null, gender }),
+        });
+        if (claim.state === "READY") {
+          const env = readEnvelope(claim.content);
+          if (env) {
+            void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, cached: true });
+            return NextResponse.json({
+              success: true,
+              data: { ...(env.data as AnnualFortuneContent), locked: false },
+              locked: false,
+            });
+          }
+          await failGeneration(claim.reportId);
+          return NextResponse.json({ error: "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요." }, { status: 503 });
+        }
+        if (claim.state === "BUSY") return NextResponse.json({ status: "GENERATING" }, { status: 202 });
+        if (claim.state === "GAVE_UP") {
+          return NextResponse.json({ error: "리포트 생성에 반복 실패했어요. 고객센터로 문의해 주세요." }, { status: 409 });
+        }
+
+        try {
+          const prompt = buildAnnualFortunePrompt(contextBlock, year, toneGuideGuest);
+          const { text, modelName: usedModel } = await runAnnualModel(prompt, 8192);
+          const full = repairJSON(text) as AnnualFortuneContent | null;
+          if (!full || typeof full.yearScore !== "number") throw new Error("Failed to parse guest annual full JSON");
+          full.yearScore = calculateAnnualYearScore({
+            dayMaster: saju.dayMasterSignKey,
+            fourPillars: saju.fourPillars,
+            elementsScore: saju.elementsScore,
+            year,
+          });
+          await completeGeneration(
+            claim.reportId,
+            JSON.parse(JSON.stringify({ version: 1, score: full.yearScore, data: full })) as Prisma.InputJsonValue,
+            usedModel
+          );
+          void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, ms: Date.now() - tStart });
+          return NextResponse.json({ success: true, data: { ...full, locked: false }, locked: false });
+        } catch (e) {
+          await failGeneration(claim.reportId);
+          throw e;
+        }
+      }
+
       // 4) Gemini 소형 맛보기 생성 (출력 토큰 대폭 축소로 2~3초대 초고속 응답)
       const t0 = Date.now();
       const toneGuide = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
@@ -198,17 +301,17 @@ export async function POST(req: Request) {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
         summary: jsonResult.summary || `${year}년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.`,
-        freeSection: jsonResult.freeSection || {
+        freeSection: clipAnnualFree(jsonResult.freeSection || {
           type: "love",
           score: 85,
           text: "올해 연애운은 전반적으로 매우 긍정적인 흐름을 보입니다. 새로운 인연을 만나거나 기존의 관계가 한층 깊어질 수 있는 기회가 찾아올 것입니다."
-        },
+        }),
         hooks: {
           love: jsonResult.hooks?.love,
-          money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
-          career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
-          health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",
-          relationship: jsonResult.hooks?.relationship || "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —",
+          money: jsonResult.hooks?.money || "올해 돈이 새는 구멍이 하나 따로 있어요. 그게 어디인지는 —",
+          career: jsonResult.hooks?.career || "올해 일에서 버틸 때와 움직일 때가 갈리는 지점이 있어요 —",
+          health: jsonResult.hooks?.health || "올해 유독 무리하기 쉬운 달이 따로 있어요 —",
+          relationship: jsonResult.hooks?.relationship || "올해 거리를 다시 재야 하는 관계가 하나 있어요 —",
         },
         teasers: {
           bestMonth: jsonResult.teasers?.bestMonth || "올해 가장 눈부시게 빛나는 달은 ●월",
@@ -380,17 +483,17 @@ export async function POST(req: Request) {
         yearScore: fixedScore,
         headline: jsonResult.headline || "새로운 기운과 도약의 해",
         summary: jsonResult.summary || `${year}년은 당신의 잠재력이 드러나며 뜻밖의 귀인과 기회를 맞이하는 해입니다.`,
-        freeSection: jsonResult.freeSection || {
+        freeSection: clipAnnualFree(jsonResult.freeSection || {
           type: "love",
           score: 85,
           text: "올해 연애운은 전반적으로 매우 긍정적인 흐름을 보입니다. 새로운 인연을 만나거나 기존의 관계가 한층 깊어질 수 있는 기회가 찾아올 것입니다."
-        },
+        }),
         hooks: {
           love: jsonResult.hooks?.love,
-          money: jsonResult.hooks?.money || "큰 돈이 들어올 결정적 타이밍이 올해 안에 숨어 있어요 —",
-          career: jsonResult.hooks?.career || "올해 당신의 능력과 노력이 단숨에 인정받을 결정적 기회가 찾아옵니다 —",
-          health: jsonResult.hooks?.health || "올해 특별히 에너지를 충전하고 조심해야 할 중요한 순간이 있어요 —",
-          relationship: jsonResult.hooks?.relationship || "당신의 곁에서 든든한 귀인이 되어줄 사람이 올해 등장하는데 —",
+          money: jsonResult.hooks?.money || "올해 돈이 새는 구멍이 하나 따로 있어요. 그게 어디인지는 —",
+          career: jsonResult.hooks?.career || "올해 일에서 버틸 때와 움직일 때가 갈리는 지점이 있어요 —",
+          health: jsonResult.hooks?.health || "올해 유독 무리하기 쉬운 달이 따로 있어요 —",
+          relationship: jsonResult.hooks?.relationship || "올해 거리를 다시 재야 하는 관계가 하나 있어요 —",
         },
         teasers: {
           bestMonth: jsonResult.teasers?.bestMonth || "올해 가장 눈부시게 빛나는 달은 ●월",

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Lock, ArrowRight, Check } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
+import { useSeenOnce } from "@/lib/useSeenOnce";
 import { priceLabel, listPrice, formatWon, type CatalogItem } from "@/lib/catalog";
 
 /**
@@ -51,6 +52,9 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
       window.removeEventListener("resize", update);
     };
   }, []);
+
+  // view_paywall = 결제 안내 카드가 실제로 화면에 보인 순간(렌더·클릭이 아니라)
+  useSeenOnce(cardRef, () => trackEvent("view_paywall", { productId: product.id, tier: product.tier, source: "teaser_card" }));
 
   const handle = (source: TeaserUnlockSource) => {
     trackTeaserUnlock(product.id, source);

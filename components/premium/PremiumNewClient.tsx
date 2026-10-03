@@ -351,21 +351,8 @@ export function PremiumNewClient({
       return;
     }
 
-    // Always require login for premium products
-    if (!sessionUser?.id) {
-      savePendingInput(product.id, payload);
-      alert("프리미엄 리포트는 구매 후 1년간 보관함에서 언제든 열람하실 수 있도록 회원 로그인이 필요합니다.\n로그인 화면으로 이동합니다.");
-      const currentPath = `/${locale}/premium/${product.id}/new`;
-      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(currentPath)}`);
-      return;
-    }
-
+    // 비회원도 바로 결제한다(2026-10-03). 열람 증명은 주문번호 토큰, 계정 보관은 결제 완료 화면에서 권한다.
     savePendingInput(product.id, payload);
-    trackEvent("view_paywall", {
-      productId: product.id,
-      tier: "premium",
-      amountLabel: priceLabel(product),
-    });
     setCheckoutModalOpen(true);
   };
 

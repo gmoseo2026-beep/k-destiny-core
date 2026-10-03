@@ -12,6 +12,7 @@ export function pickTeaser(raw: unknown): StandardTeaser | null {
     summary: r.summary,
     freeSection: { key: fs.key, title: fs.title, body: fs.body },
     hooks: r.hooks.filter((h): h is string => typeof h === "string").slice(0, 4),
+    ...(typeof r.unsaid === "string" && r.unsaid.trim() ? { unsaid: r.unsaid.trim() } : {}),
   };
 }
 

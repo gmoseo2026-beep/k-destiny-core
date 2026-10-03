@@ -9,7 +9,9 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight } from "lucide-react";
+import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight, MessageCircleQuestion } from "lucide-react";
+import { parseCompatFreeText } from "@/lib/compatFreeText";
+import { useSeenOnce } from "@/lib/useSeenOnce";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -141,11 +143,15 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const checkoutProduct = getProduct(checkoutId) ?? compatProduct;
   const upsellSets = setsContaining("compat_basic", visibleIds ?? []);
 
-  // 무료 해석 = 케미 한 문단 + "[부딪히기 쉬운 순간]" 무료 공개 1가지(예전 저장본은 표시 없이 한 문단)
-  const FREE_CLASH_MARK = "[부딪히기 쉬운 순간]";
-  const markAt = summary ? summary.indexOf(FREE_CLASH_MARK) : -1;
-  const chemistryText = summary && markAt >= 0 ? summary.slice(0, markAt).trim() : summary ?? "";
-  const clashText = summary && markAt >= 0 ? summary.slice(markAt + FREE_CLASH_MARK.length).trim() : "";
+  // 무료 해석 = 맞히는 장면 2개 + 아직 말하지 않은 것 1개(답은 심층 궁합). 예전 저장본은 첫 문단만.
+  const freeView = parseCompatFreeText(summary);
+  // 이름을 비워 두면 저장값이 "나"/"상대방" → "나 님" 대신 당신/그 사람으로 부른다
+  const callA = !data.personA.name || data.personA.name === "나" ? "당신" : `${data.personA.name} 님`;
+  const callB = !data.personB.name || data.personB.name === "상대방" ? "그 사람" : `${data.personB.name} 님`;
+  const isLocked = !isPremium && !unlockToken && !deepReport;
+  // view_paywall = 잠긴 심층 궁합 안내가 실제로 화면에 보인 순간
+  const paywallRef = React.useRef<HTMLDivElement>(null);
+  useSeenOnce(paywallRef, () => trackEvent("view_paywall", { productId: "compat_basic", source: "compat_result" }), isLocked);
 
   // 결제창 열기(정통 궁합 또는 세트). 클릭은 인앱 가드보다 먼저 기록해 인앱 사용자의 관심도 잡는다
   const proceedCompatCheckout = (id: string) => {
@@ -203,7 +209,6 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     if (refToken) {
       trackEvent("share_visit", { sourceCompatId: refToken, path: "compat_result" });
     }
-    trackEvent("view_paywall", { source: "compat_result_bottom" });
 
     // 사용자가 주소창 URL을 그대로 복사해도 ref가 유지되도록 주소창 searchParams 보존
     if (typeof window !== "undefined" && !window.location.search.includes("ref=")) {
@@ -624,27 +629,40 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               두 사람의 기운을 다정하게 읽고 있어요
             </p>
           </div>
-        ) : (
+        ) : freeView?.kind === "scenes" ? (
           <>
-            <div className="text-sm text-ink leading-relaxed space-y-3 whitespace-pre-line font-medium">
-              {chemistryText}
-            </div>
-            {clashText && (
-              <div className="mt-4 rounded-2xl border border-coral/25 bg-coral-soft p-4 text-left">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    미리 보는 갈등 포인트
-                  </span>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-coral-deep">무료 공개</span>
-                </div>
-                <p className="text-sm font-medium leading-relaxed text-ink whitespace-pre-line">{clashText}</p>
-                <p className="mt-2 text-[11px] leading-snug text-text-2">
-                  다른 갈등 포인트와 풀어 가는 법, 이번 달 애정운 흐름은 전체 리포트에 담겨 있어요.
-                </p>
+            <p className="mb-3 text-xs font-bold text-text-3">{callA}과 {callB}, 이런 장면 있죠?</p>
+            <ul className="flex flex-col gap-2.5">
+              {freeView.scenes.map((line, i) => (
+                <li key={i} className="rounded-2xl bg-surface-soft px-4 py-3 text-sm font-medium leading-relaxed text-ink">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            {freeView.unsaid && (
+              <div className="mt-4 rounded-2xl border border-coral/30 bg-coral-soft p-4 text-left">
+                <span className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
+                  <MessageCircleQuestion className="h-3.5 w-3.5" />
+                  두 사람이 아직 말하지 않은 것
+                </span>
+                <p className="text-[15px] font-bold leading-relaxed text-ink">{freeView.unsaid}</p>
+                {isLocked && (
+                  <button
+                    type="button"
+                    onClick={() => openCompatCheckout("compat_basic", "click_unsaid")}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-coral py-3 text-sm font-bold text-white transition-all active:scale-[0.96]"
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    누구인지, 왜인지 보기 · {compatPrice}
+                  </button>
+                )}
               </div>
             )}
           </>
+        ) : (
+          <div className="text-sm text-ink leading-relaxed space-y-3 whitespace-pre-line font-medium">
+            {freeView?.kind === "legacy" ? freeView.text : ""}
+          </div>
         )}
       </Card>
 
@@ -738,14 +756,15 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         </div>
       ) : (
         <Card className="w-full mt-8 text-center relative overflow-hidden">
+          <div ref={paywallRef} />
           <div className="inline-block bg-plum-deep text-gold text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
-            Special Reading
+            심층 궁합
           </div>
           <h4 className="text-lg font-black text-ink mb-2">
-            우리 관계의 진짜 갈등 포인트와<br/>현실적인 연애 조언이 궁금하다면?
+            점수는 무료, 이유는 여기에
           </h4>
           <p className="text-sm text-text-2 mb-6 font-medium">
-            서로에게 끌리는 진짜 이유와 타이밍까지<br/>두 사람의 사주로 풀어낸 심층 궁합 리포트를 만나보세요.
+            {callA}과 {callB} 사이에서 누가 먼저 서운함을 삼키는지,<br/>어디서 부딪히고 그 자리에서 뭐라고 말하면 되는지.
           </p>
           
           {isPremium || unlockToken ? (
@@ -790,69 +809,23 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </div>
 
                 <div className="space-y-3">
-                  {/* Item 1: 갈등 포인트 3가지 */}
-                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4 text-coral" />
-                        <span className="text-xs sm:text-sm font-extrabold text-ink">
-                          우리 사이 갈등 포인트 3가지 & 극복법
-                        </span>
+                  {[
+                    { icon: <AlertTriangle className="w-4 h-4 text-coral" />, title: "먼저 서운함을 삼키는 쪽은 ●●●", desc: `${callA}과 ${callB} 중 누구의 버릇인지, 그대로 두면 어떻게 되는지` },
+                    { icon: <Compass className="w-4 h-4 text-plum" />, title: "둘이 부딪히는 상황 3가지 & 그 자리에서 쓸 한마디", desc: "연락·약속·말투 중 어디서 시작되는지, 실제로 꺼낼 문장까지" },
+                    { icon: <Heart className="w-4 h-4 text-coral" />, title: "둘을 붙잡아 두는 진짜 이유", desc: "점수 뒤에 있는 두 사람의 결, 서로에게 끌리는 지점" },
+                    { icon: <Lightbulb className="w-4 h-4 text-[#C98A0B]" />, title: "이번 달, 대화하기 좋은 때와 조심할 순간", desc: "중요한 얘기를 꺼내기 좋은 흐름과 피해야 할 한 번" },
+                  ].map((it) => (
+                    <div key={it.title} className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {it.icon}
+                          <span className="text-xs sm:text-sm font-extrabold text-ink">{it.title}</span>
+                        </div>
+                        <Lock className="w-3.5 h-3.5 shrink-0 text-coral" />
                       </div>
-                      <Lock className="w-3.5 h-3.5 text-coral" />
+                      <p className="text-xs font-medium text-text-2 leading-snug">{it.desc}</p>
                     </div>
-                    <p className="text-xs font-medium text-text-2 leading-snug">
-                      두 사람이 감정적으로 부딪히기 쉬운 결정적 계기와 오해가 시작되는 순간, 실전 대처법이 담겨 있습니다.
-                    </p>
-                  </div>
-
-                  {/* Item 2: 관계의 핵심 에너지 */}
-                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Compass className="w-4 h-4 text-plum" />
-                        <span className="text-xs sm:text-sm font-extrabold text-ink">
-                          관계의 핵심 에너지 & 시너지
-                        </span>
-                      </div>
-                      <Lock className="w-3.5 h-3.5 text-text-3" />
-                    </div>
-                    <p className="text-xs font-medium text-text-2 leading-snug">
-                      서로에게 자석처럼 끌리는 타고난 기운의 비밀과 폭발적인 시너지 포인트를 분석합니다.
-                    </p>
-                  </div>
-
-                  {/* Item 3: 현실 연애 조언 & 타이밍 */}
-                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Lightbulb className="w-4 h-4 text-[#C98A0B]" />
-                        <span className="text-xs sm:text-sm font-extrabold text-ink">
-                          현실 연애 조언 & 이번 달 애정운 타이밍
-                        </span>
-                      </div>
-                      <Lock className="w-3.5 h-3.5 text-text-3" />
-                    </div>
-                    <p className="text-xs font-medium text-text-2 leading-snug">
-                      두 사람 사이에 중요한 대화나 결정을 내리기 가장 좋은 타이밍과 실전 소통법을 알려드립니다.
-                    </p>
-                  </div>
-
-                  {/* Item 4: 이상형 사주 기운 */}
-                  <div className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Heart className="w-4 h-4 text-coral" />
-                        <span className="text-xs sm:text-sm font-extrabold text-ink">
-                          나와 찰떡인 이상형 사주 기운
-                        </span>
-                      </div>
-                      <Lock className="w-3.5 h-3.5 text-text-3" />
-                    </div>
-                    <p className="text-xs font-medium text-text-2 leading-snug">
-                      상대방의 기운 중 나를 가장 편안하게 만들어주는 매력 포인트와 궁극의 인연 조화를 분석합니다.
-                    </p>
-                  </div>
+                  ))}
                 </div>
               </Card>
 
@@ -863,7 +836,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 className="w-full bg-coral hover:bg-coral-deep text-white py-4 px-4 rounded-2xl font-bold text-sm shadow-[0_8px_20px_rgba(224,36,90,0.25)] transition-all duration-150 active:scale-[0.96] flex flex-col items-center justify-center gap-0.5"
               >
                 <span className="text-sm sm:text-base font-extrabold text-white">
-                  갈등 포인트 3가지 & 심층 리포트 열기
+                  심층 궁합으로 답 보기
                 </span>
                 <span className="text-[11px] font-medium text-white/90">
                   {compatPrice} · 결제 후 바로 열람 · 90일 보관

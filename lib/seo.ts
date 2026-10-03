@@ -44,9 +44,9 @@ const OG_LOCALE: Record<string, string> = {
 export const PAGE_META: Record<string, Record<string, Meta>> = {
   '': {
     ko: {
-      title: '콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합',
+      title: '콩닥 — 그 사람 속마음까지 보는 사주 궁합',
       description:
-        '두 사람의 궁합부터 나의 2026 총운까지 — 생년월일로 30초, 다정하게 풀어내는 사주 콩닥.',
+        '그 사람은 지금 나를 어떻게 생각할까? 생년월일만 넣으면 30초 — 궁합, 속마음, 둘만의 속궁합까지 무료로 먼저 봐요.',
     },
     en: {
       title: 'Kongdak — How Well Do We Match? Saju Compatibility',
@@ -166,6 +166,29 @@ export function getPageMeta(path: string, locale: string): Meta {
  * 유효한데, 여기서는 비-ko 가 ko 를 가리키므로 두 신호가 서로 모순된다.
  * 로케일을 다시 깨울 때 canonicalLocale 을 locale 로 되돌리고 클러스터를 복원하면 된다.
  */
+/** 공유 카드 이미지. 문구를 바꾸면 v 를 올려 메신저·SNS 캐시를 새로 받게 한다. */
+export const OG_CARD_VERSION = 2;
+export const OG_CARD_URL = `/api/og/card?v=${OG_CARD_VERSION}`;
+export const productOgCardUrl = (productId: string) =>
+  `/api/og/card?p=${encodeURIComponent(productId)}&v=${OG_CARD_VERSION}`;
+
+/**
+ * 상품 링크를 공유했을 때의 미리보기(제목·설명·이미지). 홈 카드가 아니라 상품의 질문(hook)을 보여 준다.
+ * url 은 이 페이지의 정본 주소 — og:url 이 홈을 가리키면 SNS 가 홈 링크로 합쳐 버린다.
+ */
+export function productShareMeta(
+  product: { id: string; name: string; hook: string; subtitle?: string; description: string },
+  url: string
+): Pick<Metadata, 'openGraph' | 'twitter'> {
+  const title = `${product.hook} | 콩닥 ${product.name}`;
+  const description = `${product.subtitle ?? product.description} 생년월일만 넣으면 30초, 무료로 먼저 봐요.`;
+  const image = { url: `${BASE_URL}${productOgCardUrl(product.id)}`, width: 1200, height: 630, alt: product.hook };
+  return {
+    openGraph: { title, description, url, siteName: '콩닥 (kongdak)', type: 'website', locale: 'ko_KR', images: [image] },
+    twitter: { card: 'summary_large_image', title, description, images: [image.url] },
+  };
+}
+
 export function canonicalUrlFor(path: string): string {
   return `${BASE_URL}/${DEFAULT_LOCALE}${path}`;
 }
@@ -196,10 +219,10 @@ export function buildPageMetadata(path: string, locale: string): Metadata {
       siteName: '콩닥 (kongdak)',
       images: [
         {
-          url: '/og-image.jpg',
+          url: OG_CARD_URL,
           width: 1200,
           height: 630,
-          alt: '콩닥 (kongdak) — 사주 기반 궁합 서비스',
+          alt: '콩닥 (kongdak) — 그 사람, 지금 나를 어떻게 생각할까?',
         },
       ],
       locale: OG_LOCALE[locale] ?? OG_LOCALE.en,
@@ -209,7 +232,7 @@ export function buildPageMetadata(path: string, locale: string): Metadata {
       card: 'summary_large_image',
       title: meta.title,
       description: meta.description,
-      images: ['/og-image.jpg'],
+      images: [OG_CARD_URL],
     },
     icons: {
       icon: [

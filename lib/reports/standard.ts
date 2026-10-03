@@ -16,6 +16,8 @@ export interface StandardTeaser {
   /** clipped: 화면용으로 본문 뒷부분을 잘라 냈다(clipTeaserForView) */
   freeSection: { key: string; title: string; body: string; clipped?: boolean };
   hooks: string[];
+  /** 답을 숨긴 질문 한 문장(2026-10-03). 전체 리포트가 이 질문에 답한다. 예전 저장본에는 없다. */
+  unsaid?: string;
 }
 
 export interface ReportEnvelope { version: 1; score: number; data: unknown }
@@ -46,6 +48,7 @@ export function makeStandardTeaserValidator(spec: ProductPromptSpec) {
     if (t.hooks.length !== spec.sections.length - 1 || !t.hooks.every(isStr)) return false;
     // 잠긴 칸 문구가 무료로 보여 준 문장을 되풀이하면 다시 만든다(미리보기만으로 이야기가 끝나 버린다)
     const shown = `${t.headline} ${t.summary} ${t.freeSection.body}`.replace(/\s+/g, "");
+    if (!isStr(t.unsaid) || shown.includes(t.unsaid.replace(/\s+/g, "").replace(/[.!?。…]+$/, ""))) return false;
     return t.hooks.every((h) => !shown.includes(h.replace(/\s+/g, "").replace(/[.!?。]+$/, "")));
   };
 }

@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import FortuneNewClient from "@/components/FortuneNewClient";
-import { canonicalUrlFor } from "@/lib/seo";
+import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { isViewableFor } from "@/lib/catalog";
+import { isViewableFor, getProduct } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
@@ -14,17 +14,30 @@ const DESCRIPTION = "사주 정보를 입력하고 정확한 분석 결과를 �
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ productId?: string }>;
 }): Promise<Metadata> {
   await params;
   const canonical = canonicalUrlFor('/fortune/new');
+  // ?productId= 로 공유된 링크는 그 상품의 질문 카드를 보여 준다(입력 화면이 곧 상품 랜딩이다)
+  const { productId } = await searchParams;
+  const shared = productId ? getProduct(productId) : undefined;
+  if (shared && !shared.isHidden) {
+    return {
+      title: `${shared.name} — 콩닥`,
+      description: shared.description,
+      alternates: { canonical },
+      ...productShareMeta(shared, `${canonical}?productId=${encodeURIComponent(shared.id)}`),
+    };
+  }
 
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical },
-    openGraph: { title: TITLE, description: DESCRIPTION, url: canonical },
+    openGraph: { title: TITLE, description: DESCRIPTION, url: canonical, images: [OG_CARD_URL] },
   };
 }
 

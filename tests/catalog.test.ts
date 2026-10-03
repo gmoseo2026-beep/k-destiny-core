@@ -11,13 +11,13 @@ describe("catalog 불변식", () => {
       for (const id of s.items ?? []) expect(getProduct(id), `${s.id}→${id}`).toBeDefined();
     }
   });
-  it("couple 상품은 couple 입력, 프리미엄은 365일·로그인", () => {
+  it("couple 상품은 couple 입력, 프리미엄은 365일, 로그인 강제 상품 없음(2026-10-03)", () => {
     for (const c of CATALOG) {
       if (c.target === "couple") expect(c.inputKind).toBe("couple");
       if (c.tier === "premium") {
         expect(c.accessDays).toBe(365);
-        expect(c.requiresLogin).toBe(true);
       }
+      expect(c.requiresLogin, c.id).toBeFalsy();
     }
   });
   it("취소선 정가는 오픈 기념가인 표준 단품에만(실제로 받던 6,900원) — D6 를 2026-10-02 결정으로 대체", () => {

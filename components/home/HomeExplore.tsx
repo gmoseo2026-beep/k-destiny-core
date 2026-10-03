@@ -88,8 +88,8 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
                   </span>
                   <Image src={p.icon3d} alt="" width={40} height={40} className="object-contain -mt-1 -mr-1" />
                 </div>
-                <span className="mt-1 text-sm font-extrabold text-ink leading-tight">{p.gridLabel || p.name}</span>
-                <span className="mt-0.5 text-[11px] text-caption leading-snug line-clamp-2">{p.hook}</span>
+                <span className="mt-1 text-[11px] font-bold text-caption leading-tight">{p.gridLabel || p.name}</span>
+                <span className="mt-0.5 text-[13px] font-extrabold text-ink leading-snug line-clamp-3 break-keep">{p.hook}</span>
                 <span className="mt-2 text-[11px] font-bold text-coral flex items-center gap-0.5">
                   무료 미리보기 <ArrowRight className="w-3 h-3" />
                 </span>

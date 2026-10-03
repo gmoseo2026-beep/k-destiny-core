@@ -23,8 +23,8 @@ import { swrCached } from "@/lib/swrCache";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "콩닥 — 우리, 얼마나 잘 맞을까? 사주 궁합",
-  description: "두 사람의 생년월일만 넣으면 30초 만에 분석하는 진짜 사주 궁합과 에너지 케미",
+  title: "콩닥 — 그 사람 속마음까지 보는 사주 궁합",
+  description: "그 사람은 지금 나를 어떻게 생각할까? 생년월일만 넣으면 30초 — 궁합, 속마음, 둘만의 속궁합까지 무료로 먼저 봐요.",
 };
 
 interface PageProps {

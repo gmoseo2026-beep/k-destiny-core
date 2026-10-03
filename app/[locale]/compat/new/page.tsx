@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import CompatNewClient from "@/components/CompatNewClient";
-import { canonicalUrlFor } from "@/lib/seo";
+import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
-import { isViewableFor } from "@/lib/catalog";
+import { isViewableFor, getProduct } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
@@ -17,17 +17,30 @@ const DESCRIPTION = "두 사람의 생년월일시로 알아보는 진짜 사주
 // 로케일과 무관하게 ko URL 로 통합한다 — 근거는 lib/seo.ts 의 canonicalUrlFor 주석 참조.
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ productId?: string }>;
 }): Promise<Metadata> {
   await params;
   const canonical = canonicalUrlFor('/compat/new');
+  // ?productId= 로 공유된 링크는 그 상품의 질문 카드를 보여 준다(입력 화면이 곧 상품 랜딩이다)
+  const { productId } = await searchParams;
+  const shared = productId ? getProduct(productId) : undefined;
+  if (shared && !shared.isHidden) {
+    return {
+      title: `${shared.name} — 콩닥`,
+      description: shared.description,
+      alternates: { canonical },
+      ...productShareMeta(shared, `${canonical}?productId=${encodeURIComponent(shared.id)}`),
+    };
+  }
 
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical },
-    openGraph: { title: TITLE, description: DESCRIPTION, url: canonical },
+    openGraph: { title: TITLE, description: DESCRIPTION, url: canonical, images: [OG_CARD_URL] },
     twitter: { title: TITLE, description: DESCRIPTION },
   };
 }

@@ -126,14 +126,6 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   const openCheckoutFor = (id: string) => {
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
-    const target = getProduct(id);
-    if (target) {
-      trackEvent("view_paywall", {
-        productId: target.id,
-        tier: target.tier,
-        amountLabel: priceLabel(target),
-      });
-    }
     setCheckoutId(id);
     setCheckoutModalOpen(true);
   };

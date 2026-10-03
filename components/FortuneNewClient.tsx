@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import { Lock } from "lucide-react";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
@@ -28,9 +29,19 @@ interface AnnualTeaserData {
   yearScore?: number;
   headline?: string;
   summary?: string;
-  freeSection?: { text?: string };
+  freeSection?: { text?: string; clipped?: boolean };
+  hooks?: Partial<Record<"love" | "money" | "career" | "health" | "relationship", string>>;
+  teasers?: { bestMonth?: string; cautionMonth?: string };
   [key: string]: unknown;
 }
+
+// 총운 미리보기의 잠긴 칸(서버가 만든 영역별 한 줄 문구를 그대로 보여 준다)
+const ANNUAL_LOCKED = [
+  { key: "money", title: "재물·돈의 흐름" },
+  { key: "career", title: "일·커리어" },
+  { key: "relationship", title: "사람·관계" },
+  { key: "health", title: "건강·컨디션" },
+] as const;
 
 interface FortuneNewClientProps {
   locale: string;
@@ -157,29 +168,8 @@ export default function FortuneNewClient({
   const openCheckoutFor = (id: string) => {
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
 
-    const target = getProduct(id) ?? product;
-    const formatted = formatBirthInput(formValues);
-    const requiresLogin = target?.requiresLogin ?? id.startsWith("annual_");
-
-    if (requiresLogin && !session?.user?.id) {
-      savePendingInput(id, formatted);
-      alert("전체 리포트 열람과 결제는 로그인이 필요합니다.\n로그인 후 즉시 전체 운세를 확인하실 수 있어요.");
-      // 세트를 고른 경우 로그인 후 세트 화면으로 돌아와 저장된 입력을 이어 쓴다
-      const returnPath =
-        id !== currentProductId
-          ? `/${locale}/fortune/new?productId=${id}`
-          : typeof window !== "undefined"
-          ? window.location.pathname + window.location.search
-          : `/${locale}/fortune/new?productId=${currentProductId}`;
-      router.push(`/${locale}/login?callbackUrl=${encodeURIComponent(returnPath)}`);
-      return;
-    }
-
-    trackEvent("view_paywall", {
-      productId: id,
-      tier: target?.tier || "standard",
-      amountLabel: target ? priceLabel(target) : "",
-    });
+    // 비회원도 바로 결제한다(2026-10-03). 결제 후 화면이 이 입력값으로 리포트를 만든다.
+    savePendingInput(id, formatBirthInput(formValues));
     setCheckoutId(id);
     setCheckoutModalOpen(true);
   };
@@ -315,14 +305,57 @@ export default function FortuneNewClient({
             <div className="bg-cream p-4 rounded-2xl border border-[#FFD9E0]/50 mt-4">
               <h4 className="font-bold text-coral text-sm mb-2">무료 맛보기</h4>
               <p className="text-sm leading-relaxed">{resultData.annualData.freeSection?.text}</p>
+              {resultData.annualData.freeSection?.clipped && (
+                <p aria-hidden className="mt-1 select-none text-sm leading-relaxed blur-[5px]">
+                  이 뒤에는 그 흐름이 몇 월에 가장 크게 움직이는지, 그때 무엇을 잡고 무엇을 흘려보내면 되는지가 이어져요.
+                </p>
+              )}
             </div>
 
-            <button
-              onClick={handleOpenCheckout}
-              className="w-full mt-6 bg-coral hover:bg-coral active:scale-[0.98] text-white py-4 rounded-2xl font-bold text-base shadow-sm transition-all"
-            >
-              전체 리포트 열람하기
-            </button>
+            {/* 달 티저: 답(몇 월)은 가린 채 */}
+            <div className="mt-4 grid grid-cols-1 gap-2">
+              {[resultData.annualData.teasers?.bestMonth, resultData.annualData.teasers?.cautionMonth]
+                .filter((t): t is string => !!t)
+                .map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      if (product) trackTeaserUnlock(product.id, "locked_card");
+                      handleOpenCheckout();
+                    }}
+                    className="flex items-center justify-between gap-2 rounded-2xl border border-coral/25 bg-coral-soft px-4 py-3 text-left text-sm font-bold text-ink transition-all active:scale-[0.98]"
+                  >
+                    <span>{t}</span>
+                    <Lock className="h-4 w-4 shrink-0 text-coral" />
+                  </button>
+                ))}
+            </div>
+
+            {/* 잠긴 영역: 영역별 한 줄만 */}
+            <div className="mt-4 flex flex-col gap-2.5">
+              {ANNUAL_LOCKED.map(({ key, title }) => {
+                const hook = resultData.annualData?.hooks?.[key];
+                if (!hook) return null;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      if (product) trackTeaserUnlock(product.id, "locked_card");
+                      handleOpenCheckout();
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-surface-soft p-4 text-left transition-all active:scale-[0.98]"
+                  >
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="text-xs font-bold text-ink">{title}</span>
+                      <span className="text-xs leading-snug text-text-2 line-clamp-2">{hook}</span>
+                    </div>
+                    <Lock className="h-4 w-4 shrink-0 text-coral" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : resultData.reportData ? (
           <StandardReportView
@@ -367,10 +400,14 @@ export default function FortuneNewClient({
         )}
 
         {/* Paid Teaser CTA */}
-        {product && !product.isFree && !resultData.isAnnual && !resultData.previewLimit && (
+        {product && !product.isFree && !resultData.previewLimit && (
           <TeaserUnlockPanel
             product={product}
-            lockedTitles={lockedSpecs.map((s) => s.title)}
+            lockedTitles={
+              resultData.isAnnual
+                ? [...ANNUAL_LOCKED.map((s) => s.title), "12개월 달력 · 행운 포인트"]
+                : lockedSpecs.map((s) => s.title)
+            }
             onUnlock={handleOpenCheckout}
           />
         )}

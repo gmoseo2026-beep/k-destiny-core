@@ -233,6 +233,28 @@ ${locked}
 - hooks 는 "~가 있어요 / ~이 따로 있어요"처럼 지금 있는 것을 말한다. "~하게 될 거예요" 같은 앞일 예고는 쓰지 않는다.
 - 좋은 예: "둘 중 한 사람이 먼저 서운함을 삼키는 쪽이에요. 그게 쌓이는 순간이 따로 있어요"
 - 나쁜 예: "두 분은 서로를 채워 주는 찰떡궁합이에요" (결론을 말해 버림)
+- hooks 중 최소 2개는 답이 들어갈 자리를 "●●" 로 가린다(예의 형식: "먼저 연락을 끊는 쪽은 늘 ●●예요"). 예시를 베끼지 말고 이 데이터로 쓴다.
+- unsaid: 이 사람(이 두 사람)이 아직 모르는 것 하나를 짚는 질문형 한 문장(30~60자). 누가·언제·왜 중 답은 가린다. 무료로 보여 준 문장·hooks 와 겹치지 않는다. 전체 리포트가 이 질문에 답한다.
+- 무료로 보여 주는 부분(summary·freeSection)은 "어떻게 알았지?" 싶은 관찰까지만 쓴다. 이유·조언·결론은 쓰지 않는다(그건 전체 리포트의 몫이다).
+`;
+}
+
+/**
+ * 전체 리포트가 미리보기에서 약속한 것에 답하게 한다(2026-10-03).
+ * 미리보기의 잠긴 칸 문구(hooks)와 열린 질문(unsaid)을 받아, 해당 섹션 안에서 분명히 답하라고 지시한다.
+ */
+function promisedRules(spec: ProductPromptSpec, promised?: { hooks?: string[]; unsaid?: string }): string {
+  if (!promised || (!promised.unsaid && !promised.hooks?.length)) return "";
+  const lines: string[] = [];
+  if (promised.unsaid) {
+    lines.push(`- 열린 질문 "${promised.unsaid.replace(/"/g, "'")}" → sections[0] 의 두 번째 문단에서 누가·언제·왜를 분명히 답한다.`);
+  }
+  (promised.hooks ?? []).forEach((h, i) => {
+    const section = spec.sections[i + 1];
+    if (section) lines.push(`- "${section.title}" 섹션: 미리보기 문구 "${h.replace(/"/g, "'")}" 의 가려진 답(●● 포함)을 그 섹션 첫 문단에서 밝힌다.`);
+  });
+  return `PROMISED ANSWERS (미리보기에서 독자에게 "전체 리포트에 있다"고 보여 준 것들. 문구를 그대로 옮기지 말고 답을 쓴다):
+${lines.join("\n")}
 `;
 }
 
@@ -241,7 +263,8 @@ export function buildStandardPrompt(
   contextBlock: string,
   score: number,
   mode: "TEASER" | "FULL",
-  toneGuide: string
+  toneGuide: string,
+  promised?: { hooks?: string[]; unsaid?: string }
 ): string {
   const sectionsText = spec.sections
     .map((s, i) => {
@@ -252,7 +275,7 @@ export function buildStandardPrompt(
 
   const outputFormat =
     mode === "TEASER"
-      ? `OUTPUT(JSON): { "headline": string, "summary": string (2문장, 결론 금지), "freeSection": { "key": "${spec.sections[0].key}", "title": string, "body": string }, "hooks": [string, string, string] }`
+      ? `OUTPUT(JSON): { "headline": string, "summary": string (2문장, 결론 금지), "freeSection": { "key": "${spec.sections[0].key}", "title": string, "body": string }, "hooks": [string, string, string], "unsaid": string }`
       : `OUTPUT(JSON): { "headline": string, "summary": string, "sections": [ { "key": "<아래 key 순서 그대로>", "title": string, "body": string } ×4 ], "advice": { "do": [string×3], "dont": [string×3] }, "closing": string }`;
 
   return `${STYLE_GUIDE}
@@ -273,6 +296,6 @@ ${spec.guardrails.map((g) => `- ${g}`).join("\n")}
 - 오락·자기이해를 위한 풀이다. 미래를 단정적으로 예언하지 않는다.
 ${SHARPNESS_RULES}
 LENGTH: 섹션 body 는 각 350~550자, 2문단. 섹션마다 구체적인 장면이나 행동을 최소 1개 포함. "~할 수 있어요"류의 흐릿한 문장 반복 금지. 상투적 멘토 말투 금지.
-${mode === "TEASER" ? teaserRules(spec) : ""}${outputFormat}
+${mode === "TEASER" ? teaserRules(spec) : promisedRules(spec, promised)}${outputFormat}
 Output ONLY the JSON object.`.trim();
 }

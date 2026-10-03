@@ -101,9 +101,10 @@ describe("POST /api/payments/order route contract tests", () => {
     expect(body.amount).toBe(4900);
   });
 
-  // 5. requiresLogin 상품(annual_2026) 게스트 → 401 LOGIN_REQUIRED
-  it("case 5: requiresLogin product (annual_2026) returns 401 LOGIN_REQUIRED for guest", async () => {
+  // 5. 총운(annual_2026)도 게스트가 바로 결제한다(2026-10-03 로그인 강제 해제)
+  it("case 5: annual_2026 guest checkout creates an order", async () => {
     session.current = null;
+    db.order.create.mockImplementationOnce(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_annual_guest" }));
 
     const res = await POST(
       req({
@@ -112,9 +113,9 @@ describe("POST /api/payments/order route contract tests", () => {
       })
     );
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.code).toBe("LOGIN_REQUIRED");
+    expect(body.amount).toBe(4900);
   });
 
   // 6. 무료 상품 → 400, 없는 productId → 400
