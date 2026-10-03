@@ -90,9 +90,28 @@ def main():
 
     # 2. Dependencies — MUST run so new packages (e.g. `openai`, used by the
     # failover path in lib/aiFallback.ts) are present. A missing dep makes the
-    # build fail with "Module not found". `npm ci` if the lockfile matches, else
-    # `npm install`.
-    run_cmd(client, "cd /root/k-destiny-core && export PUPPETEER_SKIP_DOWNLOAD=true && (npm ci 2>&1 || npm install 2>&1)", tmo=600)
+    # build fail with "Module not found".
+    #
+    # `npm ci` ONLY. The old `npm ci || npm install` fallback hid a lockfile that
+    # was out of sync for the server's npm 10 (local npm 11 drops an optional peer
+    # entry, @swc/helpers under next-intl), so every deploy silently ran
+    # `npm install`, rewrote package-lock.json on the server and installed
+    # versions nobody had tested. A failing `npm ci` now stops the deploy before
+    # the build; the live version keeps running. Fix: `npm run lock:sync` locally
+    # (regenerates the lock with the server's npm version), commit, redeploy.
+    install_exit = run_cmd(
+        client,
+        "cd /root/k-destiny-core && export PUPPETEER_SKIP_DOWNLOAD=true && npm ci 2>&1",
+        tmo=600,
+    )
+    if install_exit != 0:
+        print("\n" + "!" * 60)
+        print(f"[DEPLOY FAILED] npm ci failed (exit {install_exit}). Nothing was built")
+        print("or restarted. If it says the lock file is out of sync, run")
+        print("`npm run lock:sync` locally, commit package-lock.json and redeploy.")
+        print("!" * 60)
+        client.close()
+        sys.exit(1)
 
     # 3. Prisma
     run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")

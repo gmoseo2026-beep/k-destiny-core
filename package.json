@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lock:sync": "npx -y npm@10.9.8 install --package-lock-only --ignore-scripts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
