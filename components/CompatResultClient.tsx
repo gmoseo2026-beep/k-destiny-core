@@ -733,7 +733,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 <span>비회원 결과 보관 안내</span>
               </div>
               <p className="text-xs text-[#6A5E72] leading-relaxed mb-4">
-                현재 사용 중인 브라우저에 열람 권한이 보관되어 있습니다. 기기를 바꾸거나 캐시를 지워도 언제든 다시 보려면 링크를 복사해 두시거나, 무료 회원가입으로 내 계정에 안전하게 저장해 두세요!
+                결제한 리포트는 지금 이 브라우저에 보관돼 있어요. 같은 브라우저에서는 링크로 다시 볼 수 있고, 기기를 바꾸거나 캐시를 지운 뒤에도 보려면 무료 회원가입으로 내 계정에 저장해 두세요.
               </p>
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <button
@@ -748,7 +748,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   href={`/${locale}/login?callbackUrl=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/compat/${data.shareToken}`)}`}
                   className="flex-1 bg-coral text-white py-2.5 px-3 rounded-xl text-xs font-bold shadow-xs hover:bg-coral transition-all flex items-center justify-center gap-1.5 active:scale-95 text-center"
                 >
-                  <span>3초 가입하고 결과 영구 저장</span>
+                  <span>가입하고 내 계정에 저장</span>
                 </Link>
               </div>
             </div>

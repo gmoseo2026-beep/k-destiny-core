@@ -16,6 +16,7 @@ import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } fr
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
+import OwnedReportNotice from "@/components/OwnedReportNotice";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
 import { trackEvent } from "@/lib/gtag";
@@ -284,6 +285,7 @@ export default function FortuneNewClient({
 
     return (
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
+        <OwnedReportNotice locale={locale} catalogId={currentProductId} source="fortune_new" />
         {!resultData.previewLimit && <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>}
 
         {resultData.previewLimit && product ? (
@@ -478,6 +480,7 @@ export default function FortuneNewClient({
   // Input Form View
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-6 pb-12 mx-auto">
+      <OwnedReportNotice locale={locale} catalogId={currentProductId} source="fortune_new" />
       {/* 3D Product Icon 72px & Title */}
       {product && (
         <div className="flex flex-col items-center justify-center -mb-2">

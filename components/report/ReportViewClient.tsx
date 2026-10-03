@@ -1,5 +1,6 @@
 "use client";
 
+import GuestKeepBanner from "@/components/GuestKeepBanner";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
@@ -207,6 +208,7 @@ export default function ReportViewClient({
         )}
 
         <div className="max-w-md mx-auto flex flex-col gap-2.5 mt-8 px-4 no-print">
+          <GuestKeepBanner locale={locale} source="premium" hideCopy className="mb-1" />
           <button
             type="button"
             onClick={handleCopyLink}
@@ -247,6 +249,7 @@ export default function ReportViewClient({
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2.5 mt-2">
+        <GuestKeepBanner locale={locale} source="report" hideCopy className="mb-1" />
         <Button
           type="button"
           onClick={handleCopyLink}

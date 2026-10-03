@@ -150,6 +150,16 @@ export async function POST(req: NextRequest) {
     const grant = orderGrants(order, { catalogId, compatId, now: new Date(), sessionUserId, presentedOrderId: orderId });
     if (!grant.ok) return grant.reason === "NOT_PAID" ? err(402, "결제가 완료되지 않았어요.") : err(403, "열람 권한이 없어요.");
     orderDbId = order.id;
+
+    // 이미 만들어 둔 리포트는 입력 없이 바로 준다. 결제한 비회원이 새 탭·다음 날 다시 들어오면
+    // 생년월일 입력값(sessionStorage)이 없는데, 그때마다 다시 입력하게 하지 않는다(한 주문 = 한 리포트).
+    const saved = await prisma.generatedReport.findUnique({ where: { cacheKey: `FULL:${order.id}:${catalogId}` } });
+    const savedEnv = saved?.status === "READY" && saved.content ? readEnvelope(saved.content) : null;
+    if (saved && savedEnv) {
+      await markViewed(saved.id);
+      void logGeneration({ catalogId, kind: "FULL", ok: true, cached: true });
+      return NextResponse.json({ kind: "FULL", reportId: saved.id, score: savedEnv.score, data: savedEnv.data }, { headers: NO_STORE });
+    }
   } else {
     const rate = await checkRateLimit(getClientIp(req));
     if (!rate.allowed || !(await checkGlobalAiCap())) {

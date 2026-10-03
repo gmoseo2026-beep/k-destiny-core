@@ -8,6 +8,7 @@ import FortuneLoading from "@/components/FortuneLoading";
 import BirthFields, { BirthValues, formatBirthInput } from "@/components/forms/BirthFields";
 import { getProduct } from "@/lib/catalog";
 import { recallOrderToken } from "@/lib/payments/client";
+import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import { loadPendingInput, clearPendingInput, savePendingInput } from "@/lib/reportHandoff";
 import { ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
@@ -41,6 +42,13 @@ interface SetItemStatus {
   error?: string;
 }
 
+/** 리포트 생성 실패. status 로 원인을 구분한다(400 = 입력값 필요, 402·403 = 환불·만료·권한 없음). */
+class ReportGenError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 const LOADING_STEPS = [
   "태어난 날의 기운을 차근차근 읽고 있어요",
   "타고난 흐름과 균형을 살펴보고 있어요",
@@ -64,6 +72,17 @@ export default function ReportNewClient({
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [needInput, setNeedInput] = useState(false);
+  // 환불됐거나 열람 기간이 지난 결제(서버가 402·403) → 기기의 결제 증명을 지우고 안내한다
+  const [orderGone, setOrderGone] = useState(false);
+  const handleGone = useCallback((err: unknown, id: string): boolean => {
+    if (err instanceof ReportGenError && (err.status === 402 || err.status === 403)) {
+      forgetDeviceOrder(id);
+      setGenerating(false);
+      setOrderGone(true);
+      return true;
+    }
+    return false;
+  }, []);
 
   // Form state for when pending input is missing
   // 저장된 프로필은 birthYear/birthMonth/birthDay 로 나뉘어 있다(birthDate 컬럼은 없음)
@@ -133,7 +152,7 @@ export default function ReportNewClient({
         }
 
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "리포트 생성에 실패했습니다.");
+        throw new ReportGenError(errJson.error || "리포트 생성에 실패했습니다.", res.status);
       }
 
       throw new Error("리포트 생성이 지연되고 있습니다. 잠시 후 다시 확인해주세요.");
@@ -171,12 +190,9 @@ export default function ReportNewClient({
       });
       queueMicrotask(() => setSetItems(itemsList));
 
-      // Get input for set items
+      // 입력값이 없어도 먼저 시도한다 — 이미 만든 리포트는 주문번호만으로 열린다(다시 들어온 비회원).
+      // 아직 만든 적 없는 구성 상품이 입력값을 요구하면(400) 그때 입력 폼을 보여 준다.
       const saved = loadPendingInput(catalogId);
-      if (!saved && product.target !== "couple") {
-        queueMicrotask(() => setNeedInput(true));
-        return;
-      }
 
       // Generate items (up to 2 parallel)
       const nonAnnualItems = itemsList.filter((it) => !it.linkHref);
@@ -194,6 +210,11 @@ export default function ReportNewClient({
                   prev.map((s) => (s.catalogId === item.catalogId ? { ...s, status: "READY", reportId: repId } : s))
                 );
               } catch (e: unknown) {
+                if (handleGone(e, orderId)) return;
+                if (!saved && e instanceof ReportGenError && e.status === 400 && product.target !== "couple") {
+                  setNeedInput(true);
+                  return;
+                }
                 const msg = e instanceof Error ? e.message : "생성 실패";
                 setSetItems((prev) =>
                   prev.map((s) => (s.catalogId === item.catalogId ? { ...s, status: "FAILED", error: msg } : s))
@@ -208,17 +229,8 @@ export default function ReportNewClient({
     }
 
     // Single Product Flow
+    // 입력값이 없어도 먼저 시도한다 — 이미 만든 리포트는 주문번호만으로 열린다(다시 들어온 비회원).
     const saved = loadPendingInput(catalogId);
-    if (!saved) {
-      if (product.tier === "premium") {
-        router.replace(`/${locale}/premium/${catalogId}/new`);
-        return;
-      }
-      if (product.inputKind === "person") {
-        queueMicrotask(() => setNeedInput(true));
-        return;
-      }
-    }
 
     // Begin generation
     queueMicrotask(() => setGenerating(true));
@@ -228,10 +240,23 @@ export default function ReportNewClient({
         router.replace(`/${locale}/report/${reportId}`);
       })
       .catch((err: unknown) => {
+        if (handleGone(err, orderId)) return;
+        // 아직 만든 적 없는 리포트인데 입력값이 없다 → 입력을 받는다
+        if (!saved && err instanceof ReportGenError && err.status === 400) {
+          setGenerating(false);
+          if (product.tier === "premium") {
+            router.replace(`/${locale}/premium/${catalogId}/new`);
+            return;
+          }
+          if (product.inputKind === "person") {
+            setNeedInput(true);
+            return;
+          }
+        }
         setGenerating(false);
         setErrorMsg(err instanceof Error ? err.message : "리포트 생성 중 오류가 발생했습니다.");
       });
-  }, [checkedOrder, orderId, product, catalogId, compatId, generateSingleReport, locale, router]);
+  }, [checkedOrder, orderId, product, catalogId, compatId, generateSingleReport, locale, router, handleGone]);
 
   // Handle re-entering input if pending input was missing
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -255,6 +280,7 @@ export default function ReportNewClient({
         router.replace(`/${locale}/report/${reportId}`);
       }
     } catch (err: unknown) {
+      if (handleGone(err, orderId)) return;
       setGenerating(false);
       setErrorMsg(err instanceof Error ? err.message : "리포트 생성 중 오류가 발생했습니다.");
     }
@@ -262,6 +288,27 @@ export default function ReportNewClient({
 
   if (!checkedOrder) {
     return <FortuneLoading steps={LOADING_STEPS} skeletonVariant="deep-report" />;
+  }
+
+  // 환불·만료된 결제
+  if (orderGone) {
+    return (
+      <Card className="w-full max-w-md mx-auto p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
+          <AlertCircle className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold text-ink mb-2">지금은 열 수 없는 결제예요</h2>
+        <p className="text-sm text-caption mb-6 leading-relaxed">
+          환불됐거나 열람 기간이 지난 결제예요. 무료 미리보기는 상품 페이지에서 그대로 볼 수 있어요.
+        </p>
+        <Link
+          href={`/${locale}/products/${catalogId}`}
+          className="inline-block w-full py-3.5 bg-coral hover:bg-coral-deep text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
+        >
+          상품 페이지로 이동
+        </Link>
+      </Card>
+    );
   }
 
   // Missing Order Token

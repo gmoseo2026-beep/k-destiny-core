@@ -1,4 +1,5 @@
 import { SerifFont } from "@/components/premium/SerifFont";
+import OwnedReportNotice from "@/components/OwnedReportNotice";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
@@ -93,6 +94,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
 
       <div className="pt-20 max-w-2xl mx-auto px-4 sm:px-6">
         {/* 1. Hero Section with cat-premium gradient and 3D icon */}
+        <OwnedReportNotice locale={locale} catalogId={product.id} source="product" className="mb-4" />
         <section className="relative text-center py-10 md:py-14 rounded-3xl bg-gradient-to-b from-[#5B3354] to-[#2A1526] border border-[#7A4570]/40 overflow-hidden mb-8 shadow-xl">
           <svg className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-10" aria-hidden="true">
             <defs>

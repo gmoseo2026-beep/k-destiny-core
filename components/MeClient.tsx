@@ -1,5 +1,6 @@
 "use client";
 
+import OwnedReportNotice from "@/components/OwnedReportNotice";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -108,6 +109,8 @@ export default function MeClient({ locale }: MeClientProps) {
   if (!session?.user) {
     return (
       <div className="w-full max-w-md flex flex-col items-center">
+        {/* 비회원이 이 기기에서 결제한 리포트(없으면 안 보인다) */}
+        <OwnedReportNotice locale={locale} source="me" className="mb-6" />
         <Card className="w-full mb-6 text-center">
           <div className="w-16 h-16 rounded-full bg-coral-soft mx-auto flex items-center justify-center text-3xl mb-4">
             💌
@@ -131,7 +134,7 @@ export default function MeClient({ locale }: MeClientProps) {
             <span>비회원으로 결제하셨나요?</span>
           </div>
           <p className="text-xs text-text-2 leading-relaxed">
-            결제 시 입력하신 정보로 로그인하시면, 이전 기기에서 결제하신 리포트가 자동으로 내 계정에 연결됩니다.
+            결제한 브라우저에서 가입·로그인한 뒤 리포트 화면이나 홈에 뜨는 [이 계정에 저장하기]를 누르면, 그 리포트가 내 계정에 저장돼 다른 기기에서도 볼 수 있어요.
           </p>
         </Card>
       </div>

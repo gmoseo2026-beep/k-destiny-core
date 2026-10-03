@@ -39,6 +39,9 @@ const person = { name: "테스트", dob: "1995-03-15", time: "10:30", gender: "F
 beforeEach(() => {
   invalidateVisibilityCache();
   vi.clearAllMocks();
+  // once 대기열이 다음 테스트로 새지 않게 비운다(저장본 선조회가 생기면서 create 가 불리지 않는 경우가 생겼다)
+  db.generatedReport.create.mockReset();
+  db.generatedReport.findUnique.mockReset();
   db.productVisibility.findMany.mockResolvedValue([]);
   session.current = null;
   process.env.SUBJECT_HASH_SECRET = "x".repeat(32);
@@ -213,7 +216,7 @@ describe("POST /api/reports/generate route contract tests", () => {
       advice: { do: [], dont: [] },
       closing: "기존 맺음말",
     };
-    db.generatedReport.findUnique.mockResolvedValueOnce({
+    db.generatedReport.findUnique.mockResolvedValue({
       id: "r1",
       status: "READY",
       content: { version: 1, score: 92, data: cachedData },
@@ -232,6 +235,36 @@ describe("POST /api/reports/generate route contract tests", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data).toEqual(cachedData);
+    expect(gen.generateJson).toHaveBeenCalledTimes(0);
+  });
+
+  // 5-1. 결제한 비회원이 새 탭으로 다시 들어온 경우: 입력값 없이도 저장본을 바로 준다(2026-10-03)
+  it("case 5-1: guest re-entry without input returns the saved report by orderId, 0 AI calls", async () => {
+    session.current = null;
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "order_db_guest",
+      orderId: "ord_guest_reentry",
+      status: "PAID",
+      type: "SINGLE",
+      productType: "FORTUNE",
+      productKey: "wealth",
+      compatId: null,
+      userId: null,
+      unlocks: [{ id: "u1", productType: "FORTUNE", productKey: "wealth", compatId: null, expiresAt: future }],
+    });
+    db.generatedReport.findUnique.mockResolvedValue({
+      id: "r_saved",
+      status: "READY",
+      content: { version: 1, score: 77, data: { headline: "저장본" } },
+      updatedAt: new Date(),
+    });
+
+    const res = await POST(req({ catalogId: "wealth", kind: "FULL", orderId: "ord_guest_reentry" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.reportId).toBe("r_saved");
+    expect(db.generatedReport.findUnique).toHaveBeenCalledWith({ where: { cacheKey: "FULL:order_db_guest:wealth" } });
+    expect(db.generatedReport.create).not.toHaveBeenCalled();
     expect(gen.generateJson).toHaveBeenCalledTimes(0);
   });
 
@@ -258,7 +291,7 @@ describe("POST /api/reports/generate route contract tests", () => {
     });
     db.generatedReport.create.mockRejectedValueOnce(p2002Error);
 
-    db.generatedReport.findUnique.mockResolvedValueOnce({
+    db.generatedReport.findUnique.mockResolvedValue({
       id: "r_corrupt",
       status: "READY",
       content: { headline: "Test" }, // corrupted / not envelope

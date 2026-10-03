@@ -8,6 +8,8 @@ import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo, recallOrderToken } from "@/lib/payments/client";
 import { grantingCatalogIds } from "@/lib/productIdentity";
 import { loadLastPerson } from "@/lib/reportHandoff";
+import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
+import GuestKeepBanner from "@/components/GuestKeepBanner";
 import { getProduct, priceLabel } from "@/lib/catalog";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
@@ -140,6 +142,8 @@ export default function AnnualFortuneClient({
   const [hour, setHour] = useState("1");
   const [min, setMin] = useState("0");
   const [formError, setFormError] = useState<string | null>(null);
+  // 결제한 비회원 안내: "paid" = 결제 확인됨(생년월일만 넣으면 전체가 열림), "gone" = 환불·만료된 결제
+  const [paidNotice, setPaidNotice] = useState<"paid" | "gone" | null>(null);
 
   // Optional input toggle states (collapsed by default for ultra-compact first impression)
   const [showNameInput, setShowNameInput] = useState(false);
@@ -226,7 +230,7 @@ export default function AnnualFortuneClient({
   };
 
   /** 비회원 전체 총운: 생성 중(202)이면 잠시 기다렸다 다시 묻는다. */
-  const fetchGuestFull = useCallback(async (input: GuestAnnualInput, orderId: string) => {
+  const fetchGuestFull = useCallback(async (input: GuestAnnualInput | null, orderId: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -234,14 +238,30 @@ export default function AnnualFortuneClient({
         const res = await fetch("/api/fortune/annual", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...input, locale, productId: `annual_${year}`, orderId }),
+          body: JSON.stringify({ ...(input ?? {}), locale, productId: `annual_${year}`, orderId }),
         });
         if (res.status === 202) {
           await new Promise((r) => setTimeout(r, 3000));
           continue;
         }
         const json = await res.json();
+        // 결제는 확인됐는데 아직 만든 적이 없고 입력값도 없다 → 생년월일만 받으면 된다
+        if (res.status === 400 && json.code === "NEED_INPUT") {
+          setPaidNotice("paid");
+          setData(null);
+          setShowInputForm(true);
+          return;
+        }
+        // 환불됐거나 열람 기간이 지난 결제 → 이 기기의 결제 증명을 지우고 평소 화면으로
+        if (res.status === 402 || res.status === 403) {
+          forgetDeviceOrder(orderId);
+          setPaidNotice("gone");
+          setData(null);
+          setShowInputForm(true);
+          return;
+        }
         if (!res.ok) throw new Error(json.error || `${year} 총운을 불러오지 못했습니다.`);
+        setPaidNotice(null);
         setData(json.data);
         setShowInputForm(false);
         return;
@@ -259,15 +279,16 @@ export default function AnnualFortuneClient({
   useEffect(() => {
     if (session?.user?.id || guestAutoRef.current) return;
     const orderId = findGuestOrderToken(year);
-    const input = orderId ? loadGuestAnnualInput() : null;
-    if (!orderId || !input) return;
+    if (!orderId) return;
     guestAutoRef.current = true;
+    // 입력값이 없어도 묻는다 — 이미 만들어 둔 전체 총운은 주문번호만으로 열린다
+    const input = loadGuestAnnualInput();
     queueMicrotask(() => {
       void fetchGuestFull(input, orderId);
     });
   }, [session?.user?.id, year, fetchGuestFull]);
 
-  const fetchFortune = useCallback(async () => {
+  const fetchFortune = useCallback(async (silent = false) => {
     try {
       setLoading(true);
       setError(null);
@@ -279,6 +300,8 @@ export default function AnnualFortuneClient({
 
       const json = await res.json();
       if (!res.ok) {
+        // silent: 프로필이 없는 회원에게 먼저 물어본 경우 — 실패하면 입력 폼을 그대로 둔다
+        if (silent) return;
         throw new Error(json.error || `${year} 총운을 불러오지 못했습니다.`);
       }
 
@@ -298,6 +321,16 @@ export default function AnnualFortuneClient({
       });
     }
   }, [initialHasProfile, fetchFortune]);
+
+  // 프로필이 없는 회원(비회원으로 결제한 뒤 방금 가입·저장한 경우 등): 계정에 저장된 총운이 있으면 바로 연다
+  const memberProbeRef = React.useRef(false);
+  useEffect(() => {
+    if (!session?.user?.id || initialHasProfile || memberProbeRef.current) return;
+    memberProbeRef.current = true;
+    queueMicrotask(() => {
+      void fetchFortune(true);
+    });
+  }, [session?.user?.id, initialHasProfile, fetchFortune]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,7 +433,7 @@ export default function AnnualFortuneClient({
           onClick={() => {
             setError(null);
             if (initialHasProfile) {
-              fetchFortune();
+              void fetchFortune();
             } else {
               setShowInputForm(true);
             }
@@ -437,6 +470,23 @@ export default function AnnualFortuneClient({
             생년월일만 넣으면 3초 만에 무료로 총운 점수와 연애운 확인
           </p>
         </div>
+
+        {paidNotice === "paid" && (
+          <div className="mb-4 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left">
+            <p className="text-sm font-extrabold text-emerald-800">결제가 확인됐어요</p>
+            <p className="mt-1 text-xs leading-relaxed text-emerald-900/80">
+              생년월일을 한 번만 입력하면 {year} 총운 전체가 바로 열려요. 다시 결제하지 않아요.
+            </p>
+          </div>
+        )}
+        {paidNotice === "gone" && (
+          <div className="mb-4 w-full rounded-2xl border border-line bg-surface-soft p-4 text-left">
+            <p className="text-sm font-extrabold text-ink">이전 결제는 지금 열 수 없어요</p>
+            <p className="mt-1 text-xs leading-relaxed text-text-2">
+              환불됐거나 열람 기간(90일)이 지난 결제예요. 무료 맛보기는 그대로 볼 수 있어요.
+            </p>
+          </div>
+        )}
 
         {/* Input Card */}
         <Card className="w-full">
@@ -664,7 +714,7 @@ export default function AnnualFortuneClient({
       <div className="relative bg-gradient-to-br from-[#FF8AA1] via-coral to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white shadow-[0_8px_24px_rgba(181,71,96,0.15)] overflow-hidden">
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-xs font-bold text-white mb-3 border border-white/25 shadow-xs">
-            <span>{year}년 {year === 2027 ? "정미년(丁未年)" : "병오년(丙午年)"}</span>
+            <span>{year}년 {year === 2027 ? "붉은 양의 해" : "붉은 말의 해"}</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
@@ -979,25 +1029,30 @@ export default function AnnualFortuneClient({
         </Card>
       )}
 
-      {/* Re-calculate with another birth date */}
-      <div className="flex justify-center mt-4">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            setData(null);
-            setShowInputForm(true);
-          }}
-        >
-          <span>🔄 다른 생년월일로 다시 보기</span>
-        </Button>
-      </div>
+      {/* 결제한 총운: 다시 찾아올 길과 계정 저장(비회원 결제는 이 브라우저에만 남는다) */}
+      {!isLocked && <GuestKeepBanner locale={locale} source="annual" className="mt-6" />}
+
+      {/* Re-calculate with another birth date — 맛보기에서만(결제한 총운은 한 사람 기준으로 보관된다) */}
+      {isLocked && (
+        <div className="flex justify-center mt-4">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setData(null);
+              setShowInputForm(true);
+            }}
+          >
+            <span>🔄 다른 생년월일로 다시 보기</span>
+          </Button>
+        </div>
+      )}
 
       {/* 6. Friendly Disclaimer */}
       <footer className="text-center mt-3 px-4">
         <p className="text-[11px] text-[#8A8291] leading-relaxed">
-          ※ 콩닥의 2026 총운 리포트는 정통 사주 데이터를 바탕으로 오락 및 자기이해를 위해 다정하게 제공되는 참고 정보이며, 단정적 미래를 보장하지 않습니다.
+          ※ 콩닥의 {year} 총운 리포트는 정통 사주 데이터를 바탕으로 오락 및 자기이해를 위해 다정하게 제공되는 참고 정보이며, 단정적 미래를 보장하지 않습니다.
         </p>
       </footer>
 

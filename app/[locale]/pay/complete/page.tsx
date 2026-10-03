@@ -232,7 +232,7 @@ function PayCompleteContent() {
               <span>비회원 결과 보관 안내</span>
             </div>
             <p className="text-xs text-text-2 leading-relaxed mb-3">
-              현재 브라우저에 열람 권한이 자동 저장되었습니다. 링크를 잃어버리거나 다른 기기에서 보시려면 링크를 꼭 보관해 두세요!
+              결제한 리포트는 지금 이 브라우저에 보관됐어요. 같은 브라우저에서는 링크로 다시 볼 수 있고, 다른 기기에서도 보려면 아래 &lsquo;가입하고 보관하기&rsquo;를 눌러 주세요.
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -255,6 +255,18 @@ function PayCompleteContent() {
           </Card>
         )}
 
+        {status === "success" && !paidCompatId && (
+          <Card variant="soft" className="w-full p-4 text-left mb-6">
+            <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
+              <span>💡</span>
+              <span>비회원 결과 보관 안내</span>
+            </div>
+            <p className="text-xs text-text-2 leading-relaxed">
+              결제한 리포트는 지금 이 브라우저에 보관됐어요. 같은 브라우저에서는 홈의 &lsquo;결제한 리포트&rsquo;에서 다시 열 수 있고, 다른 기기에서도 보려면 아래 &lsquo;가입하고 보관하기&rsquo;를 눌러 주세요.
+            </p>
+          </Card>
+        )}
+
         <div className="w-full flex flex-col gap-3">
           {status === "success" && (
             <Button
@@ -271,7 +283,7 @@ function PayCompleteContent() {
               href={`/${locale}/login?callbackUrl=${encodeURIComponent(callbackTarget)}`}
               className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"
             >
-              ✨ 가입하고 내 계정에 평생 보관하기
+              ✨ 가입하고 내 계정에 보관하기
             </Link>
           )}
 

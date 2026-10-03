@@ -2,16 +2,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // 2026-10-03: 총운도 비회원이 결제하고, 주문번호(orderId)로 전체 총운을 연다.
 const db = vi.hoisted(() => ({
-  order: { findUnique: vi.fn() },
+  order: { findUnique: vi.fn(), findMany: vi.fn(async () => [] as unknown[]) },
   sajuContentDictionary: { findFirst: vi.fn(async () => null) },
   productVisibility: { findMany: vi.fn(async () => [] as unknown[]) },
   reportGenLog: { create: vi.fn(async () => ({})) },
   generatedReport: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(async () => ({})), updateMany: vi.fn() },
 }));
 const ai = vi.hoisted(() => ({ text: "" , calls: 0 }));
+const session = vi.hoisted(() => ({ current: null as null | { user: { id: string } } }));
 
 vi.mock("@/lib/prisma", () => ({ default: db }));
-vi.mock("next-auth", () => ({ getServerSession: vi.fn(async () => null) }));
+vi.mock("next-auth", () => ({ getServerSession: vi.fn(async () => session.current) }));
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
 vi.mock("@/lib/rateLimiter", () => ({
   checkChatRateLimit: vi.fn(async () => ({ allowed: true })),
@@ -67,6 +68,9 @@ const paidOrder = (unlock: { productType: string; productKey: string }) => ({
 beforeEach(() => {
   invalidateVisibilityCache();
   vi.clearAllMocks();
+  db.generatedReport.findUnique.mockReset();
+  db.generatedReport.create.mockReset();
+  session.current = null;
   db.productVisibility.findMany.mockResolvedValue([]);
   ai.calls = 0;
   ai.text = JSON.stringify(FULL);
@@ -117,6 +121,53 @@ describe("POST /api/fortune/annual — 비회원 결제 후 전체 총운", () =
     const res = await POST(req({ ...input, productId: "annual_2026", orderId: "ord_guest_annual" }));
     expect(res.status).toBe(200);
     expect((await res.json()).locked).toBe(false);
+  });
+
+  it("다시 들어온 결제 비회원: 생년월일 없이도 저장본을 바로 준다(AI 호출 없음)", async () => {
+    db.order.findUnique.mockResolvedValueOnce(paidOrder({ productType: "ANNUAL", productKey: "2026" }));
+    db.generatedReport.findUnique.mockResolvedValueOnce({
+      id: "rep_saved",
+      status: "READY",
+      content: { version: 1, score: 88, data: { ...FULL, yearScore: 88 } },
+    });
+    const res = await POST(req({ productId: "annual_2026", orderId: "ord_guest_annual" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.locked).toBe(false);
+    expect(json.data.yearScore).toBe(88);
+    expect(db.generatedReport.findUnique).toHaveBeenCalledWith({ where: { cacheKey: "FULL:db_order_1:annual_2026" } });
+    expect(ai.calls).toBe(0);
+  });
+
+  it("결제했지만 아직 만든 적 없고 생년월일도 없으면 → 400 NEED_INPUT (입력 폼으로)", async () => {
+    db.order.findUnique.mockResolvedValueOnce(paidOrder({ productType: "ANNUAL", productKey: "2026" }));
+    const res = await POST(req({ productId: "annual_2026", orderId: "ord_guest_annual" }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).code).toBe("NEED_INPUT");
+    expect(ai.calls).toBe(0);
+  });
+
+  it("환불·없는 주문은 code 로 구분해 알려 준다(기기의 결제 증명 정리용)", async () => {
+    db.order.findUnique.mockResolvedValueOnce({ ...paidOrder({ productType: "ANNUAL", productKey: "2026" }), status: "CANCELED" });
+    const res = await POST(req({ ...input, productId: "annual_2026", orderId: "ord_guest_annual" }));
+    expect(res.status).toBe(402);
+    expect((await res.json()).code).toBe("NOT_PAID");
+  });
+
+  it("비회원으로 결제 후 계정에 연동한 회원: 프로필이 없어도 그때 만든 총운을 그대로 연다", async () => {
+    session.current = { user: { id: "user_9" } };
+    db.order.findMany.mockResolvedValueOnce([{ ...paidOrder({ productType: "ANNUAL", productKey: "2026" }), userId: "user_9" }]);
+    (db.generatedReport as unknown as { findFirst: ReturnType<typeof vi.fn> }).findFirst = vi.fn(async () => ({
+      id: "rep_saved",
+      status: "READY",
+      content: { version: 1, score: 88, data: { ...FULL, yearScore: 88 } },
+    }));
+    const res = await POST(req({ productId: "annual_2026" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.locked).toBe(false);
+    expect(json.data.sections.love.text).toBe("연애");
+    expect(ai.calls).toBe(0);
   });
 
   it("주문번호 없는 비회원은 여전히 미리보기, 무료 본문은 앞 절반만", async () => {

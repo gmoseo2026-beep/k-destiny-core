@@ -16,6 +16,7 @@ import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/Teaser
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import { saveLastCouple, loadLastCouple, saveLastPerson, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
 import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
+import OwnedReportNotice from "@/components/OwnedReportNotice";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -472,6 +473,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md md:max-w-3xl flex flex-col gap-6 pb-12 mx-auto">
+      <OwnedReportNotice locale={locale} catalogId={productId || "compat_basic"} source="compat_new" />
       {/* 3D Product Icon 72px & Title */}
       <div className="flex flex-col items-center justify-center -mb-2">
         <div className="w-[72px] h-[72px] relative mb-2">

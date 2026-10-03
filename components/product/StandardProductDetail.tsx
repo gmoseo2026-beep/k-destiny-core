@@ -10,6 +10,7 @@ import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
 import type { SectionOutline } from "@/lib/prompts/sectionOutline";
+import OwnedReportNotice from "@/components/OwnedReportNotice";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag, type TagCategory } from "@/components/ui/Tag";
@@ -238,6 +239,7 @@ export function StandardProductDetail({
 
         {/* 3. Product Info */}
         <section className="px-4 pt-6 pb-4">
+          <OwnedReportNotice locale={locale} catalogId={product.id} source="product" className="mb-4" />
           {/* Tags */}
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             <Tag

@@ -119,6 +119,34 @@ export async function POST(req: Request) {
         );
       }
 
+      // 결제한 비회원: 권한을 먼저 확인하고, 이미 만들어 둔 전체 총운이 있으면 입력 없이 바로 준다.
+      // (다시 들어올 때마다 생년월일을 새로 넣게 하지 않는다. 한 주문 = 한 사람의 총운)
+      let paidOrder: { id: string } | null = null;
+      if (guestOrderId) {
+        const order = await prisma.order.findUnique({ where: { orderId: guestOrderId }, include: { unlocks: true } });
+        const grant = order
+          ? orderGrants(order, { catalogId: productId, compatId: null, now: new Date(), sessionUserId: null, presentedOrderId: guestOrderId })
+          : null;
+        if (!order || !grant || !grant.ok) {
+          return grant && !grant.ok && grant.reason === "NOT_PAID"
+            ? NextResponse.json({ error: "결제가 완료되지 않았어요.", code: "NOT_PAID" }, { status: 402 })
+            : NextResponse.json({ error: "열람 권한이 없어요.", code: "NO_ACCESS" }, { status: 403 });
+        }
+        paidOrder = { id: order.id };
+
+        const saved = await prisma.generatedReport.findUnique({ where: { cacheKey: `FULL:${order.id}:${productId}` } });
+        const savedEnv = saved?.status === "READY" && saved.content ? readEnvelope(saved.content) : null;
+        if (saved && savedEnv) {
+          await prisma.generatedReport.updateMany({ where: { id: saved.id, firstViewedAt: null }, data: { firstViewedAt: new Date() } });
+          void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, cached: true });
+          return NextResponse.json({
+            success: true,
+            data: { ...(savedEnv.data as AnnualFortuneContent), locked: false },
+            locked: false,
+          });
+        }
+      }
+
       let dob = body.dob;
       if (!dob && body.birthYear && body.birthMonth && body.birthDay) {
         dob = `${String(body.birthYear).padStart(4, "0")}-${String(body.birthMonth).padStart(2, "0")}-${String(body.birthDay).padStart(2, "0")}`;
@@ -129,7 +157,12 @@ export async function POST(req: Request) {
 
       if (!isValidDateString(dob)) {
         return NextResponse.json(
-          { error: "올바른 생년월일(1900년 이후 및 현재 이전의 유효한 날짜)을 입력해주세요." },
+          {
+            error: paidOrder
+              ? "결제한 총운을 만들 생년월일을 입력해 주세요."
+              : "올바른 생년월일(1900년 이후 및 현재 이전의 유효한 날짜)을 입력해주세요.",
+            ...(paidOrder ? { code: "NEED_INPUT" } : {}),
+          },
           { status: 400 }
         );
       }
@@ -180,22 +213,9 @@ export async function POST(req: Request) {
       const toneGuideGuest = LOCALE_CONFIG[locale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
 
       // 3-1) 결제한 비회원: 전체 총운. 계정 대신 주문에 묶어 GeneratedReport 에 보관한다.
-      if (guestOrderId) {
+      if (paidOrder) {
         logKind = "FULL";
-        const order = await prisma.order.findUnique({ where: { orderId: guestOrderId }, include: { unlocks: true } });
-        if (!order) return NextResponse.json({ error: "열람 권한이 없어요." }, { status: 403 });
-        const grant = orderGrants(order, {
-          catalogId: productId,
-          compatId: null,
-          now: new Date(),
-          sessionUserId: null,
-          presentedOrderId: guestOrderId,
-        });
-        if (!grant.ok) {
-          return grant.reason === "NOT_PAID"
-            ? NextResponse.json({ error: "결제가 완료되지 않았어요." }, { status: 402 })
-            : NextResponse.json({ error: "열람 권한이 없어요." }, { status: 403 });
-        }
+        const order = paidOrder;
 
         const claim = await claimGeneration({
           cacheKey: `FULL:${order.id}:${productId}`,
@@ -209,6 +229,7 @@ export async function POST(req: Request) {
         if (claim.state === "READY") {
           const env = readEnvelope(claim.content);
           if (env) {
+            await prisma.generatedReport.updateMany({ where: { id: claim.reportId, firstViewedAt: null }, data: { firstViewedAt: new Date() } });
             void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, cached: true });
             return NextResponse.json({
               success: true,
@@ -240,6 +261,7 @@ export async function POST(req: Request) {
             JSON.parse(JSON.stringify({ version: 1, score: full.yearScore, data: full })) as Prisma.InputJsonValue,
             usedModel
           );
+          await prisma.generatedReport.updateMany({ where: { id: claim.reportId, firstViewedAt: null }, data: { firstViewedAt: new Date() } });
           void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, ms: Date.now() - tStart });
           return NextResponse.json({ success: true, data: { ...full, locked: false }, locked: false });
         } catch (e) {
@@ -333,6 +355,31 @@ export async function POST(req: Request) {
     // ─────────────────────────────────────────────────────────────
     // B. 회원 경로 (기존 로그인 플로우 100% 보존)
     // ─────────────────────────────────────────────────────────────
+    // 0. 비회원으로 결제해 본 뒤 계정에 연동한 경우: 그때 만든 전체 총운(주문 단위 저장본)을 그대로 보여 준다.
+    //    새로 만들면 결제하고 읽은 글과 다른 글이 나오고, 프로필이 없는 새 회원은 열지도 못했다.
+    //    그래서 프로필 확인보다 먼저 한다.
+    const myPaidOrders = await prisma.order.findMany({
+      where: { userId, status: "PAID" },
+      include: { unlocks: true },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+    const grantingKeys = myPaidOrders
+      .filter((o) => orderGrants(o, { catalogId: productId, compatId: null, now: new Date(), sessionUserId: userId, presentedOrderId: null }).ok)
+      .map((o) => `FULL:${o.id}:${productId}`);
+    if (grantingKeys.length > 0) {
+      const saved = await prisma.generatedReport.findFirst({ where: { cacheKey: { in: grantingKeys }, status: "READY" } });
+      const savedEnv = saved?.content ? readEnvelope(saved.content) : null;
+      if (savedEnv) {
+        void logGeneration({ catalogId: logCatalog, kind: "FULL", ok: true, cached: true });
+        return NextResponse.json({
+          success: true,
+          data: { ...(savedEnv.data as AnnualFortuneContent), locked: false },
+          locked: false,
+        });
+      }
+    }
+
     // 1. Fetch User Saju Profile
     let userProfile = await prisma.userSajuProfile.findUnique({
       where: { userId }
