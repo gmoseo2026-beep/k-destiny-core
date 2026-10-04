@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
-import { rememberUnlockToken, rememberOrderToken } from "@/lib/payments/client";
+import { rememberUnlockToken, rememberOrderToken, trackPurchase } from "@/lib/payments/client";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { Card } from "@/components/ui/Card";
@@ -103,6 +103,12 @@ function PayCompleteContent() {
               productId: result.catalogId,
               tier: catItem?.tier || "standard",
               amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
+            });
+            // 모바일 결제도 GA4 매출(purchase)에 잡히게 한다
+            trackPurchase({
+              receiptId: result.receiptId,
+              amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
+              catalogId: result.catalogId,
             });
           }
         } else {

@@ -33,3 +33,21 @@ describe("인앱 브라우저 결제", () => {
     expect(choice).not.toHaveBeenCalled();
   });
 });
+
+// 2026-10-04: 스레드 앱의 UA 는 "Barcelona …" 이고 "Threads"/"Instagram" 글자가 없다 → 'other' 로 잡히고 있었다
+describe("접속 환경 라벨", () => {
+  const THREADS_ANDROID =
+    "Mozilla/5.0 (Linux; Android 16; SM-F966N Build/BP2A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/140.0 Mobile Safari/537.36 Barcelona 444.0.0.45.85 Android (36/16; 420dpi)";
+  const PC = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36";
+
+  it("스레드 인앱은 threads:m", async () => {
+    const m = await load(THREADS_ANDROID);
+    expect(m.getInAppProvider()).toBe("threads");
+    expect(m.clientEnvLabel()).toBe("threads:m");
+  });
+  it("인스타 인앱은 instagram:m, 일반 브라우저는 browser:m / browser:pc", async () => {
+    expect((await load(IG_IOS)).clientEnvLabel()).toBe("instagram:m");
+    expect((await load(CHROME)).clientEnvLabel()).toBe("browser:m");
+    expect((await load(PC)).clientEnvLabel()).toBe("browser:pc");
+  });
+});

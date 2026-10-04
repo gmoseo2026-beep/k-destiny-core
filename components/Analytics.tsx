@@ -27,6 +27,27 @@ export default function Analytics() {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          // 측정에서 빼는 것(2026-10-04): 개발자 PC(localhost)와 관리자 화면(/admin).
+          // 로컬 개발 서버가 운영 GA4 ID 를 그대로 써서 테스트가 운영 수치에 섞였고,
+          // 관리자 화면 조회가 전체 페이지뷰의 20% 를 차지했다. ga-disable 플래그는 전송 직전에 확인된다.
+          (function () {
+            var KEY = 'ga-disable-${gaId}';
+            var h = location.hostname;
+            var isLocal = h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
+            var apply = function () {
+              try { window[KEY] = isLocal || location.pathname.split('/').indexOf('admin') !== -1; } catch (e) {}
+            };
+            apply();
+            ['pushState', 'replaceState'].forEach(function (fn) {
+              var orig = history[fn];
+              history[fn] = function () {
+                var r = orig.apply(this, arguments);
+                apply();
+                return r;
+              };
+            });
+            window.addEventListener('popstate', apply);
+          })();
           gtag('js', new Date());
           // [SECURITY / M-10] page_location 은 기본값으로 쿼리스트링을 포함한 전체 URL 이다.
           // 결제 리다이렉트가 /pay/complete?paymentId=... 로 돌아오는데, 이 paymentId(orderId)는

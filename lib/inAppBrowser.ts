@@ -17,6 +17,7 @@ const IN_APP_BROWSER_PATTERNS = [
   'FBAV',        // Facebook App Version
   'Instagram',
   'Threads',
+  'Barcelona',   // Threads 앱의 실제 UA 표기("Barcelona 444.0…") — 'Threads' 라는 글자는 없다
   // Line
   'Line/',
   // Twitter / X
@@ -88,11 +89,24 @@ export function getInAppProvider(): 'kakao'|'line'|'instagram'|'threads'|'facebo
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes('kakaotalk')) return 'kakao';
   if (ua.includes('line')) return 'line';
+  // 스레드를 먼저 본다(스레드 UA 는 "Barcelona")
+  if (ua.includes('barcelona') || ua.includes('threads')) return 'threads';
   if (ua.includes('instagram')) return 'instagram';
-  if (ua.includes('threads')) return 'threads';
   if (ua.includes('fban') || ua.includes('fbav') || ua.includes('fb_iab')) return 'facebook';
   if (ua.includes('naver')) return 'naver';
   return 'other';
+}
+
+/**
+ * 접속 환경 라벨: "threads:m", "instagram:m", "browser:pc" 처럼 (앱):(모바일/PC).
+ * 결제 퍼널 이벤트와 주문에 붙여, 어느 환경에서 결제가 끊기는지 본다(2026-10-04).
+ * 개인정보가 아니다(UA 원문을 남기지 않는다).
+ */
+export function clientEnvLabel(): string {
+  if (typeof navigator === 'undefined') return 'unknown';
+  const app = getInAppProvider() ?? 'browser';
+  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  return `${app}:${mobile ? 'm' : 'pc'}`;
 }
 
 /**

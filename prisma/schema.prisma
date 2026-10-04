@@ -244,6 +244,8 @@ model Order {
   tossPaymentKey String?     // 토스 승인 후 발급 키
   claimToken          String?     @unique
   claimTokenExpiresAt DateTime?
+  // 결제를 시작한 접속 환경("threads:m", "instagram:m", "browser:pc" 등). 어디서 결제가 끊기는지 보려고(2026-10-04). PII 아님.
+  clientEnv      String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

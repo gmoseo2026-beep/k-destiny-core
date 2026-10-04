@@ -78,6 +78,8 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         orderId: order.orderId,
+        // GA4 매출 이벤트용 id. 열람 증명(orderId)과 달리 이 값으로는 아무것도 열 수 없다.
+        receiptId: order.id,
         type: order.type,
         amount: order.amount,
         compatId: order.compatId,

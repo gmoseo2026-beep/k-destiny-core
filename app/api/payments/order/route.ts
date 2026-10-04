@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
     const productId = body.productId || body.product;
     const compatId = body.compatId;
     const email = body.email;
+    // 접속 환경 라벨(클라이언트가 보낸 값). 정해진 글자만 받아 그대로 저장한다 — 판정에는 쓰지 않는다.
+    const clientEnv =
+      typeof body.env === "string" && /^[a-z]{2,12}:(m|pc)$/.test(body.env) ? body.env : null;
 
     if (type === "PERIOD_PASS") {
       // [D4] PERIOD_PASS 분기는 더 이상 사용되지 않으므로 410 반환
@@ -89,6 +92,7 @@ export async function POST(req: NextRequest) {
           productKey,
           type: "SINGLE",
           amount,
+          clientEnv,
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },

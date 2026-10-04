@@ -1,6 +1,7 @@
 import * as PortOne from "@portone/browser-sdk/v2";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
+import { clientEnvLabel } from "@/lib/inAppBrowser";
 
 export interface BuyerInfo {
   fullName: string;
@@ -129,6 +130,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       compatId: opts.compatId,
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
+      env: clientEnvLabel(),
     }),
   });
 
@@ -143,7 +145,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     return { ok: false, reason: "FAILED" };
   }
   // 결제창을 여는 시점(GA4 표준 이벤트). 서버가 정한 금액으로 기록한다.
-  trackEvent("begin_checkout", { productId: opts.productId, value: order.amount, currency: "KRW" });
+  trackEvent("begin_checkout", { productId: opts.productId, value: order.amount, currency: "KRW", app: clientEnvLabel() });
 
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
   const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
@@ -184,6 +186,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       productId: opts.productId,
       stage: "pg",
       code: String(res.code).slice(0, 60),
+      app: clientEnvLabel(),
     });
     if (!isCancelled) {
       alert(`결제 실패: ${res.message || res.code}`);
@@ -193,6 +196,25 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
 
   // 4) 서버 결제 검증
   return await verifyAndCompletePayment(order.orderId, opts.productId, opts.compatId, order.amount);
+}
+
+/**
+ * GA4 표준 구매 이벤트 — 매출이 보고서에 잡히게 한다(같은 transaction_id 는 GA4 가 중복 제거).
+ * PC(팝업) 결제와 모바일(리다이렉트 → 결제 완료 화면) 결제가 같은 함수를 쓴다.
+ * 예전에는 모바일 결제가 이 이벤트를 보내지 않아 GA4 매출이 실제보다 훨씬 적게 잡혔다(2026-10-04).
+ *
+ * transaction_id 에는 주문번호(orderId)를 쓰지 않는다 — 비회원의 열람 증명이라 GA4 로 내보내면 안 된다(M-10).
+ * 서버가 주는 영수증 id(주문의 DB id, 열람에는 쓸 수 없다)를 쓴다.
+ */
+export function trackPurchase(p: { receiptId?: string | null; amount: number; catalogId: string }): void {
+  if (!p.receiptId) return;
+  trackEvent("purchase", {
+    transaction_id: p.receiptId,
+    value: p.amount,
+    currency: "KRW",
+    productId: p.catalogId,
+    app: clientEnvLabel(),
+  });
 }
 
 export async function verifyAndCompletePayment(
@@ -216,8 +238,7 @@ export async function verifyAndCompletePayment(
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
       rememberOrderToken(catalogId, orderId, compatId);
-      // GA4 표준 구매 이벤트 — 매출이 보고서에 잡히게 한다(같은 transaction_id 는 GA4 가 중복 제거)
-      trackEvent("purchase", { transaction_id: orderId, value: amount, currency: "KRW", productId: catalogId });
+      trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.
       return {
         ok: true,

@@ -5,7 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
+import { isInAppBrowser, openInExternalBrowser, clientEnvLabel } from "@/lib/inAppBrowser";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -94,7 +94,7 @@ export default function GuestCheckoutModal({
       });
       openedAtRef.current = Date.now();
       submittedRef.current = false;
-      trackEvent("checkout_open", { productId: pid, guest: !session?.user, mobile: isMobile });
+      trackEvent("checkout_open", { productId: pid, guest: !session?.user, mobile: isMobile, app: clientEnvLabel() });
     }
     // 모달이 열릴 때 한 번만 기록한다(세션 로딩으로 다시 기록하지 않음)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,6 +113,7 @@ export default function GuestCheckoutModal({
         typed: !isMobile && (email.trim() !== initialEmail.trim() || phoneNumber.trim() !== initialPhone.trim()),
         mobile: isMobile,
         inapp: inApp,
+        app: clientEnvLabel(),
       });
     }
     onClose();
@@ -156,7 +157,7 @@ export default function GuestCheckoutModal({
     }
 
     submittedRef.current = true;
-    trackEvent("checkout_submit", { productId: pid, guest: !session?.user, mobile: isMobile });
+    trackEvent("checkout_submit", { productId: pid, guest: !session?.user, mobile: isMobile, app: clientEnvLabel() });
     await onSubmit({
       // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
       fullName: trimmedName.length >= 2 ? trimmedName : "콩닥 고객",

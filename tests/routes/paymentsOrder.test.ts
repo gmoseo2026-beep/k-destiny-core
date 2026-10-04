@@ -130,6 +130,17 @@ describe("POST /api/payments/order route contract tests", () => {
     expect(bad.status).toBe(400);
   });
 
+  // 5-2. 접속 환경 라벨은 정해진 형식만 저장한다(2026-10-04)
+  it("case 5-2: stores a well-formed client env label and drops anything else", async () => {
+    session.current = null;
+    db.order.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_env" }));
+    await POST(req({ productId: "wealth", env: "threads:m" }));
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.clientEnv).toBe("threads:m");
+    await POST(req({ productId: "wealth", env: "<script>alert(1)</script>" }));
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.clientEnv).toBeNull();
+    db.order.create.mockReset();
+  });
+
   // 6. 무료 상품 → 400, 없는 productId → 400
   it("case 6: free product or nonexistent productId returns 400", async () => {
     // Free product (free_personality)
