@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
   const product = await getEffectiveProduct(catalogId);
   if (!product) return err(404, "상품을 찾을 수 없어요.");
   if (catalogId.startsWith("annual_")) return err(400, "총운은 /api/fortune/annual 을 사용하세요.");
+  if (catalogId === "compat_basic") return err(400, "정통 궁합은 궁합 결과 화면에서 열어 주세요.");
   if (product.type === "SET") return err(400, "세트는 구성 상품별로 요청하세요.");
   if (product.tier !== "standard" && product.tier !== "premium") return err(400, "지원하지 않는 상품입니다.");
 

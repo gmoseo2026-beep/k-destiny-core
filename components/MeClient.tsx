@@ -16,7 +16,8 @@ import { Tag } from "@/components/ui/Tag";
 interface ReportItem {
   catalogId: string;
   reportId: string | null;
-  status: "ANNUAL_ROUTE" | "NOT_STARTED" | "GENERATING" | "READY" | "FAILED";
+  status: "ANNUAL_ROUTE" | "COMPAT_ROUTE" | "NOT_STARTED" | "GENERATING" | "READY" | "FAILED";
+  compatId?: string | null;
   createdAt: string | null;
 }
 
@@ -256,6 +257,8 @@ export default function MeClient({ locale }: MeClientProps) {
                             ? "열람 가능"
                             : rep.status === "ANNUAL_ROUTE"
                             ? "신년 총운 바로보기"
+                            : rep.status === "COMPAT_ROUTE"
+                            ? "궁합 결과 화면에서 심층 리포트 보기"
                             : rep.status === "GENERATING"
                             ? "생성 중..."
                             : "아직 리포트를 생성하지 않았습니다"}
@@ -277,6 +280,13 @@ export default function MeClient({ locale }: MeClientProps) {
                           className="bg-coral hover:bg-coral-deep text-white text-xs font-bold px-4 py-2 rounded-2xl transition-all active:scale-[0.96] shadow-xs shrink-0"
                         >
                           총운 보기
+                        </Link>
+                      ) : rep.status === "COMPAT_ROUTE" ? (
+                        <Link
+                          href={`/${locale}/compat/${rep.compatId || order.compatId || ""}`}
+                          className="bg-coral hover:bg-coral-deep text-white text-xs font-bold px-4 py-2 rounded-2xl transition-all active:scale-[0.96] shadow-xs shrink-0"
+                        >
+                          궁합 보기
                         </Link>
                       ) : rep.status === "GENERATING" ? (
                         <Button

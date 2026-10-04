@@ -34,7 +34,7 @@ export async function GET() {
       const expanded = expandOrderReports(order);
       orderExpandedMap.set(order.id, expanded);
       for (const row of expanded) {
-        if (!row.catalogId.startsWith("annual_")) {
+        if (!row.catalogId.startsWith("annual_") && row.catalogId !== "compat_basic") {
           allCacheKeys.push(row.cacheKey);
         }
       }
@@ -66,6 +66,17 @@ export async function GET() {
             catalogId: row.catalogId,
             reportId: null,
             status: "ANNUAL_ROUTE",
+            createdAt: null,
+          };
+        }
+        // 정통 궁합(단품·세트 구성품)은 궁합 결과 화면이 심층 리포트를 연다. 여기서 "리포트 만들기"로
+        // 보내면 일반 리포트 생성 API 가 500 을 냈다(2026-10-04 세트 구매 손님이 6번 겪음).
+        if (row.catalogId === "compat_basic") {
+          return {
+            catalogId: row.catalogId,
+            reportId: null,
+            status: "COMPAT_ROUTE",
+            compatId: row.compatId,
             createdAt: null,
           };
         }

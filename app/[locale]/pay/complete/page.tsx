@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
 import { rememberUnlockToken, rememberOrderToken } from "@/lib/payments/client";
@@ -14,6 +15,8 @@ function PayCompleteContent() {
   const params = useParams();
   const router = useRouter();
   const locale = (params?.locale as string) || "ko";
+  const { data: session } = useSession();
+  const isMember = Boolean(session?.user);
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [msg, setMsg] = useState("결제 상태를 확인하고 있습니다...");
@@ -249,7 +252,7 @@ function PayCompleteContent() {
           {msg}
         </p>
 
-        {status === "success" && paidCompatId && (
+        {status === "success" && !isMember && paidCompatId && (
           <Card variant="soft" className="w-full p-4 text-left mb-6">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
@@ -279,7 +282,7 @@ function PayCompleteContent() {
           </Card>
         )}
 
-        {status === "success" && !paidCompatId && (
+        {status === "success" && !isMember && !paidCompatId && (
           <Card variant="soft" className="w-full p-4 text-left mb-6">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
@@ -328,7 +331,16 @@ function PayCompleteContent() {
             </Button>
           )}
 
-          {status === "success" && (
+          {/* 회원은 이미 계정에 보관된다 → 가입 안내 대신 보관함으로(2026-10-04: 회원 구매자가 가입 버튼을 눌러 로그인 화면으로 갔다) */}
+          {status === "success" && isMember && (
+            <Link
+              href={`/${locale}/me`}
+              className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"
+            >
+              내 보관함에서 다시 보기
+            </Link>
+          )}
+          {status === "success" && !isMember && (
             <Link
               href={`/${locale}/login?callbackUrl=${encodeURIComponent(callbackTarget)}`}
               className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"

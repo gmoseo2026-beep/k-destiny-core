@@ -170,6 +170,12 @@ export default function ReportNewClient({
       return;
     }
 
+    // 정통 궁합은 궁합 결과 화면이 심층 리포트를 연다(여기서 생성하지 않는다)
+    if (catalogId === "compat_basic") {
+      router.replace(compatId ? `/${locale}/compat/${compatId}` : `/${locale}/me`);
+      return;
+    }
+
     // SET Flow
     if (product.type === "SET" && product.items && product.items.length > 0) {
       const itemsList: SetItemStatus[] = product.items.map((itemId) => {
