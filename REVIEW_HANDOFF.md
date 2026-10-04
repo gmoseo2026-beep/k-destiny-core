@@ -120,3 +120,28 @@
 2. PC 흐름(팝업)은 결제 완료 화면을 거치지 않는다 — PC 는 이메일을 모달에서 받으므로 영향 없음.
 3. 체크박스 없는 고지 방식의 법적 판단은 사장님 결정 사항(약관 문구는 맞춰 둠).
 4. 모달 이탈 원인은 `checkout_close` 가 며칠 쌓여야 숫자로 확인된다.
+
+---
+
+# 추가(2026-10-04) — 구매자 오류 수정, 측정 정리, 가입 유도
+
+> **근거**: 10/4 11:19 회원이 "이 사람 세트" 12,900원 결제(가입 3분 뒤). 9/29 이후 결제 4건 모두 가입 후 1~5분 안의 회원. 이틀 유입은 인스타 유료 광고 78 · 스레드 27(전부 홈 `/ko` 착지). 무료 한도 도달 9명.
+> **검증**: `vitest` 348 통과 · `tsc` 0 · `next build` exit 0 · 로컬 빌드에서 한도 화면·로그인 복귀 주소·GA 차단 확인 · 운영 배포 VERIFIED(c8afde0, 68d72b8, a5303ba)
+
+| 구분 | 파일 | 내용 |
+|---|---|---|
+| 버그 | `app/api/reports/mine/route.ts`, `components/MeClient.tsx`, `components/report/ReportNewClient.tsx`, `app/api/reports/generate/route.ts` | 보관함의 정통 궁합이 [리포트 만들기]로 떠서 500(`missing spec for compat_basic`) — 구매자가 6번 겪음. `COMPAT_ROUTE` 로 궁합 결과 화면에 연결, 생성 API 는 400 안내 |
+| 버그 | `app/[locale]/login/page.tsx` | `?callbackUrl=` 을 무시하고 항상 대시보드로 보내던 문제. 같은 사이트 경로(`/`로 시작, `//`·역슬래시 불가)만 허용해 복귀 |
+| 화면 | `app/[locale]/pay/complete/page.tsx` | 회원에게는 "가입하고 보관" 대신 "내 보관함", 비회원 보관 안내는 비회원에게만 |
+| 측정 | `lib/payments/client.ts`, `pay/complete`, `app/api/payments/complete/route.ts` | 모바일 결제도 GA4 `purchase` 전송. `transaction_id` 는 주문번호(열람 증명) 대신 영수증 id(`order.id`) |
+| 측정 | `components/Analytics.tsx` | localhost·`/admin` 은 `ga-disable` 로 전송 차단 |
+| 측정 | `lib/inAppBrowser.ts`, `prisma/schema.prisma`(Order.clientEnv, nullable 추가), `app/api/payments/order/route.ts`, `GuestCheckoutModal` | 접속 환경 라벨(`threads:m` 등)을 결제 이벤트와 주문에 기록. 스레드 UA("Barcelona") 인식 |
+| 전환 | `lib/previewLimit.ts`, `app/api/reports/generate/route.ts`, `PreviewLimitPanel`, `FortuneNewClient`, `CompatNewClient` | 무료 미리보기: 비회원 3 · 회원 6. 한도에 닿은 비회원에게 "가입하면 N개 더" → 가입 후 같은 상품 미리보기로 복귀(운세 `auto=1`, 궁합 `from=`) |
+| 외부 설정 | GA4(Google 태그) | 원치 않는 추천: accounts.google.com, kauth.kakao.com, accounts.kakao.com, nid.naver.com, inicis.com |
+
+## 의심 지점
+1. 가입 유도의 효과는 미확인 — "가입자가 결제한다"는 상관이지 인과가 아니다. `preview_limit_view{signup_offer}` → `preview_limit_signup_click` → 가입 → 결제로 확인.
+2. 한도는 기기(쿠키) 기준. 인앱에서 외부 브라우저로 넘어가 가입하면 쿠키·입력값이 따라오지 않는다.
+3. `clientEnv` 는 클라이언트가 보낸 값(형식만 검사). 판정에는 쓰지 않고 분석용.
+4. 청약철회 고지는 체크박스 없이 버튼 아래 고지 유지(사장님 결정 10/4).
+5. 메타 픽셀은 보류(광고를 소액·7일만 운영 예정).
