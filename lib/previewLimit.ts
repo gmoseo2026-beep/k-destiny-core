@@ -9,6 +9,10 @@ import { createHmac, createHash, timingSafeEqual } from "crypto";
 import { todayKST } from "@/lib/validation/inputs";
 
 export const PREVIEW_DAILY_LIMIT = 3;
+// 회원은 하루 6개(2026-10-04 사장님 결정). 한도에 닿은 비회원에게 "가입하면 3개 더"를 제안한다 —
+// 9/29 이후 결제한 사람은 전부 가입 후 1~5분 안에 결제한 회원이었고, 한도에 닿은 비회원은 그냥 나갔다.
+export const MEMBER_PREVIEW_DAILY_LIMIT = 6;
+export const previewLimitFor = (isMember: boolean) => (isMember ? MEMBER_PREVIEW_DAILY_LIMIT : PREVIEW_DAILY_LIMIT);
 const COOKIE_NAME = "kd_pv";
 
 const secret = () => process.env.NEXTAUTH_SECRET || "kongdak-preview-limit";
@@ -44,13 +48,14 @@ export interface PreviewQuota {
 
 /**
  * @param key 미리보기를 구분하는 값(상품 + 대상). 같은 key 는 다시 봐도 세지 않는다.
+ * @param limit 하루 한도. 기기(쿠키) 기준으로 세므로, 비회원으로 3개 본 뒤 가입하면 3개가 더 열린다.
  */
-export function checkPreviewQuota(req: Request, key: string): PreviewQuota {
+export function checkPreviewQuota(req: Request, key: string, limit: number = PREVIEW_DAILY_LIMIT): PreviewQuota {
   const day = todayKST();
   const seen = seenToday(req, day);
   const h = shortHash(key);
   if (seen.includes(h)) return { allowed: true, used: seen.length };
-  if (seen.length >= PREVIEW_DAILY_LIMIT) return { allowed: false, used: seen.length };
+  if (seen.length >= limit) return { allowed: false, used: seen.length };
   const list = [...seen, h].join(",");
   const value = encodeURIComponent(`${day}|${list}|${sign(`${day}|${list}`)}`);
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";

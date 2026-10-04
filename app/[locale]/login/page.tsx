@@ -9,6 +9,19 @@ import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import KongdakMascot from "@/components/KongdakMascot";
 
+/**
+ * 로그인 후 돌아갈 곳. 주소의 ?callbackUrl= 을 따른다(같은 사이트의 경로만 허용 — 바깥 주소로 보내는 것을 막는다).
+ * 2026-10-04 까지는 이 값을 무시하고 항상 대시보드로 보내서, "가입하고 저장"·"가입하고 미리보기 더 보기"처럼
+ * 보던 화면으로 돌아와야 하는 흐름이 전부 홈에서 끊겼다.
+ */
+function afterLoginPath(locale: string): string {
+  const fallback = `/${locale}/dashboard`;
+  if (typeof window === "undefined") return fallback;
+  const raw = new URLSearchParams(window.location.search).get("callbackUrl");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || raw.length > 500) return fallback;
+  return raw;
+}
+
 export default function LoginPage() {
   const t = useTranslations("Login");
   const locale = useLocale();
@@ -34,7 +47,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setMessage(null);
     try {
-      await signIn("google", { callbackUrl: `/${locale}/dashboard` });
+      await signIn("google", { callbackUrl: afterLoginPath(locale) });
     } catch (error: unknown) {
       const err = error as { message?: string };
       setMessage({ type: "error", text: err.message || t("error_general") });
@@ -46,7 +59,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setMessage(null);
     try {
-      await signIn("kakao", { callbackUrl: `/${locale}/dashboard` });
+      await signIn("kakao", { callbackUrl: afterLoginPath(locale) });
     } catch (error: unknown) {
       const err = error as { message?: string };
       setMessage({ type: "error", text: err.message || t("error_general") });
@@ -58,7 +71,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setMessage(null);
     try {
-      await signIn("naver", { callbackUrl: `/${locale}/dashboard` });
+      await signIn("naver", { callbackUrl: afterLoginPath(locale) });
     } catch (error: unknown) {
       const err = error as { message?: string };
       setMessage({ type: "error", text: err.message || t("error_general") });
@@ -112,7 +125,7 @@ export default function LoginPage() {
         });
         setIsLoading(false);
       } else {
-        window.location.href = `/${locale}/dashboard`;
+        window.location.href = afterLoginPath(locale);
       }
     } catch (error: unknown) {
       const err = error as { message?: string };

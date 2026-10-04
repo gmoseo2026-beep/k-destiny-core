@@ -47,3 +47,30 @@ describe("무료 미리보기 하루 한도", () => {
     expect(decodeURIComponent(set)).not.toContain("1990");
   });
 });
+
+// 2026-10-04: 비회원 3개, 회원 6개. 기기(쿠키) 기준이라 비회원으로 3개 본 뒤 가입하면 3개가 더 열린다.
+describe("회원 한도와 가입 후 추가 미리보기", () => {
+  it("회원 한도는 비회원보다 크다", async () => {
+    const m = await import("@/lib/previewLimit");
+    expect(m.previewLimitFor(false)).toBe(PREVIEW_DAILY_LIMIT);
+    expect(m.previewLimitFor(true)).toBe(m.MEMBER_PREVIEW_DAILY_LIMIT);
+    expect(m.MEMBER_PREVIEW_DAILY_LIMIT).toBeGreaterThan(PREVIEW_DAILY_LIMIT);
+  });
+
+  it("비회원으로 한도까지 본 기기는 막히고, 같은 쿠키로 회원 한도를 주면 이어서 열린다", async () => {
+    const { MEMBER_PREVIEW_DAILY_LIMIT } = await import("@/lib/previewLimit");
+    let cookie: string | undefined;
+    for (let i = 1; i <= PREVIEW_DAILY_LIMIT; i++) {
+      cookie = cookiePair(checkPreviewQuota(reqWith(cookie), `TEASER:p${i}`).setCookie!);
+    }
+    expect(checkPreviewQuota(reqWith(cookie), "TEASER:next").allowed).toBe(false);
+
+    for (let i = PREVIEW_DAILY_LIMIT + 1; i <= MEMBER_PREVIEW_DAILY_LIMIT; i++) {
+      const q = checkPreviewQuota(reqWith(cookie), `TEASER:p${i}`, MEMBER_PREVIEW_DAILY_LIMIT);
+      expect(q.allowed).toBe(true);
+      expect(q.used).toBe(i);
+      cookie = cookiePair(q.setCookie!);
+    }
+    expect(checkPreviewQuota(reqWith(cookie), "TEASER:over", MEMBER_PREVIEW_DAILY_LIMIT).allowed).toBe(false);
+  });
+});

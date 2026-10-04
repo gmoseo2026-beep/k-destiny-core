@@ -47,7 +47,7 @@ import { generateNamingReport } from "@/lib/premium/generateNaming";
 import { generateDatesReport } from "@/lib/premium/generateDates";
 import surnamesRaw from "@/data/naming/surnames.json";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
-import { checkPreviewQuota, PREVIEW_DAILY_LIMIT } from "@/lib/previewLimit";
+import { checkPreviewQuota, previewLimitFor, MEMBER_PREVIEW_DAILY_LIMIT } from "@/lib/previewLimit";
 
 const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
   Object.entries(surnamesRaw as Record<string, Array<{ hanja: string }>>).map(([hangul, arr]) => [
@@ -362,10 +362,17 @@ export async function POST(req: NextRequest) {
   // 한도에 닿으면 화면이 미리보기 대신 결제 안내를 보여 준다(code: PREVIEW_LIMIT).
   let previewCookie: string | undefined;
   if (kind === "TEASER" && !preview) {
-    const quota = checkPreviewQuota(req, cacheKey);
+    const limit = previewLimitFor(!!sessionUserId);
+    const quota = checkPreviewQuota(req, cacheKey, limit);
     if (!quota.allowed) {
       return NextResponse.json(
-        { error: `무료 미리보기는 하루 ${PREVIEW_DAILY_LIMIT}개까지 볼 수 있어요.`, code: "PREVIEW_LIMIT", limit: PREVIEW_DAILY_LIMIT },
+        {
+          error: `무료 미리보기는 하루 ${limit}개까지 볼 수 있어요.`,
+          code: "PREVIEW_LIMIT",
+          limit,
+          // 비회원이면 가입으로 더 볼 수 있는 개수(회원 한도 − 지금까지 본 개수). 회원은 0.
+          signupBonus: sessionUserId ? 0 : Math.max(0, MEMBER_PREVIEW_DAILY_LIMIT - quota.used),
+        },
         { status: 429, headers: NO_STORE },
       );
     }

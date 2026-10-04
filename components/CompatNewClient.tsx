@@ -115,7 +115,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   } | null>(null);
 
   // 오늘의 무료 미리보기 한도를 넘김 → 미리보기 대신 결제 안내(궁합은 이미 만들어져 있어 바로 결제 가능)
-  const [limitHit, setLimitHit] = useState<{ compatId: string; limit: number } | null>(null);
+  const [limitHit, setLimitHit] = useState<{ compatId: string; limit: number; signupBonus?: number } | null>(null);
 
   const { data: session } = useSession();
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -150,7 +150,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         });
         const json = await res.json();
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-          if (alive) setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3 });
+          if (alive) setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
           return;
         }
         if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
@@ -232,7 +232,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       });
       const json = await res.json();
       if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-        setLimitHit({ compatId: lastCouple.compatId, limit: json.limit ?? 3 });
+        setLimitHit({ compatId: lastCouple.compatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
         return;
       }
       if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
@@ -340,7 +340,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
         const genJson = await genRes.json();
         if (genRes.status === 429 && genJson.code === "PREVIEW_LIMIT") {
-          setLimitHit({ compatId: json.id, limit: genJson.limit ?? 3 });
+          setLimitHit({ compatId: json.id, limit: genJson.limit ?? 3, signupBonus: genJson.signupBonus ?? 0 });
           setIsLoading(false);
           return;
         }
@@ -405,6 +405,11 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
             sectionTitles={outline.map((s) => s.title)}
             limit={limitHit?.limit ?? 3}
             onUnlock={handleOpenCheckout}
+            signupBonus={limitHit?.signupBonus ?? 0}
+            // 가입 후 같은 두 사람(from=궁합 id)으로 이 상품 미리보기를 바로 만든다
+            signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(
+              `/${locale}/compat/new?productId=${product.id}${limitHit?.compatId ? `&from=${limitHit.compatId}` : ""}`
+            )}`}
           />
         )}
 

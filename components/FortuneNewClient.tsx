@@ -130,6 +130,8 @@ export default function FortuneNewClient({
     reportId?: string;
     /** 오늘의 무료 미리보기 한도를 넘김(값 = 하루 한도). 미리보기 대신 결제 안내를 보여 준다 */
     previewLimit?: number;
+    /** 비회원이 가입하면 오늘 더 볼 수 있는 미리보기 수 */
+    signupBonus?: number;
   } | null>(null);
 
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -239,7 +241,7 @@ export default function FortuneNewClient({
 
         const json = await res.json();
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-          setResultData({ isAnnual: false, score: 0, previewLimit: json.limit ?? 3 });
+          setResultData({ isAnnual: false, score: 0, previewLimit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
           return;
         }
         if (!res.ok) throw new Error(json.error || "결과 생성 중 오류가 발생했습니다.");
@@ -271,7 +273,8 @@ export default function FortuneNewClient({
 
   // 저장된 사주 정보가 있으면 입력 화면을 건너뛰고 바로 미리보기(한 번만)
   useEffect(() => {
-    if (!autoPreview || autoRanRef.current || !initialProfile) return;
+    // 저장된 프로필이 없어도, 방금 넣은 정보(같은 탭)가 채워져 있으면 실행한다 — 한도 화면에서 가입하고 돌아온 경우
+    if (!autoPreview || autoRanRef.current) return;
     if (!formValues.year || !formValues.month || !formValues.day) return;
     autoRanRef.current = true;
     trackEvent("quick_preview_auto", { productId: currentProductId });
@@ -294,6 +297,9 @@ export default function FortuneNewClient({
             sectionTitles={outline.map((s) => s.title)}
             limit={resultData.previewLimit}
             onUnlock={handleOpenCheckout}
+            signupBonus={session?.user ? 0 : resultData.signupBonus}
+            // 가입 후 이 상품으로 돌아와, 방금 넣은 정보로 미리보기를 바로 만든다(auto=1)
+            signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/fortune/new?productId=${currentProductId}&auto=1`)}`}
           />
         ) : resultData.isAnnual && resultData.annualData ? (
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-plum/10 text-left">
