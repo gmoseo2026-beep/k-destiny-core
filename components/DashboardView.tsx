@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer, useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
 import { ArrowRight, ChevronDown, ChevronUp, Bell, Calendar } from "lucide-react";
@@ -10,6 +11,7 @@ import { CatalogItem, priceLabel } from "@/lib/catalog";
 import DailyFortuneCard from "@/components/member/DailyFortuneCard";
 import QuickPreviewRow from "@/components/member/QuickPreviewRow";
 import FirstPurchaseCard from "@/components/member/FirstPurchaseCard";
+import ResumeCard from "@/components/member/ResumeCard";
 import { trackEvent } from "@/lib/gtag";
 
 const noopSubscribe = () => () => {};
@@ -29,6 +31,7 @@ interface CompatItem {
 }
 
 export default function DashboardView({ effectiveProducts }: { effectiveProducts?: CatalogItem[] }) {
+  const locale = useLocale();
   const { data: session } = useSession();
   const [historyItems, setHistoryItems] = useState<CompatItem[]>([]);
   const [purchasedCatalogIds, setPurchasedCatalogIds] = useState<Set<string>>(new Set());
@@ -226,6 +229,9 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
             </p>
           </div>
         </div>
+
+        {/* 미리보기만 보고 결제하지 않은 것 — 보던 곳으로 바로(없으면 안 보인다) */}
+        <ResumeCard locale={locale} source="home" className="mb-4" />
 
         {/* 오늘의 운세(매일 새로) — 회원이 매일 올 이유 */}
         <DailyFortuneCard isPassActive={isPassActive} />

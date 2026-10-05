@@ -141,6 +141,25 @@ describe("POST /api/payments/order route contract tests", () => {
     db.order.create.mockReset();
   });
 
+  // 5-3. 제휴 배너 전용 주소로 들어온 사람의 주문에는 유입 표시가 남는다(2026-10-05)
+  it("case 5-3: stores the campaign tag from the kd_src cookie and drops anything malformed", async () => {
+    session.current = null;
+    db.order.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_src" }));
+    const withCookie = (cookie: string) =>
+      new Request("http://localhost/api/payments/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", cookie },
+        body: JSON.stringify({ productId: "wealth" }),
+      }) as unknown as Parameters<typeof POST>[0];
+    await POST(withCookie("kd_vid=abc; kd_src=couplediary%3Ab02_score"));
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.campaign).toBe("couplediary:b02_score");
+    await POST(withCookie("kd_src=<script>"));
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.campaign).toBeNull();
+    await POST(req({ productId: "wealth" }));
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.campaign).toBeNull();
+    db.order.create.mockReset();
+  });
+
   // 6. 무료 상품 → 400, 없는 productId → 400
   it("case 6: free product or nonexistent productId returns 400", async () => {
     // Free product (free_personality)

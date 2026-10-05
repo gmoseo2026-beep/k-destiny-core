@@ -79,6 +79,12 @@ export default function PrivacyPage() {
                   <p className="text-xs text-coral/90 mt-1 pl-3 font-medium">{t("privacy_s1_item5_note")}</p>
                 </div>
               )}
+              {isKo && (
+                <div>
+                  <p className="font-bold text-ink mb-1">▪ {t("privacy_s1_item6_label")}</p>
+                  <p className="leading-relaxed pl-3">{t("privacy_s1_item6_desc")}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -91,6 +97,7 @@ export default function PrivacyPage() {
               <li>{t("privacy_s2_li3")}</li>
               <li>{t("privacy_s2_li4")}</li>
               <li>{t("privacy_s2_li5")}</li>
+              {isKo && <li>{t("privacy_s2_li6")}</li>}
             </ul>
           </div>
 
@@ -103,6 +110,7 @@ export default function PrivacyPage() {
               <li>{t("privacy_s3_li3")}</li>
               <li>{t("privacy_s3_li4")}</li>
               {isKo && <li>{t("privacy_s3_li5")}</li>}
+              {isKo && <li>{t("privacy_s3_li6")}</li>}
             </ul>
           </div>
 

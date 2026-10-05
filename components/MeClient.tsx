@@ -1,6 +1,8 @@
 "use client";
 
 import OwnedReportNotice from "@/components/OwnedReportNotice";
+import ResumeCard from "@/components/member/ResumeCard";
+import MarketingConsentToggle from "@/components/member/MarketingConsentToggle";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -176,7 +178,11 @@ export default function MeClient({ locale }: MeClientProps) {
             로그아웃
           </button>
         </div>
+        <MarketingConsentToggle />
       </Card>
+
+      {/* 미리보기만 보고 결제하지 않은 것 — 보던 곳으로 바로(없으면 안 보인다) */}
+      <ResumeCard locale={locale} source="me" className="mb-6" />
 
       {/* Orders & Reports List */}
       <div className="w-full flex flex-col gap-4 mb-8">

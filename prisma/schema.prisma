@@ -78,6 +78,10 @@ model User {
   premiumEndDate     DateTime?
   subscriptionStatus String?   @default("NONE") // 'NONE', 'ACTIVE', 'EXPIRED', 'CANCELLED'
 
+  // 혜택·새 소식(광고성 정보) 수신 동의 — 선택. 동의한 회원에게만 홍보 메일 등을 보낼 수 있다(2026-10-05 추가).
+  marketingConsent   Boolean   @default(false)
+  marketingConsentAt DateTime? // 마지막으로 동의하거나 철회한 시각
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -246,6 +250,8 @@ model Order {
   claimTokenExpiresAt DateTime?
   // 결제를 시작한 접속 환경("threads:m", "instagram:m", "browser:pc" 등). 어디서 결제가 끊기는지 보려고(2026-10-04). PII 아님.
   clientEnv      String?
+  // 제휴 배너 등 전용 주소(/go/<코드>)로 들어온 뒤 만든 주문이면 그 유입 표시("couplediary:b02"). PII 아님.
+  campaign       String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

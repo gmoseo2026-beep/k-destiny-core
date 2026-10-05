@@ -8,6 +8,7 @@ import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { canPreview } from "@/lib/preview";
 import { isFirstPurchaseEligible } from "@/lib/payments/firstPurchase";
+import { campaignFromCookieHeader } from "@/lib/campaignLinks";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
     // 접속 환경 라벨(클라이언트가 보낸 값). 정해진 글자만 받아 그대로 저장한다 — 판정에는 쓰지 않는다.
     const clientEnv =
       typeof body.env === "string" && /^[a-z]{2,12}:(m|pc)$/.test(body.env) ? body.env : null;
+
+    // 제휴 배너 전용 주소(/go/<코드>)로 들어온 사람이면 그 유입 표시를 주문에 남긴다(집계용, 판정에는 쓰지 않는다)
+    const campaign = campaignFromCookieHeader(req.headers.get("cookie"));
 
     if (type === "PERIOD_PASS") {
       // [D4] PERIOD_PASS 분기는 더 이상 사용되지 않으므로 410 반환
@@ -93,6 +97,7 @@ export async function POST(req: NextRequest) {
           type: "SINGLE",
           amount,
           clientEnv,
+          campaign,
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },

@@ -8,6 +8,7 @@ import { signIn, useSession } from "next-auth/react";
 import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import KongdakMascot from "@/components/KongdakMascot";
+import { rememberOptIn } from "@/lib/marketingConsent";
 
 /**
  * 로그인 후 돌아갈 곳. 주소의 ?callbackUrl= 을 따른다(같은 사이트의 경로만 허용 — 바깥 주소로 보내는 것을 막는다).
@@ -43,6 +44,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showInAppModal, setShowInAppModal] = useState(false);
+  // 혜택·새 소식 수신 동의(선택). 기본은 받지 않음 — 체크한 경우에만 로그인 뒤 계정에 저장된다.
+  const [optIn, setOptIn] = useState(false);
   const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
 
   // 이미 로그인된 상태로 이 화면에 오면 바로 돌려보낸다.
@@ -274,6 +277,26 @@ export default function LoginPage() {
               </p>
             )}
           </div>
+
+          {locale === 'ko' && (
+            <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-2xl bg-cream/60 px-3.5 py-3 text-left">
+              <input
+                type="checkbox"
+                checked={optIn}
+                onChange={(e) => {
+                  setOptIn(e.target.checked);
+                  rememberOptIn(e.target.checked);
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#FF5C77]"
+              />
+              <span className="min-w-0">
+                <span className="block text-xs font-bold text-ink">(선택) 혜택·새 소식 받기</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-[#8A8291]">
+                  할인·이벤트·새 리포트 소식을 이메일 등으로 보내드려요. 체크하지 않아도 가입할 수 있고, 보관함에서 언제든 끌 수 있어요.
+                </span>
+              </span>
+            </label>
+          )}
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">

@@ -201,3 +201,32 @@
 - **네이버·빙**: `scripts/seo/indexnow.ts` 로 사이트맵의 159개 주소 통보(네이버 200, 빙 202). 열쇠 파일은 `public/<열쇠>.txt` — 규약상 공개하는 값이라 비밀이 아니다.
 - 새 페이지를 만들거나 크게 고치면 배포 후 `npx tsx scripts/seo/indexnow.ts` 를 다시 실행한다.
 - 미완: 네이버 서치어드바이저 화면(사이트맵 제출 확인)은 자동화 브라우저에서 접근이 막혀 직접 확인하지 못했다.
+
+---
+
+# 추가(2026-10-05) — 제휴 배너 전용 주소, 이어보기 카드, 선택 수신 동의
+
+> **근거**: (1) 커플다이어리 앱(플레이스토어 10만+)에 배너를 무료로 싣기로 함 — 효과를 숫자로 봐야 협업 여부를 정할 수 있다. (2) 회원 22명 중 구매 6명 전원이 가입 후 10분 안에 결제, 나중에 돌아와 산 사람 0명. 미구매 15명에게는 수신 동의가 없어 홍보 연락을 할 수 없다.
+> **검증**: `vitest` 379 통과(신규 17) · `tsc` 0 · 변경 파일 lint 0 · build exit 0 · 로컬 운영 빌드에서 가입(선택 동의 체크) → 동의 저장·`marketing_optin` → 보관함 스위치로 철회·`marketing_optout` → 미리보기 생성 → 홈·보관함 이어보기 카드·`resume_card_view/click` → 전용 주소 302·쿠키·클릭 집계 → 관리자 집계 화면까지 확인. 테스트 계정과 테스트 클릭은 삭제했다.
+
+| 파일 | 내용 |
+|---|---|
+| `lib/campaignLinks.ts`, `app/[locale]/go/[code]/route.ts` | `/ko/go/cd1~cd4` → 클릭을 하루 단위로 세고(봇 제외, `SiteCounter` 키 `go:<코드>:<한국 날짜>`) utm 을 붙여 `/ko/compat/new` 로 보낸다. 유입 표시 쿠키 `kd_src`(httpOnly, 30일) |
+| `app/api/payments/order/route.ts`, `prisma/schema.prisma` | `Order.campaign`(추가 칸) — 쿠키의 유입 표시를 정해진 형식일 때만 저장. 금액·권한 판정에는 쓰지 않는다 |
+| `app/[locale]/admin/campaigns/page.tsx`, `admin/layout.tsx` | 관리자 > 배너 유입: 배너별 오늘·7일·누적 클릭, 결제 시작·완료·금액, 날짜별 클릭 |
+| `lib/member/resume.ts`, `app/api/user/resume/route.ts`, `components/member/ResumeCard.tsx` | 미리보기만 보고 결제하지 않은 것(최근 2개)을 회원 홈·보관함에 "이어보기"로. 이미 산 것·그 상품이 든 세트를 산 것·숨긴 상품·60일 지난 것은 제외 |
+| `app/api/reports/generate/route.ts` | 비회원 때 만든 미리보기를 가입 후 다시 보면 그 행에 회원을 이어 둔다(주인 없는 행만) |
+| `lib/marketingConsent.ts`, `components/MarketingConsentSync.tsx`, `app/api/user/marketing-consent/route.ts`, `components/member/MarketingConsentToggle.tsx`, 로그인 화면 | (선택) 혜택·새 소식 받기 — 기본은 체크 안 됨. 체크하고 1시간 안에 로그인하면 계정에 저장. 보관함 스위치로 언제든 철회. `User.marketingConsent`, `marketingConsentAt`(추가 칸) |
+| `messages/ko.json`, `app/[locale]/privacy/page.tsx` | 개인정보 처리방침에 선택 수집 항목·목적·보유 기간, 유입 구분 쿠키 고지 추가(10/5 개정) |
+
+## 보안/PII/결제
+- 전용 주소는 IP·기기 정보를 저장하지 않는다(숫자만 올린다). 유입 표시는 `출처:배너` 형식의 짧은 글자뿐.
+- 결제 금액·열람 권한 로직은 건드리지 않았다. DB 는 칸 3개 추가만(기존 데이터 변경 없음).
+- 수신 동의는 기록만 한다. 실제 발송 기능은 없다 — 보낼 때는 제목에 (광고) 표기와 수신 거부 방법을 넣어야 한다.
+
+## 의심 지점
+1. 앱이 배너를 앱 안 화면(웹뷰)으로 열면 결제창(이니시스·카카오페이 앱 전환)이 막힐 수 있다. 실제 기기에서 한 번 눌러 봐야 안다.
+2. 클릭 수는 사람이 같은 배너를 여러 번 누르면 그만큼 올라간다(순방문자 수가 아니다). 순방문은 GA4 로 본다.
+3. 결제 귀속은 같은 기기·같은 브라우저 30일 기준이다. 앱 안 화면에서 보고 나중에 다른 브라우저로 결제하면 잡히지 않는다.
+4. 이어보기는 저장된 내 정보가 없는 회원이면 입력 화면이 그 상품으로 열린다(같은 탭에 방금 넣은 값이 있으면 바로 미리보기).
+5. 소셜 로그인 사용자는 체크 칸을 지나치기 쉽다 — 동의율이 낮으면 결제 완료 화면 등 다른 자리를 검토.

@@ -105,6 +105,17 @@ async function markViewed(reportId: string) {
   await prisma.generatedReport.updateMany({ where: { id: reportId, firstViewedAt: null }, data: { firstViewedAt: new Date() } });
 }
 
+/** 주인 없는(비회원 때 만든) 미리보기에 회원을 이어 둔다. 응답을 기다리게 하지 않고, 실패해도 무시한다. */
+function linkTeaserToMember(reportId: string, userId: string): void {
+  try {
+    void prisma.generatedReport
+      .updateMany({ where: { id: reportId, userId: null, kind: "TEASER" }, data: { userId } })
+      .catch(() => {});
+  } catch {
+    // 이어보기는 덤이다
+  }
+}
+
 export async function POST(req: NextRequest) {
   const t0 = Date.now();
   let body: Record<string, unknown>;
@@ -402,6 +413,8 @@ export async function POST(req: NextRequest) {
       return err(503, "리포트를 다시 준비하고 있어요. 잠시 후 다시 시도해 주세요.");
     }
     if (kind === "FULL") await markViewed(claim.reportId);
+    // 비회원 때 만든 미리보기를 가입 후 다시 본 경우: 주인 없는 미리보기에 회원을 이어 둔다("이어보기" 카드용)
+    if (kind === "TEASER" && sessionUserId) linkTeaserToMember(claim.reportId, sessionUserId);
     void logGeneration({ catalogId, kind, ok: true, cached: true });
     return ok({ kind, reportId: claim.reportId, score: env.score, data: viewData(env.data) });
   }
