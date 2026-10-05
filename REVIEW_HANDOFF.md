@@ -145,3 +145,21 @@
 3. `clientEnv` 는 클라이언트가 보낸 값(형식만 검사). 판정에는 쓰지 않고 분석용.
 4. 청약철회 고지는 체크박스 없이 버튼 아래 고지 유지(사장님 결정 10/4).
 5. 메타 픽셀은 보류(광고를 소액·7일만 운영 예정).
+
+---
+
+# 추가(2026-10-05) — 결제 실패 복귀, 로그인 중복 콜백, 카카오페이 바로가기
+
+> **근거(10/4~10/5)**: 모달을 연 14명 중 11명이 닫음(입력 칸을 없앤 뒤에도 비율 그대로). 비회원 결제창 이탈 2건 — 잔액부족(가입 후 재결제 성공), 스레드 인앱에서 이니시스 결제창 미복귀. 가입 유도 흐름은 운영에서 1회 끝까지 동작 확인.
+> **검증**: `vitest` 348 · `tsc` 0 · build exit 0 · 배포 VERIFIED(d9df37a, 56d4ed5). 카카오페이 바로가기는 로컬 테스트 채널과 **운영 채널** 모두에서 카카오페이 결제 화면으로 직행 확인(결제는 하지 않음)
+
+| 파일 | 내용 |
+|---|---|
+| `components/GuestCheckoutModal.tsx`, `lib/payments/client.ts` | 모바일: [카카오페이로 결제](EASY_PAY + easyPayProvider KAKAOPAY) + [카드·네이버페이·삼성페이로 결제](기존 창). `method` 를 checkout_submit·begin_checkout·payment_failed 에 기록. 닫은 이유는 이벤트 이름으로도(`checkout_close_x/cancel/backdrop/fast`) |
+| `lib/payments/client.ts`, `app/[locale]/pay/complete/page.tsx` | 결제 실패·취소 복귀 화면에 [다시 결제하러 가기](결제를 시작한 화면, 미리보기 자동 복원 `auto`·`from`) |
+| `app/[locale]/login/page.tsx` | 이미 로그인된 상태면 callbackUrl 로 즉시 이동, 같은 사이트의 절대 callbackUrl 허용, 로그인 화면으로의 복귀 금지 |
+
+## 의심 지점
+1. PC 는 카카오페이 바로가기가 없다(이니시스 PC 필수값·팝업 방식이라 확인 불가).
+2. 네이버페이·삼성페이 직접 호출은 넣지 않았다(같은 방식으로 가능, 수요를 보고 결정).
+3. 테스트로 운영 DB 에 PENDING 주문 몇 건(재물운 4,900원, 비회원)이 생겼다.
