@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { canonicalUrlFor } from '@/lib/seo';
+import { isViewableFor } from '@/lib/catalog';
+import { getEffectiveCatalog } from '@/lib/catalogVisibility';
 
 /**
  * Public routes that should be indexed by search engines.
@@ -26,13 +28,32 @@ const PUBLIC_ROUTES: { path: string; changeFrequency: 'always' | 'hourly' | 'dai
   { path: '/privacy',    changeFrequency: 'yearly',  priority: 0.3 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
-  return PUBLIC_ROUTES.map((route) => ({
+  const base = PUBLIC_ROUTES.map((route) => ({
     url: canonicalUrlFor(route.path),
     lastModified,
     changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
+
+  // 상품 상세 페이지(공개 상품만). 2026-10-05 까지는 위 6개 주소뿐이라 검색엔진이 상품 페이지
+  // 20여 개를 알 길이 없었다. 각 페이지는 질문형 제목·소개·공유 카드를 갖고 있다.
+  let products: MetadataRoute.Sitemap = [];
+  try {
+    const catalog = await getEffectiveCatalog();
+    products = catalog
+      .filter((p) => isViewableFor(p, false))
+      .map((p) => ({
+        url: canonicalUrlFor(`/products/${p.id}`),
+        lastModified,
+        changeFrequency: 'weekly' as const,
+        priority: p.type === 'SET' ? 0.5 : 0.8,
+      }));
+  } catch {
+    // DB 를 못 읽으면 기본 주소만 낸다
+  }
+
+  return [...base, ...products];
 }
