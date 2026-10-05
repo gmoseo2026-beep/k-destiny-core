@@ -7,6 +7,11 @@ export interface BuyerInfo {
   fullName: string;
   email: string;
   phoneNumber: string;
+  /**
+   * 결제 수단 바로가기(2026-10-05). "KAKAOPAY" 면 이니시스 결제창(약관 3개 + 수단 고르기)을 건너뛰고
+   * 카카오페이 화면으로 바로 간다. 없으면 기존처럼 카드 결제창(그 안에서 간편결제 선택).
+   */
+  payMethod?: "KAKAOPAY";
 }
 
 export interface PayOptions {
@@ -145,7 +150,14 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     return { ok: false, reason: "FAILED" };
   }
   // 결제창을 여는 시점(GA4 표준 이벤트). 서버가 정한 금액으로 기록한다.
-  trackEvent("begin_checkout", { productId: opts.productId, value: order.amount, currency: "KRW", app: clientEnvLabel() });
+  const direct = opts.buyer.payMethod === "KAKAOPAY";
+  trackEvent("begin_checkout", {
+    productId: opts.productId,
+    value: order.amount,
+    currency: "KRW",
+    app: clientEnvLabel(),
+    method: direct ? "kakaopay" : "card_window",
+  });
 
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
   const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY;
@@ -170,7 +182,10 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     orderName,
     totalAmount: order.amount,
     currency: "CURRENCY_KRW",
-    payMethod: "CARD",
+    // 카카오페이 바로가기: 포트원 V2 "간편결제 UI 직접 호출"(payMethod EASY_PAY + easyPayProvider)
+    ...(direct
+      ? { payMethod: "EASY_PAY" as const, easyPay: { easyPayProvider: "KAKAOPAY" as const } }
+      : { payMethod: "CARD" as const }),
     customer: {
       fullName: opts.buyer.fullName,
       // 모바일 결제는 이메일·휴대폰 번호를 받지 않는다(KG이니시스: PC 결제에서만 필수)
@@ -188,6 +203,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       stage: "pg",
       code: String(res.code).slice(0, 60),
       app: clientEnvLabel(),
+      method: direct ? "kakaopay" : "card_window",
     });
     if (!isCancelled) {
       alert(`결제 실패: ${res.message || res.code}`);

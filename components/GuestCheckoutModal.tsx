@@ -18,7 +18,7 @@ interface GuestCheckoutModalProps {
   initialName?: string;
   initialEmail?: string;
   initialPhone?: string;
-  onSubmit: (buyer: { fullName: string; email: string; phoneNumber: string }) => Promise<void>;
+  onSubmit: (buyer: { fullName: string; email: string; phoneNumber: string; payMethod?: "KAKAOPAY" }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -42,7 +42,11 @@ const PAY_METHODS = [
  * - 청약철회 제한은 체크박스 대신 버튼 바로 위 고지로 알린다(약관 제9조 8항: 결제를 진행하면 동의).
  * - 모바일은 하단 시트(스크롤 가능) — 키보드나 작은 화면에서도 결제 버튼이 가려지지 않는다.
  *
- * GA4: checkout_open → checkout_submit → begin_checkout / checkout_close { reason, seconds, typed }
+ * - 모바일에는 [카카오페이로 결제] 바로가기가 먼저 있다(2026-10-05). 이니시스 결제창(약관 동의 3개 + 수단 고르기)을
+ *   건너뛰고 카카오페이로 바로 간다. 스레드·인스타 인앱에서 결제창까지 가서 돌아오지 않는 경우를 줄이려는 것.
+ *   PC 는 이니시스 필수값 때문에 기존 버튼 하나만 둔다.
+ *
+ * GA4: checkout_open → checkout_submit { method } → begin_checkout / checkout_close { reason, seconds, typed }
  */
 export default function GuestCheckoutModal({
   isOpen,
@@ -70,6 +74,8 @@ export default function GuestCheckoutModal({
   const [isMobile] = useState(() => typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
   const openedAtRef = useRef(0);
   const submittedRef = useRef(false);
+  // 어느 버튼으로 제출했는지(카카오페이 바로가기 / 일반 결제창)
+  const methodRef = useRef<"KAKAOPAY" | undefined>(undefined);
 
   // 비회원은 정가가 청구된다 → 결제창에서는 청구 금액만 보이고, 첫 결제 할인은 로그인 안내로 분리한다
   const FIRST_TAG = " · 회원 첫 결제 ";
@@ -142,6 +148,8 @@ export default function GuestCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    const payMethod = isMobile ? methodRef.current : undefined;
+    methodRef.current = undefined;
 
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
@@ -162,13 +170,20 @@ export default function GuestCheckoutModal({
     }
 
     submittedRef.current = true;
-    trackEvent("checkout_submit", { productId: pid, guest: !session?.user, mobile: isMobile, app: clientEnvLabel() });
+    trackEvent("checkout_submit", {
+      productId: pid,
+      guest: !session?.user,
+      mobile: isMobile,
+      app: clientEnvLabel(),
+      method: payMethod === "KAKAOPAY" ? "kakaopay" : "card_window",
+    });
     await onSubmit({
       // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
       fullName: trimmedName.length >= 2 ? trimmedName : "콩닥 고객",
       // 모바일은 이메일을 묻지 않는다(회원이면 계정 이메일이 들어 있다). 결제 완료 화면에서 선택으로 받는다.
       email: isMobile ? initialEmail.trim() : trimmedEmail,
       phoneNumber: isMobile ? "" : cleanPhone,
+      ...(payMethod ? { payMethod } : {}),
     });
   };
 
@@ -280,29 +295,63 @@ export default function GuestCheckoutModal({
             </p>
           )}
 
-          {/* 간편결제는 이니시스 결제창 안에서 고른다. 결제창을 열기 전에는 손님이 알 수 없어 여기서 미리 알린다. */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
-            {PAY_METHODS.map((m) => (
-              <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
-                {m.label}
-              </span>
-            ))}
-          </div>
+          {isMobile ? (
+            <>
+              {/* 카카오페이 바로가기: 이니시스 결제창을 건너뛴다 */}
+              <button
+                type="submit"
+                onClick={() => {
+                  methodRef.current = "KAKAOPAY";
+                }}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] px-6 py-4 text-base font-extrabold text-[#191919] shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+              >
+                <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current" aria-hidden>
+                  <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
+                </svg>
+                {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
+              </button>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={isLoading}
-            isLoading={isLoading}
-          >
-            {isLoading ? "결제창 연결 중..." : `${shownPrice} 결제하기`}
-          </Button>
+              <Button
+                type="submit"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                disabled={isLoading}
+                onClick={() => {
+                  methodRef.current = undefined;
+                }}
+              >
+                카드·네이버페이·삼성페이로 결제
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* 간편결제는 이니시스 결제창 안에서 고른다. 결제창을 열기 전에는 손님이 알 수 없어 여기서 미리 알린다. */}
+              <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
+                {PAY_METHODS.map((m) => (
+                  <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
+                    {m.label}
+                  </span>
+                ))}
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={isLoading}
+                isLoading={isLoading}
+              >
+                {isLoading ? "결제창 연결 중..." : `${shownPrice} 결제하기`}
+              </Button>
+            </>
+          )}
 
           {/* 청약철회 제한 고지 — 체크박스 대신 버튼 바로 아래 고지(결제를 진행하면 동의, 약관 제9조) */}
           <p className="text-[11px] leading-relaxed text-text-3 text-center">
-            결제하기를 누르면 다음 화면에서 결제 수단을 골라요. 디지털 콘텐츠라 열람(제공 개시) 후에는 전자상거래법
+            디지털 콘텐츠라 열람(제공 개시) 후에는 전자상거래법
             제17조 제2항에 따라 청약철회가 제한될 수 있으며, 결제를 진행하면 이에 동의하게 됩니다.
           </p>
 
