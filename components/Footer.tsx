@@ -29,6 +29,17 @@ export default function Footer() {
           </Link>
         </nav>
 
+        {/* 모아보기(검색용 페이지로 가는 길 — 모든 화면에서 닿게 한다) */}
+        <nav aria-label="모아보기" className="flex items-center justify-center gap-4 text-xs">
+          <Link href="/zodiac" className="hover:text-ink transition-colors">
+            띠 궁합
+          </Link>
+          <span className="text-line">|</span>
+          <Link href="/fortune/2027" className="hover:text-ink transition-colors">
+            2027년 운세
+          </Link>
+        </nav>
+
         {/* Support Contact & Business Info */}
         <div className="space-y-1.5 text-[11px] leading-relaxed text-caption">
           <div className="flex items-center justify-center gap-1.5">

@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next';
 import { canonicalUrlFor } from '@/lib/seo';
 import { isViewableFor } from '@/lib/catalog';
 import { getEffectiveCatalog } from '@/lib/catalogVisibility';
+import { FORTUNE_TARGET_YEAR } from '@/lib/seo/zodiac';
+import { pairSlugsWithContent, birthYearsWithContent } from '@/lib/seo/data';
 
 /**
  * Public routes that should be indexed by search engines.
@@ -55,5 +57,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB 를 못 읽으면 기본 주소만 낸다
   }
 
-  return [...base, ...products];
+  // 검색용 페이지: 띠 궁합(78쌍)과 출생연도별 운세(48개). 본문이 있는 것만 싣는다.
+  const seoPages: MetadataRoute.Sitemap = [
+    { url: canonicalUrlFor('/zodiac'), lastModified, changeFrequency: 'monthly', priority: 0.7 },
+    { url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}`), lastModified, changeFrequency: 'monthly', priority: 0.7 },
+    ...pairSlugsWithContent().map((slug) => ({
+      url: canonicalUrlFor(`/zodiac/${slug}`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+    ...birthYearsWithContent().map((y) => ({
+      url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}/${y}`),
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+  ];
+
+  return [...base, ...products, ...seoPages];
 }
