@@ -106,10 +106,15 @@ export default function GuestCheckoutModal({
   const closeByUser = (reason: "x" | "cancel" | "backdrop") => {
     if (isLoading) return;
     if (!submittedRef.current) {
+      const seconds = Math.round((Date.now() - openedAtRef.current) / 1000);
+      // 이유(x·cancel·backdrop)와 3초 안에 닫았는지를 이름으로도 보낸다 — 매개변수는 맞춤 측정기준을
+      // 등록해야 보고서에 나오는데, 이름은 이벤트 표에서 바로 보인다.
+      trackEvent(`checkout_close_${reason}`, { productId: pid, app: clientEnvLabel() });
+      if (seconds < 3) trackEvent("checkout_close_fast", { productId: pid, reason, app: clientEnvLabel() });
       trackEvent("checkout_close", {
         productId: pid,
         reason,
-        seconds: Math.round((Date.now() - openedAtRef.current) / 1000),
+        seconds,
         typed: !isMobile && (email.trim() !== initialEmail.trim() || phoneNumber.trim() !== initialPhone.trim()),
         mobile: isMobile,
         inapp: inApp,

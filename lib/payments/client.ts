@@ -157,6 +157,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
 
   const locale = opts.locale || "ko";
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
+  rememberPayReturn(opts);
 
   // orderName은 서버 응답의 orderName을 쓴다
   const orderName = order.orderName || "콩닥 사주 리포트";
@@ -196,6 +197,41 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
 
   // 4) 서버 결제 검증
   return await verifyAndCompletePayment(order.orderId, opts.productId, opts.compatId, order.amount);
+}
+
+/**
+ * 결제를 시작한 화면(모바일은 결제창으로 떠났다가 결제 완료 화면으로 돌아온다).
+ * 결제가 실패·취소됐을 때 "다시 결제하러 가기"가 여기로 보낸다 — 2026-10-04 잔액부족으로 실패한 손님이
+ * 돌아갈 길이 없어 가입부터 다시 했다. 미리보기 화면은 입력 상태로 그려지므로, 같은 미리보기가
+ * 바로 다시 뜨도록 표시(auto·from)를 붙인다. 같은 탭에서만 유효하다(sessionStorage).
+ */
+const PAY_RETURN_KEY = "kongdak_pay_return";
+
+function rememberPayReturn(opts: PayOptions): void {
+  try {
+    const u = new URL(window.location.href);
+    const p = u.pathname;
+    if (p.endsWith("/fortune/new")) {
+      if (!u.searchParams.get("productId")) u.searchParams.set("productId", opts.productId);
+      u.searchParams.set("auto", "1");
+    } else if (p.endsWith("/compat/new") && opts.compatId) {
+      if (!u.searchParams.get("productId")) u.searchParams.set("productId", opts.productId);
+      u.searchParams.set("from", opts.compatId);
+    }
+    window.sessionStorage.setItem(PAY_RETURN_KEY, u.pathname + u.search);
+  } catch {
+    // 저장소를 못 쓰면 버튼이 안 보일 뿐이다
+  }
+}
+
+export function recallPayReturn(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.sessionStorage.getItem(PAY_RETURN_KEY);
+    return v && v.startsWith("/") && !v.startsWith("//") ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

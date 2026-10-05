@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
-import { rememberUnlockToken, rememberOrderToken, trackPurchase } from "@/lib/payments/client";
+import { rememberUnlockToken, rememberOrderToken, trackPurchase, recallPayReturn } from "@/lib/payments/client";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { Card } from "@/components/ui/Card";
@@ -24,6 +24,8 @@ function PayCompleteContent() {
   const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
   const [paidProductType, setPaidProductType] = useState<string | null>(null);
   const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
+  // 결제 실패·취소 시 돌아갈 화면(결제를 시작한 곳)
+  const [retryHref, setRetryHref] = useState<string | null>(null);
   // 이메일 없이 결제한 비회원(모바일): 결제가 끝난 뒤에 이메일을 선택으로 받는다
   const [emailOrderId, setEmailOrderId] = useState<string | null>(null);
   const [emailValue, setEmailValue] = useState("");
@@ -64,7 +66,9 @@ function PayCompleteContent() {
       queueMicrotask(() => {
         setStatus("error");
         setMsg(message ? `결제 실패: ${message}` : "결제가 취소되었거나 실패했습니다.");
+        setRetryHref(recallPayReturn());
       });
+      trackEvent("payment_failed", { stage: "pg_return", code: String(code).slice(0, 60) });
       return;
     }
 
@@ -353,6 +357,21 @@ function PayCompleteContent() {
             >
               ✨ 가입하고 내 계정에 보관하기
             </Link>
+          )}
+
+          {status === "error" && retryHref && (
+            <>
+              <p className="text-xs text-text-2 leading-relaxed -mt-2 mb-1">
+                결제되지 않았어요. 다른 카드나 간편결제로 다시 시도할 수 있어요.
+              </p>
+              <Link
+                href={retryHref}
+                onClick={() => trackEvent("payment_retry_click", {})}
+                className="w-full bg-coral hover:bg-coral-deep text-white py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.96] block text-center"
+              >
+                다시 결제하러 가기
+              </Link>
+            </>
           )}
 
           <Link

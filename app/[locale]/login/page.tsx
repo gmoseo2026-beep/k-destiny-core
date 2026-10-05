@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import KongdakMascot from "@/components/KongdakMascot";
@@ -17,8 +17,19 @@ import KongdakMascot from "@/components/KongdakMascot";
 function afterLoginPath(locale: string): string {
   const fallback = `/${locale}/dashboard`;
   if (typeof window === "undefined") return fallback;
-  const raw = new URLSearchParams(window.location.search).get("callbackUrl");
+  let raw = new URLSearchParams(window.location.search).get("callbackUrl");
+  // 로그인 오류 뒤에는 NextAuth 가 절대 주소(https://kongdak.kr/…)로 넘겨준다 → 같은 사이트면 경로만 꺼내 쓴다
+  if (raw && /^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      raw = u.origin === window.location.origin ? u.pathname + u.search : null;
+    } catch {
+      raw = null;
+    }
+  }
   if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\") || raw.length > 500) return fallback;
+  // 로그인 화면으로 되돌아오는 주소는 쓰지 않는다(무한 왕복 방지)
+  if (raw.split("?")[0].endsWith("/login")) return fallback;
   return raw;
 }
 
@@ -33,6 +44,14 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [showInAppModal, setShowInAppModal] = useState(false);
   const inApp = typeof window !== 'undefined' ? isInAppBrowser() : false;
+
+  // 이미 로그인된 상태로 이 화면에 오면 바로 돌려보낸다.
+  // 인앱에서 카카오 로그인이 두 번 돌아오면(두 번째는 OAuthCallback 오류) 방금 가입한 사람이
+  // 보던 미리보기에서 로그인 오류 화면으로 튕겼다(2026-10-05 06:47 실제 사례).
+  const { status: sessionStatus } = useSession();
+  useEffect(() => {
+    if (sessionStatus === "authenticated") window.location.replace(afterLoginPath(locale));
+  }, [sessionStatus, locale]);
 
   const handleEscape = () => {
     const ok = openInExternalBrowser();
