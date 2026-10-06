@@ -66,21 +66,48 @@ export const CAMPAIGN_TAG_RE = /^[a-z0-9]{2,24}:[a-z0-9_]{2,32}$/;
 export const CAMPAIGN_COOKIE = "kd_src";
 export const CAMPAIGN_COOKIE_DAYS = 30;
 
-/** 요청의 Cookie 헤더에서 유입 표시를 꺼낸다. 없거나 형식이 다르면 null. */
-export function campaignFromCookieHeader(header: string | null | undefined): string | null {
+/** 배너를 누른 시각(초). 가입이 그 뒤에 일어났는지 보려고 함께 심는다. */
+export const CAMPAIGN_TIME_COOKIE = "kd_src_t";
+
+function cookieValue(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {
     const i = part.indexOf("=");
-    if (i < 0 || part.slice(0, i).trim() !== CAMPAIGN_COOKIE) continue;
-    let value = part.slice(i + 1).trim();
+    if (i < 0 || part.slice(0, i).trim() !== name) continue;
     try {
-      value = decodeURIComponent(value);
+      return decodeURIComponent(part.slice(i + 1).trim());
     } catch {
       return null;
     }
-    return CAMPAIGN_TAG_RE.test(value) ? value : null;
   }
   return null;
+}
+
+/** 요청의 Cookie 헤더에서 유입 표시를 꺼낸다. 없거나 형식이 다르면 null. */
+export function campaignFromCookieHeader(header: string | null | undefined): string | null {
+  const value = cookieValue(header, CAMPAIGN_COOKIE);
+  return value && CAMPAIGN_TAG_RE.test(value) ? value : null;
+}
+
+/** 배너를 누른 시각(밀리초). 없거나 이상하면 null. */
+export function campaignClickTimeFromCookieHeader(header: string | null | undefined): number | null {
+  const value = cookieValue(header, CAMPAIGN_TIME_COOKIE);
+  if (!value || !/^[0-9]{9,11}$/.test(value)) return null;
+  return Number(value) * 1000;
+}
+
+const SIGNUP_SKEW_MS = 60 * 1000;
+const SIGNUP_FALLBACK_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * 이 가입을 배너 덕으로 칠 수 있는가: 배너를 누른 **뒤에** 만든 계정만 센다
+ * (원래 회원이 배너를 눌러 들어온 것은 가입이 아니다).
+ * 누른 시각을 모르면 방금(24시간 안) 만든 계정만 인정한다.
+ */
+export function isSignupAfterClick(createdAt: Date, clickAtMs: number | null, now: Date = new Date()): boolean {
+  const created = createdAt.getTime();
+  if (clickAtMs !== null) return created >= clickAtMs - SIGNUP_SKEW_MS && clickAtMs <= now.getTime() + SIGNUP_SKEW_MS;
+  return now.getTime() - created <= SIGNUP_FALLBACK_MS;
 }
 
 /** 한국 날짜(YYYY-MM-DD). 클릭 수는 하루 단위로 센다. */

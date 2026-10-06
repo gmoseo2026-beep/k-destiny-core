@@ -82,6 +82,9 @@ model User {
   marketingConsent   Boolean   @default(false)
   marketingConsentAt DateTime? // 마지막으로 동의하거나 철회한 시각
 
+  // 제휴 배너 전용 주소(/go/<코드>)를 누른 뒤 가입한 회원이면 그 유입 표시("couplediary:b02_score"). PII 아님.
+  campaign           String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

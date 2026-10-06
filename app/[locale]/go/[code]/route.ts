@@ -4,6 +4,7 @@ import { isBotUserAgent } from "@/app/api/visit/route";
 import {
   CAMPAIGN_COOKIE,
   CAMPAIGN_COOKIE_DAYS,
+  CAMPAIGN_TIME_COOKIE,
   campaignCounterKey,
   campaignTag,
   campaignTargetPath,
@@ -37,12 +38,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ loca
   }
 
   const res = redirectTo(campaignTargetPath(link, locale));
-  res.cookies.set(CAMPAIGN_COOKIE, campaignTag(link), {
+  const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     maxAge: CAMPAIGN_COOKIE_DAYS * 24 * 60 * 60,
     path: "/",
-  });
+  };
+  res.cookies.set(CAMPAIGN_COOKIE, campaignTag(link), cookieOptions);
+  // 누른 시각(초) — 이 뒤에 가입한 사람만 "배너로 가입"으로 센다
+  res.cookies.set(CAMPAIGN_TIME_COOKIE, String(Math.floor(Date.now() / 1000)), cookieOptions);
   return res;
 }
