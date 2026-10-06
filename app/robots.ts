@@ -23,7 +23,7 @@ const PRIVATE_PATHS = [
  */
 const PRIVATE_API = [
   'admin', 'auth', 'checkout', 'compat', 'fortune', 'generate-compat', 'hermes',
-  'payments', 'push', 'reports', 'subscriptions', 'user', 'visit', 'webhooks',
+  'payments', 'push', 'pwa', 'reports', 'subscriptions', 'user', 'visit', 'webhooks',
 ];
 
 function disallowList(extra: string[] = []): string[] {

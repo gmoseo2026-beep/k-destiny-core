@@ -242,3 +242,29 @@
 | `lib/campaignStats.ts`, `app/[locale]/admin/campaigns/page.tsx` | 오늘·7일·누적 요약(매출·클릭·가입·결제), 배너별 클릭→가입→결제→매출과 전환율, 날짜별 표. 매출 = 결제 완료(PAID) 합계 — 환불·취소 제외. 배너로 가입한 회원이 다른 기기에서 결제한 주문도 포함 |
 
 **의심 지점**: 가입 귀속은 배너를 누른 그 브라우저에서 가입해야 잡힌다(앱 안 화면에서 누르고 다른 브라우저에서 가입하면 빠진다). 비회원 결제는 가입 수에는 없고 매출에는 들어간다.
+
+---
+
+# 추가(2026-10-06) — 수신 동의 물어보기 카드, 앱 설치 집계, 관리자 "회원·설치"
+
+> **근거**: 회원 25명 중 수신 동의 0명(로그인 화면 체크 칸 도입 후 가입 3명 모두 미체크), 이메일은 12명뿐(카카오 8명 중 0명, 네이버 7명 중 2명). 앱 설치는 기록 장치가 없어 서버 기록으로 "하루 3~4회 실행"만 보였다.
+> **검증**: `vitest` 394 통과(신규 6) · `tsc` 0 · 변경 파일 lint 0 · build exit 0 · 로컬에서 가입 → 홈 카드 표시 → (이메일 없는 회원) 빈 값 오류 → 이메일 입력·동의 저장 → 잘못된 이메일 400 → 설치·실행 집계 → 관리자 화면 표시 확인. 테스트 계정·집계 삭제.
+
+| 파일 | 내용 |
+|---|---|
+| `components/member/MarketingConsentCard.tsx`, `components/DashboardView.tsx` | 회원 홈에서 한 번 묻는다(아직 정하지 않은 회원만). 받을게요/괜찮아요 중 하나를 고르면 다시 묻지 않는다. 결제 흐름 화면에는 띄우지 않는다 |
+| `app/api/user/marketing-consent/route.ts`, `prisma/schema.prisma` | GET 에 `decided`·`hasEmail` 추가. 계정에 이메일이 없는 회원은 동의할 때 소식 받을 이메일을 함께 받는다 → `User.contactEmail`(추가 칸). **로그인용 `email` 에는 쓰지 않는다**(확인되지 않은 주소로 계정이 엮이는 것 방지) |
+| `components/PwaTracker.tsx`, `app/api/pwa/event/route.ts`, `lib/pwaStats.ts` | 설치(appinstalled)·설치된 앱 실행(탭 세션당 1회)·처음 연 기기를 하루 단위 숫자로 센다(`SiteCounter` 키 `pwa:<종류>:<한국 날짜>`). 로그인 회원이면 `User.pwaInstalledAt`(추가 칸) |
+| `components/InstallPWAButton.tsx` | GA4: `pwa_banner_view`·`pwa_install_click`·`pwa_install_choice`·`pwa_banner_dismiss` |
+| `lib/audienceStats.ts`, `app/[locale]/admin/audience/page.tsx`, `admin/layout.tsx` | 관리자 > 회원·설치: 보낼 수 있는 회원(동의+이메일)·가입 경로별 표, 설치한 기기·앱 실행·알림 구독·날짜별 표 |
+| `app/robots.ts` | `/api/pwa` 수집 차단 |
+
+## 보안/PII
+- `contactEmail` 은 PII — 로그·화면에 내지 않는다(관리자 화면은 개수만). 형식만 검사하고 본인 확인 메일은 보내지 않는다(발송 기능이 아직 없다).
+- 설치 집계는 숫자만 올린다. 부풀리기 방지로 같은 IP 는 하루 30회까지(메모리에서만 세고 저장하지 않음).
+
+## 의심 지점
+1. 기존 회원 25명 전원에게 다음 방문 때 카드가 한 번 뜬다(사이트 안 안내라 동의 없이 가능).
+2. `contactEmail` 은 확인되지 않은 주소다 — 실제 발송 전에 수신 확인 절차를 넣을지 정해야 한다.
+3. "설치한 기기"는 기기 저장소 기준이라 앱 데이터를 지우면 다시 세어진다. 집계 시작(10/6) 전에 설치한 기기는 다음 실행 때 잡힌다.
+4. 카카오 이메일 동의 항목은 카카오 개발자 콘솔 설정이 필요하다(미완, 사장님 계정).

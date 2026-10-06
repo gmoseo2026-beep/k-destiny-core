@@ -12,6 +12,7 @@ import DailyFortuneCard from "@/components/member/DailyFortuneCard";
 import QuickPreviewRow from "@/components/member/QuickPreviewRow";
 import FirstPurchaseCard from "@/components/member/FirstPurchaseCard";
 import ResumeCard from "@/components/member/ResumeCard";
+import MarketingConsentCard from "@/components/member/MarketingConsentCard";
 import { trackEvent } from "@/lib/gtag";
 
 const noopSubscribe = () => () => {};
@@ -232,6 +233,9 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
 
         {/* 미리보기만 보고 결제하지 않은 것 — 보던 곳으로 바로(없으면 안 보인다) */}
         <ResumeCard locale={locale} source="home" className="mb-4" />
+
+        {/* 혜택·새 소식을 받을지 한 번 묻는다(아직 정하지 않은 회원에게만) */}
+        <MarketingConsentCard className="mb-4" />
 
         {/* 오늘의 운세(매일 새로) — 회원이 매일 올 이유 */}
         <DailyFortuneCard isPassActive={isPassActive} />

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { X, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { subscribeToPush } from '@/lib/push';
+import { trackEvent } from '@/lib/gtag';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -91,7 +92,16 @@ export default function InstallPWAButton() {
     };
   }, []);
 
+  // 설치 배너가 실제로 보인 횟수(홈에서만 보인다) — GA4: pwa_banner_view { platform }
+  const bannerSeenRef = useRef(false);
+  useEffect(() => {
+    if (!showBanner || !isHome || isStandalone || bannerSeenRef.current) return;
+    bannerSeenRef.current = true;
+    trackEvent('pwa_banner_view', { platform: isIOS ? 'ios' : 'other' });
+  }, [showBanner, isHome, isStandalone, isIOS]);
+
   const handleDismiss = () => {
+    trackEvent('pwa_banner_dismiss', {});
     setShowBanner(false);
     localStorage.setItem('kongdak_pwa_dismissed', Date.now().toString());
   };
@@ -102,6 +112,7 @@ export default function InstallPWAButton() {
   };
 
   const handleInstallClick = async () => {
+    trackEvent('pwa_install_click', { platform: isIOS ? 'ios' : deferredPrompt ? 'prompt' : 'none' });
     if (isIOS) {
       setShowIOSModal(true);
       setShowBanner(false);
@@ -118,6 +129,7 @@ export default function InstallPWAButton() {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     
+    trackEvent('pwa_install_choice', { outcome });
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
       setShowBanner(false);
