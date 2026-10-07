@@ -35,6 +35,28 @@ describe("제휴 배너 전용 주소", () => {
     expect(q.get("utm_content")).toBe("b02_score");
   });
 
+  it("광고 소재 주소는 상품 입력 화면으로 가고, 광고 클릭 표시만 넘긴다", () => {
+    const link = findCampaignLink("ig-b1")!;
+    const incoming = new URLSearchParams("fbclid=IwAR0abc_DEF-123&evil=%3Cscript%3E&productId=wealth&utm_source=fake");
+    const path = campaignTargetPath(link, "ko", incoming);
+    const q = new URLSearchParams(path.split("?")[1]);
+    expect(path.startsWith("/ko/compat/new?")).toBe(true);
+    expect(q.get("productId")).toBe("inner_mind");
+    expect(q.get("utm_source")).toBe("instagram");
+    expect(q.get("utm_medium")).toBe("paid_social");
+    expect(q.get("utm_content")).toBe("vb_hook1");
+    expect(q.get("fbclid")).toBe("IwAR0abc_DEF-123");
+    expect(q.has("evil")).toBe(false);
+    // 이상한 클릭 표시는 버린다
+    const bad = campaignTargetPath(link, "ko", new URLSearchParams("fbclid=%3Cscript%3E&gclid=" + "x".repeat(700)));
+    expect(bad.includes("fbclid")).toBe(false);
+    expect(bad.includes("gclid")).toBe(false);
+    // A안은 상품 지정 없이 무료 궁합 입력으로
+    const a = new URLSearchParams(campaignTargetPath(findCampaignLink("ig-a2")!, "ko").split("?")[1]);
+    expect(a.has("productId")).toBe(false);
+    expect(a.get("utm_campaign")).toBe("video_a_score");
+  });
+
   it("모르는 코드는 찾지 못한다", () => {
     expect(findCampaignLink("nope")).toBeUndefined();
     expect(findCampaignLink("")).toBeUndefined();

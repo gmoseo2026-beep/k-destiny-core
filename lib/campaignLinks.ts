@@ -1,11 +1,12 @@
 /**
- * 제휴·배너 전용 주소(/ko/go/<코드>).
+ * 제휴 배너·광고 전용 주소(/ko/go/<코드>).
  *
- * 배너마다 주소를 따로 줘서 (1) 서버가 클릭 수를 세고 (2) GA4 가 유입(utm)을 구분하고
+ * 배너·광고 소재마다 주소를 따로 줘서 (1) 서버가 클릭 수를 세고 (2) GA4 가 유입(utm)을 구분하고
  * (3) 그 사람이 결제하면 주문에 유입 표시가 남게 한다. 도착지를 바꿔야 할 때도 제휴사에
  * 주소를 다시 줄 필요 없이 여기만 고치면 된다.
  *
- * 새 제휴가 생기면 CAMPAIGN_LINKS 에 줄을 추가한다(코드는 영문 소문자·숫자·하이픈).
+ * 새 제휴·새 광고 소재가 생기면 CAMPAIGN_LINKS 에 줄을 추가한다(코드는 영문 소문자·숫자·하이픈).
+ * 광고 플랫폼이 주소 뒤에 붙이는 클릭 표시(fbclid 등)는 도착 주소로 그대로 넘긴다 — 픽셀이 그 값으로 광고 클릭을 알아본다.
  */
 export interface CampaignLink {
   /** 주소에 쓰는 짧은 코드 */
@@ -14,6 +15,8 @@ export interface CampaignLink {
   label: string;
   /** 도착 경로(로케일 뒤) */
   path: string;
+  /** 도착 주소에 붙일 값(예: 어떤 상품의 입력 화면인지) */
+  query?: Record<string, string>;
   utm: { source: string; medium: string; campaign: string; content: string };
 }
 
@@ -42,19 +45,73 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b09_30sec" },
   },
+  // ── 인스타그램 영상 광고(2026-10): 영상마다 도입(첫 3초) 3종. 어느 소재가 가입·매출을 만드는지 본다.
+  {
+    code: "ig-b1",
+    label: "인스타 광고 · B 속마음 · 도입1 「답장은 오는데, 마음은 모르겠을 때」",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook1" },
+  },
+  {
+    code: "ig-b2",
+    label: "인스타 광고 · B 속마음 · 도입2 「그 사람, 지금 나를 어떻게 생각할까?」",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook2" },
+  },
+  {
+    code: "ig-b3",
+    label: "인스타 광고 · B 속마음 · 도입3 「읽씹 3일째. 끝난 걸까, 바쁜 걸까」",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook3" },
+  },
+  {
+    code: "ig-a1",
+    label: "인스타 광고 · A 점수 내기 · 도입1 「우리 궁합, 몇 점 나올 것 같아?」",
+    path: "/compat/new",
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook1" },
+  },
+  {
+    code: "ig-a2",
+    label: "인스타 광고 · A 점수 내기 · 도입2 「남친은 90점이래. 나는 60점 봤는데…」",
+    path: "/compat/new",
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook2" },
+  },
+  {
+    code: "ig-a3",
+    label: "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」",
+    path: "/compat/new",
+    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook3" },
+  },
 ] as const;
 
 export const findCampaignLink = (code: string): CampaignLink | undefined =>
   CAMPAIGN_LINKS.find((l) => l.code === code);
 
-/** 도착 주소(경로 + utm). GA4 가 이 주소의 utm 으로 유입을 구분한다. */
-export function campaignTargetPath(link: CampaignLink, locale: string): string {
+/** 광고 플랫폼이 붙이는 클릭 표시. 이것만 도착 주소로 넘긴다(다른 값은 버린다). */
+export const CLICK_ID_KEYS = ["fbclid", "gclid", "gbraid", "wbraid", "ttclid", "msclkid"] as const;
+const CLICK_ID_VALUE = /^[A-Za-z0-9_.\-]{1,600}$/;
+
+/**
+ * 도착 주소(경로 + 상품 등 + utm + 클릭 표시). GA4 는 utm 으로, 광고 픽셀은 클릭 표시로 유입을 구분한다.
+ * @param incoming 전용 주소로 들어온 요청의 쿼리 — 정해진 클릭 표시만 꺼내 쓴다
+ */
+export function campaignTargetPath(link: CampaignLink, locale: string, incoming?: URLSearchParams): string {
   const q = new URLSearchParams({
+    ...(link.query ?? {}),
     utm_source: link.utm.source,
     utm_medium: link.utm.medium,
     utm_campaign: link.utm.campaign,
     utm_content: link.utm.content,
   });
+  if (incoming) {
+    for (const key of CLICK_ID_KEYS) {
+      const value = incoming.get(key);
+      if (value && CLICK_ID_VALUE.test(value)) q.set(key, value);
+    }
+  }
   return `/${locale}${link.path}?${q.toString()}`;
 }
 

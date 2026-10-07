@@ -37,7 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ loca
       .catch((e: unknown) => console.error("[go] count failed", e instanceof Error ? e.message : e));
   }
 
-  const res = redirectTo(campaignTargetPath(link, locale));
+  // 광고 클릭 표시(fbclid 등)는 도착 주소로 넘긴다
+  const res = redirectTo(campaignTargetPath(link, locale, req.nextUrl.searchParams));
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

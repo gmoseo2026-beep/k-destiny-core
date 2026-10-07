@@ -37,7 +37,7 @@ export default async function AdminLayout({
             href="/admin/campaigns"
             className="ml-auto mr-2 px-4 py-2 rounded-xl bg-white border border-[#2B2430]/10 text-ink text-sm font-semibold hover:border-coral/30 hover:text-coral active:scale-95 transition-all shadow-sm"
           >
-            배너 유입
+            광고·배너 유입
           </Link>
           <Link
             href="/admin/audience"

@@ -57,9 +57,9 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black text-ink">배너 유입</h1>
+          <h1 className="text-2xl font-black text-ink">광고·배너 유입</h1>
           <p className="mt-1 text-sm text-ink/60">
-            제휴 배너마다 준 전용 주소로 들어온 사람의 클릭 → 가입 → 결제 → 매출입니다. 서버가 직접 센 값이에요(봇 제외).
+            제휴 배너·광고 소재마다 준 전용 주소로 들어온 사람의 클릭 → 가입 → 결제 → 매출입니다. 서버가 직접 센 값이에요(봇 제외).
           </p>
         </div>
         <Link href={`/${locale}/admin`} className="rounded-xl border border-[#2B2430]/10 bg-white px-4 py-2 text-sm font-semibold text-ink">
@@ -92,12 +92,12 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-black text-ink">배너별 (누적)</h2>
+        <h2 className="mb-3 text-base font-black text-ink">배너·광고 소재별 (누적)</h2>
         <div className="overflow-x-auto rounded-2xl border border-[#2B2430]/10 bg-white">
           <table className="w-full min-w-[900px]">
             <thead className="border-b border-[#2B2430]/10 bg-[#FFF6F1]">
               <tr>
-                <th className={th}>배너</th>
+                <th className={th}>배너·광고 소재</th>
                 <th className={th}>전용 주소</th>
                 <th className={th}>클릭</th>
                 <th className={th}>가입</th>
