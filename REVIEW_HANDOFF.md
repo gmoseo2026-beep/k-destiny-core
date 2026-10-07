@@ -268,3 +268,28 @@
 2. `contactEmail` 은 확인되지 않은 주소다 — 실제 발송 전에 수신 확인 절차를 넣을지 정해야 한다.
 3. "설치한 기기"는 기기 저장소 기준이라 앱 데이터를 지우면 다시 세어진다. 집계 시작(10/6) 전에 설치한 기기는 다음 실행 때 잡힌다.
 4. 카카오 이메일 동의 항목은 카카오 개발자 콘솔 설정이 필요하다(미완, 사장님 계정).
+
+---
+
+# 추가(2026-10-07) — 메타 픽셀(광고 성과 측정)
+
+> **근거**: 인스타그램 광고가 끝난 10/6 부터 유입이 1/3 로 줄었고(하루 약 69명 → 25명), 지난 광고는 239회 방문에 GA4 기준 결제 1건이었다. 광고를 다시 하기 전에 메타가 "결과를 보고 결제까지 가는 사람"을 학습할 수 있게 사이트 안의 행동을 알린다.
+> **검증**: `vitest` 403 통과(신규 9) · `tsc` 0 · 변경 파일 lint 0 · build exit 0 · 로컬 운영 빌드에서 상품 화면 PageView·ViewContent 기록, 결제 복귀 주소의 paymentId 가 가려진 채 기록되는 것 확인(로컬은 기록만, 전송 없음).
+
+| 파일 | 내용 |
+|---|---|
+| `lib/metaPixel.ts` | 측정 이벤트 → 메타 표준 이벤트(view_item→ViewContent, compat_created·teaser_created→Lead, checkout_open→InitiateCheckout, begin_checkout→AddPaymentInfo, purchase→Purchase+금액+eventID). 주소의 paymentId·orderId·token 등을 보내는 순간에만 가린다(History 원본 함수 사용 — Next 라우터가 모르게) |
+| `components/MetaPixel.tsx`, `components/Providers.tsx` | 픽셀 불러오기(운영만), 화면이 바뀔 때 PageView. `autoConfig` 끔(버튼·페이지 정보 자동 수집 안 함), 자동 고급 매칭 미사용. localhost 는 `window.__fbqLog` 에 기록만, 관리자 화면 제외 |
+| `lib/gtag.ts` | `trackEvent` 가 메타에도 알린다(GA 가 막혀 있어도) |
+| `next.config.ts` | CSP 에 `connect.facebook.net`(script·connect), `www.facebook.com`(img·connect) 허용 |
+| `messages/ko.json`, `app/[locale]/privacy/page.tsx` | 개인정보 처리방침 5항에 행태정보 처리·국외 이전(Meta, 미국)·거부 방법 고지(10/7 개정) |
+
+## 보안/PII
+- 메타로 가는 값: 화면 주소(민감한 쿼리 제거), 상품 id, 금액, 영수증 번호(중복 제거용 eventID). **생년월일·이름·이메일·궁합 id 는 보내지 않는다**(테스트로 고정).
+- 픽셀 ID(2390478744821136)는 공개 값이라 코드 기본값으로 두었다(`NEXT_PUBLIC_META_PIXEL_ID` 로 바꿀 수 있음). 전환 API 토큰은 아직 쓰지 않는다 — 쓸 때는 서버 환경변수로만.
+
+## 의심 지점
+1. 궁합 결과 주소(`/ko/compat/<공유 토큰>`)는 PageView 로 메타에 전달된다(공유용 공개 주소라 가리지 않았다).
+2. 결제 건수가 적어 "구매" 최적화는 학습이 안 된다 → 처음에는 Lead(결과 봄)나 InitiateCheckout 을 목표로 잡을 것.
+3. 서버 전송(전환 API)은 미적용 — 광고 차단·iOS 제한으로 일부 누락이 있을 수 있다.
+4. 맞춤형 광고 고지는 방침에 넣었지만 쿠키 동의 배너는 없다(국내 서비스 기준).

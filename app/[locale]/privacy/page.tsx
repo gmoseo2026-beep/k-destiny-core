@@ -149,6 +149,7 @@ export default function PrivacyPage() {
 
             <p className="font-sans text-xs text-gray-500 leading-relaxed">{t("privacy_s5_note")}</p>
             {isKo && <p className="font-sans text-xs text-gray-500 leading-relaxed mt-2">{t("privacy_s5_gemini")}</p>}
+            {isKo && <p className="font-sans text-xs text-gray-500 leading-relaxed mt-2">{t("privacy_s5_meta")}</p>}
           </div>
 
           {/* 6. 이용자의 권리 */}

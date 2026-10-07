@@ -1,3 +1,5 @@
+import { trackMeta } from "@/lib/metaPixel";
+
 /**
  * Tiny GA4 event helper — safe to call anywhere on the client.
  * No-ops when GA isn't loaded (NEXT_PUBLIC_GA_ID unset) or on the server.
@@ -25,6 +27,12 @@
  */
 export function trackEvent(name: string, params?: Record<string, string | number | boolean>): void {
   if (typeof window === "undefined") return;
+  // 메타 픽셀(광고 성과 측정)에도 알린다 — 관계있는 이벤트만 골라 보낸다(lib/metaPixel.ts). GA 가 막혀 있어도 보낸다.
+  try {
+    trackMeta(name, params);
+  } catch {
+    // Analytics must never break the app
+  }
   const w = window as unknown as { gtag?: (...args: unknown[]) => void };
   if (typeof w.gtag !== "function") return;
   try {
