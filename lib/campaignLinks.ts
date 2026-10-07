@@ -85,6 +85,14 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     path: "/compat/new",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook3" },
   },
+  // ── 인스타그램 프로필 링크(무료 릴스 업로드용). 릴스 설명글의 주소는 눌러지지 않아서 프로필 링크로 보낸다.
+  {
+    code: "ig-bio",
+    label: "인스타 프로필 링크 · 릴스(무료 업로드)에서 들어온 사람",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "instagram", medium: "organic_social", campaign: "reels_organic", content: "bio_link" },
+  },
 ] as const;
 
 export const findCampaignLink = (code: string): CampaignLink | undefined =>
