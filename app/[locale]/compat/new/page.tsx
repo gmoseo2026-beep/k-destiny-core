@@ -70,6 +70,9 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
     });
   }
 
+  // CompatNewClient 의 isSpecialCouple 과 같은 조건(정통 궁합이 아닌 상품)
+  const hasProductLanding = Boolean(product && product.id !== "compat_basic");
+
   // 세트 추천에 쓸 공개 상품 id(숨긴 세트는 권하지 않는다)
   const visibleIds = (await getEffectiveCatalog()).filter((p) => isViewableFor(p, preview)).map((p) => p.id);
 
@@ -81,15 +84,18 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
         </div>
       )}
 
-      {/* Hero Title */}
-      <div className="w-full max-w-md text-center mb-6">
-        <h1 className="text-2xl font-black text-ink tracking-tight">
-          우리, 얼마나 잘 맞을까?
-        </h1>
-        <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
-          두 사람의 생년월일만 넣으면 30초 만에 분석 완료 🔮
-        </p>
-      </div>
+      {/* Hero Title — 상품 입력 화면(?productId=)은 CompatNewClient 가 그 상품의 머리말을 직접 그린다.
+          여기 머리말을 같이 두면 광고가 약속한 질문 대신 "우리, 얼마나 잘 맞을까?"가 먼저 보인다. */}
+      {!hasProductLanding && (
+        <div className="w-full max-w-md text-center mb-6">
+          <h1 className="text-2xl font-black text-ink tracking-tight">
+            우리, 얼마나 잘 맞을까?
+          </h1>
+          <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
+            가입 없이 무료 · 두 사람 생년월일만 넣으면 30초 🔮
+          </p>
+        </div>
+      )}
 
       {/* Form Component */}
       <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} visibleIds={visibleIds} fromCompatId={from} sectionOutlines={sectionOutlines()} />

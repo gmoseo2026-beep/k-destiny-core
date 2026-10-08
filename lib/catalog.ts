@@ -74,6 +74,15 @@ export function formatWon(n: number): string {
   return `${n.toLocaleString("ko-KR")}원`;
 }
 
+/**
+ * 버튼 안에 붙이는 짧은 가격("4,900원"). 결제창을 여는 버튼에는 이 값을 함께 적는다 —
+ * 가격 없는 "답 보기" 버튼을 누른 사람 대부분이 결제창을 3초 안에 닫았다(2026-10-07~08 GA4).
+ * 회원 첫 결제 안내까지 필요한 자리는 priceLabel 을 쓴다.
+ */
+export function basePriceLabel(p: CatalogItem): string {
+  return p.isFree ? "무료" : formatWon(p.price);
+}
+
 /** 화면 가격 표기의 유일한 출처(감사 B2). 서버 order route 의 계산 규칙과 반드시 같아야 한다. */
 export function priceLabel(p: CatalogItem): string {
   if (p.isFree) return "무료";

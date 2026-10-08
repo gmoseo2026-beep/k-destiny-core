@@ -25,7 +25,7 @@ import {
   forgetUnlockToken,
   subscribeUnlockToken,
 } from "@/lib/payments/client";
-import { getProduct, priceLabel, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, basePriceLabel, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 
 interface CompatData {
@@ -120,6 +120,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
   const compatProduct = getProduct("compat_basic");
   const compatPrice = compatProduct ? priceLabel(compatProduct) : "4,900원";
+  // 좁은 버튼 안에 넣는 짧은 가격(회원 첫 결제 안내 없이 금액만)
+  const compatBasePrice = compatProduct ? basePriceLabel(compatProduct) : "4,900원";
 
   // [SECURITY / H-2] 게스트/단건 구매자의 열람 증명 토큰(orderId).
   // 서버는 이 값을 받아야만 세션 없는 구매자의 소유권을 확인할 수 있다.
@@ -596,7 +598,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                   </span>
                 </div>
                 <span className="text-[11px] text-text-3 truncate">
-                  풀어 가는 법 · 이번 달 애정운 타이밍까지 전체 리포트로
+                  풀어 가는 법 · 애정운 타이밍까지 · 전체 리포트 {compatBasePrice}
                 </span>
               </div>
             </div>

@@ -20,6 +20,8 @@ interface StandardReportViewProps {
   lockedSpecs?: LockedSectionInfo[];
   /** 티저의 잠긴 칸을 누르면 결제 안내를 연다(없으면 누를 수 없는 카드) */
   onLockedClick?: () => void;
+  /** 잠긴 칸의 버튼에 함께 적을 가격("4,900원"). 누르면 결제창이 열린다는 걸 미리 알린다 */
+  unlockPrice?: string;
 }
 
 function isFullReport(mode: "teaser" | "full", data: StandardReport | StandardTeaser): data is StandardReport {
@@ -32,6 +34,7 @@ export default function StandardReportView({
   data,
   lockedSpecs = [],
   onLockedClick,
+  unlockPrice,
 }: StandardReportViewProps) {
   if (isFullReport(mode, data)) {
     return (
@@ -123,6 +126,7 @@ export default function StandardReportView({
 
   // TEASER MODE
   const teaser = data as StandardTeaser;
+  const priceTail = unlockPrice ? ` · ${unlockPrice}` : "";
   return (
     <div className="flex flex-col gap-5 w-full max-w-md mx-auto">
       {/* Score & Headline Card */}
@@ -160,7 +164,7 @@ export default function StandardReportView({
                     className="flex items-center gap-1.5 rounded-full border border-coral/40 bg-white px-4 py-2 text-xs font-extrabold text-coral-deep shadow-sm transition-all active:scale-[0.97]"
                   >
                     <Lock className="h-3.5 w-3.5" />
-                    이어서 읽기
+                    이어서 읽기{priceTail}
                   </button>
                 ) : (
                   <span className="flex items-center gap-1.5 text-xs font-bold text-caption">
@@ -189,7 +193,7 @@ export default function StandardReportView({
               className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-coral py-3 text-sm font-bold text-white transition-all active:scale-[0.96]"
             >
               <Lock className="h-3.5 w-3.5" />
-              답 보기
+              답 보기{priceTail}
             </button>
           )}
         </div>
@@ -197,6 +201,12 @@ export default function StandardReportView({
 
       {/* 3 Locked Sections (Hook only, NO full body DOM, surface-soft bg) */}
       <div className="flex flex-col gap-3">
+        {onLockedClick && unlockPrice && (teaser.hooks || []).length > 0 && (
+          <p className="-mb-1 flex items-center gap-1.5 pl-1 text-left text-xs font-bold text-caption">
+            <Lock className="h-3.5 w-3.5 text-coral" />
+            아래 이야기는 전체 리포트({unlockPrice})에서 열려요
+          </p>
+        )}
         {(teaser.hooks || []).map((hook, idx) => {
           const specTitle = lockedSpecs[idx]?.title || `심층 분석 ${idx + 2}`;
           // 훅 문장은 궁금증을 만드는 핵심이라 한 줄로 자르지 않고 두 줄까지 보여 준다

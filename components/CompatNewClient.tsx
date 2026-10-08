@@ -9,7 +9,9 @@ import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, basePriceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import { landingCopyFor } from "@/lib/landingCopy";
+import { Check } from "lucide-react";
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
@@ -106,6 +108,14 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   const product = productId ? getProduct(productId) : null;
   const isSpecialCouple = Boolean(productId && productId !== "compat_basic");
+  // 상품 입력 화면의 머리말(정통 궁합·상품 없음은 페이지의 기본 머리말을 쓴다)
+  const landing = isSpecialCouple && product ? landingCopyFor(product) : null;
+  // 머리말이 보인 횟수. 입력 완료(compat_created)·미리보기(teaser_created)와 견줘 첫 화면 이탈을 본다.
+  // 지난 궁합 이어보기(from=)는 입력 화면을 건너뛰므로 세지 않는다.
+  const landingProductId = landing && product && !fromCompatId ? product.id : null;
+  useEffect(() => {
+    if (landingProductId) trackEvent("product_landing_view", { productId: landingProductId });
+  }, [landingProductId]);
 
   const [teaserResult, setTeaserResult] = useState<{
     compatId: string;
@@ -381,12 +391,13 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
         {teaserResult ? (
           <>
-            <h2 className="text-2xl font-bold tracking-tight">우리의 {product.name} 미리보기</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{product.name} 미리보기</h2>
             <StandardReportView
               mode="teaser"
               score={teaserResult.score}
               data={teaserResult.data}
               lockedSpecs={lockedSpecs}
+              unlockPrice={basePriceLabel(product)}
               onLockedClick={() => {
                 trackTeaserUnlock(product.id, "locked_card");
                 handleOpenCheckout();
@@ -479,20 +490,52 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md md:max-w-3xl flex flex-col gap-6 pb-12 mx-auto">
       <OwnedReportNotice locale={locale} catalogId={productId || "compat_basic"} source="compat_new" />
-      {/* 3D Product Icon 72px & Title */}
-      <div className="flex flex-col items-center justify-center -mb-2">
-        <div className="w-[72px] h-[72px] relative mb-2">
-          <Image
-            src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"}
-            alt=""
-            width={72}
-            height={72}
-            priority
-            className="object-contain drop-shadow-sm"
-          />
+      {landing && product ? (
+        /* 상품 입력 화면 머리말 — 광고·공유 링크로 처음 온 사람의 첫 화면(lib/landingCopy.ts) */
+        <div className="flex flex-col items-center text-center -mb-1">
+          <span className="rounded-full bg-coral-soft px-3 py-1 text-[11px] font-extrabold text-coral-deep">
+            무료 미리보기 · 가입 없이 30초
+          </span>
+          <h1 className="mt-3 text-[22px] font-black leading-snug tracking-tight text-ink [word-break:keep-all]">
+            {landing.headline}
+          </h1>
+          <div className="mt-3 flex items-center gap-2">
+            <Image
+              src={product.icon3d || "/mascot/transparent/couple_red_thread.webp"}
+              alt=""
+              width={40}
+              height={40}
+              priority
+              className="object-contain drop-shadow-sm"
+            />
+            <span className="text-sm font-extrabold text-ink">{product.name}</span>
+          </div>
+          <ul className="mt-3 flex w-full max-w-md flex-col gap-1.5 rounded-2xl border border-line bg-surface-soft p-3.5 text-left">
+            {landing.points.map((point) => (
+              <li key={point} className="flex items-start gap-1.5 text-xs font-semibold leading-snug text-text-2">
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-coral" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs font-bold text-caption">두 사람 생년월일만 넣으면 바로 보여드려요 👇</p>
         </div>
-        <h2 className="text-base font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
-      </div>
+      ) : (
+        /* 3D Product Icon 72px & Title */
+        <div className="flex flex-col items-center justify-center -mb-2">
+          <div className="w-[72px] h-[72px] relative mb-2">
+            <Image
+              src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"}
+              alt=""
+              width={72}
+              height={72}
+              priority
+              className="object-contain drop-shadow-sm"
+            />
+          </div>
+          <h2 className="text-base font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
+        </div>
+      )}
 
       {errorMsg && (
         <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
@@ -805,8 +848,9 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         fullWidth
         isLoading={isLoading}
       >
-        우리 궁합 점수 확인하기 (무료) ✨
+        {landing && product ? `${product.name} 무료로 미리 보기 ✨` : "우리 궁합 점수 확인하기 (무료) ✨"}
       </Button>
+      <p className="-mt-3 text-center text-[11px] font-semibold text-caption">가입도 결제도 없이 바로 볼 수 있어요</p>
     </form>
   );
 }

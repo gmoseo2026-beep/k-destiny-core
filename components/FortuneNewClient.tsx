@@ -10,7 +10,7 @@ import { Lock } from "lucide-react";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, basePriceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
@@ -374,6 +374,7 @@ export default function FortuneNewClient({
             score={resultData.score}
             data={resultData.reportData}
             lockedSpecs={lockedSpecs}
+            unlockPrice={product && !product.isFree ? basePriceLabel(product) : undefined}
             onLockedClick={
               product && !product.isFree
                 ? () => {
