@@ -60,7 +60,7 @@ export default async function Home({ params }: PageProps) {
         <DashboardView effectiveProducts={visibleProducts} />
       ) : (
         <>
-          <HomeHeroCompact total={exploreTotal} />
+          <HomeHeroCompact total={exploreTotal} visitorCount={visitorData.count} />
           {/* 비회원이 이 기기에서 결제한 리포트 — 다시 찾아 들어오는 길(없으면 아무것도 안 보인다) */}
           <div className="mx-auto w-full max-w-md px-4 empty:hidden">
             <OwnedReportNotice locale={locale} source="home" className="mt-3" />

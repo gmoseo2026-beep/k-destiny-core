@@ -22,6 +22,9 @@ export default function InstallPWAButton() {
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const { data: session } = useSession();
+  // 설치 배너는 로그인한 회원에게만 보인다(2026-10-09 사장님 결정). 광고로 처음 온 사람의 첫 화면에서
+  // 상품 카드 위를 덮고 있었다. 이미 설치한 사람에게 뜨는 알림 켜기 안내는 그대로 둔다.
+  const isMember = Boolean(session?.user);
   // 설치·알림 배너는 홈에서만 띄운다. 상세·입력·결과 화면에서는 하단 고정 결제 버튼을 가린다.
   const pathname = usePathname();
   const isHome = /^\/(ko|en|ja)?\/?$/.test(pathname ?? "");
@@ -95,10 +98,10 @@ export default function InstallPWAButton() {
   // 설치 배너가 실제로 보인 횟수(홈에서만 보인다) — GA4: pwa_banner_view { platform }
   const bannerSeenRef = useRef(false);
   useEffect(() => {
-    if (!showBanner || !isHome || isStandalone || bannerSeenRef.current) return;
+    if (!showBanner || !isHome || !isMember || isStandalone || bannerSeenRef.current) return;
     bannerSeenRef.current = true;
     trackEvent('pwa_banner_view', { platform: isIOS ? 'ios' : 'other' });
-  }, [showBanner, isHome, isStandalone, isIOS]);
+  }, [showBanner, isHome, isMember, isStandalone, isIOS]);
 
   const handleDismiss = () => {
     trackEvent('pwa_banner_dismiss', {});
@@ -195,7 +198,7 @@ export default function InstallPWAButton() {
   return (
     <>
       <AnimatePresence>
-        {showBanner && (
+        {showBanner && isMember && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
