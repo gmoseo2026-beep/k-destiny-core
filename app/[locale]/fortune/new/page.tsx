@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import FortuneNewClient from "@/components/FortuneNewClient";
-import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
+import { canonicalUrlFor, productShareMeta, OG_CARD_URL, PAGE_META } from "@/lib/seo";
 import { sectionOutlines } from "@/lib/prompts/sectionOutline";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -10,8 +10,9 @@ import { isViewableFor, getProduct } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
-const TITLE = "내 사주 정보 입력 — 콩닥";
-const DESCRIPTION = "사주 정보를 입력하고 정확한 분석 결과를 확인하세요.";
+// 검색 결과에 보이는 제목·설명은 lib/seo.ts 한 곳에서 관리한다
+const TITLE = PAGE_META["/fortune/new"].ko.title;
+const DESCRIPTION = PAGE_META["/fortune/new"].ko.description;
 
 export async function generateMetadata({
   params,
@@ -35,7 +36,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: TITLE,
+    title: { absolute: TITLE },
     description: DESCRIPTION,
     alternates: { canonical },
     openGraph: { title: TITLE, description: DESCRIPTION, url: canonical, images: [OG_CARD_URL] },

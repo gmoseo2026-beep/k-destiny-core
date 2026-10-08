@@ -1,17 +1,13 @@
-import { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import WeeklyFortuneClient from "./WeeklyFortuneClient";
+import { createPageMetadata } from "@/lib/seo";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "이번 주 종합 운세 — 콩닥",
-    description: "한 주의 흐름을 미리 읽고 대비하는 주간 사주 운세",
-  };
-}
+// 로그인해야 보이는 화면이라 검색에 올리지 않는다
+export const generateMetadata = createPageMetadata("/fortune/weekly");
 
 interface PageProps {
   params: Promise<{ locale: string }>;

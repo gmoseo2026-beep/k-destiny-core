@@ -299,3 +299,25 @@
 - `/ko/go/<코드>` 가 광고 플랫폼의 클릭 표시(`fbclid`·`gclid`·`ttclid` 등 정해진 6종, 형식 검사)를 도착 주소로 넘긴다 — 이전에는 버려져서 픽셀이 광고 클릭을 알아볼 수 없었다. 그 밖의 쿼리는 넘기지 않는다.
 - 관리자 화면 이름을 "광고·배너 유입"으로 변경. `vitest` 404 통과.
 - 영상 제작 자료는 `SNS/광고영상_2026-10/`(커밋하지 않음): 장면별 프롬프트 가이드, 참조 이미지, 실제 화면 녹화, 마지막 화면·표정 컷.
+
+---
+
+# 추가(2026-10-08) — 검색 기술 점검(claude-seo 기술 점검 기준)과 수정
+
+> **근거**: 운영 사이트를 항목별로 점검(수집·색인·보안·주소·모바일·구조화 데이터·렌더링·IndexNow). 서버 렌더링, HTTPS·보안 헤더, 404 상태 코드, robots, IndexNow 는 정상. 아래는 고친 것.
+> **검증**: `vitest` 404 통과 · `tsc` 0 · 변경 파일 lint 0 · build exit 0 · 로컬 운영 빌드에서 이동(308)·canonical·robots·상품 구조화 데이터·사이트맵 확인.
+
+| 문제 | 수정 |
+|---|---|
+| canonical 을 선언하지 않은 화면이 레이아웃의 canonical(홈)을 물려받음 — `/fortune/annual`(색인 대상인데 홈의 중복으로 표시), `/pay/complete` 등 | `buildPageMetadata(..., { inherited: true })` — 레이아웃은 canonical 을 물려주지 않는다. 홈은 `app/[locale]/page.tsx` 가 직접 선언 |
+| `/pay/complete`·`/onboarding`·`/fortune/weekly` 가 색인 허용 | `NOINDEX_PATHS` 에 추가 + 얇은 레이아웃 |
+| 사이트맵에 리다이렉트되는 `/pricing`, 매 요청마다 "지금"으로 찍히는 lastmod, `/fortune/new`·`/fortune/annual` 누락 | `/pricing` 제거, 고정 날짜(`SITE_UPDATED`·`SEO_PAGES_UPDATED`), 두 주소 추가(159 → 160) |
+| `www.kongdak.kr` 가 그대로 200(주소 이원화), 루트 `/` → `/ko` 가 임시 이동(307) | `middleware.ts` 에서 둘 다 308 |
+| 상품 상세 제목 14자·설명 19자, 상품 구조화 데이터 없음 | `productSearchMeta`(이름 — 설명 | 콩닥 / 질문 + 무료 미리보기 + 가격), `ProductJsonLd`(Product + Offer + BreadcrumbList) |
+| 입력 화면 제목이 "상대방 정보 입력"·"내 사주 정보 입력" | `PAGE_META` 의 검색용 제목·설명 사용 |
+| `/fortune/annual` 설명의 "병오년" | "붉은 말의 해"로 |
+
+## 의심 지점
+1. 루트 `/` 의 308 은 브라우저가 오래 기억한다. 다른 로케일을 다시 깨울 때는 이 이동부터 손봐야 한다.
+2. 핵심 웹 지표(LCP 등)는 이번에 측정하지 못했다 — PageSpeed 공개 API 가 하루 한도 초과.
+3. 동면 로케일(`/en/...`)은 여전히 200 으로 한국어 화면을 내고 canonical 로만 합친다(삭제 금지 규칙에 따라 유지).

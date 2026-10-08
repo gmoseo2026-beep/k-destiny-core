@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+import { createPageMetadata } from "@/lib/seo";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
@@ -6,12 +6,8 @@ import AnnualFortuneClient from "./AnnualFortuneClient";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: "2026 나의 총운 리포트 — 콩닥",
-    description: "2026년 병오년(붉은 말의 해), 당신에게 펼쳐질 1년 운세와 행운의 기회를 미리 만나보세요.",
-  };
-}
+// 제목·설명·canonical 은 lib/seo.ts 에서(이전에는 canonical 을 선언하지 않아 홈의 중복으로 처리됐다)
+export const generateMetadata = createPageMetadata("/fortune/annual");
 
 export default async function AnnualFortunePage({
   params,

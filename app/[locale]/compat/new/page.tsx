@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import CompatNewClient from "@/components/CompatNewClient";
-import { canonicalUrlFor, productShareMeta, OG_CARD_URL } from "@/lib/seo";
+import { canonicalUrlFor, productShareMeta, OG_CARD_URL, PAGE_META } from "@/lib/seo";
 import { sectionOutlines } from "@/lib/prompts/sectionOutline";
 import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -10,8 +10,9 @@ import { isViewableFor, getProduct } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 
-const TITLE = "상대방 정보 입력 — 콩닥 궁합";
-const DESCRIPTION = "두 사람의 생년월일시로 알아보는 진짜 사주 궁합과 타고난 에너지 케미";
+// 검색 결과에 보이는 제목·설명은 lib/seo.ts 한 곳에서 관리한다
+const TITLE = PAGE_META["/compat/new"].ko.title;
+const DESCRIPTION = PAGE_META["/compat/new"].ko.description;
 
 // canonical 을 직접 선언한다. 선언하지 않으면 레이아웃의 canonical(로케일 홈)을
 // 상속해 이 페이지가 "홈의 중복"으로 색인에서 제외된다. ?ref= 등 유입 파라미터는 canonical 에 넣지 않는다.
@@ -38,7 +39,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: TITLE,
+    title: { absolute: TITLE },
     description: DESCRIPTION,
     alternates: { canonical },
     openGraph: { title: TITLE, description: DESCRIPTION, url: canonical, images: [OG_CARD_URL] },

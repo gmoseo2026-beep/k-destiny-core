@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import type { SeoFaq } from "@/lib/seo/content";
+import { BASE_URL, canonicalUrlFor, productOgCardUrl, productSearchMeta } from "@/lib/seo";
 
 /** 검색용 페이지 공통 조각(서버 컴포넌트 — 본문이 HTML 로 그대로 나간다) */
 
@@ -122,6 +123,47 @@ export function SeoJsonLd({ faq, crumbs }: { faq: SeoFaq[]; crumbs: Array<{ name
       {
         "@type": "BreadcrumbList",
         itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: c.url })),
+      },
+    ],
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
+}
+
+/**
+ * 상품 상세의 구조화 데이터(상품 + 경로). 검색엔진이 "무엇을 얼마에 파는 화면인지" 읽을 수 있게 한다.
+ * 값은 전부 카탈로그에서 온다(우리가 쓴 고정 문구) — 손님 입력이 들어가지 않는다.
+ */
+export function ProductJsonLd({
+  product,
+}: {
+  product: { id: string; name: string; description: string; hook: string; subtitle?: string; price: number; isFree?: boolean };
+}) {
+  const url = canonicalUrlFor(`/products/${product.id}`);
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        name: product.name,
+        description: productSearchMeta(product).description,
+        image: `${BASE_URL}${productOgCardUrl(product.id)}`,
+        url,
+        brand: { "@type": "Brand", name: "콩닥" },
+        category: "사주·궁합 디지털 리포트",
+        offers: {
+          "@type": "Offer",
+          url,
+          price: product.isFree ? 0 : product.price,
+          priceCurrency: "KRW",
+          availability: "https://schema.org/InStock",
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "콩닥", item: canonicalUrlFor("") },
+          { "@type": "ListItem", position: 2, name: product.name, item: url },
+        ],
       },
     ],
   };

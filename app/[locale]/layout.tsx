@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{locale: st
 
   return {
     metadataBase: new URL(siteUrl),
-    ...buildPageMetadata('', locale),
+    ...buildPageMetadata('', locale, { inherited: true }),
     keywords: [
       "궁합", "사주궁합", "사주", "무료궁합", "커플궁합", "썸", "연애운",
       "생년월일 궁합", "콩닥", "kongdak", "saju", "compatibility",

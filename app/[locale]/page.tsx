@@ -20,12 +20,15 @@ import { fetchVisitorCount } from "@/lib/home/visitors";
 import { prisma } from "@/lib/prisma";
 import { buildExploreTabs } from "@/lib/home/explore";
 import { swrCached } from "@/lib/swrCache";
+import { canonicalUrlFor } from "@/lib/seo";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "콩닥 — 그 사람 속마음까지 보는 사주 궁합",
   description: "그 사람은 지금 나를 어떻게 생각할까? 생년월일만 넣으면 30초 — 궁합, 속마음, 둘만의 속궁합까지 무료로 먼저 봐요.",
+  // 레이아웃은 canonical 을 물려주지 않는다(lib/seo.ts buildPageMetadata 주석) → 홈은 여기서 선언한다
+  alternates: { canonical: canonicalUrlFor("") },
 };
 
 interface PageProps {

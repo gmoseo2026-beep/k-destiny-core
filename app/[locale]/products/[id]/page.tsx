@@ -6,7 +6,8 @@ import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct, getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { StandardProductDetail } from "@/components/product/StandardProductDetail";
-import { canonicalUrlFor, productShareMeta } from "@/lib/seo";
+import { canonicalUrlFor, productSearchMeta, productShareMeta } from "@/lib/seo";
+import { ProductJsonLd } from "@/components/seo/SeoBlocks";
 import { sectionOutlineFor } from "@/lib/prompts/sectionOutline";
 
 interface PageProps {
@@ -23,8 +24,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // 공유 카드: 홈 카드가 아니라 이 상품의 질문(hook)이 크게 보이게 한다. og:url 도 이 상품 주소로.
   const url = canonicalUrlFor(`/products/${product.id}`);
   return {
-    title: `${product.name} | 콩닥`,
-    description: product.description,
+    title: { absolute: productSearchMeta(product).title },
+    description: productSearchMeta(product).description,
     alternates: { canonical: url },
     ...productShareMeta(product, url),
   };
@@ -42,19 +43,27 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   if (product.tier === "premium") {
     const { PremiumProductDetail } = await import("@/components/premium/PremiumProductDetail");
-    return <PremiumProductDetail product={product} locale={locale} />;
+    return (
+      <>
+        <ProductJsonLd product={product} />
+        <PremiumProductDetail product={product} locale={locale} />
+      </>
+    );
   }
 
   const effectiveCatalog = await getEffectiveCatalog();
   const allProducts = effectiveCatalog.filter((p) => !p.isHidden);
 
   return (
-    <StandardProductDetail
-      product={product}
-      locale={locale}
-      preview={preview}
-      allProducts={allProducts}
-      sections={sectionOutlineFor(product.promptKey)}
-    />
+    <>
+      <ProductJsonLd product={product} />
+      <StandardProductDetail
+        product={product}
+        locale={locale}
+        preview={preview}
+        allProducts={allProducts}
+        sections={sectionOutlineFor(product.promptKey)}
+      />
+    </>
   );
 }

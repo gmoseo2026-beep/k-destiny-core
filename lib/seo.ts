@@ -57,7 +57,7 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
 
   '/compat/new': {
     ko: {
-      title: '무료 궁합 보기 — 생년월일 입력 | 콩닥',
+      title: '무료 사주 궁합 보기 — 생년월일로 30초 | 콩닥',
       description:
         '나와 상대방의 생년월일을 넣으면 끝. 회원가입 없이 30초 만에 사주 궁합 점수와 우리 사이 케미 키워드를 확인하고 친구에게 바로 공유해보세요.',
     },
@@ -70,9 +70,9 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
 
   '/fortune/annual': {
     ko: {
-      title: '2026 병오년 신년 총운 | 콩닥',
+      title: '2026년 신년 총운 무료 맛보기 — 붉은 말의 해 내 운세 | 콩닥',
       description:
-        '나의 2026년 총운과 12개월 월별 운세, 애정운, 재물운, 커리어운을 사주로 다정하게 풀어냅니다.',
+        '2026년 붉은 말의 해, 나의 한 해 흐름과 월별 운세, 연애·돈·일의 흐름을 생년월일로 다정하게 풀어 드려요. 무료로 먼저 볼 수 있어요.',
     },
     en: {
       title: '2026 Annual Fortune Reading | Kongdak',
@@ -143,10 +143,37 @@ export const PAGE_META: Record<string, Record<string, Meta>> = {
     ko: { title: '내 콩닥 | 콩닥', description: '내가 본 궁합 기록을 모아보고 새 궁합을 시작하세요.' },
     en: { title: 'My Kongdak | Kongdak', description: 'Your saved compatibility readings.' },
   },
+
+  '/fortune/new': {
+    ko: {
+      title: '무료 사주 풀이 — 생년월일로 보는 내 운세 | 콩닥',
+      description:
+        '생년월일만 넣으면 30초. 재물운·연애운·취업운·신년운까지 내 사주를 쉬운 말로 풀어 드려요. 회원가입 없이 무료로 먼저 볼 수 있어요.',
+    },
+    en: { title: 'Free Saju Reading | Kongdak', description: 'Enter your birth date and read your fortune in 30 seconds.' },
+  },
+
+  '/pay/complete': {
+    ko: { title: '결제 안내 | 콩닥', description: '결제 결과를 확인하고 리포트로 이동합니다.' },
+    en: { title: 'Payment | Kongdak', description: 'Payment result.' },
+  },
+
+  '/onboarding': {
+    ko: { title: '내 사주 정보 저장 | 콩닥', description: '내 생년월일을 한 번 저장하면 매번 입력하지 않아도 돼요.' },
+    en: { title: 'Save my birth info | Kongdak', description: 'Save your birth info once.' },
+  },
+
+  '/fortune/weekly': {
+    ko: { title: '이번 주 종합 운세 | 콩닥', description: '한 주의 흐름을 미리 읽고 대비하는 주간 운세.' },
+    en: { title: 'Weekly Fortune | Kongdak', description: 'Your week ahead.' },
+  },
 };
 
-/** Routes we never want in the index (utility pages with no search value). */
-const NOINDEX_PATHS = new Set(['/login', '/me', '/dashboard']);
+/**
+ * Routes we never want in the index (utility pages with no search value).
+ * 결제 완료·내 정보 저장·주간 운세(로그인 필요)는 검색으로 들어올 화면이 아니다.
+ */
+const NOINDEX_PATHS = new Set(['/login', '/me', '/dashboard', '/pay/complete', '/onboarding', '/fortune/weekly']);
 
 export function getPageMeta(path: string, locale: string): Meta {
   const byLocale = PAGE_META[path] ?? PAGE_META[''];
@@ -176,6 +203,24 @@ export const productOgCardUrl = (productId: string) =>
  * 상품 링크를 공유했을 때의 미리보기(제목·설명·이미지). 홈 카드가 아니라 상품의 질문(hook)을 보여 준다.
  * url 은 이 페이지의 정본 주소 — og:url 이 홈을 가리키면 SNS 가 홈 링크로 합쳐 버린다.
  */
+/**
+ * 상품 상세의 검색 결과용 제목·설명. 이름만 있던 제목(14자)·한 줄 설명(19자)으로는 검색 결과에서
+ * 무엇을 해 주는지 알 수 없었다(2026-10-08 점검). 상품의 질문(hook)과 가격·무료 미리보기를 넣는다.
+ */
+export function productSearchMeta(product: {
+  name: string;
+  description: string;
+  hook: string;
+  subtitle?: string;
+  price: number;
+  isFree?: boolean;
+}): { title: string; description: string } {
+  const title = `${product.name} — ${product.description} | 콩닥`;
+  const price = product.isFree ? '무료로 볼 수 있어요.' : `무료 미리보기 후 ${product.price.toLocaleString('ko-KR')}원.`;
+  const description = `${product.hook} ${product.subtitle ?? ''} 생년월일만 넣으면 30초, ${price}`.replace(/\s+/g, ' ').trim();
+  return { title, description: description.slice(0, 158) };
+}
+
 export function productShareMeta(
   product: { id: string; name: string; hook: string; subtitle?: string; description: string },
   url: string
@@ -196,7 +241,13 @@ export function canonicalUrlFor(path: string): string {
 /**
  * Builds a full Metadata object for one route in one locale.
  */
-export function buildPageMetadata(path: string, locale: string): Metadata {
+/**
+ * @param opts.inherited 레이아웃이 모든 하위 화면에 내려 주는 기본값으로 쓸 때 true.
+ *   이때는 canonical 을 넣지 않는다 — 넣으면 자기 canonical 을 선언하지 않은 화면이 전부
+ *   "홈의 중복"이라고 말하게 된다(2026-10-08: /fortune/annual·/pay/complete 가 홈을 canonical 로 가리키고 있었다).
+ *   홈의 canonical 은 app/[locale]/page.tsx 가 직접 선언한다.
+ */
+export function buildPageMetadata(path: string, locale: string, opts: { inherited?: boolean } = {}): Metadata {
   const meta = getPageMeta(path, locale);
   const canonicalUrl = canonicalUrlFor(path);
   const noindex = NOINDEX_PATHS.has(path);
@@ -205,9 +256,7 @@ export function buildPageMetadata(path: string, locale: string): Metadata {
     metadataBase: new URL(BASE_URL),
     title: { absolute: meta.title },
     description: meta.description,
-    alternates: {
-      canonical: canonicalUrl,
-    },
+    ...(opts.inherited ? {} : { alternates: { canonical: canonicalUrl } }),
     // 네이버 서치어드바이저 사이트 소유확인용 메타. 공개 검증 토큰이라 하드코딩 안전.
     verification: {
       other: { 'naver-site-verification': 'adb48681bd4421372c1c3d7306629630e6281a6f' },

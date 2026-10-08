@@ -18,20 +18,29 @@ import { pairSlugsWithContent, birthYearsWithContent } from '@/lib/seo/data';
  *  - the bare root `/`   → it redirects to /{locale}; a redirecting URL in the
  *    sitemap is what GSC reports as "Page with redirect".
  *  - `/login`, `/me`     → utility / placeholder pages, marked noindex in lib/seo.ts.
+ *  - `/pricing`          → 홈의 상품 목록으로 리다이렉트된다(2026-10-08 까지 실려 있어 "리다이렉트 포함 페이지"로 잡혔다).
  *  - `/compat/[id]`      → personal readings reached by share token, not by search.
  *  - anything behind auth (/dashboard, /admin) → blocked in robots.ts.
  */
 const PUBLIC_ROUTES: { path: string; changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'; priority: number }[] = [
   { path: '',            changeFrequency: 'weekly',  priority: 1.0 },
   { path: '/compat/new', changeFrequency: 'monthly', priority: 0.9 },
+  { path: '/fortune/new', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/fortune/annual', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/guide',      changeFrequency: 'monthly', priority: 0.6 },
-  { path: '/pricing',    changeFrequency: 'monthly', priority: 0.7 },
   { path: '/terms',      changeFrequency: 'yearly',  priority: 0.3 },
   { path: '/privacy',    changeFrequency: 'yearly',  priority: 0.3 },
 ];
 
+/**
+ * 마지막으로 내용을 고친 날. 요청할 때마다 "지금"을 찍으면 검색엔진이 이 값을 믿지 않게 된다.
+ * 화면 내용을 크게 바꾸면 해당 날짜를 올린다.
+ */
+const SITE_UPDATED = new Date('2026-10-08T00:00:00+09:00'); // 홈·입력·상품 상세(제목·설명·구조화 데이터 정비)
+const SEO_PAGES_UPDATED = new Date('2026-10-05T00:00:00+09:00'); // 띠 궁합·출생연도 운세 본문 생성일
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date();
+  const lastModified = SITE_UPDATED;
 
   const base = PUBLIC_ROUTES.map((route) => ({
     url: canonicalUrlFor(route.path),
@@ -59,17 +68,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 검색용 페이지: 띠 궁합(78쌍)과 출생연도별 운세(48개). 본문이 있는 것만 싣는다.
   const seoPages: MetadataRoute.Sitemap = [
-    { url: canonicalUrlFor('/zodiac'), lastModified, changeFrequency: 'monthly', priority: 0.7 },
-    { url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}`), lastModified, changeFrequency: 'monthly', priority: 0.7 },
+    { url: canonicalUrlFor('/zodiac'), lastModified: SEO_PAGES_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    { url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}`), lastModified: SEO_PAGES_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
     ...pairSlugsWithContent().map((slug) => ({
       url: canonicalUrlFor(`/zodiac/${slug}`),
-      lastModified,
+      lastModified: SEO_PAGES_UPDATED,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     })),
     ...birthYearsWithContent().map((y) => ({
       url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}/${y}`),
-      lastModified,
+      lastModified: SEO_PAGES_UPDATED,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     })),
