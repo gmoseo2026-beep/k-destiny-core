@@ -14,12 +14,24 @@ const APEX_HOST = 'kongdak.kr';
  * 나머지는 next-intl 에 맡긴다.
  */
 export default function middleware(req: NextRequest) {
-  const host = (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '').toLowerCase();
+  // host 만 본다. nginx 가 실제 접속 호스트를 Host 로 넘겨 주고(proxy_set_header Host $host),
+  // x-forwarded-host 는 nginx 가 덮어쓰지 않아 방문자가 마음대로 꾸며 보낼 수 있다(2026-10-08 운영에서 확인).
+  const host = (req.headers.get('host') ?? '').toLowerCase();
   const { pathname, search } = req.nextUrl;
 
   if (host === `www.${APEX_HOST}`) {
     const target = pathname === '/' ? `/${routing.defaultLocale}` : pathname;
-    return new NextResponse(null, { status: 308, headers: { Location: `https://${APEX_HOST}${target}${search}` } });
+    // 호스트 헤더로 갈리는 응답이라 Cloudflare 가 페이지 주소로 보관하면 안 된다.
+    // next.config 가 검색용 페이지에 붙이는 보관 헤더(lib/seo/edgeCache.ts)까지 둘 다 덮어쓴다 —
+    // 하나라도 남으면 x-forwarded-host 를 꾸민 요청 한 번으로 그 페이지가 자기 자신으로 무한 이동한다.
+    return new NextResponse(null, {
+      status: 308,
+      headers: {
+        Location: `https://${APEX_HOST}${target}${search}`,
+        'Cache-Control': 'no-store',
+        'Cloudflare-CDN-Cache-Control': 'no-store',
+      },
+    });
   }
   if (pathname === '/') {
     // next-intl 이 하던 것과 같은 방식(요청 주소 기준)으로 만들되 영구 이동으로 보낸다

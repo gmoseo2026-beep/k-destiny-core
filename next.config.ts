@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
+import { edgeCacheHeaderRules } from './lib/seo/edgeCache';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -110,6 +111,9 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
         ],
       },
+      // 검색용 고정 페이지(띠 궁합·출생연도 운세): 맨 위 규칙의 no-store 를 덮어써
+      // Cloudflare 가 보관할 수 있게 한다. 반드시 맨 뒤에 둔다(뒤 규칙이 이긴다).
+      ...edgeCacheHeaderRules(),
     ];
   },
 };
