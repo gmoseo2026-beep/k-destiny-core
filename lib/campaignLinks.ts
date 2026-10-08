@@ -46,43 +46,42 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b09_30sec" },
   },
   // ── 인스타그램 영상 광고(2026-10): 영상마다 도입(첫 3초) 3종. 어느 소재가 가입·매출을 만드는지 본다.
+  // 도착 화면은 홈(path: "")이다 — 2026-10-09 사장님 결정. 10-08 하루 입력 화면으로 바로 보냈더니
+  // 인스타 유입의 입력 완료가 홈 도착 때(16%)보다 낮았다(11% → 새 머리말 5%, 표본은 작다).
   {
     code: "ig-b1",
     label: "인스타 광고 · B 속마음 · 도입1 「답장은 오는데, 마음은 모르겠을 때」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook1" },
   },
   {
     code: "ig-b2",
     label: "인스타 광고 · B 속마음 · 도입2 「그 사람, 지금 나를 어떻게 생각할까?」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook2" },
   },
   {
     code: "ig-b3",
     label: "인스타 광고 · B 속마음 · 도입3 「읽씹 3일째. 끝난 걸까, 바쁜 걸까」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook3" },
   },
   {
     code: "ig-a1",
     label: "인스타 광고 · A 점수 내기 · 도입1 「우리 궁합, 몇 점 나올 것 같아?」",
-    path: "/compat/new",
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook1" },
   },
   {
     code: "ig-a2",
     label: "인스타 광고 · A 점수 내기 · 도입2 「남친은 90점이래. 나는 60점 봤는데…」",
-    path: "/compat/new",
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook2" },
   },
   {
     code: "ig-a3",
     label: "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」",
-    path: "/compat/new",
+    path: "",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook3" },
   },
   // ── 인스타그램 프로필 링크(무료 릴스 업로드용). 릴스 설명글의 주소는 눌러지지 않아서 프로필 링크로 보낸다.
