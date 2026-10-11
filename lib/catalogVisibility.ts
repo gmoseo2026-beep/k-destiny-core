@@ -38,7 +38,15 @@ export function resolveHidden(
 export function invalidateVisibilityCache(): void {
   cachedCatalog = null;
   cacheExpiresAt = 0;
+  fallbackUntil = 0;
 }
+
+// 서버(프랑스)에서 DB(미국)까지 새 연결을 맺는 데만 1초 넘게 걸린다. 1.5초로 끊던 때에는 서버를 다시 켠 직후
+// 첫 요청들이 줄줄이 시간 초과로 기본값을 썼다(배포한 날마다 오류 기록 3~4건, 2026-10-08·10-10).
+const DB_TIMEOUT_MS = 4000;
+// 그래도 실패하면 이만큼은 DB 를 다시 두드리지 않고 코드 기본값을 쓴다(DB 가 죽었을 때 모든 요청이 4초씩 기다리지 않게).
+const FALLBACK_HOLD_MS = 15_000;
+let fallbackUntil = 0;
 
 async function loadEffectiveCatalog(): Promise<CatalogItem[]> {
   const rowsPromise = prisma.productVisibility.findMany({
@@ -46,7 +54,7 @@ async function loadEffectiveCatalog(): Promise<CatalogItem[]> {
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error("ProductVisibility DB timeout (1500ms)")), 1500);
+    timer = setTimeout(() => reject(new Error(`ProductVisibility DB timeout (${DB_TIMEOUT_MS}ms)`)), DB_TIMEOUT_MS);
   });
   const rows = await Promise.race([rowsPromise, timeoutPromise]).finally(() => clearTimeout(timer));
 
@@ -97,14 +105,18 @@ export async function getEffectiveCatalog(): Promise<CatalogItem[]> {
     return cachedCatalog;
   }
 
+  const codeDefaults = () => CATALOG.map((item) => ({ ...item, isHidden: item.isHidden ?? false }));
+  if (now < fallbackUntil) return codeDefaults();
+
   try {
     const effective = await loadEffectiveCatalog();
     cachedCatalog = effective;
     cacheExpiresAt = Date.now() + CACHE_TTL_MS;
     return effective;
   } catch (error) {
-    console.warn("[getEffectiveCatalog] DB 조회 실패, 코드 기본값으로 폴백합니다:", error);
-    return CATALOG.map((item) => ({ ...item, isHidden: item.isHidden ?? false }));
+    fallbackUntil = Date.now() + FALLBACK_HOLD_MS;
+    console.warn("[getEffectiveCatalog] DB 조회 실패, 코드 기본값으로 폴백합니다:", error instanceof Error ? error.message : error);
+    return codeDefaults();
   }
 }
 

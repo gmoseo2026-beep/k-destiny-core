@@ -13,7 +13,7 @@ import time
 HOST, USER = get_host_user()
 
 # 지난 빌드의 /_next/static 파일을 모아 두는 곳(저장소 밖 — git clean 이 건드리지 않는다).
-# 빌드는 .next 를 통째로 지우고 새로 만들기 때문에, 배포 전에 받아 간 HTML(열어 둔 탭,
+# 새 빌드에는 옛 정적 파일이 없기 때문에, 배포 전에 받아 간 HTML(열어 둔 탭,
 # Cloudflare 가 보관 중인 검색용 페이지)이 가리키는 옛 JS·CSS 가 404 가 된다.
 # 파일 이름에 내용 해시가 들어 있어 옛 파일을 그대로 함께 두어도 새 파일과 충돌하지 않는다.
 STATIC_KEEP_DIR = "/root/.kongdak-static-keep"
@@ -142,11 +142,15 @@ def main():
         tmo=120,
     )
 
-    print("\nBuilding Next.js application...")
+    # 새 빌드는 .next-new 에 만든다(next.config.ts 의 distDir 이 NEXT_DIST_DIR 을 읽는다).
+    # 예전에는 .next 를 먼저 지우고 그 자리에 2분쯤 다시 만들었는데, 그동안에도 옛 서버가 방문자를 받고 있어서
+    # 아직 불러오지 않은 화면을 열면 서버 조각을 못 찾아 오류가 났다(2026-10-09 ChunkLoadError 3건).
+    # 빌드가 실패해도 .next 는 그대로라 옛 버전이 온전히 계속 돈다.
+    print("\nBuilding Next.js application (into .next-new)...")
     build_exit = run_cmd(
         client,
-        "cd /root/k-destiny-core && rm -rf .next && "
-        "NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1; "
+        "cd /root/k-destiny-core && rm -rf .next-new && "
+        "NEXT_DIST_DIR=.next-new NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1; "
         "code=$?; echo \"BUILD_EXIT=$code\"; exit $code",
         tmo=600,
     )
@@ -159,6 +163,20 @@ def main():
         print("live. DO NOT report this as deployed. Fix the build error above")
         print("(often OOM on the VPS — add swap or raise --max-old-space-size).")
         print("!" * 60)
+        run_cmd(client, "cd /root/k-destiny-core && rm -rf .next-new; true", tmo=120)
+        client.close()
+        sys.exit(1)
+
+    # 빌드가 exit 0 이어도 결과물이 비어 있으면 바꿔 끼우지 않는다.
+    sane = run_cmd(
+        client,
+        "cd /root/k-destiny-core && test -s .next-new/BUILD_ID && test -d .next-new/server/app && test -d .next-new/static",
+        tmo=60,
+    )
+    if sane != 0:
+        print("\n" + "!" * 60)
+        print("[DEPLOY FAILED] .next-new 에 빌드 결과가 온전하지 않다. PM2 는 재시작하지 않았고 옛 버전이 그대로 돈다.")
+        print("!" * 60)
         client.close()
         sys.exit(1)
 
@@ -166,16 +184,29 @@ def main():
     # 재시작 전에 해야 한다 — 서버가 뜰 때 이 폴더의 파일 목록을 읽는다.
     run_cmd(
         client,
-        f"cd /root/k-destiny-core && if [ -d {STATIC_KEEP_DIR} ] && [ -d .next/static ]; then "
-        f"cp -a --update=none {STATIC_KEEP_DIR}/. .next/static/ 2>/dev/null "
-        f"|| cp -an {STATIC_KEEP_DIR}/. .next/static/; fi; "
-        "echo \"static files: $(find .next/static -type f | wc -l)\"; true",
+        f"cd /root/k-destiny-core && if [ -d {STATIC_KEEP_DIR} ] && [ -d .next-new/static ]; then "
+        f"cp -a --update=none {STATIC_KEEP_DIR}/. .next-new/static/ 2>/dev/null "
+        f"|| cp -an {STATIC_KEEP_DIR}/. .next-new/static/; fi; "
+        "echo \"static files: $(find .next-new/static -type f | wc -l)\"; true",
         tmo=120,
     )
 
-    print("\nBuild SUCCESS. Restarting PM2...")
+    print("\nBuild SUCCESS. Swapping build folders and restarting PM2...")
+    # 폴더 바꿔 끼우기와 재시작을 한 명령으로 붙여서, 옛 서버가 새 폴더를 보는 시간을 1~2초로 줄인다.
+    # 직전 빌드는 .next-old 로 남겨 둔다(문제가 생기면 mv 로 되돌릴 수 있다. 다음 배포 때 지운다).
     # 웹 앱만 재시작한다. `restart all` 은 일부러 멈춰 둔 k-destiny-autopilot(Hermes)까지 되살린다.
-    run_cmd(client, "cd /root/k-destiny-core && pm2 restart k-destiny --update-env 2>&1")
+    swap_exit = run_cmd(
+        client,
+        "cd /root/k-destiny-core && rm -rf .next-old && "
+        "{ if [ -d .next ]; then mv .next .next-old; fi; } && mv .next-new .next && "
+        "pm2 restart k-destiny --update-env 2>&1",
+    )
+    if swap_exit != 0:
+        print("\n" + "!" * 60)
+        print("[DEPLOY FAILED] 빌드 폴더 교체 또는 PM2 재시작이 실패했다. 서버에서 .next / .next-old / .next-new 상태를 확인할 것.")
+        print("!" * 60)
+        client.close()
+        sys.exit(1)
     run_cmd(client, "sleep 4 && curl -sI http://localhost:3000/en 2>&1 | head -1")
 
     # 5. POST-DEPLOY VERIFICATION — prove the NEW code is actually serving.

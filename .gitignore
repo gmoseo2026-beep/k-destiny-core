@@ -15,6 +15,9 @@
 
 # next.js
 /.next/
+# 배포 때 쓰는 임시 빌드 폴더(scripts/safe_deploy.py)
+/.next-new/
+/.next-old/
 /out/
 
 # production

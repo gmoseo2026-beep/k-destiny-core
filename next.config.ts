@@ -5,6 +5,10 @@ import { edgeCacheHeaderRules } from './lib/seo/edgeCache';
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // 배포 때는 새 빌드를 다른 폴더(NEXT_DIST_DIR)에 만든 뒤 한 번에 바꿔 끼운다(scripts/safe_deploy.py).
+  // .next 를 지우고 그 자리에 2분 동안 다시 만들면, 그 사이 들어온 방문자는 서버 조각을 못 찾아 오류 화면을 본다
+  // (2026-10-09 ChunkLoadError 3건). 값이 없으면 평소처럼 .next 를 쓴다.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   images: {
     // Serve AVIF (≈30% smaller than WebP) with WebP fallback, and cache the
     // optimized variants aggressively — the source images are now small too.
