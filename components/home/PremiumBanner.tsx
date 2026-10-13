@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CatalogItem, priceLabel } from "@/lib/catalog";
+import { CatalogItem, priceLabel, listPrice, formatWon } from "@/lib/catalog";
 
 interface PremiumBannerProps {
   locale: string;
@@ -53,6 +53,9 @@ export default function PremiumBanner({ locale, premiumProducts }: PremiumBanner
                 </div>
               </div>
               <div className="text-right shrink-0">
+                {listPrice(product) && (
+                  <div className="text-[10px] font-semibold text-white/50 line-through">{formatWon(listPrice(product)!)}</div>
+                )}
                 <div className="text-xs sm:text-sm font-extrabold text-gold-soft">
                   {priceLabel(product)}
                 </div>

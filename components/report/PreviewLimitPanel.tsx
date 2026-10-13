@@ -11,7 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
-import { formatWon, listPrice, priceLabel, type CatalogItem } from "@/lib/catalog";
+import { formatWon, listPrice, priceLabel, discountBadge, type CatalogItem } from "@/lib/catalog";
 import { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 
 interface PreviewLimitPanelProps {
@@ -110,7 +110,7 @@ export default function PreviewLimitPanel({ product, sectionTitles, limit, onUnl
           {strike && (
             <span className="mb-0.5 flex items-center gap-1.5">
               <span className="text-xs font-bold text-text-3 line-through">{formatWon(strike)}</span>
-              <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">오픈 기념가</span>
+              <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">{discountBadge(product)}</span>
             </span>
           )}
           <span className="block text-2xl font-black text-ink">{price}</span>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
 import type { CatalogItem } from "@/lib/catalog";
-import { priceLabel } from "@/lib/catalog";
+import { priceLabel, listPrice, formatWon, discountBadge } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
@@ -328,6 +328,12 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
           <p className="text-xs text-[#B9AEC4] mb-2 uppercase tracking-widest font-semibold">
             단건 서비스 이용권
           </p>
+          {listPrice(product) && (
+            <p className="mb-1.5 flex items-center justify-center gap-2 text-sm text-[#B9AEC4]">
+              <span className="line-through">{formatWon(listPrice(product)!)}</span>
+              <span className="rounded-md bg-[#F3E3BF]/15 px-2 py-0.5 text-xs font-bold text-[#F3E3BF]">{discountBadge(product)}</span>
+            </p>
+          )}
           <div className="text-3xl sm:text-4xl font-bold font-serif-kr text-[#F3E3BF] mb-6">
             {priceLabel(product)}
           </div>
@@ -343,7 +349,15 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
       {/* Floating Bottom Bar on Mobile */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#14101A]/95 backdrop-blur-md border-t border-[#3A2E45] z-40 sm:hidden flex items-center justify-between">
         <div>
-          <span className="text-xs text-[#B9AEC4] block">이용료</span>
+          <span className="text-xs text-[#B9AEC4] block">
+            {listPrice(product) ? (
+              <>
+                <span className="line-through">{formatWon(listPrice(product)!)}</span> · {discountBadge(product)}
+              </>
+            ) : (
+              "이용료"
+            )}
+          </span>
           <span className="font-serif-kr text-lg font-bold text-[#F3E3BF]">
             {priceLabel(product)}
           </span>

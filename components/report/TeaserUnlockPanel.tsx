@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Lock, ArrowRight, Check } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
 import { useSeenOnce } from "@/lib/useSeenOnce";
-import { priceLabel, listPrice, formatWon, type CatalogItem } from "@/lib/catalog";
+import { priceLabel, listPrice, formatWon, discountBadge, type CatalogItem } from "@/lib/catalog";
 
 /**
  * 맛보기(티저) 화면의 결제 안내 — 본문 아래 안내 카드 + 화면 하단 고정 바.
@@ -97,7 +97,7 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
             {strike && (
               <span className="mb-0.5 flex items-center gap-1.5">
                 <span className="text-xs font-bold text-text-3 line-through">{formatWon(strike)}</span>
-                <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">오픈 기념가</span>
+                <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">{discountBadge(product)}</span>
               </span>
             )}
             <span className="block text-2xl font-black text-ink">{price}</span>

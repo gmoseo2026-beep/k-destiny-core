@@ -12,6 +12,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn(async () => session.curren
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
 
 import { POST } from "@/app/api/payments/order/route";
+import { seasonPriceAt } from "@/lib/catalog";
 import { invalidateVisibilityCache } from "@/lib/catalogVisibility";
 
 const req = (body: unknown) =>
@@ -115,7 +116,10 @@ describe("POST /api/payments/order route contract tests", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.amount).toBe(4900);
+    // 주문 금액은 화면과 같은 출처(카탈로그의 그 순간 가격)에서 나온다 — 연말 특가 기간에는 3,000원
+    const expected = seasonPriceAt("annual_2026", Date.now())!.price;
+    expect(body.amount).toBe(expected);
+    expect([3000, 4900]).toContain(expected);
   });
 
   // 5-1. 비회원 이메일은 선택(2026-10-03 모바일 결제 모달에서 이메일 칸 제거)

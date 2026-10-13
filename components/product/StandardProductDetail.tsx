@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, hasFirstPurchaseDiscount } from "@/lib/catalog";
+import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, hasFirstPurchaseDiscount, discountBadge } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
@@ -290,7 +290,7 @@ export function StandardProductDetail({
               {listPrice(product) && (
                 <>
                   <span className="text-sm font-bold text-text-3 line-through">{formatWon(listPrice(product)!)}</span>
-                  <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">오픈 기념가</span>
+                  <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">{discountBadge(product)}</span>
                 </>
               )}
               {/* 세트: 실제 단건 가격 합계와 비교. 따로 사는 게 더 싸면 보여 주지 않는다 */}

@@ -12,7 +12,7 @@ interface SetRowProps {
 // 홈 "세트로 한 번에" 가로 줄. 가격 비교는 실제 단건 정가 합계만 쓴다(취소선 금지).
 export default function SetRow({ locale, products }: SetRowProps) {
   const sets = products
-    .filter((p) => p.type === "SET")
+    .filter((p) => p.type === "SET" && separatePrice(p) > p.price)
     // 아끼는 금액이 큰 세트부터
     .sort((a, b) => separatePrice(b) - b.price - (separatePrice(a) - a.price));
   if (sets.length === 0) return null;

@@ -6,7 +6,7 @@ import React, { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Crown } from "lucide-react";
-import { type CatalogItem, priceLabel, formatWon } from "@/lib/catalog";
+import { type CatalogItem, priceLabel, formatWon, listPrice, isOnSeasonPromo } from "@/lib/catalog";
 import type { ExploreTab, ExploreTabId } from "@/lib/home/explore";
 import { trackEvent } from "@/lib/gtag";
 
@@ -21,6 +21,7 @@ const PICK_BADGE: Record<string, string> = { secret_love: "19", inner_mind: "속
 function badgeFor(p: CatalogItem): { text: string; cls: string } | null {
   if (p.id === "secret_love") return { text: "19", cls: "bg-plum-deep text-[#F2D08F]" };
   if (p.isFree) return { text: "무료", cls: "bg-coral text-white" };
+  if (isOnSeasonPromo(p.id)) return { text: "특가", cls: "bg-[#FFC24B] text-ink" };
   if (p.isNew) return { text: "NEW", cls: "bg-[#FF8AA1] text-white" };
   return null;
 }
@@ -115,7 +116,10 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
                 <span className="block text-sm font-extrabold text-white truncate">{p.name}</span>
                 <span className="block text-[11px] text-white/70 truncate">{p.hook}</span>
               </div>
-              <span className="shrink-0 text-sm font-black text-[#F2D08F]">{formatWon(p.price)}</span>
+              <span className="shrink-0 text-right">
+                {listPrice(p) && <span className="block text-[10px] font-semibold text-white/50 line-through">{formatWon(listPrice(p)!)}</span>}
+                <span className="block text-sm font-black text-[#F2D08F]">{formatWon(p.price)}</span>
+              </span>
             </Link>
           ))}
           <p className="text-[11px] text-caption px-1">1년 보관 · PDF로 저장 · 결제 전 무료 미리보기</p>
@@ -146,7 +150,11 @@ export default function HomeExplore({ locale, tabs, picks }: HomeExploreProps) {
             })}
           </div>
           <p className="mt-2 text-[11px] text-caption px-1">
-            {tab.items.some((p) => !p.isFree) ? `미리보기 후 마음에 들면 전체 리포트 ${priceLabel(tab.items.find((p) => !p.isFree)!)}` : ""}
+            {(() => {
+              const paid = tab.items.filter((p) => !p.isFree);
+              const regular = paid.find((p) => !isOnSeasonPromo(p.id)) ?? paid[0];
+              return regular ? `미리보기 후 마음에 들면 전체 리포트 ${priceLabel(regular)}` : "";
+            })()}
           </p>
         </>
       )}

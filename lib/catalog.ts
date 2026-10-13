@@ -836,6 +836,67 @@ export const CATALOG: CatalogItem[] = [
   },
 ];
 
+/**
+ * 연말 특가(2026-10-13 사장님 결정) — 2026-12-31 23:59(KST)까지.
+ *   2026년 총운 4,900원 → 3,000원 / 2027 대운 프리미엄 리포트 19,900원 → 9,900원
+ *
+ * 가격을 읽는 곳(화면 표시·서버 주문 금액·세트 비교)이 수십 군데라, 함수로 감싸 호출부마다 고치면
+ * 한 곳만 빠져도 "보이는 값"과 "결제되는 값"이 어긋난다. 그래서 해당 상품의 price · originalPrice 를
+ * 읽는 순간의 시각으로 계산되게 해 둔다 → 날짜가 지나면 배포 없이 원래 값으로 돌아간다.
+ * 기간 중 취소선에 보이는 값은 "직전까지 실제로 받던 값"(총운 4,900원, 대운 19,900원)이다.
+ * 기간을 바꾸려면 SEASON_PROMO_ENDS_AT 과 약관(messages/ko.json terms_s9_body)을 함께 고칠 것.
+ */
+export const SEASON_PROMO_ENDS_AT = Date.parse("2027-01-01T00:00:00+09:00");
+export const SEASON_PROMO_LABEL = "연말 특가";
+export const SEASON_PROMO_UNTIL = "12/31까지";
+export const SEASON_PROMO_PRICES: Readonly<Record<string, number>> = {
+  annual_2026: 3000,
+  premium_2027_daeun: 9900,
+};
+
+const SEASON_PROMO_BASE = new Map<string, { price: number; originalPrice: number }>();
+
+export function isSeasonPromoActive(now: number = Date.now()): boolean {
+  return now < SEASON_PROMO_ENDS_AT;
+}
+
+/** 이 상품이 지금 연말 특가인가 */
+export function isOnSeasonPromo(id: string, now: number = Date.now()): boolean {
+  return id in SEASON_PROMO_PRICES && isSeasonPromoActive(now);
+}
+
+/** 그 시각의 가격과 취소선 값(테스트·기간 경계 확인용). 특가 대상이 아니면 undefined. */
+export function seasonPriceAt(id: string, now: number): { price: number; originalPrice: number } | undefined {
+  const base = SEASON_PROMO_BASE.get(id);
+  if (!base) return undefined;
+  return isSeasonPromoActive(now) ? { price: SEASON_PROMO_PRICES[id], originalPrice: base.price } : base;
+}
+
+/** 특가가 끝날 때까지 남은 날 수(끝났으면 0) */
+export function seasonPromoDaysLeft(now: number = Date.now()): number {
+  return Math.max(0, Math.ceil((SEASON_PROMO_ENDS_AT - now) / 86_400_000));
+}
+
+/** 취소선 옆에 붙는 딱지: 특가 상품은 기한을 함께 적는다 */
+export function discountBadge(p: Pick<CatalogItem, "id">, now: number = Date.now()): string {
+  return isOnSeasonPromo(p.id, now) ? `${SEASON_PROMO_LABEL} · ${SEASON_PROMO_UNTIL}` : "오픈 기념가";
+}
+
+for (const item of CATALOG) {
+  if (!(item.id in SEASON_PROMO_PRICES)) continue;
+  SEASON_PROMO_BASE.set(item.id, { price: item.price, originalPrice: item.originalPrice });
+  Object.defineProperty(item, "price", {
+    enumerable: true,
+    configurable: true,
+    get: () => seasonPriceAt(item.id, Date.now())!.price,
+  });
+  Object.defineProperty(item, "originalPrice", {
+    enumerable: true,
+    configurable: true,
+    get: () => seasonPriceAt(item.id, Date.now())!.originalPrice,
+  });
+}
+
 export function getProduct(id: string): CatalogItem | undefined {
   return CATALOG.find((p) => p.id === id);
 }

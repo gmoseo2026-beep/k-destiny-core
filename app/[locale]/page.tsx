@@ -12,6 +12,8 @@ import PremiumBanner from "@/components/home/PremiumBanner";
 import HomeRankingView from "@/components/home/HomeRankingView";
 import MoreContentCards from "@/components/home/MoreContentCards";
 import VisitorSection from "@/components/home/VisitorSection";
+import SeasonPromoBanner, { type SeasonPromoItem } from "@/components/home/SeasonPromoBanner";
+import { isOnSeasonPromo, seasonPromoDaysLeft } from "@/lib/catalog";
 import BrandStory from "@/components/home/BrandStory";
 import SetRow from "@/components/home/SetRow";
 import { getEffectiveCatalog } from "@/lib/catalogVisibility";
@@ -53,6 +55,19 @@ export default async function Home({ params }: PageProps) {
     swrCached("home:visitors", 60_000, () => fetchVisitorCount(prisma)),
   ]);
 
+  // 연말 특가(12/31까지): 공개 중인 대상 상품만. 기간이 끝나면 목록이 비어 영역이 사라진다.
+  const PROMO_LINES: Record<string, string> = {
+    annual_2026: "남은 올해, 무엇을 정리하고 무엇을 붙잡을지",
+    premium_2027_daeun: "10년 흐름 속 2027년의 자리와 12개월 달력",
+  };
+  const promoItems: SeasonPromoItem[] = visibleProducts
+    .filter((p) => isOnSeasonPromo(p.id) && PROMO_LINES[p.id])
+    .map((p) => ({
+      product: { id: p.id, name: p.name, icon3d: p.icon3d, price: p.price, originalPrice: p.originalPrice },
+      line: PROMO_LINES[p.id],
+    }));
+  const promoDaysLeft = seasonPromoDaysLeft();
+
   return (
     <div className={`w-full min-h-screen bg-background text-ink ${isMember ? "pb-12" : "pb-28"}`}>
       {/* 첫 화면: 무엇이 있는지(탭·추천·격자·프리미엄)를 먼저 보여 준다 */}
@@ -67,6 +82,7 @@ export default async function Home({ params }: PageProps) {
           </div>
         </>
       )}
+      <SeasonPromoBanner locale={locale} items={promoItems} daysLeft={promoDaysLeft} total={exploreTotal} />
       <HomeExplore locale={locale} tabs={explore.tabs} picks={explore.picks} />
       <SetRow locale={locale} products={products} />
       <PremiumBanner locale={locale} premiumProducts={premiumProducts} />
