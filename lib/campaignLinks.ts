@@ -104,6 +104,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     return [
       { code: `${p}-compat`, label: `${name} · 궁합(무료 궁합 점수)`, path: "/compat/new", utm: { source: src, medium: "cpc", campaign: "search_compat", content: "compat" } },
       { code: `${p}-inner`, label: `${name} · 그 사람 속마음·짝사랑·재회`, path: "/compat/new", query: { productId: "inner_mind" }, utm: { source: src, medium: "cpc", campaign: "search_innermind", content: "inner" } },
+      { code: `${p}-saju`, label: `${name} · 사주(저단가, 2026 총운으로)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_saju", content: "saju" } },
       { code: `${p}-2026`, label: `${name} · 2026 총운(연말 특가)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_annual2026", content: "annual2026" } },
       { code: `${p}-2027`, label: `${name} · 2027 대운(연말 특가)`, path: "/products/premium_2027_daeun", utm: { source: src, medium: "cpc", campaign: "search_daeun2027", content: "daeun2027" } },
       { code: `${p}-brand`, label: `${name} · 콩닥(브랜드)`, path: "", utm: { source: src, medium: "cpc", campaign: "search_brand", content: "brand" } },
