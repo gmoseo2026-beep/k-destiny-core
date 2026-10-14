@@ -29,10 +29,13 @@ async function loadAdminDashboardData() {
   const monthStart = new Date(todayStart.getTime() - 30 * DAY_MS);
 
   const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+  // 단품 개편 시작일(2026-09-28 00:00 KST)
+  const v2Start = new Date(Date.UTC(2026, 8, 28) - KST_MS);
 
   // 병렬 쿼리 수행
   const [
     orders,
+    orderPayMethods,
     reportsRaw,
     failedReportsRaw,
     visibilities,
@@ -46,16 +49,36 @@ async function loadAdminDashboardData() {
     todayUsers,
     activePassHolders,
   ] = await Promise.all([
-    // 1. 주문 목록 (최근 300건)
+    // 1. 주문 목록 (최근 300건) — payMethod 컬럼 추가 전후 모두 안전하도록 필요한 필드를 명시적으로 조회
     prisma.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 300,
-      include: {
+      select: {
+        id: true,
+        orderId: true,
+        userId: true,
+        email: true,
+        compatId: true,
+        productType: true,
+        productKey: true,
+        type: true,
+        planId: true,
+        amount: true,
+        status: true,
+        provider: true,
+        clientEnv: true,
+        campaign: true,
+        createdAt: true,
         unlocks: {
           select: { id: true, expiresAt: true, compatId: true, productType: true, productKey: true },
         },
       },
     }),
+
+    // 1-1. 결제 수단(Order.payMethod) 병렬 조회 — DB에 컬럼이 생기기 전에는 빈 배열로 폴백
+    prisma.$queryRaw<Array<{ id: string; payMethod: string | null }>>`
+      SELECT id, "payMethod" FROM "Order" ORDER BY "createdAt" DESC LIMIT 300
+    `.catch(() => [] as Array<{ id: string; payMethod: string | null }>),
 
     // 2. FULL 생성 리포트 (최근 300건) — cacheKey로 주문 매핑
     prisma.generatedReport.findMany({
@@ -168,7 +191,7 @@ async function loadAdminDashboardData() {
     prisma.user.count({ where: { premiumEndDate: { gt: now } } }),
   ]);
 
-  // 생성 기록표(ReportGenLog): 모든 생성 경로의 성공·실패·미리보기 수. 도입 전 기간은 기존 표로 보완한다.
+  // 생성 기록표(ReportGenLog): 모든 생성 경로의 성공·실패·미리보기 수(저장본 재열람 제외). 도입 전 기간은 기존 표로 보완한다.
   const [firstLog, genByKind7d, teaserLogs30d, recentFailures, compatRows30d] = await Promise.all([
     prisma.reportGenLog.findFirst({ orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.reportGenLog.groupBy({
@@ -178,7 +201,7 @@ async function loadAdminDashboardData() {
     }),
     prisma.reportGenLog.groupBy({
       by: ["catalogId"],
-      where: { createdAt: { gte: monthStart }, kind: { in: ["TEASER", "FREE", "COMPAT"] } },
+      where: { createdAt: { gte: monthStart }, kind: { in: ["TEASER", "FREE", "COMPAT"] }, cached: false, ok: true },
       _count: { _all: true },
     }),
     prisma.reportGenLog.findMany({
@@ -190,6 +213,7 @@ async function loadAdminDashboardData() {
     prisma.compatibility.findMany({ where: { createdAt: { gte: monthStart } }, select: { createdAt: true }, take: 10000 }),
   ]);
   const logStart = firstLog?.createdAt ?? now;
+  const payMethodByOrderId = new Map(orderPayMethods.map((r) => [r.id, r.payMethod]));
 
   // 궁합 요약 매핑 (PII 원문 제외, 점수 및 이름 앞글자만)
   const compatIds = Array.from(new Set(orders.map((o) => o.compatId).filter(Boolean))) as string[];
@@ -236,18 +260,48 @@ async function loadAdminDashboardData() {
   let paidCountMonth = 0;
   let totalRevenue = 0;
   let totalPaidCount = 0;
+  let totalPendingCount = 0;
 
   let refundCount = 0;
   let refundAmount = 0;
+
+  let v2PaidCount = 0;
+  let v2PaidAmount = 0;
+  let v2PendingCount = 0;
+  let v2CanceledCount = 0;
 
   let firstPurchaseCount = 0;
   let regularPurchaseCount = 0;
 
   const productSalesMap = new Map<string, { count: number; amount: number }>();
+  const productPendingMap = new Map<string, number>();
   const tierSalesMap = {
     standard: { count: 0, amount: 0 },
     set: { count: 0, amount: 0 },
     premium: { count: 0, amount: 0 },
+  };
+
+  type FunnelBucket = { attempts: number; paid: number; pending: number; canceled: number; amount: number };
+  const clientEnvMap = new Map<string, FunnelBucket>();
+  const campaignMap = new Map<string, FunnelBucket>();
+  const payMethodMap = new Map<string, FunnelBucket>([
+    ["KAKAOPAY", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
+    ["CARD", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
+    ["__null__", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
+  ]);
+
+  const addBucket = (map: Map<string, FunnelBucket>, key: string, status: string, amount: number) => {
+    const cur = map.get(key) || { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 };
+    cur.attempts += 1;
+    if (status === "PAID") {
+      cur.paid += 1;
+      cur.amount += amount;
+    } else if (status === "PENDING") {
+      cur.pending += 1;
+    } else if (status === "CANCELED") {
+      cur.canceled += 1;
+    }
+    map.set(key, cur);
   };
 
   // 포맷팅된 주문 데이터 생성
@@ -275,6 +329,28 @@ async function loadAdminDashboardData() {
     const isFirstDiscount = !isManual && o.amount === FIRST_PURCHASE_PRICE && (prod?.price ?? originalPrice) > o.amount;
 
     const oTime = new Date(o.createdAt).getTime();
+
+    if (!isManual) {
+      const envKey = o.clientEnv || "__null__";
+      const campKey = o.campaign || "__null__";
+      const rawPayMethod = payMethodByOrderId.get(o.id);
+      const pmKey = rawPayMethod === "KAKAOPAY" || rawPayMethod === "CARD" ? rawPayMethod : "__null__";
+
+      addBucket(clientEnvMap, envKey, o.status, o.amount);
+      addBucket(campaignMap, campKey, o.status, o.amount);
+      addBucket(payMethodMap, pmKey, o.status, o.amount);
+
+      if (oTime >= v2Start.getTime()) {
+        if (o.status === "PAID") {
+          v2PaidCount += 1;
+          v2PaidAmount += o.amount;
+        } else if (o.status === "PENDING") {
+          v2PendingCount += 1;
+        } else if (o.status === "CANCELED") {
+          v2CanceledCount += 1;
+        }
+      }
+    }
 
     // 집계 (유효 결제건만)
     if (o.status === "PAID") {
@@ -333,6 +409,13 @@ async function loadAdminDashboardData() {
         }
         userStatsMap.set(o.userId, uStat);
       }
+    } else if (o.status === "PENDING") {
+      if (!isManual) {
+        totalPendingCount++;
+        if (catId && oTime >= monthStart.getTime()) {
+          productPendingMap.set(catId, (productPendingMap.get(catId) || 0) + 1);
+        }
+      }
     } else if (o.status === "CANCELED") {
       refundCount++;
       refundAmount += o.amount;
@@ -380,6 +463,120 @@ async function loadAdminDashboardData() {
     };
   });
 
+  // 재구매 집계 (궁합 id와 회원 id로만 묶음 — 이름·이메일·주문번호 노출 금지)
+  const paidChronological = [...formattedOrders]
+    .filter((o) => o.status === "PAID" && !o.isManual)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const compatPaidGroups = new Map<string, typeof paidChronological>();
+  const userPaidGroups = new Map<string, typeof paidChronological>();
+  for (const po of paidChronological) {
+    if (po.compatId) {
+      const list = compatPaidGroups.get(po.compatId) || [];
+      list.push(po);
+      compatPaidGroups.set(po.compatId, list);
+    }
+    if (po.userId) {
+      const list = userPaidGroups.get(po.userId) || [];
+      list.push(po);
+      userPaidGroups.set(po.userId, list);
+    }
+  }
+
+  const repeatByCompat = Array.from(compatPaidGroups.values())
+    .filter((list) => list.length >= 2)
+    .map((list) => {
+      const covered = new Set<string>();
+      let duplicateIncluded = false;
+      let duplicateNote: string | null = null;
+      for (const item of list) {
+        const cid = item.catalogId;
+        if (cid && covered.has(cid)) {
+          duplicateIncluded = true;
+          duplicateNote = `이미 포함된 단품(${item.productName}) 재결제`;
+        }
+        if (cid) {
+          covered.add(cid);
+          const p = getProduct(cid);
+          if (p?.type === "SET" && p.items) {
+            for (const subId of p.items) covered.add(subId);
+          }
+        }
+      }
+      return {
+        count: list.length,
+        combo: list.map((x) => x.productName).join(" → "),
+        duplicateIncluded,
+        duplicateNote,
+      };
+    });
+
+  const repeatByUser = Array.from(userPaidGroups.values())
+    .filter((list) => list.length >= 2)
+    .map((list) => ({
+      count: list.length,
+      combo: list.map((x) => x.productName).join(" → "),
+    }));
+
+  const CLIENT_ENV_LABELS: Record<string, string> = {
+    "instagram:m": "인스타 앱 (모바일)",
+    "browser:m": "일반 브라우저 (모바일)",
+    "naver:m": "네이버 앱 (모바일)",
+    "kakao:m": "카카오톡 앱 (모바일)",
+    "threads:m": "스레드 앱 (모바일)",
+    "browser:pc": "일반 브라우저 (PC)",
+    "__null__": "기록 전 (미기록)",
+  };
+
+  const toFunnelRows = (map: Map<string, FunnelBucket>, labelFor: (k: string) => string, keepZero = false) => {
+    const entries = Array.from(map.entries()).filter(([, b]) => keepZero || b.attempts > 0);
+    entries.sort(([ka, a], [kb, b]) => {
+      if (ka === "__null__") return 1;
+      if (kb === "__null__") return -1;
+      if (b.attempts !== a.attempts) return b.attempts - a.attempts;
+      return b.paid - a.paid;
+    });
+    return entries.map(([key, b]) => ({
+      key,
+      label: labelFor(key),
+      attempts: b.attempts,
+      paid: b.paid,
+      pending: b.pending,
+      canceled: b.canceled,
+      convRate: b.attempts > 0 ? Math.round((b.paid / b.attempts) * 100) : 0,
+      amount: b.amount,
+    }));
+  };
+
+  const byClientEnv = toFunnelRows(
+    clientEnvMap,
+    (k) => CLIENT_ENV_LABELS[k] || k
+  );
+
+  const byCampaign = toFunnelRows(
+    campaignMap,
+    (k) => (k === "__null__" ? "미지정 (직접·일반 유입)" : k)
+  );
+
+  const PAY_METHOD_LABELS: Record<string, string> = {
+    KAKAOPAY: "카카오페이 바로가기",
+    CARD: "일반 결제창 (카드·간편결제)",
+    "__null__": "기록 전 (미기록)",
+  };
+  const byPayMethod = ["KAKAOPAY", "CARD", "__null__"].map((key) => {
+    const b = payMethodMap.get(key) || { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 };
+    return {
+      key,
+      label: PAY_METHOD_LABELS[key] || key,
+      attempts: b.attempts,
+      paid: b.paid,
+      pending: b.pending,
+      canceled: b.canceled,
+      convRate: b.attempts > 0 ? Math.round((b.paid / b.attempts) * 100) : 0,
+      amount: b.amount,
+    };
+  });
+
   // 포맷팅된 실패 리포트 목록 (A5)
   const formattedFailedReports = failedReportsRaw.map((r) => {
     const parts = r.cacheKey.split(":");
@@ -405,7 +602,7 @@ async function loadAdminDashboardData() {
   const addTeaser = (catId: string, n: number) => {
     teaserCountMap[catId] = (teaserCountMap[catId] || 0) + n;
   };
-  // (1) 생성 기록표 도입 후: 미리보기를 본 횟수(같은 사람이 다시 본 것 포함)
+  // (1) 생성 기록표 도입 후: 새로 만든 미리보기 수(저장본 재열람 제외)
   for (const g of teaserLogs30d) addTeaser(g.catalogId, g._count._all);
   // (2) 도입 전: 저장된 미리보기(사람별 1건) + 정통 궁합 무료 결과 생성 수
   for (const t of teaserCountGroup) {
@@ -417,16 +614,18 @@ async function loadAdminDashboardData() {
 
   const teaserToPaidList = CATALOG.map((p) => {
     const tCount = teaserCountMap[p.id] || 0;
+    const pendingCount = productPendingMap.get(p.id) || 0;
     const pSales = productSalesMap.get(p.id)?.count || 0;
     const convRate = tCount > 0 ? Math.round((pSales / tCount) * 100) : 0;
     return {
       catalogId: p.id,
       name: p.name,
       teaserCount: tCount,
+      pendingCount,
       paidCount: pSales,
       convRate,
     };
-  }).filter((item) => item.teaserCount > 0 || item.paidCount > 0);
+  }).filter((item) => item.teaserCount > 0 || item.pendingCount > 0 || item.paidCount > 0);
 
   // FULL 리포트 건강도 집계
   let fullSuccessCount = 0;
@@ -540,9 +739,22 @@ async function loadAdminDashboardData() {
       monthCount: paidCountMonth,
       total: totalRevenue,
       totalCount: totalPaidCount,
+      pendingCount: totalPendingCount,
       refundCount,
       refundAmount,
+      v2PaidCount,
+      v2PaidAmount,
+      v2PendingCount,
+      v2CanceledCount,
     },
+    repeatPurchases: {
+      byCompat: repeatByCompat,
+      byUser: repeatByUser,
+      duplicateIncludedCount: repeatByCompat.filter((r) => r.duplicateIncluded).length,
+    },
+    byClientEnv,
+    byCampaign,
+    byPayMethod,
     salesByProduct: Array.from(productSalesMap.entries()).map(([catId, s]) => {
       const p = getProduct(catId);
       return {
