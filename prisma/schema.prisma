@@ -260,6 +260,8 @@ model Order {
   clientEnv      String?
   // 제휴 배너 등 전용 주소(/go/<코드>)로 들어온 뒤 만든 주문이면 그 유입 표시("couplediary:b02"). PII 아님.
   campaign       String?
+  // 결제를 시작한 결제 수단("KAKAOPAY" | "CARD"). 어디서 결제가 끊기는지 보려고(2026-10-14). PII 아님.
+  payMethod      String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

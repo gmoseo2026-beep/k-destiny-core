@@ -164,6 +164,30 @@ describe("POST /api/payments/order route contract tests", () => {
     db.order.create.mockReset();
   });
 
+  // 5-4. 결제 수단(payMethod)은 KAKAOPAY·CARD만 저장하고, 없거나 이상한 값은 null로 저장하며 주문은 그대로 만든다(2026-10-14)
+  it("case 5-4: stores KAKAOPAY or CARD for payMethod and falls back to null without rejecting the order", async () => {
+    session.current = null;
+    db.order.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "ord_pm" }));
+
+    const r1 = await POST(req({ productId: "wealth", payMethod: "KAKAOPAY" }));
+    expect(r1.status).toBe(200);
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.payMethod).toBe("KAKAOPAY");
+
+    const r2 = await POST(req({ productId: "wealth", payMethod: "CARD" }));
+    expect(r2.status).toBe(200);
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.payMethod).toBe("CARD");
+
+    const r3 = await POST(req({ productId: "wealth", payMethod: "UNKNOWN_METHOD" }));
+    expect(r3.status).toBe(200);
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.payMethod).toBeNull();
+
+    const r4 = await POST(req({ productId: "wealth" }));
+    expect(r4.status).toBe(200);
+    expect(db.order.create.mock.calls.at(-1)?.[0].data.payMethod).toBeNull();
+
+    db.order.create.mockReset();
+  });
+
   // 6. 무료 상품 → 400, 없는 productId → 400
   it("case 6: free product or nonexistent productId returns 400", async () => {
     // Free product (free_personality)

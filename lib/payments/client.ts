@@ -136,6 +136,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
       env: clientEnvLabel(),
+      payMethod: opts.buyer.payMethod === "KAKAOPAY" ? "KAKAOPAY" : "CARD",
     }),
   });
 

@@ -29,6 +29,10 @@ export async function POST(req: NextRequest) {
     // 제휴 배너 전용 주소(/go/<코드>)로 들어온 사람이면 그 유입 표시를 주문에 남긴다(집계용, 판정에는 쓰지 않는다)
     const campaign = campaignFromCookieHeader(req.headers.get("cookie"));
 
+    // 결제 수단("KAKAOPAY" | "CARD"). 없거나 다른 값이면 null로 저장하며 이 값 때문에 주문을 거절하지 않는다.
+    const payMethod =
+      body.payMethod === "KAKAOPAY" || body.payMethod === "CARD" ? body.payMethod : null;
+
     if (type === "PERIOD_PASS") {
       // [D4] PERIOD_PASS 분기는 더 이상 사용되지 않으므로 410 반환
       return NextResponse.json({ error: "기간권 판매가 종료되었습니다." }, { status: 410 });
@@ -98,6 +102,7 @@ export async function POST(req: NextRequest) {
           amount,
           clientEnv,
           campaign,
+          payMethod,
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },

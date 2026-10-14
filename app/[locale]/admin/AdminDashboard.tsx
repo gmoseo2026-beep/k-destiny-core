@@ -9,6 +9,7 @@ import {
   Package, Check
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { CATALOG } from '@/lib/catalog';
 import { issueGuestViewLink } from './actions';
 import { buildRefundRequestBody } from '@/lib/admin/refundRequest';
@@ -122,6 +123,17 @@ export interface ReportDetailData {
   rawContent?: unknown;
 }
 
+export interface FunnelStatRow {
+  key: string;
+  label: string;
+  attempts: number;
+  paid: number;
+  pending: number;
+  canceled: number;
+  convRate: number;
+  amount: number;
+}
+
 export interface DashboardStats {
   revenue: {
     today: number;
@@ -132,9 +144,30 @@ export interface DashboardStats {
     monthCount: number;
     total: number;
     totalCount: number;
+    pendingCount?: number;
     refundCount: number;
     refundAmount: number;
+    v2PaidCount?: number;
+    v2PaidAmount?: number;
+    v2PendingCount?: number;
+    v2CanceledCount?: number;
   };
+  repeatPurchases?: {
+    byCompat: {
+      count: number;
+      combo: string;
+      duplicateIncluded: boolean;
+      duplicateNote: string | null;
+    }[];
+    byUser: {
+      count: number;
+      combo: string;
+    }[];
+    duplicateIncludedCount: number;
+  };
+  byClientEnv?: FunnelStatRow[];
+  byCampaign?: FunnelStatRow[];
+  byPayMethod?: FunnelStatRow[];
   salesByProduct: {
     catalogId: string;
     name: string;
@@ -156,6 +189,7 @@ export interface DashboardStats {
     catalogId: string;
     name: string;
     teaserCount: number;
+    pendingCount?: number;
     paidCount: number;
     convRate: number;
   }[];
@@ -243,8 +277,8 @@ export default function AdminDashboard({
   users: initialUsers,
   auditLogs: initialLogs,
 }: AdminDashboardProps) {
-  // Tabs: orders (주문 목록), reports (리포트 실패 관리), cs (수동 발급), metrics (지표), products (상품 관리), users (회원 관리), audit (감사 로그)
-  const [activeTab, setActiveTab] = useState<'orders' | 'reports' | 'cs' | 'metrics' | 'products' | 'users' | 'audit'>('orders');
+  // Tabs: metrics (상품 지표 - 첫 화면), orders (주문 목록), reports (리포트 실패 관리), cs (수동 발급), products (상품 관리), users (회원 관리), audit (감사 로그)
+  const [activeTab, setActiveTab] = useState<'orders' | 'reports' | 'cs' | 'metrics' | 'products' | 'users' | 'audit'>('metrics');
 
   const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
   const [failedReports, setFailedReports] = useState<FailedReportItem[]>(initialFailedReports);
@@ -620,10 +654,10 @@ export default function AdminDashboard({
         {/* 탭 내비게이션 */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto">
           {[
+            { id: 'metrics', label: '상품 지표', icon: BarChart3 },
             { id: 'orders', label: '주문 관리', icon: ShoppingBag, count: filteredOrders.length },
             { id: 'reports', label: '리포트 실패 관리', icon: AlertTriangle, count: failedReports.length, alert: failedReports.length > 0 },
             { id: 'cs', label: 'CS 수동 발급', icon: Key },
-            { id: 'metrics', label: '상품 지표', icon: BarChart3 },
             { id: 'products', label: '상품 스위치', icon: Package },
             { id: 'users', label: '회원 관리', icon: Users, count: users.length },
             { id: 'audit', label: '감사 로그', icon: Clock },
@@ -1298,7 +1332,53 @@ export default function AdminDashboard({
               <div className="bg-white p-5 rounded-2xl border border-line shadow-xs">
                 <span className="text-xs font-bold text-caption">누적 매출 (실 결제액)</span>
                 <p className="text-2xl font-black text-[#FF5C77] mt-1.5">{formatCurrency(stats.revenue.total)}</p>
-                <span className="text-xs font-medium text-caption mt-1 block">환불 {stats.revenue.refundCount}건 ({formatCurrency(stats.revenue.refundAmount)})</span>
+                <span className="text-xs font-medium text-caption mt-1 block">
+                  {stats.revenue.totalCount}건 결제 · 환불 {stats.revenue.refundCount}건 ({formatCurrency(stats.revenue.refundAmount)})
+                </span>
+                <span className="text-[11px] font-medium text-caption mt-1 block">
+                  09-28~ 개편 후: 결제 {stats.revenue.v2PaidCount ?? 0}건 ({formatCurrency(stats.revenue.v2PaidAmount ?? 0)}) · 미완료 {stats.revenue.v2PendingCount ?? 0}건 · 취소 {stats.revenue.v2CanceledCount ?? 0}건
+                </span>
+              </div>
+            </div>
+
+            {/* 재구매 요약 줄 (궁합 ID · 회원 ID 기준, 개인정보 제외) */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-line shadow-xs space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-xs font-extrabold text-ink">
+                  재구매 요약 (같은 두 사람 {(stats.repeatPurchases?.byCompat ?? []).length}쌍 · 같은 회원 {(stats.repeatPurchases?.byUser ?? []).length}명)
+                </h3>
+                {(stats.repeatPurchases?.duplicateIncludedCount ?? 0) > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    이미 포함된 단품 재결제 {stats.repeatPurchases?.duplicateIncludedCount ?? 0}쌍
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1.5 text-xs">
+                {(stats.repeatPurchases?.byCompat ?? []).length === 0 ? (
+                  <p className="text-caption">같은 궁합 ID로 2회 이상 결제된 내역이 없습니다.</p>
+                ) : (
+                  (stats.repeatPurchases?.byCompat ?? []).map((item, idx) => (
+                    <div key={`compat-rep-${idx}`} className="flex flex-wrap items-center gap-1.5 text-ink">
+                      <span className="px-1.5 py-0.5 rounded bg-surface text-caption font-bold text-[11px]">
+                        같은 두 사람 #{idx + 1} ({item.count}건)
+                      </span>
+                      <span className="font-bold">{item.combo}</span>
+                      {item.duplicateIncluded && (
+                        <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]">
+                          ⚠️ {item.duplicateNote || '세트 포함 단품 중복 결제'}
+                        </span>
+                      )}
+                    </div>
+                  ))
+                )}
+                {(stats.repeatPurchases?.byUser ?? []).map((item, idx) => (
+                  <div key={`user-rep-${idx}`} className="flex flex-wrap items-center gap-1.5 text-ink">
+                    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[11px]">
+                      같은 회원 #{idx + 1} ({item.count}건)
+                    </span>
+                    <span className="font-bold">{item.combo}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -1348,14 +1428,14 @@ export default function AdminDashboard({
                 <h3 className="font-extrabold text-sm text-ink">최근 30일 상품별 매출 및 판매 건수</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-[11px] sm:text-xs">
                   <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
                     <tr>
-                      <th className="py-3 px-4">상품 ID</th>
-                      <th className="py-3 px-4">상품명</th>
-                      <th className="py-3 px-4">등급</th>
-                      <th className="py-3 px-4">판매 건수</th>
-                      <th className="py-3 px-4 text-right">매출액</th>
+                      <th className="py-2.5 pl-3 pr-1.5 sm:px-4">상품 ID</th>
+                      <th className="py-2.5 px-1.5 sm:px-4">상품명</th>
+                      <th className="py-2.5 px-1.5 sm:px-4 whitespace-nowrap">등급</th>
+                      <th className="py-2.5 px-1.5 sm:px-4 whitespace-nowrap">판매</th>
+                      <th className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right whitespace-nowrap">매출액</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line/40">
@@ -1368,11 +1448,11 @@ export default function AdminDashboard({
                     ) : (
                       stats.salesByProduct.map((p) => (
                         <tr key={p.catalogId} className="hover:bg-surface/30">
-                          <td className="py-3 px-4 font-mono font-bold text-ink">{p.catalogId}</td>
-                          <td className="py-3 px-4 font-extrabold text-ink">{p.name}</td>
-                          <td className="py-3 px-4">{getTierBadge(p.tier)}</td>
-                          <td className="py-3 px-4 font-bold text-ink">{p.count}건</td>
-                          <td className="py-3 px-4 text-right font-black text-ink">{formatCurrency(p.amount)}</td>
+                          <td className="py-2.5 pl-3 pr-1.5 sm:px-4 font-mono font-bold text-ink break-all">{p.catalogId}</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 font-extrabold text-ink">{p.name}</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 whitespace-nowrap">{getTierBadge(p.tier)}</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 font-bold text-ink whitespace-nowrap">{p.count}건</td>
+                          <td className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right font-black text-ink whitespace-nowrap">{formatCurrency(p.amount)}</td>
                         </tr>
                       ))
                     )}
@@ -1381,43 +1461,162 @@ export default function AdminDashboard({
               </div>
             </div>
 
-            {/* TEASER -> PAID 전환 표 */}
+            {/* ② TEASER -> PAID 전환 표 ("결제 시도(미완료)" 열 추가) */}
             <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
               <div className="p-4 border-b border-line bg-surface/40 flex items-center justify-between">
                 <div>
                   <h3 className="font-extrabold text-sm text-ink">미리보기(TEASER) → 결제(PAID) 전환율</h3>
                   <p className="text-[11px] text-caption">
-                    * 최근 30일 · 미리보기 수는 미리보기를 본 횟수(다시 본 것 포함) · 정통 궁합은 무료 궁합 결과 생성 수 · 세트 미리보기는 대표 구성 상품에 합산
+                    * 최근 30일 · 미리보기 수는 새로 생성된 횟수(저장본 재열람 제외) · 정통 궁합은 무료 궁합 결과 생성 수
                   </p>
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-[11px] sm:text-xs">
                   <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
                     <tr>
-                      <th className="py-3 px-4">상품명</th>
-                      <th className="py-3 px-4">미리보기 생성 수</th>
-                      <th className="py-3 px-4">결제 건수</th>
-                      <th className="py-3 px-4 text-right">전환율</th>
+                      <th className="py-2.5 pl-3 pr-1.5 sm:px-4">상품명</th>
+                      <th className="py-2.5 px-1.5 sm:px-4 text-right whitespace-nowrap">미리보기</th>
+                      <th className="py-2.5 px-1.5 sm:px-4 text-right whitespace-nowrap">결제 시도(미완료)</th>
+                      <th className="py-2.5 px-1.5 sm:px-4 text-right whitespace-nowrap">결제 건수</th>
+                      <th className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right whitespace-nowrap">전환율</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line/40">
                     {stats.teaserToPaid.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="py-8 text-center text-caption">
+                        <td colSpan={5} className="py-8 text-center text-caption">
                           집계 가능한 미리보기/결제 데이터가 없습니다.
                         </td>
                       </tr>
                     ) : (
                       stats.teaserToPaid.map((item) => (
                         <tr key={item.catalogId} className="hover:bg-surface/30">
-                          <td className="py-3 px-4 font-extrabold text-ink">{item.name}</td>
-                          <td className="py-3 px-4 text-caption font-medium">{item.teaserCount}건</td>
-                          <td className="py-3 px-4 text-ink font-bold">{item.paidCount}건</td>
-                          <td className="py-3 px-4 text-right font-black text-[#FF5C77]">{item.convRate}%</td>
+                          <td className="py-2.5 pl-3 pr-1.5 sm:px-4 font-extrabold text-ink">{item.name}</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 text-right text-caption font-medium whitespace-nowrap">{item.teaserCount}건</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 text-right text-amber-700 font-bold whitespace-nowrap">{item.pendingCount ?? 0}건</td>
+                          <td className="py-2.5 px-1.5 sm:px-4 text-right text-ink font-bold whitespace-nowrap">{item.paidCount}건</td>
+                          <td className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right font-black text-[#FF5C77] whitespace-nowrap">{item.convRate}%</td>
                         </tr>
                       ))
                     )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ③ 접속 환경별 표 (Order.clientEnv) */}
+            <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-line bg-surface/40">
+                <h3 className="font-extrabold text-sm text-ink">접속 환경별 결제 전환 (Order.clientEnv)</h3>
+                <p className="text-[11px] text-caption">
+                  * 인앱 브라우저 및 기기 환경별 주문 시도 · 결제 완료 · 미완료 · 완료율 · 매출액
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[11px] sm:text-xs">
+                  <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
+                    <tr>
+                      <th className="py-2.5 pl-3 pr-1.5 sm:px-4">접속 환경</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">시도</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">미완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료율</th>
+                      <th className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right whitespace-nowrap">매출</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/40">
+                    {(stats.byClientEnv ?? []).map((row) => (
+                      <tr key={row.key} className="hover:bg-surface/30">
+                        <td className="py-2.5 pl-3 pr-1.5 sm:px-4 font-extrabold text-ink">{row.label}</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-medium text-caption whitespace-nowrap">{row.attempts}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-emerald-700 whitespace-nowrap">{row.paid}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-amber-700 whitespace-nowrap">{row.pending}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-black text-[#FF5C77] whitespace-nowrap">{row.convRate}%</td>
+                        <td className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right font-black text-ink whitespace-nowrap">{formatCurrency(row.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ④ 유입 표시(Order.campaign)별 표 + /admin/campaigns 링크 */}
+            <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-line bg-surface/40 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-extrabold text-sm text-ink">유입 표시별 결제 전환 (Order.campaign)</h3>
+                  <p className="text-[11px] text-caption">
+                    * 캠페인 단축 링크(/go/...) 및 광고 유입 표시별 주문 성과
+                  </p>
+                </div>
+                <Link
+                  href="/ko/admin/campaigns"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white border border-line text-xs font-extrabold text-ink hover:border-[#FF5C77] hover:text-[#FF5C77] transition-colors shrink-0"
+                >
+                  <span>캠페인 관리</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[11px] sm:text-xs">
+                  <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
+                    <tr>
+                      <th className="py-2.5 pl-3 pr-1.5 sm:px-4">유입 표시</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">시도</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">미완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료율</th>
+                      <th className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right whitespace-nowrap">매출</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/40">
+                    {(stats.byCampaign ?? []).map((row) => (
+                      <tr key={row.key} className="hover:bg-surface/30">
+                        <td className="py-2.5 pl-3 pr-1.5 sm:px-4 font-extrabold text-ink break-all">{row.label}</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-medium text-caption whitespace-nowrap">{row.attempts}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-emerald-700 whitespace-nowrap">{row.paid}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-amber-700 whitespace-nowrap">{row.pending}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-black text-[#FF5C77] whitespace-nowrap">{row.convRate}%</td>
+                        <td className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right font-black text-ink whitespace-nowrap">{formatCurrency(row.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ⑤ 결제 수단별 표 (Order.payMethod) */}
+            <div className="bg-white rounded-2xl border border-line shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-line bg-surface/40">
+                <h3 className="font-extrabold text-sm text-ink">결제 수단별 결제 전환 (Order.payMethod)</h3>
+                <p className="text-[11px] text-caption">
+                  * 카카오페이 바로가기(KAKAOPAY) 대 일반 결제창(CARD) 주문 시도 및 완료율
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[11px] sm:text-xs">
+                  <thead className="bg-surface/60 border-b border-line text-caption font-extrabold">
+                    <tr>
+                      <th className="py-2.5 pl-3 pr-1.5 sm:px-4">결제 수단</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">시도</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">미완료</th>
+                      <th className="py-2.5 px-1.5 sm:px-3 text-right whitespace-nowrap">완료율</th>
+                      <th className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right whitespace-nowrap">매출</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line/40">
+                    {(stats.byPayMethod ?? []).map((row) => (
+                      <tr key={row.key} className="hover:bg-surface/30">
+                        <td className="py-2.5 pl-3 pr-1.5 sm:px-4 font-extrabold text-ink">{row.label}</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-medium text-caption whitespace-nowrap">{row.attempts}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-emerald-700 whitespace-nowrap">{row.paid}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-bold text-amber-700 whitespace-nowrap">{row.pending}건</td>
+                        <td className="py-2.5 px-1.5 sm:px-3 text-right font-black text-[#FF5C77] whitespace-nowrap">{row.convRate}%</td>
+                        <td className="py-2.5 pl-1.5 pr-3 sm:px-4 text-right font-black text-ink whitespace-nowrap">{formatCurrency(row.amount)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
