@@ -6,7 +6,7 @@ import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
 import type { CatalogItem } from "@/lib/catalog";
 import { priceLabel, listPrice, formatWon, discountBadge } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
-import ProductViewTracker from "@/components/ProductViewTracker";
+import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
 import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
 
 // Import static sample previews
@@ -337,12 +337,17 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
           <div className="text-3xl sm:text-4xl font-bold font-serif-kr text-[#F3E3BF] mb-6">
             {priceLabel(product)}
           </div>
-          <Link
+          <ProductCtaLink
             href={nextPath}
+            productId={product.id}
+            tier="premium"
+            target={product.target}
+            isFree={false}
+            location="bottom_cta"
             className="inline-flex items-center justify-center w-full max-w-sm py-4 rounded-2xl text-base font-bold text-[#14101A] bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] hover:opacity-95 shadow-xl transition-all active:scale-95"
           >
             프리미엄 리포트 신청하기
-          </Link>
+          </ProductCtaLink>
         </section>
       </div>
 
@@ -362,12 +367,17 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
             {priceLabel(product)}
           </span>
         </div>
-        <Link
+        <ProductCtaLink
           href={nextPath}
+          productId={product.id}
+          tier="premium"
+          target={product.target}
+          isFree={false}
+          location="mobile_sticky"
           className="px-6 py-2.5 rounded-xl text-sm font-bold text-[#14101A] bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] shadow-lg active:scale-95 transition-transform"
         >
           신청하기
-        </Link>
+        </ProductCtaLink>
       </div>
     </main>
   );

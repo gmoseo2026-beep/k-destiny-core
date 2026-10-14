@@ -25,6 +25,27 @@ import { trackMeta } from "@/lib/metaPixel";
  * K = compat_created(has_ref=true) ÷ share_created
  * share_card_created 는 분모에 넣지 않는다(카드 생성 ≠ 공유 실행).
  */
+export const GA_SENSITIVE_QUERY_KEYS = ["paymentId", "orderId", "claimToken", "token"] as const;
+
+export function cleanPageLocation(rawUrl?: string): string {
+  const href =
+    rawUrl !== undefined
+      ? rawUrl
+      : typeof window !== "undefined"
+        ? window.location.href
+        : "";
+  if (!href) return "";
+  try {
+    const u = new URL(href);
+    for (const k of GA_SENSITIVE_QUERY_KEYS) {
+      u.searchParams.delete(k);
+    }
+    return u.toString();
+  } catch {
+    return href;
+  }
+}
+
 export function trackEvent(name: string, params?: Record<string, string | number | boolean>): void {
   if (typeof window === "undefined") return;
   // 메타 픽셀(광고 성과 측정)에도 알린다 — 관계있는 이벤트만 골라 보낸다(lib/metaPixel.ts). GA 가 막혀 있어도 보낸다.
@@ -36,7 +57,11 @@ export function trackEvent(name: string, params?: Record<string, string | number
   const w = window as unknown as { gtag?: (...args: unknown[]) => void };
   if (typeof w.gtag !== "function") return;
   try {
-    w.gtag("event", name, params || {});
+    const pageLocation = cleanPageLocation();
+    w.gtag("event", name, {
+      ...(pageLocation ? { page_location: pageLocation } : {}),
+      ...(params || {}),
+    });
   } catch {
     // Analytics must never break the app
   }
