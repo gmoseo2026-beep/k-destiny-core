@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
+import { withCompatFromParam } from "@/lib/compatFromUrl";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
@@ -23,20 +24,6 @@ import { Button } from "@/components/ui/Button";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
-
-/**
- * 현재 주소에 `from=<compatId>`를 넣은 경로(`pathname + search + hash`)를 돌려준다.
- * 이미 같은 `from`이 있으면 그대로 두고, `productId`·`utm_*` 등 다른 값은 모두 보존한다.
- */
-export function withCompatFromParam(rawUrl: string, compatId: string): string {
-  const trimmed = compatId.trim();
-  const url = new URL(rawUrl, "https://saju.kongdak.com");
-  if (!trimmed || url.searchParams.get("from") === trimmed) {
-    return `${url.pathname}${url.search}${url.hash}`;
-  }
-  url.searchParams.set("from", trimmed);
-  return `${url.pathname}${url.search}${url.hash}`;
-}
 
 interface InitialProfile {
   name?: string | null;

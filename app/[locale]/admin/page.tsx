@@ -35,7 +35,6 @@ async function loadAdminDashboardData() {
   // 병렬 쿼리 수행
   const [
     orders,
-    orderPayMethods,
     reportsRaw,
     failedReportsRaw,
     visibilities,
@@ -49,7 +48,7 @@ async function loadAdminDashboardData() {
     todayUsers,
     activePassHolders,
   ] = await Promise.all([
-    // 1. 주문 목록 (최근 300건) — payMethod 컬럼 추가 전후 모두 안전하도록 필요한 필드를 명시적으로 조회
+    // 1. 주문 목록 (최근 300건) — 쓰는 필드만 조회
     prisma.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 300,
@@ -68,17 +67,13 @@ async function loadAdminDashboardData() {
         provider: true,
         clientEnv: true,
         campaign: true,
+        payMethod: true,
         createdAt: true,
         unlocks: {
           select: { id: true, expiresAt: true, compatId: true, productType: true, productKey: true },
         },
       },
     }),
-
-    // 1-1. 결제 수단(Order.payMethod) 병렬 조회 — DB에 컬럼이 생기기 전에는 빈 배열로 폴백
-    prisma.$queryRaw<Array<{ id: string; payMethod: string | null }>>`
-      SELECT id, "payMethod" FROM "Order" ORDER BY "createdAt" DESC LIMIT 300
-    `.catch(() => [] as Array<{ id: string; payMethod: string | null }>),
 
     // 2. FULL 생성 리포트 (최근 300건) — cacheKey로 주문 매핑
     prisma.generatedReport.findMany({
@@ -213,7 +208,6 @@ async function loadAdminDashboardData() {
     prisma.compatibility.findMany({ where: { createdAt: { gte: monthStart } }, select: { createdAt: true }, take: 10000 }),
   ]);
   const logStart = firstLog?.createdAt ?? now;
-  const payMethodByOrderId = new Map(orderPayMethods.map((r) => [r.id, r.payMethod]));
 
   // 궁합 요약 매핑 (PII 원문 제외, 점수 및 이름 앞글자만)
   const compatIds = Array.from(new Set(orders.map((o) => o.compatId).filter(Boolean))) as string[];
@@ -333,7 +327,7 @@ async function loadAdminDashboardData() {
     if (!isManual) {
       const envKey = o.clientEnv || "__null__";
       const campKey = o.campaign || "__null__";
-      const rawPayMethod = payMethodByOrderId.get(o.id);
+      const rawPayMethod = o.payMethod;
       const pmKey = rawPayMethod === "KAKAOPAY" || rawPayMethod === "CARD" ? rawPayMethod : "__null__";
 
       addBucket(clientEnvMap, envKey, o.status, o.amount);

@@ -460,3 +460,29 @@
 1. 브라우저 쪽 가격 표시는 방문자 기기의 시계를 따른다. 시계가 틀린 기기는 화면 값과 결제 값이 다를 수 있다(결제 금액은 서버 시각 기준, 결제창에 금액이 다시 표시된다).
 2. 12/31 까지면 2027 운세 성수기(12월)에도 대운 리포트를 절반 값에 팔게 된다.
 3. 홈 구조를 또 바꿨다. 광고 유입은 입력 화면으로 가므로 주로 스레드·검색·직접 방문에 영향이 간다.
+
+---
+
+# 2026-10-14 · Gemini 4 UI/UX 1차 병합 (P-001a·P-002a·P-001b)
+
+> 절차: `docs/uiux/` — Gemini 제안 → Claude 결정서(`decisions/`) → Gemini 구현(`uiux/P-00N` 브랜치) → Claude 검토·수정·병합·배포.
+> **검증**: `tsc` 0 · 변경 파일 lint 0 · `vitest` 420 통과 · build exit 0 · 로컬 운영 빌드(kongdak.local:3099, GA 전송·`/api/*` 가로채서 끊음)에서 GA 전송값 확인.
+
+## 무엇이 바뀌나
+- **P-001a 측정**: GA4 이벤트가 지금 보는 화면 주소로 잡힌다(`lib/gtag.ts`가 이벤트마다 `page_location`을 싣고, `components/Analytics.tsx`가 화면 이동 때 `gtag('set')`). 상품 상세 버튼 `product_cta_click`, 관련 상품 `related_product_click` 추가. `DashboardView`의 직접 `gtag` 호출을 `trackEvent`로.
+- **P-002a**: 두 사람 상품 미리보기(또는 한도 안내)가 뜨면 주소에 `from=<궁합 id>`를 넣는다(`replaceState`, `lib/compatFromUrl.ts`). 새로고침·인앱 → 다른 브라우저로 열어도 입력 없이 같은 미리보기. 같은 id로 효과가 다시 돌지 않게 막았다(`handledFromRef`).
+- **P-001b 어드민**: 첫 탭이 지표. 재구매(같은 궁합·같은 회원, 세트에 든 단품 재결제 표시), 상품별 미완료 열, 접속 환경·유입 표시·결제 수단 표. 미리보기 수는 저장본 재열람 제외. `Order.payMethod`(KAKAOPAY|CARD|null) 추가 — **운영 DB에 칸을 먼저 추가함(10-14, `ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "payMethod" TEXT`)**.
+
+## Claude가 Gemini 구현에서 바꾼 것
+1. `components/Analytics.tsx`: Gemini 판은 GA 스크립트가 **주소창의 `paymentId`를 직접 지우고**(`History.prototype.replaceState`), `history.pushState/replaceState`를 `defineProperty` 게터로 덮어썼다. 결제 완료 화면은 마운트 뒤 주소에서 `paymentId`를 읽어 결제를 확정하므로, 순서가 어긋나면 결제 확정이 안 된다. Next 라우터의 history 처리와도 부딪힐 수 있다. → 원래 스크립트로 되돌리고 `gtag('set', { page_location })` 한 줄과 공통 지우기 목록만 넣었다.
+2. `withCompatFromParam`을 클라이언트 컴포넌트에서 `lib/compatFromUrl.ts`로 옮김(가짜 도메인 `saju.kongdak.com` 제거).
+3. 어드민의 `payMethod` 별도 원시 조회(`$queryRaw` + 실패 시 빈 값)를 없애고 `select`에 넣음(칸을 먼저 만들었으므로).
+
+## 확인(로컬 운영 빌드)
+- `/ko/products/inner_mind` → 하단 버튼 → `/ko/compat/new`: `view_item`·`product_cta_click`의 주소 = 상품 상세, 상품 상세 체류 시간(`user_engagement`)도 상품 상세 주소, 화면 이동 1번에 `page_view` 1번(GA가 같은 전송을 두 주소로 보내 패킷은 두 벌).
+- `/ko/pay/complete?paymentId=…&orderId=…&claimToken=…&token=…`: GA 전송값 어디에도 네 값 없음(0건). 화면은 `paymentId`를 읽어 `/api/payments/complete`를 호출함(주소 정리는 화면이 함).
+
+## 의심 지점
+1. 미리보기 화면 주소가 바뀔 때 GA가 `page_view`를 한 번 더 보낼 수 있다(`from` 붙은 주소). 미리보기 수는 `teaser_created`로 보고, `via=compat_continue`(새로고침·다른 브라우저 재열람)는 빼고 본다.
+2. `from=` 주소를 남에게 보내면 그 두 사람의 미리보기가 열린다. 궁합 id는 원래 공유 주소에 쓰이는 값이라 새로 드러나는 것은 없지만, 속궁합처럼 민감한 상품 미리보기도 열린다.
+3. 어드민 집계는 최근 주문 300건 기준이다(지금 62건).
