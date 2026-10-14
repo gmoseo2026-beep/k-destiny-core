@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
@@ -23,6 +23,20 @@ import { Button } from "@/components/ui/Button";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+
+/**
+ * 현재 주소에 `from=<compatId>`를 넣은 경로(`pathname + search + hash`)를 돌려준다.
+ * 이미 같은 `from`이 있으면 그대로 두고, `productId`·`utm_*` 등 다른 값은 모두 보존한다.
+ */
+export function withCompatFromParam(rawUrl: string, compatId: string): string {
+  const trimmed = compatId.trim();
+  const url = new URL(rawUrl, "https://saju.kongdak.com");
+  if (!trimmed || url.searchParams.get("from") === trimmed) {
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+  url.searchParams.set("from", trimmed);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
 
 interface InitialProfile {
   name?: string | null;
@@ -138,8 +152,19 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
   // 지난 궁합 이어보기: 두 사람 정보를 다시 넣지 않고 기존 궁합(compatId)으로 맛보기를 만든다
   const [continuing, setContinuing] = useState(Boolean(fromCompatId && isSpecialCouple));
+  const handledFromRef = useRef<string | null>(null);
+
+  const syncCompatUrl = (compatId: string) => {
+    if (typeof window === "undefined") return;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const next = withCompatFromParam(window.location.href, compatId);
+    if (next === current) return;
+    window.history.replaceState(window.history.state, "", next);
+  };
+
   useEffect(() => {
     if (!fromCompatId || !isSpecialCouple || !product) return;
+    if (handledFromRef.current === fromCompatId) return;
     let alive = true;
     (async () => {
       try {
@@ -150,11 +175,15 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         });
         const json = await res.json();
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-          if (alive) setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+          if (alive) {
+            handledFromRef.current = fromCompatId;
+            setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+          }
           return;
         }
         if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
         if (!alive) return;
+        handledFromRef.current = fromCompatId;
         trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "compat_continue" });
         setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
       } catch (err) {
@@ -232,12 +261,16 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
       });
       const json = await res.json();
       if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
+        handledFromRef.current = lastCouple.compatId;
         setLimitHit({ compatId: lastCouple.compatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+        syncCompatUrl(lastCouple.compatId);
         return;
       }
       if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
+      handledFromRef.current = lastCouple.compatId;
       trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "last_couple" });
       setTeaserResult({ compatId: lastCouple.compatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+      syncCompatUrl(lastCouple.compatId);
     } catch (err) {
       setErrorMsg(err instanceof Error ? `${err.message} 아래에 두 사람 정보를 확인하고 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
     } finally {
@@ -340,12 +373,15 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
         const genJson = await genRes.json();
         if (genRes.status === 429 && genJson.code === "PREVIEW_LIMIT") {
+          handledFromRef.current = json.id;
           setLimitHit({ compatId: json.id, limit: genJson.limit ?? 3, signupBonus: genJson.signupBonus ?? 0 });
+          syncCompatUrl(json.id);
           setIsLoading(false);
           return;
         }
         if (!genRes.ok) throw new Error(genJson.error || "리포트 생성 중 오류가 발생했습니다.");
 
+        handledFromRef.current = json.id;
         trackEvent("teaser_created", { productId, tier: product?.tier || "standard" });
 
         setTeaserResult({
@@ -354,6 +390,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
           data: genJson.data,
           reportId: genJson.reportId,
         });
+        syncCompatUrl(json.id);
         setIsLoading(false);
         return;
       }
