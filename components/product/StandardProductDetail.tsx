@@ -482,6 +482,12 @@ export function StandardProductDetail({
                   prefetch
                   key={rel.id}
                   href={`/${locale}/products/${rel.id}`}
+                  onClick={() =>
+                    trackEvent("related_product_click", {
+                      fromProductId: product.id,
+                      toProductId: rel.id,
+                    })
+                  }
                   className="group flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-surface-soft border border-line transition-all active:scale-[0.97]"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -518,7 +524,20 @@ export function StandardProductDetail({
 
       {/* 8. Fixed Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-line z-40 max-w-[480px] mx-auto shadow-lg">
-        <Link prefetch href={nextPath} className="block w-full">
+        <Link
+          prefetch
+          href={nextPath}
+          onClick={() =>
+            trackEvent("product_cta_click", {
+              productId: product.id,
+              tier: product.tier,
+              target: product.target,
+              isFree: Boolean(product.isFree),
+              location: "bottom_fixed",
+            })
+          }
+          className="block w-full"
+        >
           <Button
             size="lg"
             fullWidth

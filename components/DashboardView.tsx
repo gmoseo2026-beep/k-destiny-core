@@ -148,15 +148,10 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
   };
 
   const handleCardClick = (itemId: string) => {
-    if (typeof window !== "undefined") {
-      const w = window as unknown as { gtag?: (event: string, action: string, params: Record<string, unknown>) => void };
-      if (w.gtag) {
-        w.gtag("event", "select_content", {
-          location: "member_dashboard",
-          item_id: itemId,
-        });
-      }
-    }
+    trackEvent("select_content", {
+      location: "member_dashboard",
+      item_id: itemId,
+    });
   };
 
   const user = session?.user as { name?: string | null; tier?: string; premiumEndDate?: string | null } | undefined;
