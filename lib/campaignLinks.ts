@@ -96,6 +96,19 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "inner_mind" },
     utm: { source: "instagram", medium: "organic_social", campaign: "reels_organic", content: "bio_link" },
   },
+  // ── 검색 광고(2026-10-14): 구글·네이버 광고그룹마다 하나. 도착 화면은 검색어의 뜻에 맞춘 입력 화면이다
+  // (인스타 광고에서 홈보다 입력 화면이 입력 완료율이 높았다 — 위 주석). 브랜드 검색만 홈으로 보낸다.
+  ...(["google", "naver"] as const).flatMap((src): CampaignLink[] => {
+    const p = src === "google" ? "gg" : "nv";
+    const name = src === "google" ? "구글 검색" : "네이버 검색";
+    return [
+      { code: `${p}-compat`, label: `${name} · 궁합(무료 궁합 점수)`, path: "/compat/new", utm: { source: src, medium: "cpc", campaign: "search_compat", content: "compat" } },
+      { code: `${p}-inner`, label: `${name} · 그 사람 속마음·짝사랑·재회`, path: "/compat/new", query: { productId: "inner_mind" }, utm: { source: src, medium: "cpc", campaign: "search_innermind", content: "inner" } },
+      { code: `${p}-2026`, label: `${name} · 2026 총운(연말 특가)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_annual2026", content: "annual2026" } },
+      { code: `${p}-2027`, label: `${name} · 2027 대운(연말 특가)`, path: "/products/premium_2027_daeun", utm: { source: src, medium: "cpc", campaign: "search_daeun2027", content: "daeun2027" } },
+      { code: `${p}-brand`, label: `${name} · 콩닥(브랜드)`, path: "", utm: { source: src, medium: "cpc", campaign: "search_brand", content: "brand" } },
+    ];
+  }),
 ] as const;
 
 export const findCampaignLink = (code: string): CampaignLink | undefined =>
