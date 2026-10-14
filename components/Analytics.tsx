@@ -21,10 +21,6 @@ export default function Analytics() {
 
   return (
     <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-        strategy="afterInteractive"
-      />
       <Script id="ga4-init" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
@@ -69,11 +65,44 @@ export default function Analytics() {
             });
             window.addEventListener('popstate', function () { apply(true); });
           })();
-          gtag('js', new Date());
-          gtag('config', '${gaId}', {
-            anonymize_ip: true,
-            page_location: gaCleanLocation(),
-          });
+          // 주소에 지울 값이 남아 있는 동안에는 GA 를 불러오지도 시작하지도 않는다. gtag.js 가 그 주소를 한 번이라도 보면
+          // 다음 화면 page_view·user_engagement 의 이전 주소(page_referrer)로 실려 나간다(2026-10-14 로컬 패킷으로 확인).
+          // 결제 완료 화면은 마운트 직후 스스로 주소를 정리하므로 그때 시작한다. 10초 안에 정리되지 않으면
+          // 그 화면은 측정하지 않는다.
+          function gaHasSensitive() {
+            try {
+              var u = new URL(window.location.href);
+              return GA_STRIP.some(function (k) { return u.searchParams.has(k); });
+            } catch (e) {
+              return true;
+            }
+          }
+          function gaBoot() {
+            // gtag.js 도 이때 불러온다. 먼저 떠 있으면 지울 값이 붙은 주소를 기억했다가 다음 화면의 이전 주소로 보낸다.
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=${gaId}';
+            document.head.appendChild(s);
+            gtag('js', new Date());
+            gtag('config', '${gaId}', {
+              anonymize_ip: true,
+              page_location: gaCleanLocation(),
+            });
+          }
+          if (!gaHasSensitive()) {
+            gaBoot();
+          } else {
+            var gaWait = 0;
+            var gaTimer = setInterval(function () {
+              gaWait += 1;
+              if (!gaHasSensitive()) {
+                clearInterval(gaTimer);
+                gaBoot();
+              } else if (gaWait >= 200) {
+                clearInterval(gaTimer);
+              }
+            }, 50);
+          }
         `}
       </Script>
     </>
