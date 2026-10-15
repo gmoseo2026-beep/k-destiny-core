@@ -52,7 +52,13 @@ export default function SeasonPromoBanner({ locale, items, daysLeft, total }: Se
             <Link
               prefetch
               key={product.id}
-              href={`/${locale}/products/${product.id}`}
+              href={
+                product.id === "annual_2026"
+                  ? `/${locale}/fortune/annual?year=2026`
+                  : product.id === "annual_2027"
+                  ? `/${locale}/fortune/annual?year=2027`
+                  : `/${locale}/products/${product.id}`
+              }
               onClick={() => trackEvent("home_card_click", { section: "season_promo", position: i + 1, productId: product.id, tab: "-" })}
               className="flex flex-col rounded-2xl bg-white p-3 text-left text-ink transition-all active:scale-[0.97]"
             >

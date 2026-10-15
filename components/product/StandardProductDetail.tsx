@@ -57,7 +57,11 @@ export function StandardProductDetail({
 
   // Next path for form input
   const nextPath =
-    product.target === "couple"
+    product.id === "annual_2026"
+      ? `/${locale}/fortune/annual?year=2026`
+      : product.id === "annual_2027"
+      ? `/${locale}/fortune/annual?year=2027`
+      : product.target === "couple"
       ? `/${locale}/compat/new?productId=${product.id}`
       : `/${locale}/fortune/new?productId=${product.id}`;
 
