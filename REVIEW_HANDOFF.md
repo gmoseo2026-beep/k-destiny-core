@@ -500,3 +500,15 @@
 - 수정: `tone="light" | "dark"` 추가(밝은 쪽도 글자색 `text-ink`를 명시). 프리미엄 3곳(2027 대운, 택일 두 사람) `tone="dark"`. 커밋 54d5783(입력 칸), be1144c(대비), 둘 다 배포 VERIFIED.
 - 전 페이지 대비 검사(390px, 사이트맵 + 입력 흐름 49쪽): 대비 3 미만 6쪽 → 1쪽. 고친 것: "NEW" 딱지(#FF8AA1→#E0245A), 재물 딱지 글씨(#C98A0B→#8A5A00), 흐린 회색 안내 글씨 `text-[#8A8291]` 43곳 → `text-caption`(#6B6470). 남은 1곳은 네이버 로그인 버튼(네이버 지정 색).
 - 의심 지점: 결과·미리보기·결제창처럼 데이터가 있어야 열리는 화면은 자동 검사에 들어가지 않았다(코드로 확인한 범위: 프리미엄 화면에 들어가는 공용 부품 중 밝은 전용은 BirthFields 하나였다).
+
+---
+
+# 2026-10-15 · 보안 점검(바이브코딩 보안 체크리스트 기준)
+- 계기: "프론트에 키 노출 · SQL 주입 · 인증 없는 API" 체크리스트. 결과와 조치를 정리한다.
+- 문제없음으로 확인: 브라우저 번들(라이브 JS 21개)에 API 키·DB 주소·토큰·프롬프트 원문 0건, `NEXT_PUBLIC_` 비밀값 없음, 추적되는 시크릿 파일 없음(`.env.example`만), git 이력 시크릿 0건, `$queryRawUnsafe` 없음(Prisma 매개변수 쿼리), Supabase public 표 25개 전부 RLS 켜짐(정책 0 = anon 접근 불가) + 서버에 Supabase 키 자체가 없음, 관리자 API 전부 `getAdminSessionOrThrow`(401/403), 유료 결과는 `isEntitled`/주문번호로만 열람, 보안 헤더(CSP·HSTS preload·X-Frame-Options DENY·nosniff) 적용.
+- 조치 1 (커밋 21db6d0, 배포 VERIFIED): Next.js 16.2.9 → 16.3.8, next-auth 4.24.14 → 4.24.15. 공유카드(`next/og`)와 이미지 최적화(AVIF) 경로의 인증 없는 원격 코드 실행(critical) 등. `npm audit --omit=dev` critical 2 → 0. 남은 high/moderate 11건은 Prisma CLI 로컬 개발 서버(hono·mysql2)·Tailwind·ESLint 등 빌드 도구 안에만 있다(Prisma 6으로 내리는 것만 해결책이라 보류).
+- 조치 2: Gumroad 결제 알림(`/api/webhooks/gumroad`)이 서버에 비밀값이 없으면 검증 없이 받던 것을 **비밀값 없으면 503**으로 바꿈. 이전에는 아무나 회원 이메일로 가짜 결제 알림을 보내 유료 등급을 줄 수 있었다(동면 코드라 삭제는 안 함). 테스트 `tests/routes/gumroadWebhook.test.ts`.
+- 조치 3: 이메일 로그인(같은 이메일 5회/분·30회/일)과 가입(같은 IP 5회/분·30회/일)에 횟수 제한(`checkAuthRateLimit`). 막히면 "로그인 시도가 너무 많아요" 안내. 테스트 `tests/authRateLimit.test.ts`.
+- 조치 4: 쓰이지 않던 `lib/supabaseClient.ts` 삭제(서비스 롤 키 → anon 키 순으로 넘어가는 위험한 기본값).
+- 검증: tsc 0 · 바꾼 파일 lint 새 오류 0(register의 `any` 2건은 기존) · vitest 426 통과 · build exit 0.
+- 의심 지점: (1) 횟수 제한은 Upstash가 없으면 PM2 프로세스 메모리에 센다(재시작하면 초기화, 여러 프로세스면 프로세스별). (2) 남의 이메일로 로그인을 반복하면 그 사람의 이메일 로그인이 하루 막힐 수 있다(카카오·구글 로그인은 영향 없음). (3) `GET /api/compat?id=`는 id를 아는 사람에게 유료 결과를 돌려준다(id는 추측 불가한 cuid라 유지).

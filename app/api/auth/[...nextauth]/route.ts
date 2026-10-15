@@ -8,6 +8,7 @@ import type { Adapter, AdapterUser } from 'next-auth/adapters';
 import type { JWT } from 'next-auth/jwt';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { checkAuthRateLimit } from '@/lib/rateLimiter';
 
 const normalizeEmail = (value?: string | null) => value?.trim().toLowerCase() ?? null;
 
@@ -122,8 +123,16 @@ export const authOptions: NextAuthOptions = {
         }
 
         // [SECURITY / M-1] register 는 소문자로 저장한다 → 조회도 소문자로 맞춘다.
+        const loginEmail = normalizeEmail(credentials.email) ?? credentials.email;
+
+        // 같은 계정에 비밀번호를 계속 대입하는 것을 막는다(5/분, 30/일).
+        const limit = await checkAuthRateLimit(`login:${loginEmail}`);
+        if (!limit.allowed) {
+          throw new Error('Too many login attempts');
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: normalizeEmail(credentials.email) ?? credentials.email },
+          where: { email: loginEmail },
         });
 
         if (!user || !user.password) {

@@ -27,8 +27,10 @@ export const runtime = "nodejs";
  * Retained from v3 (revenue + security critical):
  *   1. PRICE UNIT FIX — Gumroad's ping sends `price` in USD *cents*
  *      (e.g. "299" for $2.99); dollars are also accepted defensively.
- *   2. Sender verification — ?secret= (GUMROAD_WEBHOOK_SECRET) and
- *      seller_id (GUMROAD_SELLER_ID); each enforced only when configured.
+ *   2. Sender verification — ?secret= (GUMROAD_WEBHOOK_SECRET) is REQUIRED
+ *      (fails closed when unset, so the dormant endpoint can't be used to
+ *      grant premium with a forged ping); seller_id (GUMROAD_SELLER_ID) is
+ *      checked when configured.
  *   3. Idempotency — duplicate sale_id never double-creates PurchasedReport.
  * ───────────────────────────────────────────── */
 
@@ -177,13 +179,16 @@ async function handleSubscriptionEvent(
 export async function POST(req: NextRequest) {
   try {
     // ── 1. Shared-secret check (set the ping URL to .../gumroad?secret=XXX) ──
+    // 비밀값이 없으면 받지 않는다(동면 중인 주소로 가짜 결제 알림을 보내 유료 등급을 받는 것 방지).
     const expectedSecret = process.env.GUMROAD_WEBHOOK_SECRET;
-    if (expectedSecret) {
-      const givenSecret = req.nextUrl.searchParams.get("secret");
-      if (givenSecret !== expectedSecret) {
-        console.warn("[Gumroad] Rejected: bad webhook secret");
-        return NextResponse.json({ ok: false }, { status: 401 });
-      }
+    if (!expectedSecret) {
+      console.warn("[Gumroad] Rejected: GUMROAD_WEBHOOK_SECRET not configured");
+      return NextResponse.json({ ok: false }, { status: 503 });
+    }
+    const givenSecret = req.nextUrl.searchParams.get("secret");
+    if (givenSecret !== expectedSecret) {
+      console.warn("[Gumroad] Rejected: bad webhook secret");
+      return NextResponse.json({ ok: false }, { status: 401 });
     }
 
     // ── 2. Parse body — sale pings are form-encoded, resource events are JSON ──

@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { getClientIp, checkAuthRateLimit } from '@/lib/rateLimiter';
 
 export async function POST(req: NextRequest) {
+  // 0. 같은 IP 의 대량 가입 방지
+  const limit = await checkAuthRateLimit(`register:${getClientIp(req)}`);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: '요청이 너무 많아요. 잠시 후 다시 시도해주세요.' },
+      { status: 429 }
+    );
+  }
+
   // 1. Parse body safely
   let body: any;
   try {

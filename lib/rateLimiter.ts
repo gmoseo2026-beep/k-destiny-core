@@ -27,6 +27,9 @@ const DAY_LIMIT = 10;
 const CHAT_MINUTE_LIMIT = 20;
 const CHAT_DAY_LIMIT = 100;
 const GUEST_CHAT_DAY_LIMIT = 3;
+// 로그인·가입 시도(비밀번호 무차별 대입 방지): 키(이메일 또는 IP)당 5/분, 30/일
+const AUTH_MINUTE_LIMIT = 5;
+const AUTH_DAY_LIMIT = 30;
 
 const MINUTE_WINDOW = 60 * 1000;        // 1 minute
 const DAY_WINDOW = 24 * 60 * 60 * 1000; // 24 hours
@@ -118,6 +121,7 @@ async function redisDualCheck(
 const ipStore = new Map<string, RateLimitEntry>();
 const chatIpStore = new Map<string, RateLimitEntry>();
 const guestChatIpStore = new Map<string, RateLimitEntry>();
+const authStore = new Map<string, RateLimitEntry>();
 
 let lastCleanup = Date.now();
 const CLEANUP_INTERVAL = 10 * 60 * 1000;
@@ -126,7 +130,7 @@ function cleanup() {
   const now = Date.now();
   if (now - lastCleanup < CLEANUP_INTERVAL) return;
   lastCleanup = now;
-  for (const store of [ipStore, chatIpStore, guestChatIpStore]) {
+  for (const store of [ipStore, chatIpStore, guestChatIpStore, authStore]) {
     for (const [ip, entry] of store) {
       const recentDay = entry.dayTimestamps.filter((t) => now - t < DAY_WINDOW);
       if (recentDay.length === 0) store.delete(ip);
@@ -244,6 +248,17 @@ export async function checkGuestChatLimit(ip: string): Promise<{ allowed: boolea
   if (viaRedis) return { allowed: viaRedis.allowed };
   const mem = memoryCheck(guestChatIpStore, ip, GUEST_CHAT_DAY_LIMIT, GUEST_CHAT_DAY_LIMIT);
   return { allowed: mem.allowed };
+}
+
+/**
+ * Login/sign-up attempts: 5/min, 30/day per key. Counts on check.
+ * key 예: `login:<소문자 이메일>`, `register:<IP>`.
+ */
+export async function checkAuthRateLimit(key: string): Promise<{ allowed: boolean; retryAfterMs?: number }> {
+  const viaRedis = await redisDualCheck("auth", key, AUTH_MINUTE_LIMIT, AUTH_DAY_LIMIT);
+  if (viaRedis) return { allowed: viaRedis.allowed, retryAfterMs: viaRedis.retryAfterMs };
+  const mem = memoryCheck(authStore, key, AUTH_MINUTE_LIMIT, AUTH_DAY_LIMIT);
+  return { allowed: mem.allowed, retryAfterMs: mem.retryAfterMs };
 }
 
 // ─────────────────────────────────────────────

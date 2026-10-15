@@ -141,9 +141,15 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setMessage({ type: "error", text: locale === 'ko' 
-          ? "이메일 또는 비밀번호가 올바르지 않습니다." 
-          : "Invalid email or password." 
+
+        const tooMany = result.error === "Too many login attempts";
+
+        setMessage({ type: "error", text: tooMany
+
+          ? (locale === 'ko' ? "로그인 시도가 너무 많아요. 잠시 후 다시 시도해주세요." : "Too many login attempts. Please try again later.")
+
+          : (locale === 'ko' ? "이메일 또는 비밀번호가 올바르지 않습니다." : "Invalid email or password.")
+
         });
         setIsLoading(false);
       } else {
