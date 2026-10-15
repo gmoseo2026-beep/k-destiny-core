@@ -1,5 +1,5 @@
 // 출시 결제 매트릭스: 판매 중인 모든 상품에 대해
-//   ① 주문 금액(게스트 / 회원 첫 결제 / 회원 재구매) ② 결제 검증(complete) ③ 권한 부여(Unlock) ④ 열람 판정
+//   ① 주문 금액(게스트 / 회원 — 회원 첫 결제 할인은 2026-10-15 폐지) ② 결제 검증(complete) ③ 권한 부여(Unlock) ④ 열람 판정
 // 을 한 번에 확인한다. 새 상품을 추가하면 자동으로 이 매트릭스에 들어온다.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -21,7 +21,7 @@ vi.mock("@/lib/payments", () => ({ payments: pg }));
 
 import { POST as ORDER } from "@/app/api/payments/order/route";
 import { POST as COMPLETE } from "@/app/api/payments/complete/route";
-import { CATALOG, FIRST_PURCHASE_PRICE, type CatalogItem } from "@/lib/catalog";
+import { CATALOG, type CatalogItem } from "@/lib/catalog";
 import { invalidateVisibilityCache } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { orderGrants } from "@/lib/entitlementRules";
@@ -35,7 +35,7 @@ const post = (url: string, body: unknown) =>
 const SELLABLE = CATALOG.filter((p) => !p.isFree && p.price > 0);
 
 function expectedMemberFirst(p: CatalogItem) {
-  return p.tier === "standard" && p.type !== "SET" ? Math.min(p.price, FIRST_PURCHASE_PRICE) : p.price;
+  return p.price; // 결제한 적 없는 회원도 판매가 그대로
 }
 
 beforeEach(() => {

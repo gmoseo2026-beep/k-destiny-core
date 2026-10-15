@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, hasFirstPurchaseDiscount, discountBadge } from "@/lib/catalog";
+import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, discountBadge } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
@@ -297,12 +297,6 @@ export function StandardProductDetail({
               {product.type === "SET" && separatePrice(product) > product.price && (
                 <span className="text-xs font-bold text-caption">
                   따로 사면 {formatWon(separatePrice(product))}
-                </span>
-              )}
-              {/* 첫 결제 할인은 표준 단품만(세트 제외) — 서버 주문 규칙과 동일 */}
-              {hasFirstPurchaseDiscount(product) && (
-                <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">
-                  회원 첫 결제 4,900원
                 </span>
               )}
             </div>

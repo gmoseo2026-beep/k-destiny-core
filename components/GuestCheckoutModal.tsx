@@ -77,17 +77,7 @@ export default function GuestCheckoutModal({
   // 어느 버튼으로 제출했는지(카카오페이 바로가기 / 일반 결제창)
   const methodRef = useRef<"KAKAOPAY" | undefined>(undefined);
 
-  // 비회원은 정가가 청구된다 → 결제창에서는 청구 금액만 보이고, 첫 결제 할인은 로그인 안내로 분리한다
-  const FIRST_TAG = " · 회원 첫 결제 ";
-  const isGuest = !session?.user;
-  const hasFirstDiscount = priceLabel.includes(FIRST_TAG);
-  const shownPrice = isGuest && hasFirstDiscount ? priceLabel.split(FIRST_TAG)[0] : priceLabel;
-  const firstPrice = hasFirstDiscount ? priceLabel.split(FIRST_TAG)[1] : null;
-  const loginHref = (() => {
-    if (typeof window === "undefined") return "/ko/login";
-    const locale = window.location.pathname.split("/")[1] || "ko";
-    return `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-  })();
+  const shownPrice = priceLabel;
   const pid = productId || orderName || "unknown";
 
   useEffect(() => {
@@ -354,17 +344,6 @@ export default function GuestCheckoutModal({
             디지털 콘텐츠라 열람(제공 개시) 후에는 전자상거래법
             제17조 제2항에 따라 청약철회가 제한될 수 있으며, 결제를 진행하면 이에 동의하게 됩니다.
           </p>
-
-          {isGuest && firstPrice && (
-            <a
-              href={loginHref}
-              onClick={() => trackEvent("checkout_login_hint_click", { productId: pid })}
-              className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-text-3"
-            >
-              <span>회원가입·로그인하면 첫 결제는 {firstPrice}</span>
-              <span className="shrink-0 underline">로그인하기 →</span>
-            </a>
-          )}
 
           <button
             type="button"

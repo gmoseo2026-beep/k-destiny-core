@@ -42,20 +42,14 @@ export interface CatalogItem {
   pointDesc?: Record<string, string>; // "이런 내용" 섹션별 요약
 }
 
-export const FIRST_PURCHASE_PRICE = 4900; // 사장님 결정 D3: 회원 첫 결제 1회
 // 오픈 기념가(2026-10-02 사장님 결정): 표준 단품은 회원·비회원 모두 4,900원. 정가(originalPrice) 6,900원은 취소선으로 보여 준다.
 // 비회원에게만 6,900원을 받고 "회원은 4,900원"이라고 안내하던 방식이 결제 직전 이탈을 만들었다.
-// 기념가를 끝낼 때는 이 값을 6900 으로 되돌리면 회원 첫 결제 할인 안내가 다시 살아난다.
+// 회원 첫 결제 할인은 2026-10-15 사장님 결정으로 폐지했다(기념가를 바꿔도 다시 살아나지 않는다).
 export const LAUNCH_PRICE = 4900;
 
 /** 취소선으로 보여 줄 정가. 지금 가격보다 높을 때만 값이 있다. */
 export function listPrice(p: CatalogItem): number | null {
   return !p.isFree && p.originalPrice > p.price ? p.originalPrice : null;
-}
-
-/** 회원 첫 결제 할인이 실제로 더 싼 상품인가(기념가가 이미 그 가격이면 안내하지 않는다). */
-export function hasFirstPurchaseDiscount(p: CatalogItem): boolean {
-  return !p.isFree && p.tier === "standard" && p.type !== "SET" && p.price > FIRST_PURCHASE_PRICE;
 }
 
 export function isViewable(p: CatalogItem | undefined): p is CatalogItem {
@@ -77,9 +71,6 @@ export function formatWon(n: number): string {
 /** 화면 가격 표기의 유일한 출처(감사 B2). 서버 order route 의 계산 규칙과 반드시 같아야 한다. */
 export function priceLabel(p: CatalogItem): string {
   if (p.isFree) return "무료";
-  if (hasFirstPurchaseDiscount(p)) {
-    return `${formatWon(p.price)} · 회원 첫 결제 ${formatWon(FIRST_PURCHASE_PRICE)}`;
-  }
   return formatWon(p.price);
 }
 export function getPremiumProducts(): CatalogItem[] {
@@ -901,7 +892,7 @@ export function getProduct(id: string): CatalogItem | undefined {
   return CATALOG.find((p) => p.id === id);
 }
 
-/** 세트 구성 상품을 따로 살 때의 정가 합계(회원 첫 결제 할인 제외). 세트가 아니면 자기 가격. */
+/** 세트 구성 상품을 따로 살 때의 가격 합계. 세트가 아니면 자기 가격. */
 export function separatePrice(p: CatalogItem): number {
   if (p.type !== "SET") return p.price;
   return (p.items ?? []).reduce((sum, id) => sum + (getProduct(id)?.price ?? 0), 0);

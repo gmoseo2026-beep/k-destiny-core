@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  CATALOG, getProduct, priceLabel, isSellable, teaserCatalogIdFor, separatePrice, setsContaining, LAUNCH_PRICE, listPrice, hasFirstPurchaseDiscount,
+  CATALOG, getProduct, priceLabel, isSellable, teaserCatalogIdFor, separatePrice, setsContaining, LAUNCH_PRICE, listPrice,
   SEASON_PROMO_ENDS_AT, SEASON_PROMO_PRICES, seasonPriceAt, isOnSeasonPromo, discountBadge,
 } from "@/lib/catalog";
 import { PRODUCT_SPECS } from "@/lib/prompts/productSpecs";
@@ -85,9 +85,9 @@ describe("catalog 불변식", () => {
   });
 
   it("가격 라벨", () => {
-    // 기념가가 회원 첫 결제가와 같으면 "회원 첫 결제" 문구를 붙이지 않는다
+    // 회원 첫 결제 할인은 폐지(2026-10-15) — 라벨은 가격 하나뿐이다
     expect(priceLabel(getProduct("wealth")!)).toBe("4,900원");
-    expect(hasFirstPurchaseDiscount(getProduct("wealth")!)).toBe(false);
+    for (const p of CATALOG) expect(priceLabel(p)).not.toContain("첫 결제");
     expect(priceLabel(getProduct("set_love")!)).toBe("7,900원");
     expect(priceLabel(getProduct("free_personality")!)).toBe("무료");
   });

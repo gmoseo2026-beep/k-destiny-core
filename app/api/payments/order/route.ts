@@ -3,11 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { isSellableFor, FIRST_PURCHASE_PRICE } from "@/lib/catalog";
+import { isSellableFor } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { canPreview } from "@/lib/preview";
-import { isFirstPurchaseEligible } from "@/lib/payments/firstPurchase";
 import { campaignFromCookieHeader } from "@/lib/campaignLinks";
 
 function isValidEmail(email: string) {
@@ -78,11 +77,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      let amount = catalogItem.price;
+      // 회원·비회원 같은 가격(회원 첫 결제 할인은 2026-10-15 폐지)
+      const amount = catalogItem.price;
       const sessionUserId = session?.user?.id ?? null;
-      if (sessionUserId && catalogItem.tier === "standard" && catalogItem.type !== "SET") {
-        if (await isFirstPurchaseEligible(sessionUserId)) amount = Math.min(amount, FIRST_PURCHASE_PRICE);
-      }
 
       const { productType, productKey } = toStorageKey(catalogItem.id);
       

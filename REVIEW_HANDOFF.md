@@ -512,3 +512,13 @@
 - 조치 4: 쓰이지 않던 `lib/supabaseClient.ts` 삭제(서비스 롤 키 → anon 키 순으로 넘어가는 위험한 기본값).
 - 검증: tsc 0 · 바꾼 파일 lint 새 오류 0(register의 `any` 2건은 기존) · vitest 426 통과 · build exit 0.
 - 의심 지점: (1) 횟수 제한은 Upstash가 없으면 PM2 프로세스 메모리에 센다(재시작하면 초기화, 여러 프로세스면 프로세스별). (2) 남의 이메일로 로그인을 반복하면 그 사람의 이메일 로그인이 하루 막힐 수 있다(카카오·구글 로그인은 영향 없음). (3) `GET /api/compat?id=`는 id를 아는 사람에게 유료 결과를 돌려준다(id는 추측 불가한 cuid라 유지).
+
+---
+
+# 2026-10-15 · 회원 첫 결제 할인 폐지(사장님 결정)
+- 결정: 첫 결제 할인은 없앤다. 표준 단품은 회원·비회원 모두 오픈 기념가 4,900원(취소선 6,900원) 그대로.
+- 이유(코드 측): 지금은 기념가 = 첫 결제가(4,900)라 꺼져 있었지만, 기념가를 6,900원으로 되돌리면 자동으로 살아나는 구조였다.
+- 바꾼 것: 서버 주문 금액에서 할인 제거(`app/api/payments/order/route.ts`), `priceLabel`의 "회원 첫 결제" 꼬리·`hasFirstPurchaseDiscount`·`FIRST_PURCHASE_PRICE` 삭제(`lib/catalog.ts`), 결제창 "가입하면 첫 결제는" 안내, 맛보기 결제 카드·한도 화면·상품 상세의 첫 결제 표시, 회원 홈 `FirstPurchaseCard`와 `/api/user/first-purchase`, `lib/payments/firstPurchase.ts` 삭제, 약관 제9조의 "회원의 첫 결제 1회는 4,900원" 삭제.
+- 남긴 것: 관리자 화면의 "첫 결제(4,900원) 대 정가 결제" 집계는 과거 주문 분류용으로 `LEGACY_FIRST_PURCHASE_PRICE`(4,900)를 쓴다. 쓰이지 않는 `components/PricingClient.tsx`(`/pricing`은 홈으로 이동)의 옛 문구는 화면에 나오지 않아 그대로 뒀다.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 423 통과(첫 결제 안내 API 테스트 3건 삭제, 모든 상품 라벨에 "첫 결제"가 없다는 검사 추가, 결제한 적 없는 회원도 판매가 그대로 청구) · build exit 0.
+- 의심 지점: GA4 `first_purchase_banner_click`, `checkout_login_hint_click` 이벤트는 더 이상 나오지 않는다.

@@ -11,7 +11,6 @@ vi.mock("@/lib/prisma", () => ({ default: db, prisma: db }));
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(async () => session.current) }));
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({ authOptions: {} }));
 
-import { GET as FIRST_PURCHASE } from "@/app/api/user/first-purchase/route";
 import { POST as DAILY } from "@/app/api/fortune/daily/route";
 
 const dailyReq = () =>
@@ -22,23 +21,6 @@ const dailyReq = () =>
 beforeEach(() => {
   vi.clearAllMocks();
   session.current = null;
-});
-
-describe("회원 첫 결제 안내(/api/user/first-purchase)", () => {
-  it("비회원은 401", async () => {
-    expect((await FIRST_PURCHASE()).status).toBe(401);
-  });
-  it("오픈 기념가 동안은 첫 결제 안내를 띄우지 않는다(모두 4,900원이라 더 싼 상품이 없다)", async () => {
-    session.current = { user: { id: "u1" } };
-    db.order.findFirst.mockResolvedValueOnce(null);
-    const j = await (await FIRST_PURCHASE()).json();
-    expect(j).toEqual({ eligible: false, price: 4900 });
-  });
-  it("결제한 적 있으면 eligible=false", async () => {
-    session.current = { user: { id: "u1" } };
-    db.order.findFirst.mockResolvedValueOnce({ id: "o1" });
-    expect((await (await FIRST_PURCHASE()).json()).eligible).toBe(false);
-  });
 });
 
 describe("오늘의 운세(/api/fortune/daily) 회원 개방", () => {

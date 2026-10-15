@@ -1,7 +1,10 @@
 import prisma from "@/lib/prisma";
 import AdminDashboard from "./AdminDashboard";
 import { getAdminSessionOrThrow } from "@/lib/adminAuth";
-import { CATALOG, FIRST_PURCHASE_PRICE, getProduct } from "@/lib/catalog";
+import { CATALOG, getProduct } from "@/lib/catalog";
+
+// 회원 첫 결제 할인(2026-10-15 폐지) 시절의 결제가. 과거 주문을 분류할 때만 쓴다.
+const LEGACY_FIRST_PURCHASE_PRICE = 4900;
 import { toCatalogId } from "@/lib/productIdentity";
 import { resolveHidden } from "@/lib/catalogVisibility";
 import { fetchVisitorCount } from "@/lib/home/visitors";
@@ -320,7 +323,7 @@ async function loadAdminDashboardData() {
 
     const originalPrice = prod?.originalPrice || prod?.price || o.amount;
     // 첫 결제 할인 = 그 상품의 현재 판매가보다 싸게 결제된 4,900원(기념가로 모두 4,900원이면 해당 없음)
-    const isFirstDiscount = !isManual && o.amount === FIRST_PURCHASE_PRICE && (prod?.price ?? originalPrice) > o.amount;
+    const isFirstDiscount = !isManual && o.amount === LEGACY_FIRST_PURCHASE_PRICE && (prod?.price ?? originalPrice) > o.amount;
 
     const oTime = new Date(o.createdAt).getTime();
 

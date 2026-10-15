@@ -33,8 +33,7 @@ export default function PreviewLimitPanel({ product, sectionTitles, limit, onUnl
   }, [product.id, canSignup]);
 
   const strike = listPrice(product);
-  // 회원 첫 결제 문구가 붙는 경우엔 앞의 가격만 크게 보여 준다
-  const price = priceLabel(product).split(" · ")[0];
+  const price = priceLabel(product);
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col gap-5 pb-12 text-center">

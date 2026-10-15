@@ -21,8 +21,6 @@ export function trackTeaserUnlock(productId: string, source: TeaserUnlockSource)
   trackEvent("click_unlock_teaser", { productId, source });
 }
 
-const FIRST_TAG = " · 회원 첫 결제 ";
-
 interface TeaserUnlockPanelProps {
   product: CatalogItem;
   lockedTitles: string[];
@@ -30,8 +28,7 @@ interface TeaserUnlockPanelProps {
 }
 
 export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: TeaserUnlockPanelProps) {
-  const label = priceLabel(product);
-  const [price, firstPrice] = label.includes(FIRST_TAG) ? label.split(FIRST_TAG) : [label, null];
+  const price = priceLabel(product);
   const lockedCount = lockedTitles.length;
   const strike = listPrice(product);
 
@@ -101,7 +98,6 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
               </span>
             )}
             <span className="block text-2xl font-black text-ink">{price}</span>
-            {firstPrice && <span className="text-[11px] font-bold text-coral-deep">회원 첫 결제는 {firstPrice}</span>}
           </div>
         </div>
 

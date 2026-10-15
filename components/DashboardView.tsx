@@ -10,7 +10,6 @@ import { subscribeToPush } from "@/lib/push";
 import { CatalogItem, priceLabel } from "@/lib/catalog";
 import DailyFortuneCard from "@/components/member/DailyFortuneCard";
 import QuickPreviewRow from "@/components/member/QuickPreviewRow";
-import FirstPurchaseCard from "@/components/member/FirstPurchaseCard";
 import ResumeCard from "@/components/member/ResumeCard";
 import MarketingConsentCard from "@/components/member/MarketingConsentCard";
 import { trackEvent } from "@/lib/gtag";
@@ -323,9 +322,6 @@ export default function DashboardView({ effectiveProducts }: { effectiveProducts
           </Link>
 
         </div>
-
-        {/* 회원 첫 결제 혜택(아직 결제 전인 회원만) */}
-        <FirstPurchaseCard />
 
         {/* 4. 이어서 보면 좋은 리포트 (가로 카드 3개) */}
         {recommendedReports.length > 0 && (

@@ -39,7 +39,7 @@ describe("POST /api/payments/order route contract tests", () => {
     expect(body.error).toContain("기간권 판매가 종료되었습니다");
   });
 
-  // 2. 게스트가 wealth 주문 → 400(숨김). V2 미리보기 이메일 세션이면 성공하고 amount는 첫 결제 기준대로 나온다.
+  // 2. 게스트가 wealth 주문 → 400(숨김). V2 미리보기 이메일 세션이면 성공하고 amount는 판매가 그대로다.
   it("case 2: hidden wealth order returns 400 for guest, succeeds with preview session", async () => {
     // 출시 후 코드 기본값은 전부 공개 → 어드민이 wealth 를 숨긴 상태를 만든다
     db.productVisibility.findMany.mockResolvedValue([{ catalogId: "wealth", visible: false }]);
