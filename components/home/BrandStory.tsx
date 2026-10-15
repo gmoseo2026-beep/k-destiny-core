@@ -35,7 +35,7 @@ export default function BrandStory() {
           <span className="bg-white/90 text-plum-deep text-xs font-bold px-3 py-1 rounded-full border border-[#E8DCE5] shadow-2xs">
             배려 +3 🌿
           </span>
-          <span className="bg-white/90 text-[#C98A0B] text-xs font-bold px-3 py-1 rounded-full border border-[#FBEEC8] shadow-2xs">
+          <span className="bg-white/90 text-[#8A5A00] text-xs font-bold px-3 py-1 rounded-full border border-[#FBEEC8] shadow-2xs">
             티키타카 +2 💬
           </span>
         </div>

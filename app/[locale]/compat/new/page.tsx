@@ -86,7 +86,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
         <h1 className="text-2xl font-black text-ink tracking-tight">
           우리, 얼마나 잘 맞을까?
         </h1>
-        <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
+        <p className="text-xs font-semibold text-caption mt-1.5">
           두 사람의 생년월일만 넣으면 30초 만에 분석 완료 🔮
         </p>
       </div>

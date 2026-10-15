@@ -191,7 +191,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
         <h1 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
           데일리 코치 & 주간 운세
         </h1>
-        <p className="text-xs sm:text-sm text-[#8A8291] mt-1.5">
+        <p className="text-xs sm:text-sm text-caption mt-1.5">
           매일 실천하는 오늘의 조언과 이번 주 좋은 날·주의할 타이밍
         </p>
       </div>
@@ -285,7 +285,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
           </div>
           <div className="text-left">
             <h4 className="text-xs sm:text-sm font-bold text-ink">콩닥 소식 알림</h4>
-            <p className="text-[11px] text-[#8A8291] mt-0.5">새 운세·이벤트 소식이 생기면 알려드려요</p>
+            <p className="text-[11px] text-caption mt-0.5">새 운세·이벤트 소식이 생기면 알려드려요</p>
           </div>
         </div>
         <button
@@ -376,19 +376,19 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 blur-[4px] select-none pointer-events-none opacity-40">
               <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/40">
                 <h4 className="font-bold text-xs text-coral mb-1">애정운</h4>
-                <p className="text-xs text-[#8A8291]">이번 주 연애와 연락 타이밍 흐름...</p>
+                <p className="text-xs text-caption">이번 주 연애와 연락 타이밍 흐름...</p>
               </div>
               <div className="bg-white p-4 rounded-2xl border border-[#FFD9E0]/40">
                 <h4 className="font-bold text-xs text-[#FFC24B] mb-1">금전운</h4>
-                <p className="text-xs text-[#8A8291]">소비와 수익이 생기는 길일...</p>
+                <p className="text-xs text-caption">소비와 수익이 생기는 길일...</p>
               </div>
               <div className="bg-cream p-4 rounded-2xl border border-[#FFD9E0]/40">
                 <h4 className="font-bold text-xs text-[#6A2C70] mb-1">가장 좋은 요일: 수요일</h4>
-                <p className="text-xs text-[#8A8291]">중요한 만남을 갖기 좋은 날...</p>
+                <p className="text-xs text-caption">중요한 만남을 갖기 좋은 날...</p>
               </div>
               <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
                 <h4 className="font-bold text-xs text-red-500 mb-1">주의할 점</h4>
-                <p className="text-xs text-[#8A8291]">감정 소모를 피해야 할 순간...</p>
+                <p className="text-xs text-caption">감정 소모를 피해야 할 순간...</p>
               </div>
             </div>
           </div>
@@ -420,7 +420,7 @@ export default function WeeklyFortuneClient({ locale, compatId }: WeeklyFortuneC
             </Link>
             <Link
               href={`/${locale}#products`}
-              className="text-xs font-semibold text-[#8A8291] hover:text-ink py-1 transition-colors"
+              className="text-xs font-semibold text-caption hover:text-ink py-1 transition-colors"
             >
               전체 상품 보기 →
             </Link>

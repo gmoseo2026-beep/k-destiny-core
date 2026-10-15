@@ -180,7 +180,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
           <button
             onClick={onClose}
             aria-label="Close login dialog"
-            className="absolute top-4 right-4 p-2 rounded-full bg-cream border border-ink/10 text-[#8A8291] hover:text-ink hover:bg-[#FFF0EA] transition-colors z-20"
+            className="absolute top-4 right-4 p-2 rounded-full bg-cream border border-ink/10 text-caption hover:text-ink hover:bg-[#FFF0EA] transition-colors z-20"
           >
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -279,7 +279,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
               </motion.button>
 
               {inApp && (
-                <p className="mt-1.5 text-center text-[11px] text-[#8A8291] font-medium leading-relaxed">
+                <p className="mt-1.5 text-center text-[11px] text-caption font-medium leading-relaxed">
                   {locale === 'ko'
                     ? '구글 로그인은 브라우저에서만 돼요. 위 카카오로 로그인하거나, 구글은 눌러서 브라우저로 열어 주세요.'
                     : 'Google login is only available in external browsers. Please use Kakao above, or tap Google to open your browser.'}
@@ -290,7 +290,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
             {/* Divider */}
             <div className="flex items-center gap-4 my-6">
               <div className="h-px flex-1 bg-ink/10" />
-              <span className="text-xs text-[#8A8291] font-sans uppercase tracking-widest">{t("or")}</span>
+              <span className="text-xs text-caption font-sans uppercase tracking-widest">{t("or")}</span>
               <div className="h-px flex-1 bg-ink/10" />
             </div>
 
@@ -360,7 +360,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, redirectTo }: Au
             {/* Toggle Sign In / Sign Up */}
             <button
               onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-              className="w-full mt-4 text-center text-sm text-[#8A8291] hover:text-coral transition-colors font-sans"
+              className="w-full mt-4 text-center text-sm text-caption hover:text-coral transition-colors font-sans"
             >
               {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
             </button>

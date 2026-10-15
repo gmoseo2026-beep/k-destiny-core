@@ -58,7 +58,7 @@ export default function FortuneLoading({
         <h2 className="mt-4 text-base sm:text-lg font-black text-ink min-h-[28px] flex items-center justify-center transition-all duration-300">
           {steps[stepIndex] || "분석을 진행하는 중…"}
         </h2>
-        <p className="text-xs text-[#8A8291] mt-1 font-medium">
+        <p className="text-xs text-caption mt-1 font-medium">
           {subMessage}
         </p>
 
@@ -70,7 +70,7 @@ export default function FortuneLoading({
               style={{ width: `${Math.round(progress)}%` }}
             />
           </div>
-          <div className="flex justify-between items-center text-[10px] text-[#8A8291] mt-1.5 font-bold px-0.5">
+          <div className="flex justify-between items-center text-[10px] text-caption mt-1.5 font-bold px-0.5">
             <span>운세 리포트 분석 중</span>
             <span className="text-coral font-extrabold">{Math.round(progress)}%</span>
           </div>

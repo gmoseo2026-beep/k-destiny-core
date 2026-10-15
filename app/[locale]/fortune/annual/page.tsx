@@ -36,7 +36,7 @@ export default async function AnnualFortunePage({
       <header className="w-full max-w-md md:max-w-2xl flex items-center justify-between mb-6">
         <Link
           href={`/${locale}`}
-          className="flex items-center gap-1.5 text-xs font-bold text-[#8A8291] hover:text-coral transition-colors group"
+          className="flex items-center gap-1.5 text-xs font-bold text-caption hover:text-coral transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>홈으로</span>
@@ -46,7 +46,7 @@ export default async function AnnualFortunePage({
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">{year} 총운</span>
+            콩닥 <span className="text-xs font-semibold text-caption">{year} 총운</span>
           </span>
         </Link>
         <div className="w-12" /> {/* Balanced spacer */}

@@ -673,7 +673,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <div className="inline-block bg-plum text-gold text-xs font-black px-4 py-1.5 rounded-full shadow-md uppercase tracking-widest">
               Premium Reading
             </div>
-            <p className="text-[11px] text-[#8A8291] mt-1.5 font-medium">
+            <p className="text-[11px] text-caption mt-1.5 font-medium">
               열람 유효기간: 결제일로부터 90일간 이용 가능
             </p>
           </div>
@@ -944,7 +944,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4">
           <div className="max-w-md md:max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div className="flex flex-col text-left">
-              <span className="text-[10px] sm:text-xs font-bold text-[#8A8291] flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs font-bold text-caption flex items-center gap-1">
                 <Lock className="w-3 h-3 text-coral" />
                 전체 심층 리포트 열기
               </span>
@@ -974,7 +974,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       <div className="mt-8 text-center">
         <Link
           href={refToken ? `/${locale}/compat/new?ref=${encodeURIComponent(refToken)}` : `/${locale}/compat/new`}
-          className="text-xs font-semibold text-[#8A8291] hover:text-coral underline underline-offset-4 transition-colors"
+          className="text-xs font-semibold text-caption hover:text-coral underline underline-offset-4 transition-colors"
         >
           다른 사람과의 궁합도 새로 알아보기 →
         </Link>

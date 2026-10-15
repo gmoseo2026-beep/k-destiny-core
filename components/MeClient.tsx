@@ -103,7 +103,7 @@ export default function MeClient({ locale }: MeClientProps) {
     return (
       <div className="w-full max-w-md py-16 flex flex-col items-center justify-center gap-3 text-plum">
         <KongdakMascot size={64} animate="bounce" expression="flutter" />
-        <p className="text-sm font-bold text-[#8A8291]">내 보관함을 열고 있어요...</p>
+        <p className="text-sm font-bold text-caption">내 보관함을 열고 있어요...</p>
       </div>
     );
   }

@@ -122,7 +122,7 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
       >
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col text-left">
-            <span className="flex items-center gap-1 truncate text-[11px] font-bold text-[#8A8291]">
+            <span className="flex items-center gap-1 truncate text-[11px] font-bold text-caption">
               <Lock className="h-3 w-3 shrink-0 text-coral" />
               {product.name} 전체 보기
             </span>

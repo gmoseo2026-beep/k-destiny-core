@@ -43,7 +43,7 @@ export default async function WeeklyFortunePage({
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-[#6A2C70]">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">운세</span>
+            콩닥 <span className="text-xs font-semibold text-caption">운세</span>
           </span>
         </Link>
       </header>
@@ -52,7 +52,7 @@ export default async function WeeklyFortunePage({
         <h1 className="text-2xl font-black text-ink tracking-tight">
           {compatId ? "우리 커플의 이번 주 운세" : "나의 이번 주 종합 운세"}
         </h1>
-        <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
+        <p className="text-xs font-semibold text-caption mt-1.5">
           매주 월요일 0시, 당신을 위한 새로운 흐름이 업데이트됩니다
         </p>
       </div>

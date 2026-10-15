@@ -172,7 +172,7 @@ export default function LoginPage() {
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-ink mb-2">
             {t("title")}
           </h1>
-          <p className="text-xs sm:text-sm text-[#8A8291] font-medium leading-relaxed max-w-xs mx-auto">
+          <p className="text-xs sm:text-sm text-caption font-medium leading-relaxed max-w-xs mx-auto">
             {t("subtitle")}
           </p>
         </motion.div>
@@ -270,7 +270,7 @@ export default function LoginPage() {
             </motion.button>
 
             {inApp && (
-              <p className="mt-1.5 text-center text-[11px] text-[#8A8291] font-medium leading-relaxed">
+              <p className="mt-1.5 text-center text-[11px] text-caption font-medium leading-relaxed">
                 {locale === 'ko'
                   ? '구글 로그인은 브라우저에서만 돼요. 위 카카오로 로그인하거나, 구글은 눌러서 브라우저로 열어 주세요.'
                   : 'Google login is only available in external browsers. Please use Kakao above, or tap Google to open your browser.'}
@@ -291,7 +291,7 @@ export default function LoginPage() {
               />
               <span className="min-w-0">
                 <span className="block text-xs font-bold text-ink">(선택) 혜택·새 소식 받기</span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-[#8A8291]">
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-caption">
                   할인·이벤트·새 리포트 소식을 이메일 등으로 보내드려요. 체크하지 않아도 가입할 수 있고, 보관함에서 언제든 끌 수 있어요.
                 </span>
               </span>
@@ -301,7 +301,7 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
             <div className="h-px flex-1 bg-[#FFD9E0]" />
-            <span className="text-[11px] text-[#8A8291] font-bold uppercase tracking-wider">{t("or")}</span>
+            <span className="text-[11px] text-caption font-bold uppercase tracking-wider">{t("or")}</span>
             <div className="h-px flex-1 bg-[#FFD9E0]" />
           </div>
 
@@ -371,7 +371,7 @@ export default function LoginPage() {
           {/* Toggle Sign In / Sign Up */}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-            className="w-full mt-4 text-center text-xs text-[#8A8291] hover:text-coral font-semibold transition-colors"
+            className="w-full mt-4 text-center text-xs text-caption hover:text-coral font-semibold transition-colors"
           >
             {isSignUp ? t("toggle_to_signin") : t("toggle_to_signup")}
           </button>

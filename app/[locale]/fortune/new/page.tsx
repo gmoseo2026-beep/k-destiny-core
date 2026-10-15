@@ -85,7 +85,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
           <h1 className="text-2xl font-black text-ink tracking-tight">
             내 사주 정보 입력
           </h1>
-          <p className="text-xs font-semibold text-[#8A8291] mt-1.5">
+          <p className="text-xs font-semibold text-caption mt-1.5">
             가장 정확한 사주 풀이를 위해 생년월일을 입력해주세요 ✨
           </p>
         </div>

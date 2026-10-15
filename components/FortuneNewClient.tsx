@@ -402,7 +402,7 @@ export default function FortuneNewClient({
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs font-black text-coral">{priceLabel(rec)}</span>
-                    <span className="text-[11px] font-bold text-[#8A8291]">자세히 →</span>
+                    <span className="text-[11px] font-bold text-caption">자세히 →</span>
                   </div>
                 </Link>
               ))}

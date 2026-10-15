@@ -1051,7 +1051,7 @@ export default function AnnualFortuneClient({
 
       {/* 6. Friendly Disclaimer */}
       <footer className="text-center mt-3 px-4">
-        <p className="text-[11px] text-[#8A8291] leading-relaxed">
+        <p className="text-[11px] text-caption leading-relaxed">
           ※ 콩닥의 {year} 총운 리포트는 정통 사주 데이터를 바탕으로 오락 및 자기이해를 위해 다정하게 제공되는 참고 정보이며, 단정적 미래를 보장하지 않습니다.
         </p>
       </footer>
@@ -1061,7 +1061,7 @@ export default function AnnualFortuneClient({
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4">
           <div className="max-w-md md:max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div className="flex flex-col text-left">
-              <span className="text-[10px] sm:text-xs font-bold text-[#8A8291] flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs font-bold text-caption flex items-center gap-1">
                 <Lock className="w-3 h-3 text-coral" />
                 {year} 총운 전체 열기
               </span>

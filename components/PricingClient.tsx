@@ -45,7 +45,7 @@ export default function PricingClient({ locale }: { locale: string }) {
         <h1 className="text-3xl sm:text-4xl font-black text-ink tracking-tight mb-3">
           {t("title")}
         </h1>
-        <p className="text-[#8A8291] text-sm sm:text-base font-medium">
+        <p className="text-caption text-sm sm:text-base font-medium">
           {t("subtitle")}
         </p>
       </div>
@@ -57,13 +57,13 @@ export default function PricingClient({ locale }: { locale: string }) {
         <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xs hover:shadow-md border border-[#FFD9E0]/60 flex flex-col items-center text-center transition-all duration-150 hover:-translate-y-0.5">
           {/* Tag Area */}
           <div className="h-7 mb-2 flex items-center justify-center">
-            <span className="text-[11px] font-bold text-[#8A8291] bg-gray-100 px-3 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-caption bg-gray-100 px-3 py-1 rounded-full">
               체험형 단건
             </span>
           </div>
 
           <h2 className="text-xl font-black text-ink mb-2">{t("product_single_title")}</h2>
-          <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_single_desc")}</p>
+          <p className="text-xs sm:text-sm text-caption min-h-[38px] mb-5 leading-relaxed">{t("product_single_desc")}</p>
           
           {/* Price Box */}
           <div className="w-full bg-cream/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
@@ -115,7 +115,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           </div>
 
           <h2 className="text-xl font-black text-[#6A2C70] mb-2">{t("product_1m_title")}</h2>
-          <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_1m_desc")}</p>
+          <p className="text-xs sm:text-sm text-caption min-h-[38px] mb-5 leading-relaxed">{t("product_1m_desc")}</p>
           
           {/* Price Box */}
           <div className="w-full bg-cream border border-[#FF8AA1]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
@@ -167,7 +167,7 @@ export default function PricingClient({ locale }: { locale: string }) {
           </div>
 
           <h2 className="text-xl font-black text-[#6A2C70] mb-2">{t("product_3m_title")}</h2>
-          <p className="text-xs sm:text-sm text-[#8A8291] min-h-[38px] mb-5 leading-relaxed">{t("product_3m_desc")}</p>
+          <p className="text-xs sm:text-sm text-caption min-h-[38px] mb-5 leading-relaxed">{t("product_3m_desc")}</p>
           
           {/* Price Box */}
           <div className="w-full bg-cream/60 border border-[#FFD9E0]/40 rounded-2xl py-4 px-3 mb-6 flex flex-col items-center">
@@ -224,7 +224,7 @@ export default function PricingClient({ locale }: { locale: string }) {
             <h3 className="text-lg sm:text-xl font-black text-ink">
               2026 신년 총운 리포트 (단건)
             </h3>
-            <p className="text-xs sm:text-sm text-[#8A8291] mt-0.5">
+            <p className="text-xs sm:text-sm text-caption mt-0.5">
               5대 영역 심층 분석 · 12개월 타임라인 · 행운 포인트를 90일간 언제든 열람
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function PricingClient({ locale }: { locale: string }) {
               첫 결제 1,900원
             </span>
             <div className="text-xl sm:text-2xl font-black text-ink">
-              2,900<span className="text-sm font-normal text-[#8A8291]">원</span>
+              2,900<span className="text-sm font-normal text-caption">원</span>
             </div>
           </div>
           <button
@@ -279,7 +279,7 @@ export default function PricingClient({ locale }: { locale: string }) {
             <span>{t("info_sub")}</span>
           </li>
         </ul>
-        <div className="p-3 bg-cream/80 rounded-2xl border border-[#FFD9E0]/40 text-xs text-[#8A8291] leading-relaxed">
+        <div className="p-3 bg-cream/80 rounded-2xl border border-[#FFD9E0]/40 text-xs text-caption leading-relaxed">
           {t("info_disclaimer")}
         </div>
       </div>

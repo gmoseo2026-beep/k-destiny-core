@@ -50,7 +50,7 @@ export default function KongdakHero({ locale }: KongdakHeroProps) {
             <span>우리 궁합 무료로 보기</span>
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-150" />
           </Link>
-          <p className="text-[11px] text-[#8A8291] font-medium">
+          <p className="text-[11px] text-caption font-medium">
             회원가입 없이 30초면 바로 확인 가능해요
           </p>
 

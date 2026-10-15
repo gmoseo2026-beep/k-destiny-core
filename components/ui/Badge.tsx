@@ -12,7 +12,7 @@ export function Badge({ className = '', variant = 'default', icon, children, ...
   
   const variants = {
     popular: 'bg-coral text-white shadow-2xs',
-    new: 'bg-[#FF8AA1] text-white shadow-2xs',
+    new: 'bg-[#E0245A] text-white shadow-2xs',
     default: 'bg-surface-soft text-text-2 border border-line',
   };
 

@@ -26,14 +26,14 @@ export default async function MePage({ params }: PageProps) {
             콩
           </div>
           <span className="font-extrabold text-lg tracking-tight text-plum">
-            콩닥 <span className="text-xs font-semibold text-[#8A8291]">kongdak</span>
+            콩닥 <span className="text-xs font-semibold text-caption">kongdak</span>
           </span>
         </Link>
       </header>
 
       <MeClient locale={locale} />
 
-      <footer className="w-full max-w-md text-center text-xs text-[#8A8291] mt-8">
+      <footer className="w-full max-w-md text-center text-xs text-caption mt-8">
         오락 및 자기이해 목적의 서비스입니다.
       </footer>
     </main>

@@ -22,7 +22,7 @@ function badgeFor(p: CatalogItem): { text: string; cls: string } | null {
   if (p.id === "secret_love") return { text: "19", cls: "bg-plum-deep text-[#F2D08F]" };
   if (p.isFree) return { text: "무료", cls: "bg-coral text-white" };
   if (isOnSeasonPromo(p.id)) return { text: "특가", cls: "bg-[#FFC24B] text-ink" };
-  if (p.isNew) return { text: "NEW", cls: "bg-[#FF8AA1] text-white" };
+  if (p.isNew) return { text: "NEW", cls: "bg-[#E0245A] text-white" };
   return null;
 }
 
