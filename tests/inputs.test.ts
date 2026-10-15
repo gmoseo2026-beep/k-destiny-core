@@ -5,6 +5,8 @@ import {
   parsePersonInput,
   parseDateSelectionInput,
   parseChildNamingInput,
+  buildDateSelectionPayload,
+  type RawBirthFields,
 } from "@/lib/validation/inputs";
 
 describe("Input Validation", () => {
@@ -81,6 +83,90 @@ describe("Input Validation", () => {
     ];
     const r1 = parseDateSelectionInput({ purpose: "MOVING", start: "2026-05-11", end: "2026-05-20", people, excludeDates: ["2026-05-21"] }, today);
     expect(r1).toBeNull(); // outside range
+  });
+
+  it("buildDateSelectionPayload blocks empty birth fields and accepts complete inputs", () => {
+    const today = "2026-05-10";
+    const emptyM: RawBirthFields = { name: "", year: "", month: "", day: "", gender: "M", ampm: "", hour: "1", min: "00" };
+    const emptyF: RawBirthFields = { name: "", year: "", month: "", day: "", gender: "F", ampm: "", hour: "1", min: "00" };
+    const filledM: RawBirthFields = { name: "", year: "1993", month: "4", day: "8", gender: "M", ampm: "AM", hour: "9", min: "30" };
+    const filledF: RawBirthFields = { name: "", year: "1995", month: "11", day: "22", gender: "F", ampm: "", hour: "1", min: "00" };
+
+    // 1. 둘 다 빈 초기값이면 null (제출 차단)
+    expect(
+      buildDateSelectionPayload({
+        purpose: "WEDDING",
+        start: "2026-05-11",
+        end: "2026-06-10",
+        person1: emptyM,
+        person2: emptyF,
+        includePerson2: true,
+        weekdays: [5, 6, 0],
+        excludeDates: [],
+        today,
+      }),
+    ).toBeNull();
+
+    // 2. 결혼(WEDDING)에서 첫 번째 사람만 채우고 두 번째 사람이 비어 있으면 null
+    expect(
+      buildDateSelectionPayload({
+        purpose: "WEDDING",
+        start: "2026-05-11",
+        end: "2026-06-10",
+        person1: filledM,
+        person2: emptyF,
+        includePerson2: true,
+        weekdays: [5, 6, 0],
+        excludeDates: [],
+        today,
+      }),
+    ).toBeNull();
+
+    // 3. 이사(MOVING)에서 동반자 포함(includePerson2=true)인데 두 번째 사람이 비어 있으면 null
+    expect(
+      buildDateSelectionPayload({
+        purpose: "MOVING",
+        start: "2026-05-11",
+        end: "2026-06-10",
+        person1: filledM,
+        person2: emptyF,
+        includePerson2: true,
+        weekdays: [5, 6, 0],
+        excludeDates: [],
+        today,
+      }),
+    ).toBeNull();
+
+    // 4. 이사(MOVING)에서 1인(includePerson2=false)이고 첫 번째 사람이 채워지면 통과 (빈 이름은 "나")
+    const moving1 = buildDateSelectionPayload({
+      purpose: "MOVING",
+      start: "2026-05-11",
+      end: "2026-06-10",
+      person1: filledM,
+      person2: emptyF,
+      includePerson2: false,
+      weekdays: [5, 6, 0],
+      excludeDates: [],
+      today,
+    });
+    expect(moving1?.people).toEqual([{ name: "나", dob: "1993-04-08", time: "09:30", gender: "M" }]);
+
+    // 5. 결혼(WEDDING)에서 두 사람 모두 채워지면 통과
+    const wedding2 = buildDateSelectionPayload({
+      purpose: "WEDDING",
+      start: "2026-05-11",
+      end: "2026-06-10",
+      person1: filledM,
+      person2: filledF,
+      includePerson2: true,
+      weekdays: [5, 6, 0],
+      excludeDates: [],
+      today,
+    });
+    expect(wedding2?.people).toEqual([
+      { name: "나", dob: "1993-04-08", time: "09:30", gender: "M" },
+      { name: "나", dob: "1995-11-22", time: null, gender: "F" },
+    ]);
   });
 
   it("formatBirthInput & parseBirthInput roundtrip", async () => {
@@ -165,3 +251,4 @@ describe("작명 입력 — 법정대리인 동의(만 14세 미만 아동 정�
     expect(parseChildNamingInput({ ...raw, guardianConsent: true }, surnames, now)?.guardianConsent).toBe(true);
   });
 });
+

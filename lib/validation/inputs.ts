@@ -190,3 +190,51 @@ export function parseDateSelectionInput(raw: unknown, today: string): DateSelect
 
   return { purpose, start: r.start, end: r.end, people, weekdays, excludeDates };
 }
+
+export interface RawBirthFields {
+  name: string;
+  year: string;
+  month: string;
+  day: string;
+  gender: Gender;
+  ampm: string;
+  hour: string;
+  min: string;
+}
+
+function formatRawBirth(v: RawBirthFields): PersonInput {
+  const mStr = v.month.padStart(2, "0");
+  const dStr = v.day.padStart(2, "0");
+  const dob = `${v.year}-${mStr}-${dStr}`;
+  let time: string | null = null;
+  if (v.ampm) {
+    let h = parseInt(v.hour, 10) || 0;
+    if (v.ampm === "PM" && h < 12) h += 12;
+    if (v.ampm === "AM" && h === 12) h = 0;
+    time = `${String(h).padStart(2, "0")}:${v.min.padStart(2, "0")}`;
+  }
+  return { name: v.name.trim() || "나", dob, time, gender: v.gender };
+}
+
+export function buildDateSelectionPayload(args: {
+  purpose: SelectablePurpose;
+  start: string;
+  end: string;
+  person1: RawBirthFields;
+  person2: RawBirthFields;
+  includePerson2: boolean;
+  weekdays: number[];
+  excludeDates: string[];
+  today: string;
+}): DateSelectionInput | null {
+  const { purpose, start, end, person1, person2, includePerson2, weekdays, excludeDates, today } = args;
+  if (!start || !end) return null;
+  if (!person1.year || !person1.month || !person1.day) return null;
+  const people: PersonInput[] = [formatRawBirth(person1)];
+  if (purpose === "WEDDING" || includePerson2) {
+    if (!person2.year || !person2.month || !person2.day) return null;
+    people.push(formatRawBirth(person2));
+  }
+  return parseDateSelectionInput({ purpose, start, end, people, weekdays, excludeDates }, today);
+}
+

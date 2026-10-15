@@ -13,7 +13,7 @@ import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/c
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { savePendingInput, loadPendingInput } from "@/lib/reportHandoff";
+import { savePendingInput, loadPendingInput, loadLastCouple, loadLastPerson } from "@/lib/reportHandoff";
 import { trackEvent } from "@/lib/gtag";
 import surnamesData from "@/data/naming/surnames.json";
 import {
@@ -22,6 +22,7 @@ import {
   PURPOSES,
   type SelectablePurpose,
   todayKST,
+  buildDateSelectionPayload,
 } from "@/lib/validation/inputs";
 import type { Daeun2027Teaser, NamingTeaser, DateSelectionTeaser } from "@/lib/premium/teasers";
 
@@ -142,23 +143,23 @@ export function PremiumNewClient({
   const [startDate, setStartDate] = useState(tomorrowStr);
   const [endDate, setEndDate] = useState(defaultEndStr);
   const [datePerson1, setDatePerson1] = useState<BirthValues>({
-    name: "첫 번째 분",
-    year: "1994",
-    month: "6",
-    day: "15",
+    name: "",
+    year: "",
+    month: "",
+    day: "",
     gender: "M",
-    ampm: "AM",
-    hour: "10",
+    ampm: "",
+    hour: "1",
     min: "00",
   });
   const [datePerson2, setDatePerson2] = useState<BirthValues>({
-    name: "두 번째 분",
-    year: "1996",
-    month: "9",
-    day: "20",
+    name: "",
+    year: "",
+    month: "",
+    day: "",
     gender: "F",
-    ampm: "PM",
-    hour: "2",
+    ampm: "",
+    hour: "1",
     min: "00",
   });
   const [includePerson2, setIncludePerson2] = useState(true);
@@ -171,48 +172,78 @@ export function PremiumNewClient({
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const pending = loadPendingInput(product.id);
-    if (!pending || typeof pending !== "object") return;
-    const p = pending as Record<string, unknown>;
+    if (pending && typeof pending === "object") {
+      const p = pending as Record<string, unknown>;
 
-    if (is2027 && p.dob) {
-      const restored = parseBirthInput(p as { name?: string | null; dob?: string | null; time?: string | null; gender?: string | null });
-      if (restored.year && restored.month && restored.day) {
-        queueMicrotask(() => setPersonValues(restored));
+      if (is2027 && p.dob) {
+        const restored = parseBirthInput(p as { name?: string | null; dob?: string | null; time?: string | null; gender?: string | null });
+        if (restored.year && restored.month && restored.day) {
+          queueMicrotask(() => setPersonValues(restored));
+        }
+      } else if (isNaming && p.surnameHangul) {
+        queueMicrotask(() => {
+          setSurname(String(p.surnameHangul));
+          setSurnameHanja(String(p.surnameHanja));
+          setNamingGender((p.gender as "M" | "F") || "M");
+          if (typeof p.dob === "string") {
+            const parts = p.dob.split("-");
+            if (parts[0]) setNamingDobYear(parts[0]);
+            if (parts[1]) setNamingDobMonth(String(parseInt(parts[1], 10)));
+            if (parts[2]) setNamingDobDay(String(parseInt(parts[2], 10)));
+          }
+          if (p.dollim && typeof p.dollim === "object") {
+            const d = p.dollim as { syllable: string; position: 1 | 2; hanja: string | null };
+            setHasDollim(true);
+            setDollimSyllable(d.syllable || "");
+            setDollimPosition(d.position || 1);
+            setDollimHanja(d.hanja || "");
+          }
+          if (Array.isArray(p.tags)) {
+            setSelectedTags(p.tags as NamingTag[]);
+          }
+          if (Array.isArray(p.avoidSyllables)) {
+            setAvoidSyllables(p.avoidSyllables as string[]);
+          }
+          if (p.guardianConsent === true) setGuardianConsent(true);
+        });
+      } else if (isDates && p.purpose) {
+        queueMicrotask(() => {
+          setPurpose(p.purpose as SelectablePurpose);
+          if (typeof p.start === "string") setStartDate(p.start);
+          if (typeof p.end === "string") setEndDate(p.end);
+          if (Array.isArray(p.weekdays)) setSelectedWeekdays(p.weekdays as number[]);
+          if (Array.isArray(p.excludeDates)) setExcludeDates(p.excludeDates as string[]);
+          if (Array.isArray(p.people)) {
+            const p1 = p.people[0] as { name?: string | null; dob?: string | null; time?: string | null; gender?: string | null } | undefined;
+            const p2 = p.people[1] as { name?: string | null; dob?: string | null; time?: string | null; gender?: string | null } | undefined;
+            if (p1?.dob) setDatePerson1(parseBirthInput(p1));
+            if (p2?.dob) {
+              setDatePerson2(parseBirthInput(p2));
+              setIncludePerson2(true);
+            } else if (p.purpose !== "WEDDING") {
+              setIncludePerson2(false);
+            }
+          }
+        });
       }
-    } else if (isNaming && p.surnameHangul) {
-      queueMicrotask(() => {
-        setSurname(String(p.surnameHangul));
-        setSurnameHanja(String(p.surnameHanja));
-        setNamingGender((p.gender as "M" | "F") || "M");
-        if (typeof p.dob === "string") {
-          const parts = p.dob.split("-");
-          if (parts[0]) setNamingDobYear(parts[0]);
-          if (parts[1]) setNamingDobMonth(String(parseInt(parts[1], 10)));
-          if (parts[2]) setNamingDobDay(String(parseInt(parts[2], 10)));
-        }
-        if (p.dollim && typeof p.dollim === "object") {
-          const d = p.dollim as { syllable: string; position: 1 | 2; hanja: string | null };
-          setHasDollim(true);
-          setDollimSyllable(d.syllable || "");
-          setDollimPosition(d.position || 1);
-          setDollimHanja(d.hanja || "");
-        }
-        if (Array.isArray(p.tags)) {
-          setSelectedTags(p.tags as NamingTag[]);
-        }
-        if (Array.isArray(p.avoidSyllables)) {
-          setAvoidSyllables(p.avoidSyllables as string[]);
-        }
-        if (p.guardianConsent === true) setGuardianConsent(true);
-      });
-    } else if (isDates && p.purpose) {
-      queueMicrotask(() => {
-        setPurpose(p.purpose as SelectablePurpose);
-        if (typeof p.start === "string") setStartDate(p.start);
-        if (typeof p.end === "string") setEndDate(p.end);
-        if (Array.isArray(p.weekdays)) setSelectedWeekdays(p.weekdays as number[]);
-        if (Array.isArray(p.excludeDates)) setExcludeDates(p.excludeDates as string[]);
-      });
+      return;
+    }
+
+    if (isDates) {
+      const couple = loadLastCouple();
+      if (couple) {
+        queueMicrotask(() => {
+          setDatePerson1(parseBirthInput(couple.a));
+          setDatePerson2(parseBirthInput(couple.b));
+        });
+        return;
+      }
+      const lastPerson = loadLastPerson();
+      if (lastPerson) {
+        queueMicrotask(() => {
+          setDatePerson1(parseBirthInput(lastPerson));
+        });
+      }
     }
   }, [product.id, is2027, isNaming, isDates]);
 
@@ -265,20 +296,17 @@ export function PremiumNewClient({
       };
     }
     if (isDates) {
-      if (!startDate || !endDate) return null;
-      const p1 = formatBirthInput(datePerson1);
-      const people = [p1];
-      if (purpose === "WEDDING" || includePerson2) {
-        people.push(formatBirthInput(datePerson2));
-      }
-      return {
+      return buildDateSelectionPayload({
         purpose,
         start: startDate,
         end: endDate,
-        people,
+        person1: datePerson1,
+        person2: datePerson2,
+        includePerson2,
         weekdays: selectedWeekdays,
         excludeDates,
-      };
+        today,
+      });
     }
     return null;
   };
