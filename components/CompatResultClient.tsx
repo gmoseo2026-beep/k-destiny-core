@@ -351,7 +351,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     }
   };
 
-  const handleGenerateDeepReport = async () => {
+  const handleGenerateDeepReport = useCallback(async () => {
     setIsLoadingDeepReport(true);
     setDeepReportError(null);
     try {
@@ -376,7 +376,24 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     } finally {
       setIsLoadingDeepReport(false);
     }
-  };
+  }, [data.id, locale, unlockToken]);
+
+  // 결제 완료(또는 권한 보유) 시 심층 리포트를 화면당 1회 자동으로 시작하고 해당 영역으로 스크롤한다.
+  // 생성 실패(deepReportError) 시 자동 재시도하지 않고 기존 버튼을 보여 준다.
+  const hasAutoStartedDeepReport = React.useRef(false);
+  useEffect(() => {
+    if (
+      (isPremium || unlockToken) &&
+      !deepReport &&
+      !isLoadingDeepReport &&
+      !deepReportError &&
+      !hasAutoStartedDeepReport.current
+    ) {
+      hasAutoStartedDeepReport.current = true;
+      paywallRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      void handleGenerateDeepReport();
+    }
+  }, [isPremium, unlockToken, deepReport, isLoadingDeepReport, deepReportError, handleGenerateDeepReport]);
 
   // 4. 인스타 스토리 카드 다운로드 핸들러
   const handleDownloadCard = () => {
