@@ -146,10 +146,13 @@ def main():
     # 예전에는 .next 를 먼저 지우고 그 자리에 2분쯤 다시 만들었는데, 그동안에도 옛 서버가 방문자를 받고 있어서
     # 아직 불러오지 않은 화면을 열면 서버 조각을 못 찾아 오류가 났다(2026-10-09 ChunkLoadError 3건).
     # 빌드가 실패해도 .next 는 그대로라 옛 버전이 온전히 계속 돈다.
+    # tsconfig 는 .next/types 도 검사 대상에 넣는다(next build 가 자동으로 넣음). 서비스 중인 .next 의
+    # 타입 파일은 옛 경로를 기억하고 있어서, API 경로 파일을 지운 배포는 새 빌드의 타입 검사에서 실패했다
+    # (2026-10-15 /api/user/first-purchase 삭제). 이 파일들은 타입 검사 전용이라 실행 중인 서버는 읽지 않는다.
     print("\nBuilding Next.js application (into .next-new)...")
     build_exit = run_cmd(
         client,
-        "cd /root/k-destiny-core && rm -rf .next-new && "
+        "cd /root/k-destiny-core && rm -rf .next-new .next/types .next/dev/types && "
         "NEXT_DIST_DIR=.next-new NODE_OPTIONS='--max-old-space-size=2048' npm run build 2>&1; "
         "code=$?; echo \"BUILD_EXIT=$code\"; exit $code",
         tmo=600,
