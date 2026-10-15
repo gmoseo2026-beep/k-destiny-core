@@ -43,37 +43,49 @@ describe("catalog 불변식", () => {
     const lastSecond = Date.parse("2026-12-31T23:59:59+09:00");
     const after = Date.parse("2027-01-01T00:00:00+09:00");
 
-    it("대상은 2026년 총운과 2027 대운 프리미엄 리포트 둘뿐", () => {
-      expect(Object.keys(SEASON_PROMO_PRICES).sort()).toEqual(["annual_2026", "premium_2027_daeun"]);
+    it("대상은 2026년 총운, 취업/이직 세트, 2027 대운 프리미엄 리포트 셋", () => {
+      expect(Object.keys(SEASON_PROMO_PRICES).sort()).toEqual(["annual_2026", "premium_2027_daeun", "set_career"]);
       expect(SEASON_PROMO_ENDS_AT).toBe(after);
       expect(seasonPriceAt("wealth", during)).toBeUndefined();
       expect(isOnSeasonPromo("annual_2027", during)).toBe(false);
     });
 
-    it("기간 중: 총운 3,000원(직전 4,900원), 대운 9,900원(직전 19,900원)", () => {
+    it("기간 중: 총운 3,000원(직전 4,900원), 취업/이직 세트 6,900원(직전 7,900원), 대운 9,900원(직전 19,900원)", () => {
       for (const t of [during, lastSecond]) {
         expect(seasonPriceAt("annual_2026", t)).toEqual({ price: 3000, originalPrice: 4900 });
+        expect(seasonPriceAt("set_career", t)).toEqual({ price: 6900, originalPrice: 7900 });
         expect(seasonPriceAt("premium_2027_daeun", t)).toEqual({ price: 9900, originalPrice: 19900 });
         expect(isOnSeasonPromo("annual_2026", t)).toBe(true);
+        expect(isOnSeasonPromo("set_career", t)).toBe(true);
         expect(discountBadge({ id: "annual_2026" }, t)).toBe("연말 특가 · 12/31까지");
+        expect(discountBadge({ id: "set_career" }, t)).toBe("연말 특가 · 12/31까지");
       }
       expect(discountBadge({ id: "wealth" }, during)).toBe("오픈 기념가");
     });
 
-    it("1월 1일 0시부터는 배포 없이 원래 가격으로 돌아간다", () => {
+    it("1월 1일 0시부터는 배포 없이 원래 가격으로 돌아간다(취업/이직 세트 7,900원 vs 따로 사면 9,800원)", () => {
       expect(seasonPriceAt("annual_2026", after)).toEqual({ price: LAUNCH_PRICE, originalPrice: 6900 });
+      expect(seasonPriceAt("set_career", after)).toEqual({ price: 7900, originalPrice: 7900 });
       expect(seasonPriceAt("premium_2027_daeun", after)).toEqual({ price: 19900, originalPrice: 19900 });
       expect(isOnSeasonPromo("annual_2026", after)).toBe(false);
+      expect(isOnSeasonPromo("set_career", after)).toBe(false);
       expect(discountBadge({ id: "annual_2026" }, after)).toBe("오픈 기념가");
+      // 특가 종료 후 취업/이직 세트(7,900원) vs 단품 합계(career 4,900원 + annual_2026 4,900원 = 9,800원)
+      const careerAfter = getProduct("career")!.price + seasonPriceAt("annual_2026", after)!.price;
+      expect(careerAfter).toBe(9800);
+      expect(seasonPriceAt("set_career", after)!.price).toBe(7900);
     });
 
     it("상품 객체의 price 는 읽는 순간의 시각을 따른다(화면·주문 금액이 같은 값을 본다)", () => {
       const annual = getProduct("annual_2026")!;
       const daeun = getProduct("premium_2027_daeun")!;
+      const setCareer = getProduct("set_career")!;
       const expected = (id: string) => seasonPriceAt(id, Date.now())!;
       expect(annual.price).toBe(expected("annual_2026").price);
       expect(annual.originalPrice).toBe(expected("annual_2026").originalPrice);
       expect(daeun.price).toBe(expected("premium_2027_daeun").price);
+      expect(setCareer.price).toBe(expected("set_career").price);
+      expect(setCareer.originalPrice).toBe(expected("set_career").originalPrice);
       // 펼쳐 복사해도(서버가 화면에 넘길 때) 값이 그대로 실린다
       expect({ ...annual }.price).toBe(annual.price);
       expect(JSON.parse(JSON.stringify(daeun)).price).toBe(daeun.price);
@@ -135,10 +147,9 @@ describe("세트 추천·가격 비교", () => {
   it("모든 세트는 따로 사는 것보다 싸다(비교 문구가 거짓이 되지 않게)", () => {
     // 단품 기념가(4,900원)에 맞춰 세트 가격도 다시 정했다(2026-10-02): 2종 7,900 · 3~4종 12,900 · 2027 세트 11,900
     for (const s of CATALOG.filter((c) => c.type === "SET")) {
-      // 연말 특가 상품이 든 세트는 그 기간에 아끼는 금액이 줄어든다(취업/이직 세트는 0원 — 홈·추천에서 숨는다).
-      // 어떤 경우에도 세트가 따로 사는 것보다 비싸서는 안 된다.
+      // 연말 특가 상품이 든 세트도 따로 사는 값보다 최소 1,000원 이상 싸다(set_career 6,900원 vs 7,900원).
       const hasPromoItem = (s.items ?? []).some((id) => isOnSeasonPromo(id));
-      expect(separatePrice(s) - s.price, s.id).toBeGreaterThanOrEqual(hasPromoItem ? 0 : 1800);
+      expect(separatePrice(s) - s.price, s.id).toBeGreaterThanOrEqual(hasPromoItem ? 1000 : 1800);
     }
     for (const c of CATALOG) {
       for (const s of setsContaining(c.id, allIds)) expect(separatePrice(s), s.id).toBeGreaterThan(s.price);
@@ -147,8 +158,9 @@ describe("세트 추천·가격 비교", () => {
   it("따로 사면 금액은 실제 단건 가격의 합", () => {
     expect(separatePrice(getProduct("set_me")!)).toBe(3 * 4900 + getProduct("annual_2026")!.price);
     expect(separatePrice(getProduct("set_love")!)).toBe(2 * 4900);
+    expect(separatePrice(getProduct("set_career")!)).toBe(4900 + getProduct("annual_2026")!.price);
     expect(getProduct("set_love")!.price).toBe(7900);
-    expect(getProduct("set_career")!.price).toBe(7900);
+    expect(getProduct("set_career")!.price).toBe(seasonPriceAt("set_career", Date.now())!.price);
     expect(getProduct("set_2027")!.price).toBe(11900);
   });
   it("재물운이 든 세트를 아끼는 금액 큰 순으로 찾고, 숨긴 세트는 빼며, 세트 자신은 추천하지 않는다", () => {
@@ -156,5 +168,7 @@ describe("세트 추천·가격 비교", () => {
     expect(setsContaining("wealth", allIds.filter((id) => id !== "set_me")).map((s) => s.id)).toEqual(["set_2027"]);
     expect(setsContaining("set_me", allIds)).toEqual([]);
     expect(setsContaining("compat_basic", allIds).map((s) => s.id)).toEqual(["set_this_person"]);
+    expect(setsContaining("career", allIds).map((s) => s.id)).toContain("set_career");
+    expect(setsContaining("annual_2026", allIds).map((s) => s.id)).toContain("set_career");
   });
 });

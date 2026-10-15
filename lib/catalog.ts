@@ -828,13 +828,13 @@ export const CATALOG: CatalogItem[] = [
 ];
 
 /**
- * 연말 특가(2026-10-13 사장님 결정) — 2026-12-31 23:59(KST)까지.
- *   2026년 총운 4,900원 → 3,000원 / 2027 대운 프리미엄 리포트 19,900원 → 9,900원
+ * 연말 특가(2026-10-13 사장님 결정, 10-15 취업/이직 세트 추가) — 2026-12-31 23:59(KST)까지.
+ *   2026년 총운 4,900원 → 3,000원 / 취업/이직 세트 7,900원 → 6,900원 / 2027 대운 프리미엄 리포트 19,900원 → 9,900원
  *
  * 가격을 읽는 곳(화면 표시·서버 주문 금액·세트 비교)이 수십 군데라, 함수로 감싸 호출부마다 고치면
  * 한 곳만 빠져도 "보이는 값"과 "결제되는 값"이 어긋난다. 그래서 해당 상품의 price · originalPrice 를
  * 읽는 순간의 시각으로 계산되게 해 둔다 → 날짜가 지나면 배포 없이 원래 값으로 돌아간다.
- * 기간 중 취소선에 보이는 값은 "직전까지 실제로 받던 값"(총운 4,900원, 대운 19,900원)이다.
+ * 기간 중 취소선에 보이는 값은 "직전까지 실제로 받던 값"(총운 4,900원, 취업/이직 세트 7,900원, 대운 19,900원)이다.
  * 기간을 바꾸려면 SEASON_PROMO_ENDS_AT 과 약관(messages/ko.json terms_s9_body)을 함께 고칠 것.
  */
 export const SEASON_PROMO_ENDS_AT = Date.parse("2027-01-01T00:00:00+09:00");
@@ -843,6 +843,7 @@ export const SEASON_PROMO_UNTIL = "12/31까지";
 export const SEASON_PROMO_PRICES: Readonly<Record<string, number>> = {
   annual_2026: 3000,
   premium_2027_daeun: 9900,
+  set_career: 6900,
 };
 
 const SEASON_PROMO_BASE = new Map<string, { price: number; originalPrice: number }>();
