@@ -153,6 +153,22 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const paywallRef = React.useRef<HTMLDivElement>(null);
   useSeenOnce(paywallRef, () => trackEvent("view_paywall", { productId: "compat_basic", source: "compat_result" }), isLocked);
 
+  // 하단 고정 바는 본문 결제 카드가 화면에 보이는 동안 숨긴다(버튼 중복·하단 가림 방지)
+  const [isPaywallVisible, setIsPaywallVisible] = useState(false);
+  useEffect(() => {
+    const el = paywallRef.current;
+    if (!isLocked || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry) setIsPaywallVisible(entry.isIntersecting);
+      },
+      { threshold: 0.05 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isLocked]);
+
   // 결제창 열기(정통 궁합 또는 세트). 클릭은 인앱 가드보다 먼저 기록해 인앱 사용자의 관심도 잡는다
   const proceedCompatCheckout = (id: string) => {
     setCheckoutType("SINGLE");
@@ -772,8 +788,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           )}
         </div>
       ) : (
-        <Card className="w-full mt-8 text-center relative overflow-hidden">
-          <div ref={paywallRef} />
+        <Card ref={paywallRef} className="w-full mt-8 text-center relative overflow-hidden">
           <div className="inline-block bg-plum-deep text-gold text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
             심층 궁합
           </div>
@@ -956,9 +971,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         }}
       />
 
-      {/* 2-A. Sticky Bottom CTA (미결제 시 뷰포트 하단 고정) */}
-      {!isPremium && !unlockToken && !deepReport && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4">
+      {/* 2-A. Sticky Bottom CTA (미결제 시 뷰포트 하단 고정 · 본문 결제 카드가 보이면 숨김) */}
+      {isLocked && (
+        <div
+          aria-hidden={isPaywallVisible}
+          className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ${
+            !isPaywallVisible ? "translate-y-0" : "pointer-events-none translate-y-full"
+          } bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4`}
+        >
           <div className="max-w-md md:max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div className="flex flex-col text-left">
               <span className="text-[10px] sm:text-xs font-bold text-caption flex items-center gap-1">
