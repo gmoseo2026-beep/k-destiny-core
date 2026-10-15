@@ -18,7 +18,22 @@ interface BirthFieldsProps {
   onChange: (patch: Partial<BirthValues>) => void;
   disabled?: boolean;
   showName?: boolean;
+  /** 놓이는 화면의 바탕. 프리미엄(어두운 바탕) 화면은 "dark" — 밝은 칸을 그대로 쓰면 글씨가 안 보인다(2026-10-15). */
+  tone?: "light" | "dark";
 }
+
+const TONE = {
+  light: {
+    label: "block text-xs font-semibold text-text-2 mb-1",
+    field: "w-full border border-line rounded-xl p-3 text-sm text-ink placeholder:text-text-3 focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral",
+    star: "text-coral",
+  },
+  dark: {
+    label: "block text-xs font-semibold text-[#D8CEE0] mb-1",
+    field: "w-full border border-[#4A3D56] rounded-xl p-3 text-sm text-[#F6F1EA] placeholder:text-[#9A8FA6] bg-[#1E1726] [color-scheme:dark] focus:outline-none focus:border-[#D9B26A] disabled:opacity-50 focus-visible:ring-2 ring-[#D9B26A]",
+    star: "text-[#D9B26A]",
+  },
+} as const;
 
 export function getDaysInMonth(y: string, m: string): number {
   if (!y || !m) return 31;
@@ -84,7 +99,9 @@ export default function BirthFields({
   onChange,
   disabled = false,
   showName = true,
+  tone = "light",
 }: BirthFieldsProps) {
+  const t = TONE[tone];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -95,7 +112,7 @@ export default function BirthFields({
     <div className="flex flex-col gap-3.5 w-full">
       {showName && (
         <div>
-          <label className="block text-xs font-semibold text-text-2 mb-1">
+          <label className={t.label}>
             이름 또는 닉네임 (선택)
           </label>
           <input
@@ -104,22 +121,22 @@ export default function BirthFields({
             onChange={(e) => onChange({ name: e.target.value })}
             placeholder="예: 김콩닥"
             disabled={disabled}
-            className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+            className={t.field}
           />
         </div>
       )}
 
       <div className="flex flex-col gap-3">
         <div>
-          <label className="block text-xs font-semibold text-text-2 mb-1">
-            생년월일 <span className="text-coral">*</span>
+          <label className={t.label}>
+            생년월일 <span className={t.star}>*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
             <select
               value={values.year}
               onChange={(e) => onChange({ year: e.target.value })}
               disabled={disabled}
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className={t.field}
             >
               <option value="">년도</option>
               {years.map((y) => (
@@ -132,7 +149,7 @@ export default function BirthFields({
               value={values.month}
               onChange={(e) => onChange({ month: e.target.value })}
               disabled={disabled}
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className={t.field}
             >
               <option value="">월</option>
               {months.map((m) => (
@@ -145,7 +162,7 @@ export default function BirthFields({
               value={values.day}
               onChange={(e) => onChange({ day: e.target.value })}
               disabled={disabled}
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className={t.field}
             >
               <option value="">일</option>
               {Array.from(
@@ -162,19 +179,19 @@ export default function BirthFields({
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="sm:col-span-1">
-            <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
+            <label className={t.label}>성별</label>
             <select
               value={values.gender}
               onChange={(e) => onChange({ gender: e.target.value as "F" | "M" })}
               disabled={disabled}
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className={t.field}
             >
               <option value="F">여성</option>
               <option value="M">남성</option>
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label className="block text-xs font-semibold text-text-2 mb-1">
+            <label className={t.label}>
               태어난 시간 (선택)
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -182,7 +199,7 @@ export default function BirthFields({
                 value={values.ampm}
                 onChange={(e) => onChange({ ampm: e.target.value })}
                 disabled={disabled}
-                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                className={t.field}
               >
                 <option value="">모름</option>
                 <option value="AM">오전</option>
@@ -192,7 +209,7 @@ export default function BirthFields({
                 value={values.hour}
                 onChange={(e) => onChange({ hour: e.target.value })}
                 disabled={disabled || !values.ampm}
-                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                className={t.field}
               >
                 {hours.map((h) => (
                   <option key={h} value={h}>
@@ -204,7 +221,7 @@ export default function BirthFields({
                 value={values.min}
                 onChange={(e) => onChange({ min: e.target.value })}
                 disabled={disabled || !values.ampm}
-                className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                className={t.field}
               >
                 {minutes.map((m) => (
                   <option key={m} value={m}>

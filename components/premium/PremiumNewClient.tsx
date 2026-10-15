@@ -391,6 +391,7 @@ export function PremiumNewClient({
           <div className="space-y-4">
             <div className="bg-[#14101A] p-4 rounded-2xl border border-[#3A2E45]/80">
               <BirthFields
+                tone="dark"
                 values={personValues}
                 onChange={(patch) => setPersonValues((prev) => ({ ...prev, ...patch }))}
                 showName={true}
@@ -756,6 +757,7 @@ export function PremiumNewClient({
                   {purpose === "WEDDING" ? "신랑 사주 정보" : "주요 대상자 사주 정보"}
                 </span>
                 <BirthFields
+                  tone="dark"
                   values={datePerson1}
                   onChange={(patch) => setDatePerson1((prev) => ({ ...prev, ...patch }))}
                   showName={false}
@@ -779,6 +781,7 @@ export function PremiumNewClient({
                     )}
                   </div>
                   <BirthFields
+                    tone="dark"
                     values={datePerson2}
                     onChange={(patch) => setDatePerson2((prev) => ({ ...prev, ...patch }))}
                     showName={false}
