@@ -153,10 +153,12 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const paywallRef = React.useRef<HTMLDivElement>(null);
   useSeenOnce(paywallRef, () => trackEvent("view_paywall", { productId: "compat_basic", source: "compat_result" }), isLocked);
 
-  // 하단 고정 바는 본문 결제 카드가 화면에 보이는 동안 숨긴다(버튼 중복·하단 가림 방지)
+  // 하단 고정 바는 본문 결제 카드가 화면에 보이는 동안 숨긴다(버튼 중복·하단 가림 방지).
+  // view_paywall 은 카드 맨 위 표시점(paywallRef)으로 재던 그대로 두고, 숨김 판단만 카드 전체(paywallCardRef)로 한다.
+  const paywallCardRef = React.useRef<HTMLDivElement>(null);
   const [isPaywallVisible, setIsPaywallVisible] = useState(false);
   useEffect(() => {
-    const el = paywallRef.current;
+    const el = paywallCardRef.current;
     if (!isLocked || !el || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(
       (entries) => {
@@ -788,7 +790,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           )}
         </div>
       ) : (
-        <Card ref={paywallRef} className="w-full mt-8 text-center relative overflow-hidden">
+        <Card ref={paywallCardRef} className="w-full mt-8 text-center relative overflow-hidden">
+          <div ref={paywallRef} />
           <div className="inline-block bg-plum-deep text-gold text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-3">
             심층 궁합
           </div>
