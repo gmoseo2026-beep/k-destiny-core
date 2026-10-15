@@ -522,3 +522,16 @@
 - 남긴 것: 관리자 화면의 "첫 결제(4,900원) 대 정가 결제" 집계는 과거 주문 분류용으로 `LEGACY_FIRST_PURCHASE_PRICE`(4,900)를 쓴다. 쓰이지 않는 `components/PricingClient.tsx`(`/pricing`은 홈으로 이동)의 옛 문구는 화면에 나오지 않아 그대로 뒀다.
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 423 통과(첫 결제 안내 API 테스트 3건 삭제, 모든 상품 라벨에 "첫 결제"가 없다는 검사 추가, 결제한 적 없는 회원도 판매가 그대로 청구) · build exit 0.
 - 의심 지점: GA4 `first_purchase_banner_click`, `checkout_login_hint_click` 이벤트는 더 이상 나오지 않는다.
+
+---
+
+# 2026-10-15 · MP-1 병합(Gemini 구현, Claude 검토·수정)
+- 결정서: `docs/uiux/decisions/MP_매출UX마스터플랜.md` 1묶음. 결과 보고: `docs/uiux/results/MP-1.md`. 커밋 dff1bb6 · 9f7f911 · 5038f00 · 3345ed5 · 23c782f + 검토 수정 1건.
+- 1 길일 택일: 가짜 1994·1996 초기값 제거, 빈 생년월일이면 맛보기·결제 모두 막힘(`buildDateSelectionPayload`, 테스트 5케이스). 저장된 커플·본인 정보가 있으면 채움. 이름 칸은 원래 화면에 없어 빈 이름은 "나"로 보냄(택일 생성은 이름을 쓰지 않음).
+- 2 취업·이직 세트 연말특가 6,900원(따로 7,900원), 1/1부터 7,900원(따로 9,800원). 약관 제9조 갱신.
+- 3 2026·2027 총운: 상품 상세 버튼과 홈 연말특가 배너 → `/fortune/annual?year=`.
+- 4 정통 궁합: 권한이 있으면 심층 리포트를 화면당 1회 자동 시작·스크롤, 실패 시 재시도 없이 버튼. 이미 만든 리포트는 서버 캐시라 재방문 비용 없음(대신 재방문 때도 그 영역으로 스크롤된다).
+- 5 하단 고정 바: 결제 카드가 보이면 숨김.
+- 검토에서 고친 것: Gemini가 `paywallRef`를 카드 전체로 옮겨 `view_paywall`(useSeenOnce, threshold 0.5)이 긴 카드에서 늦게·안 잡힐 수 있었다 → 카드 맨 위 0높이 표시점으로 되돌리고 숨김 판단만 `paywallCardRef`로.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 424 통과 · build exit 0.
+- 판정: 2주 뒤 annual_2026/2027 `teaser_created → checkout_open → purchase`를 직전 2주와 비교, 세트 결제 수 기록.
