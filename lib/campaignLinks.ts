@@ -113,6 +113,46 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "inner_mind" },
     utm: { source: "instagram", medium: "organic_social", campaign: "reels_organic", content: "bio_link" },
   },
+  // ── 크리에이터 제휴 1차(2026-10-16 제안 메일). 회신 전이라 수익 배분율(rsRate)은 합의 후에 넣는다.
+  {
+    code: "kd-kimdal",
+    partner: "kimdal",
+    label: "크리에이터 김달 · 그 사람의 속마음",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "kimdal", medium: "creator", campaign: "creator_2026", content: "inner_mind" },
+  },
+  {
+    code: "kd-enjoy",
+    partner: "enjoycouple",
+    label: "크리에이터 엔조이커플 · 무료 궁합(반쪽 초대장)",
+    path: "/compat/new",
+    utm: { source: "enjoycouple", medium: "creator", campaign: "creator_2026", content: "compat" },
+  },
+  {
+    code: "kd-jaehyung",
+    partner: "sigmajjj",
+    label: "크리에이터 미남재형 · 결혼 궁합",
+    path: "/compat/new",
+    query: { productId: "marriage" },
+    utm: { source: "sigmajjj", medium: "creator", campaign: "creator_2026", content: "marriage" },
+  },
+  {
+    code: "kd-jiin",
+    partner: "jiinlove",
+    label: "모두의지인 · 연애운(솔로)",
+    path: "/fortune/new",
+    query: { productId: "love_single" },
+    utm: { source: "jiinlove", medium: "creator", campaign: "creator_2026", content: "love_single" },
+  },
+  {
+    code: "kd-horang",
+    partner: "tarohorang",
+    label: "크리에이터 타로호랑 · 그 사람의 속마음",
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "tarohorang", medium: "creator", campaign: "creator_2026", content: "inner_mind" },
+  },
   // ── 검색 광고(2026-10-14): 구글·네이버 광고그룹마다 하나. 도착 화면은 검색어의 뜻에 맞춘 입력 화면이다
   // (인스타 광고에서 홈보다 입력 화면이 입력 완료율이 높았다 — 위 주석). 브랜드 검색만 홈으로 보낸다.
   ...(["google", "naver"] as const).flatMap((src): CampaignLink[] => {
@@ -146,6 +186,11 @@ const PARTNER_NAMES: Record<string, string> = {
   instagram: "인스타그램",
   google: "구글 검색",
   naver: "네이버 검색",
+  kimdal: "김달",
+  enjoycouple: "엔조이커플",
+  sigmajjj: "미남재형",
+  jiinlove: "모두의지인",
+  tarohorang: "타로호랑",
 };
 
 export const partnerDisplayName = (partner: string): string => PARTNER_NAMES[partner] ?? partner;
