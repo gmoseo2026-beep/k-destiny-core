@@ -11,6 +11,10 @@
 export interface CampaignLink {
   /** 주소에 쓰는 짧은 코드 */
   code: string;
+  /** 제휴사·채널 구분 이름(예: "couplediary", "instagram", "google", "naver") */
+  partner: string;
+  /** 수익 배분 비율(예: 0.3 = 30%). 정산 대상 제휴사에만 둔다 */
+  rsRate?: number;
   /** 관리자 화면에 보이는 설명 */
   label: string;
   /** 도착 경로(로케일 뒤) */
@@ -23,24 +27,32 @@ export interface CampaignLink {
 export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd1",
+    partner: "couplediary",
+    rsRate: 0.3,
     label: "커플다이어리 · 배너 02 「우리 궁합, 몇 점일까?」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b02_score" },
   },
   {
     code: "cd2",
+    partner: "couplediary",
+    rsRate: 0.3,
     label: "커플다이어리 · 배너 06 「기념일엔 우리 궁합 리포트」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b06_anniversary" },
   },
   {
     code: "cd3",
+    partner: "couplediary",
+    rsRate: 0.3,
     label: "커플다이어리 · 배너 07 「티격태격도 케미라면?」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b07_fight" },
   },
   {
     code: "cd4",
+    partner: "couplediary",
+    rsRate: 0.3,
     label: "커플다이어리 · 배너 09 「30초, 생일 두 개면 궁합 끝!」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b09_30sec" },
@@ -51,6 +63,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   // 홈으로 다시 바꾸려면 이 숫자부터 확인할 것(REVIEW_HANDOFF.md 2026-10-11).
   {
     code: "ig-b1",
+    partner: "instagram",
     label: "인스타 광고 · B 속마음 · 도입1 「답장은 오는데, 마음은 모르겠을 때」",
     path: "/compat/new",
     query: { productId: "inner_mind" },
@@ -58,6 +71,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   },
   {
     code: "ig-b2",
+    partner: "instagram",
     label: "인스타 광고 · B 속마음 · 도입2 「그 사람, 지금 나를 어떻게 생각할까?」",
     path: "/compat/new",
     query: { productId: "inner_mind" },
@@ -65,6 +79,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   },
   {
     code: "ig-b3",
+    partner: "instagram",
     label: "인스타 광고 · B 속마음 · 도입3 「읽씹 3일째. 끝난 걸까, 바쁜 걸까」",
     path: "/compat/new",
     query: { productId: "inner_mind" },
@@ -72,18 +87,21 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   },
   {
     code: "ig-a1",
+    partner: "instagram",
     label: "인스타 광고 · A 점수 내기 · 도입1 「우리 궁합, 몇 점 나올 것 같아?」",
     path: "/compat/new",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook1" },
   },
   {
     code: "ig-a2",
+    partner: "instagram",
     label: "인스타 광고 · A 점수 내기 · 도입2 「남친은 90점이래. 나는 60점 봤는데…」",
     path: "/compat/new",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook2" },
   },
   {
     code: "ig-a3",
+    partner: "instagram",
     label: "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」",
     path: "/compat/new",
     utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook3" },
@@ -91,6 +109,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   // ── 인스타그램 프로필 링크(무료 릴스 업로드용). 릴스 설명글의 주소는 눌러지지 않아서 프로필 링크로 보낸다.
   {
     code: "ig-bio",
+    partner: "instagram",
     label: "인스타 프로필 링크 · 릴스(무료 업로드)에서 들어온 사람",
     path: "/compat/new",
     query: { productId: "inner_mind" },
@@ -102,18 +121,36 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     const p = src === "google" ? "gg" : "nv";
     const name = src === "google" ? "구글 검색" : "네이버 검색";
     return [
-      { code: `${p}-compat`, label: `${name} · 궁합(무료 궁합 점수)`, path: "/compat/new", utm: { source: src, medium: "cpc", campaign: "search_compat", content: "compat" } },
-      { code: `${p}-inner`, label: `${name} · 그 사람 속마음·짝사랑·재회`, path: "/compat/new", query: { productId: "inner_mind" }, utm: { source: src, medium: "cpc", campaign: "search_innermind", content: "inner" } },
-      { code: `${p}-saju`, label: `${name} · 사주(저단가, 2026 총운으로)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_saju", content: "saju" } },
-      { code: `${p}-2026`, label: `${name} · 2026 총운(연말 특가)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_annual2026", content: "annual2026" } },
-      { code: `${p}-2027`, label: `${name} · 2027 대운(연말 특가)`, path: "/products/premium_2027_daeun", utm: { source: src, medium: "cpc", campaign: "search_daeun2027", content: "daeun2027" } },
-      { code: `${p}-brand`, label: `${name} · 콩닥(브랜드)`, path: "", utm: { source: src, medium: "cpc", campaign: "search_brand", content: "brand" } },
+      { code: `${p}-compat`, partner: src, label: `${name} · 궁합(무료 궁합 점수)`, path: "/compat/new", utm: { source: src, medium: "cpc", campaign: "search_compat", content: "compat" } },
+      { code: `${p}-inner`, partner: src, label: `${name} · 그 사람 속마음·짝사랑·재회`, path: "/compat/new", query: { productId: "inner_mind" }, utm: { source: src, medium: "cpc", campaign: "search_innermind", content: "inner" } },
+      { code: `${p}-saju`, partner: src, label: `${name} · 사주(저단가, 2026 총운으로)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_saju", content: "saju" } },
+      { code: `${p}-2026`, partner: src, label: `${name} · 2026 총운(연말 특가)`, path: "/fortune/annual", utm: { source: src, medium: "cpc", campaign: "search_annual2026", content: "annual2026" } },
+      { code: `${p}-2027`, partner: src, label: `${name} · 2027 대운(연말 특가)`, path: "/products/premium_2027_daeun", utm: { source: src, medium: "cpc", campaign: "search_daeun2027", content: "daeun2027" } },
+      { code: `${p}-brand`, partner: src, label: `${name} · 콩닥(브랜드)`, path: "", utm: { source: src, medium: "cpc", campaign: "search_brand", content: "brand" } },
     ];
   }),
 ] as const;
 
 export const findCampaignLink = (code: string): CampaignLink | undefined =>
   CAMPAIGN_LINKS.find((l) => l.code === code);
+
+export const linksForPartner = (partner: string): CampaignLink[] =>
+  CAMPAIGN_LINKS.filter((l) => l.partner === partner);
+
+export const listPartners = (): string[] =>
+  Array.from(new Set(CAMPAIGN_LINKS.map((l) => l.partner)));
+
+export const partnerRsRate = (partner: string): number | undefined =>
+  linksForPartner(partner).find((l) => typeof l.rsRate === "number")?.rsRate;
+
+const PARTNER_NAMES: Record<string, string> = {
+  couplediary: "커플다이어리",
+  instagram: "인스타그램",
+  google: "구글 검색",
+  naver: "네이버 검색",
+};
+
+export const partnerDisplayName = (partner: string): string => PARTNER_NAMES[partner] ?? partner;
 
 /** 광고 플랫폼이 붙이는 클릭 표시. 이것만 도착 주소로 넘긴다(다른 값은 버린다). */
 export const CLICK_ID_KEYS = ["fbclid", "gclid", "gbraid", "wbraid", "ttclid", "msclkid"] as const;

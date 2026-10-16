@@ -1,8 +1,19 @@
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { BASE_URL } from "@/lib/seo";
-import { CAMPAIGN_COUNTER_PREFIX, CAMPAIGN_LINKS, campaignTag, parseCampaignCounterKey } from "@/lib/campaignLinks";
+import {
+  CAMPAIGN_COUNTER_PREFIX,
+  CAMPAIGN_LINKS,
+  campaignTag,
+  linksForPartner,
+  listPartners,
+  parseCampaignCounterKey,
+  partnerDisplayName,
+  partnerRsRate,
+} from "@/lib/campaignLinks";
 import { buildCampaignReport, rateLabel, type CampaignTotals, type ClickRow } from "@/lib/campaignStats";
+import { partnerShareUrl } from "@/lib/partnerReport";
+import PartnerShareLinks, { type PartnerShareItem } from "@/components/admin/PartnerShareLinks";
 
 /**
  * 관리자 > 배너 유입: 제휴 배너 전용 주소(/ko/go/<코드>)별 클릭 → 가입 → 결제 → 매출.
@@ -43,6 +54,14 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
     }),
     DAYS_SHOWN
   );
+
+  const partnerShareItems: PartnerShareItem[] = listPartners().map((partner) => ({
+    partner,
+    name: partnerDisplayName(partner),
+    rsRate: partnerRsRate(partner) ?? null,
+    codeCount: linksForPartner(partner).length,
+    shareUrl: partnerShareUrl(partner, BASE_URL, locale),
+  }));
 
   const th = "px-3 py-2 text-left text-[11px] font-bold text-ink/60 whitespace-nowrap";
   const td = "px-3 py-2.5 text-sm text-ink whitespace-nowrap";
@@ -90,6 +109,9 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
           </div>
         ))}
       </section>
+
+      {/* 제휴사별 읽기 전용 공유 주소 */}
+      <PartnerShareLinks items={partnerShareItems} />
 
       <section>
         <h2 className="mb-3 text-base font-black text-ink">배너·광고 소재별 (누적)</h2>

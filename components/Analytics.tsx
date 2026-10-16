@@ -51,7 +51,8 @@ export default function Analytics() {
             var h = location.hostname;
             var isLocal = h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
             var apply = function (moved) {
-              try { window[KEY] = isLocal || location.pathname.split('/').indexOf('admin') !== -1; } catch (e) {}
+              var parts = location.pathname.split('/');
+              try { window[KEY] = isLocal || parts.indexOf('admin') !== -1 || parts.indexOf('partner') !== -1; } catch (e) {}
               if (moved) gtag('set', { page_location: gaCleanLocation() });
             };
             apply(false);

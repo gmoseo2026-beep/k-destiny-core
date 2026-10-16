@@ -86,8 +86,11 @@ export function metaEventFor(name: string, params?: Params): MetaEvent | null {
 export const isLocalHost = (hostname: string): boolean =>
   hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
 
-/** 관리자 화면에서는 아무것도 보내지 않는다 */
-export const isAdminPath = (pathname: string): boolean => pathname.split("/").includes("admin");
+/** 관리자·제휴사 성과 화면에서는 아무것도 보내지 않는다 */
+export const isAdminPath = (pathname: string): boolean => {
+  const parts = pathname.split("/");
+  return parts.includes("admin") || parts.includes("partner");
+};
 
 interface Fbq {
   (...args: unknown[]): void;

@@ -13,6 +13,7 @@ const PRIVATE_PATHS = [
   'dashboard',
   'admin',
   'me',
+  'partner',
 ];
 
 /**
