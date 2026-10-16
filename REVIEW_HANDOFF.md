@@ -559,3 +559,14 @@
 - 검토에서 고친 것: 결제 후 점수 아래 카드가 5축 전체로 풀리는데 심층 리포트 안에 같은 카드가 한 번 더 있었다 → 뺌. `lib/destinyGen.ts`(타입 한 줄 추가뿐)의 import 를 파일 머리로.
 - 검증: tsc 0 · 바꾼 파일 lint 새 오류 0(deep-report `any` 3건은 기존) · vitest 444 통과 · build exit 0.
 - 판정: (d) 14일 `home_hero_cta_click`/비회원 홈 세션 ≥ 3%, (e) `saved_info_*` 클릭과 `teaser_created` 도달, (a)(c)는 기능 확인 + 결제 열기 비율이 떨어지지 않는지.
+
+---
+
+# 2026-10-16 · P-008 반쪽 궁합 초대장 병합(Gemini 구현, Claude 검토·수정)
+- 결정서: `docs/uiux/decisions/P-008.md`. 커밋 beb1cc6(표·API·초대 화면) · 9259a46(입구 2곳) · a53d026(카톡 카드·OG) · 2152a53(개인정보처리방침) + 검토 수정 fe7707b.
+- 흐름: `/compat/new` 상대방 카드의 "생일을 모르나요? 반쪽 초대장 보내기"(또는 궁합 결과 공유 아래 버튼 → `?mode=invite`) → 내 정보만으로 `POST /api/compat/invite` → 카톡/링크 `/ko/compat/invite/<token>` → 받는 사람이 자기 생년월일 + "동의하고 우리 궁합 열기" → `POST /api/compat/invite/<token>`가 일반 궁합과 같은 `Compatibility` 행을 만들고 결과로 이동. 보낸 사람은 같은 링크 또는 `/compat/new` 상단 배너로 결과를 연다.
+- 개인정보: 원문 생년월일·시간 저장 없음. `CompatInvite.personA`(사주 계산값 = 생년월일을 추정할 수 있는 값)는 응답에 싣지 않고, 완성 즉시 `{}`, 미완성은 72시간 뒤 삭제(생성·조회 때마다 정리). 완성된 행은 결과 연결만 남긴다. 보낸 사람 브라우저에는 토큰과 시각만.
+- 운영 DB: 10-16 Claude가 `CompatInvite` 표 + 인덱스 3개를 추가하고 RLS를 켰다(배포 스크립트의 `prisma db push`는 이후 차이 없음).
+- 검토에서 고친 것: ① 화면 두 곳이 서버 파일(`lib/compatInvite.ts`)을 가져와 **lunar-javascript 만세력 표가 브라우저 코드에 실렸다**(빌드 산출물에서 "癸亥"·"SolarUtil" 확인) → 브라우저용 `lib/compatInviteClient.ts` 분리, 분리 후 0건. ② 생년월일 해시에 코드에 적힌 대체 pepper가 있었다 → 기존 궁합과 같은 fail-closed, 서버 오류 문구는 손님에게 숨김. ③ 동시에 두 사람이 채우면 궁합이 둘 생길 수 있었다 → `updateMany`로 1회 선점. ④ `compat_created via=half_invite`, `compat_invite_opened isSender`. ⑤ 개인정보처리방침에 "생년월일을 추정할 수 있는 값" 명시.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 453 통과(초대 9건) · build exit 0.
+- 판정(배포 후 21일, 11-06): `compat_invite_shared` ≥ 10 또는 입력 진입자의 3%, `compat_invite_completed` ≥ 3, 직접 `compat_created`가 줄지 않으면 유지. 공유 3건 미만 또는 완성 0건이면 입력 화면 전환 버튼을 접는다.
