@@ -153,6 +153,58 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "inner_mind" },
     utm: { source: "tarohorang", medium: "creator", campaign: "creator_2026", content: "inner_mind" },
   },
+  // ── 제휴 2차(2026-10-16 준비, 발송 전). 수익 배분율(rsRate)은 합의 후에 넣는다.
+  {
+    code: "kd-thecouple",
+    partner: "thecouple",
+    label: "더커플 · 무료 궁합(반쪽 초대장)",
+    path: "/compat/new",
+    utm: { source: "thecouple", medium: "partner", campaign: "partner_2026", content: "compat" },
+  },
+  {
+    code: "kd-ourday",
+    partner: "ourday",
+    label: "아워데이 · 무료 궁합(반쪽 초대장)",
+    path: "/compat/new",
+    utm: { source: "ourday", medium: "partner", campaign: "partner_2026", content: "compat" },
+  },
+  {
+    code: "kd-ringuniv",
+    partner: "ringuniv",
+    label: "반지대학 · 매장 QR 무료 궁합",
+    path: "/compat/new",
+    utm: { source: "ringuniv", medium: "partner", campaign: "partner_2026", content: "store_qr" },
+  },
+  {
+    code: "kd-hosoo",
+    partner: "hosoo",
+    label: "아뜰리에호수 · 결혼 궁합",
+    path: "/compat/new",
+    query: { productId: "marriage" },
+    utm: { source: "hosoo", medium: "partner", campaign: "partner_2026", content: "marriage" },
+  },
+  {
+    code: "kd-haru",
+    partner: "harufilm",
+    label: "하루필름 · 매장 QR 무료 궁합",
+    path: "/compat/new",
+    utm: { source: "harufilm", medium: "partner", campaign: "partner_2026", content: "store_qr" },
+  },
+  {
+    code: "kd-photogray",
+    partner: "photogray",
+    label: "포토그레이 · 매장 QR 무료 궁합",
+    path: "/compat/new",
+    utm: { source: "photogray", medium: "partner", campaign: "partner_2026", content: "store_qr" },
+  },
+  {
+    code: "kd-redate",
+    partner: "redate",
+    label: "리데이트 · 재회운",
+    path: "/compat/new",
+    query: { productId: "reunion" },
+    utm: { source: "redate", medium: "partner", campaign: "partner_2026", content: "reunion" },
+  },
   // ── 검색 광고(2026-10-14): 구글·네이버 광고그룹마다 하나. 도착 화면은 검색어의 뜻에 맞춘 입력 화면이다
   // (인스타 광고에서 홈보다 입력 화면이 입력 완료율이 높았다 — 위 주석). 브랜드 검색만 홈으로 보낸다.
   ...(["google", "naver"] as const).flatMap((src): CampaignLink[] => {
@@ -191,6 +243,13 @@ const PARTNER_NAMES: Record<string, string> = {
   sigmajjj: "미남재형",
   jiinlove: "모두의지인",
   tarohorang: "타로호랑",
+  thecouple: "더커플",
+  ourday: "아워데이",
+  ringuniv: "반지대학",
+  hosoo: "아뜰리에호수",
+  harufilm: "하루필름",
+  photogray: "포토그레이",
+  redate: "리데이트",
 };
 
 export const partnerDisplayName = (partner: string): string => PARTNER_NAMES[partner] ?? partner;
