@@ -5,7 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, openInExternalBrowser, clientEnvLabel } from "@/lib/inAppBrowser";
+import { isInAppBrowser, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -128,7 +128,7 @@ export default function GuestCheckoutModal({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(externalBrowserUrl(window.location.href));
       setCopied(true);
     } catch {
       // 복사가 막힌 인앱이면 위 메뉴 안내만으로 진행한다

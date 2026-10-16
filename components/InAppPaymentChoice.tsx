@@ -4,7 +4,7 @@
 // 예전에는 결제를 막고 외부 브라우저로만 보냈지만, 이제 이 자리에서 결제하는 길을 먼저 연다.
 import { useEffect, useState } from "react";
 import { Copy, Check, ExternalLink, CreditCard } from "lucide-react";
-import { continueInAppPayment, openInExternalBrowser } from "@/lib/inAppBrowser";
+import { continueInAppPayment, externalBrowserUrl, openInExternalBrowser } from "@/lib/inAppBrowser";
 import { trackEvent } from "@/lib/gtag";
 
 interface InAppPaymentChoiceProps {
@@ -38,7 +38,7 @@ export default function InAppPaymentChoice({ isOpen, onClose }: InAppPaymentChoi
   };
 
   const handleCopy = async () => {
-    const url = window.location.href;
+    const url = externalBrowserUrl(window.location.href);
     try {
       await navigator.clipboard.writeText(url);
     } catch {

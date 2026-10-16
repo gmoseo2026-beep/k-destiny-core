@@ -151,6 +151,18 @@ export const CAMPAIGN_COOKIE_DAYS = 30;
 /** 배너를 누른 시각(초). 가입이 그 뒤에 일어났는지 보려고 함께 심는다. */
 export const CAMPAIGN_TIME_COOKIE = "kd_src_t";
 
+/**
+ * 인앱 브라우저 → 외부 브라우저로 넘어갈 때 제휴 코드·누른 시각을 주소에 실어 보내기 위한 쿠키(httpOnly 아님).
+ * 형식: "<코드>.<초>" (예: "cd1.1791248400"). 코드만 담고 개인정보는 없다.
+ */
+export const CAMPAIGN_REF_COOKIE = "kd_ref";
+export const CAMPAIGN_HANDOFF_CODE_PARAM = "ksrc";
+export const CAMPAIGN_HANDOFF_TIME_PARAM = "ksrct";
+
+export function formatCampaignRef(code: string, clickSec: number): string {
+  return `${code}.${clickSec}`;
+}
+
 function cookieValue(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {
@@ -163,6 +175,107 @@ function cookieValue(header: string | null | undefined, name: string): string | 
     }
   }
   return null;
+}
+
+/** kd_ref 쿠키에서 제휴 코드와 누른 시각(초)을 꺼낸다. 등록된 코드가 아니면 null. */
+export function parseCampaignRefFromCookieHeader(
+  header: string | null | undefined
+): { code: string; clickSec: number | null } | null {
+  const value = cookieValue(header, CAMPAIGN_REF_COOKIE);
+  if (!value) return null;
+  const withTime = /^([a-z0-9-]{2,20})\.([0-9]{9,11})$/.exec(value);
+  if (withTime) {
+    const link = findCampaignLink(withTime[1]);
+    return link ? { code: link.code, clickSec: Number(withTime[2]) } : null;
+  }
+  const codeOnly = /^([a-z0-9-]{2,20})$/.exec(value);
+  if (codeOnly) {
+    const link = findCampaignLink(codeOnly[1]);
+    return link ? { code: link.code, clickSec: null } : null;
+  }
+  return null;
+}
+
+/**
+ * 외부 브라우저로 여는 주소(또는 복사 주소)에 kd_ref 가 있으면 ksrc·ksrct 를 붙인다.
+ * kd_ref 가 없거나 등록된 코드가 아니면 원래 주소를 그대로 돌려준다.
+ */
+export function appendCampaignHandoffParams(
+  targetUrl: string,
+  cookieHeader?: string | null,
+  nowMs: number = Date.now()
+): string {
+  const rawCookie = cookieHeader !== undefined ? cookieHeader : typeof document !== "undefined" ? document.cookie : null;
+  const ref = parseCampaignRefFromCookieHeader(rawCookie);
+  if (!ref) return targetUrl;
+  try {
+    const u = new URL(targetUrl);
+    u.searchParams.set(CAMPAIGN_HANDOFF_CODE_PARAM, ref.code);
+    const sec = ref.clickSec !== null ? ref.clickSec : Math.floor(nowMs / 1000);
+    u.searchParams.set(CAMPAIGN_HANDOFF_TIME_PARAM, String(sec));
+    return u.toString();
+  } catch {
+    return targetUrl;
+  }
+}
+
+export interface CampaignHandoffResolution {
+  /** 기존 쿠키가 더 최근 클릭이면 false(덮어쓰지 않음) */
+  shouldSetCookies: boolean;
+  cookies: {
+    src: string;
+    srcT: string;
+    ref: string;
+    maxAge: number;
+  };
+  /** ksrc·ksrct 만 빼고 나머지 쿼리(paymentId 등)는 그대로 남긴 쿼리 문자열("?..." 또는 "") */
+  cleanedSearch: string;
+}
+
+/**
+ * middleware 에서 요청 주소의 ksrc·ksrct 를 검사해 쿠키 설정 값과 정리된 쿼리를 만든다.
+ * - 등록된 코드만 받는다(없으면 null = 무시).
+ * - ksrct 는 정수이고 now-30일 ≤ ksrct ≤ now 일 때만 쓰고, 아니면 지금 시각을 쓴다.
+ * - 이미 kd_src_t 가 있고 그 시각이 ksrct 보다 늦으면(더 최근 클릭) 덮어쓰지 않는다.
+ */
+export function resolveCampaignHandoff(
+  searchParams: URLSearchParams,
+  cookieHeader: string | null | undefined,
+  nowMs: number = Date.now()
+): CampaignHandoffResolution | null {
+  const rawCode = searchParams.get(CAMPAIGN_HANDOFF_CODE_PARAM);
+  if (!rawCode) return null;
+  const link = findCampaignLink(rawCode);
+  if (!link) return null;
+
+  const nowSec = Math.floor(nowMs / 1000);
+  const windowSec = CAMPAIGN_COOKIE_DAYS * 24 * 60 * 60;
+  const rawTime = searchParams.get(CAMPAIGN_HANDOFF_TIME_PARAM) ?? "";
+  const parsedSec = /^[0-9]{9,11}$/.test(rawTime) ? Number(rawTime) : NaN;
+  const clickSec =
+    Number.isInteger(parsedSec) && parsedSec >= nowSec - windowSec && parsedSec <= nowSec ? parsedSec : nowSec;
+
+  const existingTag = campaignFromCookieHeader(cookieHeader);
+  const existingMs = campaignClickTimeFromCookieHeader(cookieHeader);
+  const existingSec = existingMs !== null ? Math.floor(existingMs / 1000) : null;
+  const shouldSetCookies = !(existingTag !== null && existingSec !== null && existingSec > clickSec);
+
+  const maxAge = Math.max(1, clickSec + windowSec - nowSec);
+  const cleaned = new URLSearchParams(searchParams);
+  cleaned.delete(CAMPAIGN_HANDOFF_CODE_PARAM);
+  cleaned.delete(CAMPAIGN_HANDOFF_TIME_PARAM);
+  const qs = cleaned.toString();
+
+  return {
+    shouldSetCookies,
+    cookies: {
+      src: campaignTag(link),
+      srcT: String(clickSec),
+      ref: formatCampaignRef(link.code, clickSec),
+      maxAge,
+    },
+    cleanedSearch: qs ? `?${qs}` : "",
+  };
 }
 
 /** 요청의 Cookie 헤더에서 유입 표시를 꺼낸다. 없거나 형식이 다르면 null. */

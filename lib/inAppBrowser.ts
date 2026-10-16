@@ -1,4 +1,5 @@
 import { trackEvent } from "@/lib/gtag";
+import { appendCampaignHandoffParams } from "@/lib/campaignLinks";
 
 /**
  * In-App Browser Detection Utility
@@ -109,13 +110,20 @@ export function clientEnvLabel(): string {
   return `${app}:${mobile ? 'm' : 'pc'}`;
 }
 
+/** 외부 브라우저로 열거나 복사할 주소에 제휴 표시(kd_ref → ksrc·ksrct)를 붙인다. */
+export function externalBrowserUrl(targetUrl?: string, cookieHeader?: string | null): string {
+  const raw = targetUrl || (typeof window !== "undefined" ? window.location.href : "");
+  if (!raw) return "";
+  return appendCampaignHandoffParams(raw, cookieHeader);
+}
+
 /**
  * 외부 브라우저로 탈출 시도.
  * @returns true = 탈출 시도함(호출부는 모달 안 띄워도 됨) / false = 못 함(호출부가 복사+안내 모달 띄워야 함)
  */
 export function openInExternalBrowser(targetUrl?: string): boolean {
   if (typeof window === 'undefined') return false;
-  const url = targetUrl || window.location.href;
+  const url = externalBrowserUrl(targetUrl);
   const provider = getInAppProvider();
 
   // 카카오톡: 공식 외부열기 스킴 (iOS/안드 모두 동작)

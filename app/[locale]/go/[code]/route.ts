@@ -4,11 +4,13 @@ import { isBotUserAgent } from "@/app/api/visit/route";
 import {
   CAMPAIGN_COOKIE,
   CAMPAIGN_COOKIE_DAYS,
+  CAMPAIGN_REF_COOKIE,
   CAMPAIGN_TIME_COOKIE,
   campaignCounterKey,
   campaignTag,
   campaignTargetPath,
   findCampaignLink,
+  formatCampaignRef,
   kstDateKey,
 } from "@/lib/campaignLinks";
 
@@ -39,6 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ loca
 
   // 광고 클릭 표시(fbclid 등)는 도착 주소로 넘긴다
   const res = redirectTo(campaignTargetPath(link, locale, req.nextUrl.searchParams));
+  const nowSec = Math.floor(Date.now() / 1000);
   const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -48,6 +51,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ loca
   };
   res.cookies.set(CAMPAIGN_COOKIE, campaignTag(link), cookieOptions);
   // 누른 시각(초) — 이 뒤에 가입한 사람만 "배너로 가입"으로 센다
-  res.cookies.set(CAMPAIGN_TIME_COOKIE, String(Math.floor(Date.now() / 1000)), cookieOptions);
+  res.cookies.set(CAMPAIGN_TIME_COOKIE, String(nowSec), cookieOptions);
+  // 외부 브라우저로 넘어갈 때 주소에 실어 보낼 제휴 코드·시각(httpOnly 아님, 코드만 담고 개인정보 없음)
+  res.cookies.set(CAMPAIGN_REF_COOKIE, formatCampaignRef(link.code, nowSec), {
+    ...cookieOptions,
+    httpOnly: false,
+  });
   return res;
 }
