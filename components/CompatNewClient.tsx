@@ -20,6 +20,13 @@ import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Link2 } from "lucide-react";
+import {
+  loadSentInvites,
+  saveSentInvite,
+  removeSentInvite,
+  relationLabel,
+} from "@/lib/compatInvite";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 
@@ -49,9 +56,37 @@ interface CompatNewClientProps {
   fromVia?: string;
   /** 상품별 섹션 제목(서버가 넘김 — 프롬프트 원문은 클라이언트로 가져오지 않는다) */
   sectionOutlines?: SectionOutlineMap;
+  /** ?mode=invite 진입 시 반쪽 초대장 모드로 시작 */
+  initialInviteMode?: boolean;
 }
 
-export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId, fromVia, sectionOutlines = {} }: CompatNewClientProps) {
+function getReadyKakaoForInvite() {
+  if (typeof window === "undefined") return null;
+  const kakao = window.Kakao;
+  if (!kakao || typeof kakao.init !== "function") return null;
+  try {
+    if (!kakao.isInitialized()) {
+      const jsKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || "";
+      if (!jsKey) return null;
+      kakao.init(jsKey);
+    }
+    return kakao.isInitialized() ? kakao : null;
+  } catch {
+    return null;
+  }
+}
+
+export default function CompatNewClient({
+  locale,
+  refToken,
+  productId,
+  initialProfile,
+  visibleIds,
+  fromCompatId,
+  fromVia,
+  sectionOutlines = {},
+  initialInviteMode = false,
+}: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -276,8 +311,203 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     }
   };
 
+  // [P-008] 반쪽 초대장 모드 및 보낸 초대장 완성 확인
+  const [inviteMode, setInviteMode] = useState<boolean>(
+    Boolean(initialInviteMode && !isSpecialCouple)
+  );
+  const [createdInvite, setCreatedInvite] = useState<{
+    token: string;
+    nameA: string;
+    relation: string;
+  } | null>(null);
+  const [inviteToast, setInviteToast] = useState<string | null>(null);
+  const [completedSentInvites, setCompletedSentInvites] = useState<
+    { token: string; shareToken: string }[]
+  >([]);
+
+  useEffect(() => {
+    if (isSpecialCouple) return;
+    const sent = loadSentInvites();
+    if (sent.length === 0) return;
+
+    let alive = true;
+    (async () => {
+      const found: { token: string; shareToken: string }[] = [];
+      for (const item of sent) {
+        try {
+          const res = await fetch(`/api/compat/invite/${encodeURIComponent(item.token)}`, {
+            cache: "no-store",
+          });
+          if (res.status === 410 || res.status === 404) {
+            removeSentInvite(item.token);
+            continue;
+          }
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (json?.status === "completed" && typeof json?.shareToken === "string") {
+            found.push({ token: item.token, shareToken: json.shareToken });
+          }
+        } catch {
+          // 네트워크 오류 시 다음 방문에 다시 확인
+        }
+      }
+      if (alive && found.length > 0) {
+        setCompletedSentInvites(found);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [isSpecialCouple]);
+
+  const handleCreateInvite = async () => {
+    setErrorMsg(null);
+    if (!yearA || !monthA || !dayA) {
+      setErrorMsg("내 생년월일을 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const dobA = `${yearA}-${String(monthA).padStart(2, "0")}-${String(dayA).padStart(2, "0")}`;
+      let finalTimeA: string | null = null;
+      if (ampmA) {
+        let h = parseInt(hourA, 10);
+        if (ampmA === "PM" && h !== 12) h += 12;
+        if (ampmA === "AM" && h === 12) h = 0;
+        finalTimeA = `${String(h).padStart(2, "0")}:${String(minA).padStart(2, "0")}`;
+      }
+
+      const cleanNameA = nameA.trim() || "나";
+
+      const res = await fetch("/api/compat/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personA: {
+            name: cleanNameA,
+            dob: dobA,
+            gender: genderA,
+            time: finalTimeA,
+          },
+          relation,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || typeof json?.token !== "string") {
+        throw new Error(json?.error || "초대장 생성 중 오류가 발생했습니다.");
+      }
+
+      saveLastPerson({
+        name: cleanNameA,
+        dob: dobA,
+        time: finalTimeA,
+        gender: genderA,
+      });
+
+      // [SECURITY] localStorage에는 { token, createdAt }만 저장한다 (이름·생년월일 저장 금지)
+      saveSentInvite(json.token);
+
+      trackEvent("compat_invite_created", { relation });
+      setCreatedInvite({
+        token: json.token,
+        nameA: cleanNameA,
+        relation,
+      });
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "초대장 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getInviteUrl = (token: string) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://kongdak.kr";
+    return `${origin}/${locale}/compat/invite/${token}`;
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!createdInvite) return;
+    const inviteUrl = getInviteUrl(createdInvite.token);
+    trackEvent("compat_invite_shared", { method: "link", relation: createdInvite.relation });
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(inviteUrl);
+        setInviteToast("반쪽 초대장 링크가 복사되었어요! 상대방에게 보내보세요 💌");
+        setTimeout(() => setInviteToast(null), 3000);
+      } catch {
+        setInviteToast("링크 복사에 실패했습니다.");
+        setTimeout(() => setInviteToast(null), 2000);
+      }
+    }
+  };
+
+  const handleKakaoInviteShare = () => {
+    if (!createdInvite) return;
+    const kakao = getReadyKakaoForInvite();
+    if (!kakao) {
+      void handleCopyInviteLink();
+      return;
+    }
+
+    trackEvent("compat_invite_shared", { method: "kakao", relation: createdInvite.relation });
+
+    let baseDomain = process.env.NEXT_PUBLIC_SITE_URL || "https://kongdak.kr";
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        baseDomain = window.location.origin;
+      }
+    }
+
+    const inviteUrl = `${baseDomain}/${locale}/compat/invite/${createdInvite.token}`;
+    const imageUrl = `${baseDomain}/api/og/compat?inviteToken=${encodeURIComponent(createdInvite.token)}&w=800&h=400`;
+
+    try {
+      if (typeof kakao.Share?.sendDefault === "function") {
+        kakao.Share.sendDefault({
+          objectType: "feed",
+          content: {
+            title: `${createdInvite.nameA}님이 반쪽 궁합을 채워뒀어요 💌`,
+            description: `${createdInvite.nameA}님의 반쪽은 이미 입력 완료! 내 생년월일만 채우면 우리 두 사람의 궁합 점수가 바로 열려요.`,
+            imageUrl,
+            imageWidth: 800,
+            imageHeight: 400,
+            link: {
+              mobileWebUrl: inviteUrl,
+              webUrl: inviteUrl,
+            },
+          },
+          buttons: [
+            {
+              title: "내 생년월일 채우고 궁합 열기 💘",
+              link: {
+                mobileWebUrl: inviteUrl,
+                webUrl: inviteUrl,
+              },
+            },
+          ],
+        });
+      } else if (typeof kakao.Share?.sendScrap === "function") {
+        kakao.Share.sendScrap({ requestUrl: inviteUrl });
+      }
+    } catch {
+      void handleCopyInviteLink();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (inviteMode && !isSpecialCouple) {
+      await handleCreateInvite();
+      return;
+    }
     setErrorMsg(null);
 
     if (!yearA || !monthA || !dayA) {
@@ -512,9 +742,102 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     );
   }
 
+  // [P-008] 반쪽 초대장 생성 완료 화면
+  if (createdInvite) {
+    return (
+      <div className="w-full max-w-md mx-auto flex flex-col gap-5 pb-12 text-center">
+        {inviteToast && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-ink text-white px-5 py-3 rounded-full text-sm font-semibold shadow-xl transition-all duration-300 border border-[#FF8AA1]/30">
+            {inviteToast}
+          </div>
+        )}
+
+        <div className="w-full bg-gradient-to-br from-[#FF8AA1] via-[coral] to-[plum] rounded-3xl p-6 text-white shadow-lg">
+          <span className="inline-flex items-center gap-1 bg-black/25 backdrop-blur-sm text-gold px-3 py-1 rounded-full text-xs font-extrabold mb-3">
+            💌 {relationLabel(createdInvite.relation)} 반쪽 초대장
+          </span>
+          <h2 className="text-lg sm:text-xl font-black tracking-tight">
+            {createdInvite.nameA}님의 반쪽이 준비됐어요!
+          </h2>
+          <p className="text-xs font-semibold text-white/90 mt-1.5 leading-relaxed">
+            상대방에게 링크를 보내면, 상대방이 생년월일만 입력해
+            <br />
+            우리 두 사람의 궁합 점수를 바로 열 수 있어요.
+          </p>
+          <p className="text-[11px] font-medium text-white/80 mt-2">
+            내 생년월일·태어난 시간 원문은 상대방에게 보이지 않아요 (72시간 유효)
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleKakaoInviteShare}
+            className="w-full bg-[#FEE500] hover:bg-[#FEE500]/90 active:scale-[0.96] text-[#191919] py-4 rounded-2xl font-bold text-base shadow-xs transition-all duration-150 flex items-center justify-center gap-2"
+          >
+            <svg viewBox="0 0 32 32" className="w-5 h-5 fill-current">
+              <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
+            </svg>
+            <span>카카오톡으로 반쪽 초대장 보내기</span>
+          </button>
+
+          <Button
+            type="button"
+            onClick={handleCopyInviteLink}
+            variant="primary"
+            size="lg"
+            fullWidth
+            leftIcon={<Link2 className="w-5 h-5 text-white" />}
+          >
+            <span>초대장 링크 복사하기</span>
+          </Button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setCreatedInvite(null);
+            setInviteMode(false);
+          }}
+          className="mt-1 text-xs font-bold text-text-2 hover:text-coral underline underline-offset-4 transition-colors py-2"
+        >
+          기다리지 않고 내가 아는 생년월일로 바로 볼래요 →
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md md:max-w-3xl flex flex-col gap-6 pb-12 mx-auto">
       <OwnedReportNotice locale={locale} catalogId={productId || "compat_basic"} source="compat_new" />
+
+      {/* [P-008] 보낸 반쪽 초대장이 완성된 경우 상단 안내 배너 */}
+      {completedSentInvites.length > 0 && !isSpecialCouple && (
+        <div className="rounded-2xl border border-coral/35 bg-coral-soft p-4 flex items-center justify-between gap-3">
+          <div className="text-left min-w-0">
+            <p className="text-xs font-extrabold text-coral-deep">
+              🎉 보내신 반쪽 초대장이 완성됐어요!
+            </p>
+            <p className="text-[11px] font-medium text-text-2 mt-0.5">
+              상대방이 생년월일을 입력해 우리 궁합 결과가 열렸어요.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                const target = completedSentInvites[0];
+                removeSentInvite(target.token);
+                router.push(`/${locale}/compat/${target.shareToken}`);
+              }}
+              className="rounded-xl bg-coral hover:bg-coral-deep text-white px-3.5 py-2 text-xs font-extrabold shadow-2xs transition-all active:scale-[0.96]"
+            >
+              결과 보기 →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 3D Product Icon 72px & Title */}
       <div className="flex flex-col items-center justify-center -mb-2">
         <div className="w-[72px] h-[72px] relative mb-2">
@@ -715,134 +1038,182 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
 
         {/* Person B (Partner) */}
         <Card className="p-5 flex flex-col gap-3.5 h-full">
-          <div className="flex items-center gap-2 border-b border-line pb-2">
-            <span className="text-base">💖</span>
-            <h3 className="font-bold text-sm text-ink">상대방 정보</h3>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-2 mb-1">상대방 이름 또는 애칭 (선택)</label>
-            <input
-              type="text"
-              value={nameB}
-              onChange={(e) => setNameB(e.target.value)}
-              placeholder="예: 이설렘"
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-2 mb-1">
-                생년월일 <span className="text-coral">*</span>
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <select
-                  value={yearB}
-                  onChange={(e) => setYearB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                >
-                  <option value="">년도</option>
-                  {years.map((y) => (
-                    <option key={y} value={y}>
-                      {y}년
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={monthB}
-                  onChange={(e) => setMonthB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                >
-                  <option value="">월</option>
-                  {months.map((m) => (
-                    <option key={m} value={m}>
-                      {m}월
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={dayB}
-                  onChange={(e) => setDayB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                >
-                  <option value="">일</option>
-                  {Array.from(
-                    { length: getDaysInMonth(yearB, monthB) },
-                    (_, i) => i + 1
-                  ).map((d) => (
-                    <option key={d} value={d}>
-                      {d}일
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="flex items-center justify-between gap-2 border-b border-line pb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💖</span>
+              <h3 className="font-bold text-sm text-ink">상대방 정보</h3>
             </div>
+            {!isSpecialCouple && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !inviteMode;
+                  setInviteMode(next);
+                  setErrorMsg(null);
+                  if (next) {
+                    trackEvent("compat_invite_entry_click", { source: "compat_new" });
+                  }
+                }}
+                className="text-[11px] font-bold text-coral hover:text-coral-deep bg-coral-soft px-2.5 py-1 rounded-full transition-colors shrink-0"
+              >
+                {inviteMode ? "직접 입력으로 돌아가기" : "생일을 모르나요? 반쪽 초대장 보내기"}
+              </button>
+            )}
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
-                <select
-                  value={genderB}
-                  onChange={(e) => setGenderB(e.target.value as "M" | "F")}
+          {inviteMode && !isSpecialCouple ? (
+            <div className="flex-1 rounded-2xl bg-surface-soft border border-coral/25 p-4 flex flex-col justify-center gap-2 text-left">
+              <p className="text-sm font-extrabold text-ink">
+                💌 상대방의 생년월일을 몰라도 괜찮아요
+              </p>
+              <p className="text-xs font-medium text-text-2 leading-relaxed">
+                내 정보만 입력하고 반쪽 초대장 링크를 보내면, 상대방이 직접 생년월일을 채워 우리 두 사람의 궁합 점수를 바로 열 수 있어요.
+              </p>
+              <p className="text-[11px] font-semibold text-coral-deep">
+                내 생년월일과 태어난 시간 원문은 상대방에게 보이지 않아요.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-text-2 mb-1">상대방 이름 또는 애칭 (선택)</label>
+                <input
+                  type="text"
+                  value={nameB}
+                  onChange={(e) => setNameB(e.target.value)}
+                  placeholder="예: 이설렘"
                   className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                >
-                  <option value="M">남성</option>
-                  <option value="F">여성</option>
-                </select>
+                />
               </div>
-              <div className="sm:col-span-3">
-                <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <select
-                    value={ampmB}
-                    onChange={(e) => setAmpmB(e.target.value)}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                  >
-                    <option value="">모름</option>
-                    <option value="AM">오전</option>
-                    <option value="PM">오후</option>
-                  </select>
-                  <select
-                    value={hourB}
-                    onChange={(e) => setHourB(e.target.value)}
-                    disabled={!ampmB}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
-                  >
-                    {hours.map((h) => (
-                      <option key={h} value={h}>
-                        {h}시
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={minB}
-                    onChange={(e) => setMinB(e.target.value)}
-                    disabled={!ampmB}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
-                  >
-                    {minutes.map((m) => (
-                      <option key={m} value={m}>
-                        {m}분
-                      </option>
-                    ))}
-                  </select>
+
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-text-2 mb-1">
+                    생년월일 <span className="text-coral">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      value={yearB}
+                      onChange={(e) => setYearB(e.target.value)}
+                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    >
+                      <option value="">년도</option>
+                      {years.map((y) => (
+                        <option key={y} value={y}>
+                          {y}년
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={monthB}
+                      onChange={(e) => setMonthB(e.target.value)}
+                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    >
+                      <option value="">월</option>
+                      {months.map((m) => (
+                        <option key={m} value={m}>
+                          {m}월
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={dayB}
+                      onChange={(e) => setDayB(e.target.value)}
+                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    >
+                      <option value="">일</option>
+                      {Array.from(
+                        { length: getDaysInMonth(yearB, monthB) },
+                        (_, i) => i + 1
+                      ).map((d) => (
+                        <option key={d} value={d}>
+                          {d}일
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
+                    <select
+                      value={genderB}
+                      onChange={(e) => setGenderB(e.target.value as "M" | "F")}
+                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    >
+                      <option value="M">남성</option>
+                      <option value="F">여성</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <select
+                        value={ampmB}
+                        onChange={(e) => setAmpmB(e.target.value)}
+                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                      >
+                        <option value="">모름</option>
+                        <option value="AM">오전</option>
+                        <option value="PM">오후</option>
+                      </select>
+                      <select
+                        value={hourB}
+                        onChange={(e) => setHourB(e.target.value)}
+                        disabled={!ampmB}
+                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                      >
+                        {hours.map((h) => (
+                          <option key={h} value={h}>
+                            {h}시
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={minB}
+                        onChange={(e) => setMinB(e.target.value)}
+                        disabled={!ampmB}
+                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                      >
+                        {minutes.map((m) => (
+                          <option key={m} value={m}>
+                            {m}분
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </Card>
       </div>
 
       {/* Submit Button */}
-      <Button
-        type="submit"
-        size="lg"
-        fullWidth
-        isLoading={isLoading}
-      >
-        우리 궁합 점수 확인하기 (무료) ✨
-      </Button>
+      <div className="flex flex-col gap-2 items-center">
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          isLoading={isLoading}
+        >
+          {inviteMode && !isSpecialCouple
+            ? "반쪽 초대장 링크 만들기 (무료) 💌"
+            : "우리 궁합 점수 확인하기 (무료) ✨"}
+        </Button>
+
+        {inviteMode && !isSpecialCouple && (
+          <button
+            type="button"
+            onClick={() => setInviteMode(false)}
+            className="text-xs font-bold text-text-2 hover:text-coral underline underline-offset-4 transition-colors py-1.5"
+          >
+            기다리지 않고 내가 아는 생년월일로 바로 볼래요 →
+          </button>
+        )}
+      </div>
     </form>
   );
 }

@@ -1033,6 +1033,16 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         >
           <span>인스타 스토리 카드 다운로드 (1080×1350)</span>
         </Button>
+
+        {/* 반쪽 궁합 초대장 보조 버튼 (P-008 입구 2) */}
+        <Link
+          href={`/${locale}/compat/new?mode=invite`}
+          onClick={() => trackEvent("compat_invite_entry_click", { source: "compat_result" })}
+          className="w-full py-3.5 px-4 rounded-2xl bg-surface-soft hover:bg-coral-soft/60 border border-line text-ink text-xs sm:text-sm font-bold transition-all active:scale-[0.96] flex items-center justify-center gap-1.5"
+        >
+          <span>💌</span>
+          <span>생일 모르는 친구에게 내 반쪽 초대장 보내기 →</span>
+        </Link>
       </div>
 
       {/* Guest Checkout Modal */}

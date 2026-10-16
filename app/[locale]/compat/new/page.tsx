@@ -49,12 +49,12 @@ export async function generateMetadata({
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ ref?: string; productId?: string; from?: string; via?: string }>;
+  searchParams: Promise<{ ref?: string; productId?: string; from?: string; via?: string; mode?: string }>;
 }
 
 export default async function CompatNewPage({ params, searchParams }: PageProps) {
   const { locale } = await params;
-  const { ref, productId, from, via } = await searchParams;
+  const { ref, productId, from, via, mode } = await searchParams;
 
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
@@ -92,7 +92,17 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
       </div>
 
       {/* Form Component */}
-      <CompatNewClient locale={locale} refToken={ref} productId={productId} initialProfile={profile} visibleIds={visibleIds} fromCompatId={from} fromVia={via} sectionOutlines={sectionOutlines()} />
+      <CompatNewClient
+        locale={locale}
+        refToken={ref}
+        productId={productId}
+        initialProfile={profile}
+        visibleIds={visibleIds}
+        fromCompatId={from}
+        fromVia={via}
+        sectionOutlines={sectionOutlines()}
+        initialInviteMode={mode === "invite"}
+      />
     </main>
   );
 }
