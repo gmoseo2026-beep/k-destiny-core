@@ -179,7 +179,7 @@ function PayCompleteContent() {
         objectType: "feed",
         content: {
           title: "콩닥 — 내가 결제한 궁합 리포트 보관함 💌",
-          description: "결제한 브라우저로 열어야 바로 보입니다. 다른 앱에서 보려면 가입해 계정에 보관해 두세요.",
+          description: "카톡 안에서 열면 잠겨 보일 수 있어요. 결제한 브라우저에서 열거나, 가입해 계정에 보관해 두세요.",
           imageUrl: `${origin}/og-image.png`,
           link: {
             mobileWebUrl: link,
@@ -286,7 +286,7 @@ function PayCompleteContent() {
                 onClick={handleShareKakaoSelf}
                 className="flex-1 bg-[#FEE500] text-[#191919] py-2 px-3 rounded-2xl text-xs font-bold shadow-xs hover:bg-[#FDD835] transition-all flex items-center justify-center gap-1.5 active:scale-[0.96] focus-visible:ring-2 ring-coral"
               >
-                <span>💬 카톡으로 저장</span>
+                <span>💬 카톡으로 링크 보내기</span>
               </button>
             </div>
           </Card>
