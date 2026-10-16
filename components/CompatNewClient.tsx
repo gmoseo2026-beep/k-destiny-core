@@ -416,6 +416,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
               mode="teaser"
               score={teaserResult.score}
               data={teaserResult.data}
+              catalogId={product.id}
               lockedSpecs={lockedSpecs}
               onLockedClick={() => {
                 trackTeaserUnlock(product.id, "locked_card");

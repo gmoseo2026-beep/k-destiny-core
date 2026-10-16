@@ -6,6 +6,7 @@ import { ReportSection } from "@/components/ui/ReportSection";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { StandardReport, StandardTeaser } from "@/lib/reports/standard";
+import { getTeaserBlurCopy } from "@/lib/teaserBlurCopy";
 import { Lock, Sparkles, CheckCircle2, XCircle, Heart, MessageCircleQuestion } from "lucide-react";
 
 interface LockedSectionInfo {
@@ -17,6 +18,7 @@ interface StandardReportViewProps {
   mode: "teaser" | "full";
   score: number;
   data: StandardReport | StandardTeaser;
+  catalogId?: string;
   lockedSpecs?: LockedSectionInfo[];
   /** 티저의 잠긴 칸을 누르면 결제 안내를 연다(없으면 누를 수 없는 카드) */
   onLockedClick?: () => void;
@@ -30,6 +32,7 @@ export default function StandardReportView({
   mode,
   score,
   data,
+  catalogId,
   lockedSpecs = [],
   onLockedClick,
 }: StandardReportViewProps) {
@@ -149,8 +152,7 @@ export default function StandardReportView({
           {teaser.freeSection.clipped && (
             <div className="relative mt-1">
               <p aria-hidden className="select-none text-sm leading-relaxed text-ink blur-[5px]">
-                이 뒤에는 왜 그런지, 그리고 그 장면이 언제 다시 돌아오는지가 이어져요. 마지막 문단에는 그때 무엇을 하면
-                되는지까지 적혀 있어요. 여기까지 읽고 고개를 끄덕였다면, 다음 문단이 바로 그 답이에요.
+                {getTeaserBlurCopy(catalogId)}
               </p>
               <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-b from-white/10 via-white/70 to-white pb-1">
                 {onLockedClick ? (

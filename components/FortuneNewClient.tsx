@@ -373,6 +373,7 @@ export default function FortuneNewClient({
             mode={product?.isFree ? "full" : "teaser"}
             score={resultData.score}
             data={resultData.reportData}
+            catalogId={product?.id}
             lockedSpecs={lockedSpecs}
             onLockedClick={
               product && !product.isFree
