@@ -535,3 +535,15 @@
 - 검토에서 고친 것: Gemini가 `paywallRef`를 카드 전체로 옮겨 `view_paywall`(useSeenOnce, threshold 0.5)이 긴 카드에서 늦게·안 잡힐 수 있었다 → 카드 맨 위 0높이 표시점으로 되돌리고 숨김 판단만 `paywallCardRef`로.
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 424 통과 · build exit 0.
 - 판정: 2주 뒤 annual_2026/2027 `teaser_created → checkout_open → purchase`를 직전 2주와 비교, 세트 결제 수 기록.
+
+---
+
+# 2026-10-16 · P-007 병합(Gemini 구현, Claude 검토·수정)
+- 결정서: `docs/uiux/decisions/P-007.md`, 문구 `decisions/P-007_문구.md`. 커밋 41afca7(ⓐ 권유) · 373e00b(ⓑ 회원 판별) · 7b31fc9(ⓒ 문구) + 검토 수정 1건.
+- ⓐ 두 사람 리포트 끝(`ReportViewClient`, 두 사람 상품일 때)과 정통 궁합 심층 리포트 끝(`CompatResultClient`)에 "두 사람 사주로 이어서 볼 수 있어요" 권유: 단품 최대 2개 + 세트 1줄. 표 `lib/recommendations/nextReadings.ts`(7종, id만). 같은 궁합으로 가진 것(이 기기 주문 → `/api/payments/owned` 검증, 회원은 `/api/reports/mine`)·숨긴 상품은 빼고, 확인 중·실패 시 그리지 않음. `/api/reports/view` 응답에 `compatId` 추가. 이동 `/compat/new?productId=&from=&via=next` → `teaser_created.via = next_reading`. 이벤트 `view_next_reading`, `click_next_reading`.
+- ⓑ `/compat/[id]` 회원 열람 판별을 `isEntitled`로(`resolveCompatPageEntitlement`): 정통 궁합·그것이 든 세트를 산 회원은 다른 기기에서도 열림. 비회원은 조회 추가 없음. MP-1의 자동 시작과 이어져 그 회원은 심층 리포트가 바로 열린다.
+- ⓒ 잠긴 궁합 화면 결제 버튼 아래 "이미 결제하셨나요?" 한 줄 + 로그인 링크, 결제 완료 카카오톡 메시지 설명·버튼 글자.
+- 검토에서 고친 것: Gemini가 반려된 문구 초안을 그대로 넣었고 버튼 글자 변경과 `owned_hint_login_click`이 빠져 있었다 → 승인본으로 맞춤.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 437 통과 · build exit 0.
+- 의심 지점: 권유로 들어간 미리보기 주소에 `via=next`가 남아 새로고침하면 `teaser_created(via=next_reading)`가 한 번 더 잡힌다. 판정 때 같은 궁합·상품의 중복은 하나로 센다.
+- 판정: 배포 후 21일(11-06) 또는 새 결제 쌍 20개 중 먼저. 같은 두 사람의 7일 내 두 번째 결제 비율(기준 13쌍 중 3쌍).
