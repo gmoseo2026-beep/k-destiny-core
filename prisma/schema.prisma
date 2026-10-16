@@ -452,3 +452,21 @@ model ReportGenLog {
 
   @@index([createdAt])
 }
+
+// 22. [콩닥 P-008] 반쪽 궁합 초대장 — 1:1 1회 완성, 원문 미저장, 완성 즉시 personA 삭제, 미완성 72시간 만료·삭제
+model CompatInvite {
+  id                  String    @id @default(cuid())
+  token               String    @unique
+  creatorId           String?
+  personA             Json
+  relation            String
+  expiresAt           DateTime
+  completedAt         DateTime?
+  completedCompatId   String?
+  completedShareToken String?
+  createdAt           DateTime  @default(now())
+
+  @@index([creatorId])
+  @@index([expiresAt])
+}
+
