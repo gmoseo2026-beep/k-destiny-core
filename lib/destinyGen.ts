@@ -8,6 +8,7 @@
  */
 import { COMPAT_FREE_MARKS } from "@/lib/compatFreeText";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { CompatBreakdown } from "@/lib/compatGauge";
 
 // IMPORTANT: GEMINI_API_KEY MUST be the key of the BILLING-ENABLED project
 // (Google AI Studio → the project under your paid Billing Account). The free vs
@@ -137,8 +138,6 @@ DETERMINISTIC COMPATIBILITY RESULT (DO NOT CALCULATE, USE THIS AS FACT):
 YOUR TASK:
 Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. The Core Keywords are internal labels for background only: never quote or paraphrase them in the output.`;
 }
-
-import type { CompatBreakdown } from "@/lib/compatGauge";
 
 export interface DeepReportContent {
   coreDynamic: string;          // 우리 관계의 핵심 에너지 (2~3문장)
