@@ -547,3 +547,15 @@
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 437 통과 · build exit 0.
 - 의심 지점: 권유로 들어간 미리보기 주소에 `via=next`가 남아 새로고침하면 `teaser_created(via=next_reading)`가 한 번 더 잡힌다. 판정 때 같은 궁합·상품의 중복은 하나로 센다.
 - 판정: 배포 후 21일(11-06) 또는 새 결제 쌍 20개 중 먼저. 같은 두 사람의 7일 내 두 번째 결제 비율(기준 13쌍 중 3쌍).
+
+---
+
+# 2026-10-16 · MP-2 병합(Gemini 구현, Claude 검토·수정)
+- 결정서: `docs/uiux/decisions/MP-2.md`. 커밋 6c9b105(a 게이지) · 3fbf78b(c 흐림 문구) · 8ae1b1f(d 홈 바로가기) · f00c4ab(e 저장 정보 바로 보기) + 검토 수정 1건. (b) 분량 배지는 반려.
+- (a) 궁합 점수 아래 "궁합 점수 세부 분석": 공개 3축(타고난 성향 합 / 두 사람 기운의 균형 / 에너지 온도 조화) + 잠금 2축(서로 채워 주는 정도 / 일상·감정 리듬). 미결제 페이지는 공개 3축 숫자만 받는다(`pickPublicBreakdown`). 잠긴 값은 `/api/compat/deep-report` 성공 응답(권한 확인 뒤, 캐시 포함)에만 `breakdown`으로 실린다. 잠긴 줄 → `checkout_open source=click_gauge_lock`. 매핑 `lib/compatGauge.ts`.
+- (c) 맛보기 흐림 문구를 유료 단품 12종별로(`lib/teaserBlurCopy.ts`, 각 상품 2~4번째 유료 섹션 제목을 그대로 옮김). 나머지는 기존 문구.
+- (d) 비회원 홈 첫 화면 버튼 2개(우리 궁합 무료로 보기 → /compat/new, 2027 신년운 미리보기 → /fortune/annual?year=2027), `home_hero_cta_click`.
+- (e) 상품 상세: 같은 탭에 방금 입력한 정보가 있으면 "저장된 … 정보로 바로 보기"(위·하단 고정) + "다른 생년월일로 새로 입력하기". `product_cta_click location=saved_info_hero|saved_info_sticky`, 두 사람 상품은 `teaser_created.via=saved_detail`.
+- 검토에서 고친 것: 결제 후 점수 아래 카드가 5축 전체로 풀리는데 심층 리포트 안에 같은 카드가 한 번 더 있었다 → 뺌. `lib/destinyGen.ts`(타입 한 줄 추가뿐)의 import 를 파일 머리로.
+- 검증: tsc 0 · 바꾼 파일 lint 새 오류 0(deep-report `any` 3건은 기존) · vitest 444 통과 · build exit 0.
+- 판정: (d) 14일 `home_hero_cta_click`/비회원 홈 세션 ≥ 3%, (e) `saved_info_*` 클릭과 `teaser_created` 도달, (a)(c)는 기능 확인 + 결제 열기 비율이 떨어지지 않는지.
