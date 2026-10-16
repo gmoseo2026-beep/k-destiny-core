@@ -9,6 +9,7 @@ import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
+import { resolveCompatPageEntitlement } from "@/lib/entitlement";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -91,17 +92,6 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   const { ref } = await searchParams;
 
   const session = await getServerSession(authOptions);
-  
-  // Calculate isPremium exactly like in user/entitlement/route.ts
-  const userRow = session?.user?.id ? await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { tier: true, role: true, premiumEndDate: true },
-  }) : null;
-  const now = new Date();
-  const premiumActive =
-    userRow?.tier === "PREMIUM" &&
-    (!userRow.premiumEndDate || userRow.premiumEndDate > now);
-  const isPremium = premiumActive || userRow?.role === "ADMIN";
 
   // shareToken 또는 cuid(id)로 DB 조회
   // (cuid 25자·shareToken 24자로 둘 다 20자를 넘어 길이 분기가 불가능하므로 OR 조회)
@@ -122,6 +112,8 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   if (!compat) {
     notFound();
   }
+
+  const isPremium = await resolveCompatPageEntitlement(session?.user?.id, compat.id);
 
   const pA = compat.personA as { name?: string; gender?: string } | null;
   const pB = compat.personB as { name?: string; gender?: string } | null;

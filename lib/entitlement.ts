@@ -68,3 +68,26 @@ export async function isEntitled(params: {
   // ⛔ 여기서 끝. 과거처럼 compatId 전용 분기로 폴스루하지 않는다(감사 B1).
   return NONE;
 }
+
+/**
+ * 궁합 결과 페이지(/compat/[id])의 서버 렌더링 시 회원 열람 권한 판정 (P-007 §3-1).
+ * - 비회원 방문(!userId)에는 DB 조회를 더하지 않고 즉시 false를 반환한다.
+ * - 로그인한 경우에는 isEntitled({ userId, role, tier, compatId })로 단품·세트·구독·관리자 권한을 판정한다.
+ */
+export async function resolveCompatPageEntitlement(
+  userId: string | null | undefined,
+  compatId: string,
+): Promise<boolean> {
+  if (!userId) return false;
+  const userRow = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { tier: true, role: true },
+  });
+  const entitlement = await isEntitled({
+    userId,
+    role: userRow?.role,
+    tier: userRow?.tier,
+    compatId,
+  });
+  return entitlement.entitled;
+}
