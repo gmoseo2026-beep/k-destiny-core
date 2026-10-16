@@ -4,6 +4,7 @@ import GuestKeepBanner from "@/components/GuestKeepBanner";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
+import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
@@ -19,11 +20,13 @@ import type { PremiumDateSelectionReportContent } from "@/lib/premium/generateDa
 interface ReportViewClientProps {
   locale: string;
   reportId: string;
+  visibleIds?: string[];
 }
 
 interface ReportResponse {
   reportId: string;
   catalogId: string;
+  compatId?: string | null;
   score: number;
   data: unknown;
 }
@@ -57,6 +60,7 @@ const LOADING_STEPS = [
 export default function ReportViewClient({
   locale,
   reportId,
+  visibleIds,
 }: ReportViewClientProps) {
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<ReportResponse | null>(null);
@@ -246,6 +250,16 @@ export default function ReportViewClient({
         score={reportData.score}
         data={reportData.data as StandardReport}
       />
+
+      {product?.target === "couple" && reportData.compatId && (
+        <NextReadingRecommendations
+          currentCatalogId={reportData.catalogId}
+          compatId={reportData.compatId}
+          locale={locale}
+          visibleIds={visibleIds}
+          sourceScreen="report_view"
+        />
+      )}
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-2.5 mt-2">

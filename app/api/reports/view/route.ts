@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
       {
         reportId: report.id,
         catalogId: report.catalogId,
+        compatId: report.compatId,
         score: env.score,
         data: env.data,
       },

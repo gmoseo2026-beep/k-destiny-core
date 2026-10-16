@@ -45,11 +45,13 @@ interface CompatNewClientProps {
   visibleIds?: string[];
   /** 회원 화면 "지난 궁합 이어보기": 이미 만든 궁합으로 입력 없이 바로 이 상품 미리보기 */
   fromCompatId?: string;
+  /** 진입 경로 구분 (next = 리포트 끝 다음 풀이 권유) */
+  fromVia?: string;
   /** 상품별 섹션 제목(서버가 넘김 — 프롬프트 원문은 클라이언트로 가져오지 않는다) */
   sectionOutlines?: SectionOutlineMap;
 }
 
-export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId, sectionOutlines = {} }: CompatNewClientProps) {
+export default function CompatNewClient({ locale, refToken, productId, initialProfile, visibleIds, fromCompatId, fromVia, sectionOutlines = {} }: CompatNewClientProps) {
   const router = useRouter();
 
   const [nameA, setNameA] = useState(initialProfile?.name || "");
@@ -171,7 +173,11 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
         if (!alive) return;
         handledFromRef.current = fromCompatId;
-        trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "compat_continue" });
+        trackEvent("teaser_created", {
+          productId: product.id,
+          tier: product.tier,
+          via: fromVia === "next" ? "next_reading" : "compat_continue",
+        });
         setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
       } catch (err) {
         if (!alive) return;
@@ -183,7 +189,7 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
     return () => {
       alive = false;
     };
-  }, [fromCompatId, isSpecialCouple, product, locale]);
+  }, [fromCompatId, fromVia, isSpecialCouple, product, locale]);
 
   // 방금 입력한 두 사람(같은 탭 안에서만 기억). 상품을 바꿀 때마다 처음부터 다시 넣지 않게 한다.
   const [lastCouple, setLastCouple] = useState<LastCouple | null>(null);

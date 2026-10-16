@@ -153,6 +153,7 @@ describe("POST /api/reports/view route contract tests", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.reportId).toBe("rep_1");
+    expect(body.compatId).toBeNull();
     expect(body.score).toBe(88);
     expect(body.data.headline).toBe("재물운 대길");
 
@@ -160,5 +161,34 @@ describe("POST /api/reports/view route contract tests", () => {
       where: { id: "rep_1", firstViewedAt: null },
       data: { firstViewedAt: expect.any(Date) },
     });
+  });
+
+  // 6. 두 사람 상품 리포트 → 200 응답에 compatId 포함 (P-007 §2-3)
+  it("case 6: couple report returns compatId in 200 response", async () => {
+    session.current = { user: { id: "user_owner", email: "owner@example.com" } };
+    db.generatedReport.findUnique.mockResolvedValueOnce({
+      ...mockReport,
+      id: "rep_couple_1",
+      catalogId: "inner_mind",
+      compatId: "cmp_123",
+    });
+    db.order.findUnique.mockResolvedValueOnce({
+      id: "order_db_1",
+      orderId: "ord_couple_valid",
+      userId: "user_owner",
+      status: "PAID",
+      productType: "COMPAT_SPECIAL",
+      productKey: "inner_mind",
+      type: "SINGLE",
+      compatId: "cmp_123",
+      unlocks: [{ id: "u1", productType: "COMPAT_SPECIAL", productKey: "inner_mind", compatId: "cmp_123", expiresAt: future }],
+    });
+
+    const res = await POST(req({ reportId: "rep_couple_1" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.reportId).toBe("rep_couple_1");
+    expect(body.catalogId).toBe("inner_mind");
+    expect(body.compatId).toBe("cmp_123");
   });
 });

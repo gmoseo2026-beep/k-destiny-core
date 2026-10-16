@@ -27,6 +27,7 @@ import {
 } from "@/lib/payments/client";
 import { getProduct, priceLabel, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
+import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 
 interface CompatData {
   id: string;
@@ -760,6 +761,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             <p className="text-sm font-bold text-coral mb-1">{deepReport.idealMatchEnergy.energyName}</p>
             <p className="text-xs text-ink font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
           </div>
+
+          <NextReadingRecommendations
+            currentCatalogId="compat_basic"
+            compatId={data.id}
+            locale={locale}
+            visibleIds={visibleIds}
+            sourceScreen="compat_unlocked"
+          />
 
           {/* Guest Retention & Account Binding Banner */}
           {!session?.user?.id && (

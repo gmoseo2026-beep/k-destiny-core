@@ -1,6 +1,11 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import ReportViewClient from "@/components/report/ReportViewClient";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveCatalog } from "@/lib/catalogVisibility";
+import { canPreview } from "@/lib/preview";
 
 export const metadata: Metadata = {
   title: "심층 사주 리포트 | 콩닥",
@@ -14,6 +19,11 @@ interface PageProps {
 
 export default async function ReportViewPage({ params }: PageProps) {
   const { locale, reportId } = await params;
+  const session = await getServerSession(authOptions).catch(() => null);
+  const preview = canPreview(session?.user?.email);
+  const visibleIds = (await getEffectiveCatalog())
+    .filter((p) => isViewableFor(p, preview))
+    .map((p) => p.id);
 
   return (
     <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
@@ -29,7 +39,7 @@ export default async function ReportViewPage({ params }: PageProps) {
         </Link>
       </header>
 
-      <ReportViewClient locale={locale} reportId={reportId} />
+      <ReportViewClient locale={locale} reportId={reportId} visibleIds={visibleIds} />
     </main>
   );
 }
