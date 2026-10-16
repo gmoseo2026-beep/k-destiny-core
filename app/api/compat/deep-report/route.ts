@@ -6,6 +6,7 @@ import { parseCompatFreeText } from "@/lib/compatFreeText";
 import { isEntitled } from "@/lib/entitlement";
 import prisma from "@/lib/prisma";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
+import { parseCompatBreakdown } from "@/lib/compatGauge";
 
 type GenResult = { response?: { candidates?: Array<{ finishReason?: string }> } };
 
@@ -40,9 +41,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingReport) {
+      const compatForGauge = await prisma.compatibility.findUnique({
+        where: { id: compatId },
+        select: { breakdown: true },
+      });
+      const cachedObj =
+        existingReport.content && typeof existingReport.content === "object" && !Array.isArray(existingReport.content)
+          ? (existingReport.content as Record<string, unknown>)
+          : {};
       console.log(`[deep-report-timing] cache=hit genMs=0 dbMs=0 model=cache`);
       void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: true, cached: true });
-      return NextResponse.json(existingReport.content, { status: 200 });
+      return NextResponse.json(
+        { ...cachedObj, breakdown: parseCompatBreakdown(compatForGauge?.breakdown) },
+        { status: 200 }
+      );
     }
 
     // 3. Generate new DeepReport
@@ -123,7 +135,10 @@ export async function POST(req: NextRequest) {
     console.log(`[deep-report-timing] cache=miss genMs=${tGen - t0} dbMs=${tDone - tDb0} model=${modelName}`);
 
     void logGeneration({ catalogId: "compat_basic", kind: "FULL", ok: true, ms: Date.now() - tStart });
-    return NextResponse.json(parsedJson, { status: 200 });
+    return NextResponse.json(
+      { ...parsedJson, breakdown: parseCompatBreakdown(compat.breakdown) },
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error("[deep-report] Error:", error);

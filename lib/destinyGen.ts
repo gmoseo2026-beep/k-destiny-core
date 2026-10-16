@@ -138,6 +138,8 @@ YOUR TASK:
 Do not mention the raw scores or numbers. Interpret the dynamic between these two based on their natural energies and elemental balance. The Core Keywords are internal labels for background only: never quote or paraphrase them in the output.`;
 }
 
+import type { CompatBreakdown } from "@/lib/compatGauge";
+
 export interface DeepReportContent {
   coreDynamic: string;          // 우리 관계의 핵심 에너지 (2~3문장)
   strengths: string[];          // 우리가 가진 시너지 강점 3가지
@@ -152,6 +154,7 @@ export interface DeepReportContent {
     energyName: string;         // e.g. "포근하고 든든한 흙 기운"
     traits: string;             // 이런 성향의 사람이 나의 부족한 점을 채워줍니다
   };
+  breakdown?: CompatBreakdown | null;
 }
 
 /**

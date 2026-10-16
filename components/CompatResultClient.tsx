@@ -28,6 +28,7 @@ import {
 import { getProduct, priceLabel, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
+import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
 
 interface CompatData {
   id: string;
@@ -36,6 +37,7 @@ interface CompatData {
   score: number;
   keywords: string[];
   summaryKo: string | null;
+  publicBreakdown?: CompatPublicBreakdown | null;
   personA: { name: string; gender: string };
   personB: { name: string; gender: string };
 }
@@ -611,6 +613,87 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         </div>
       </div>
 
+      {/* 5-Axis Compatibility Gauge Card (공개 3축 + 잠금 2축, 유료 시 5축 전체) */}
+      {(() => {
+        const gaugeItems = buildCompatGaugeItems(data.publicBreakdown, deepReport?.breakdown);
+        if (!gaugeItems) return null;
+        return (
+          <Card className="w-full mt-4 p-4">
+            <div className="flex items-center justify-between mb-2.5">
+              <h3 className="text-sm font-black text-ink">궁합 점수 세부 분석</h3>
+              <span className="text-[11px] font-bold text-text-3">
+                {deepReport?.breakdown ? "5가지 지표 전체" : "3개 공개 · 2개 심층"}
+              </span>
+            </div>
+            <div className="space-y-2.5">
+              {gaugeItems.map((item) => {
+                const isItemUnlocked = item.score !== null && item.step !== null;
+                if (isItemUnlocked && item.step) {
+                  return (
+                    <div key={item.key} className="text-left">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xs font-extrabold text-ink truncate">{item.label}</span>
+                          <span className="rounded-md bg-coral-soft px-1.5 py-0.5 text-[11px] font-bold text-coral-deep shrink-0">
+                            {item.step.stepLabel}
+                          </span>
+                        </div>
+                        <span className="text-xs font-extrabold text-plum tabular-nums shrink-0">
+                          {item.score}/{item.max}
+                        </span>
+                      </div>
+                      <div
+                        className="mt-1 grid gap-1"
+                        style={{ gridTemplateColumns: `repeat(${item.totalCells}, minmax(0, 1fr))` }}
+                      >
+                        {Array.from({ length: item.totalCells }).map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`h-1.5 rounded-full ${
+                              idx < item.step!.filledCells ? "bg-coral" : "bg-line"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      {item.isPublic && item.description && (
+                        <p className="mt-0.5 text-[11px] text-text-3 leading-tight">{item.description}</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => openCompatCheckout("compat_basic", "click_gauge_lock")}
+                    className="w-full rounded-xl bg-surface-soft px-3 py-2 text-left transition-all hover:bg-coral-soft/50 active:scale-[0.98]"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-extrabold text-ink flex items-center gap-1.5 min-w-0">
+                        <Lock className="w-3 h-3 text-coral shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-coral shrink-0">
+                        심층 리포트에서 공개 · ?/{item.max}
+                      </span>
+                    </div>
+                    <div
+                      className="mt-1.5 grid gap-1"
+                      style={{ gridTemplateColumns: `repeat(${item.totalCells}, minmax(0, 1fr))` }}
+                    >
+                      {Array.from({ length: item.totalCells }).map((_, idx) => (
+                        <div key={idx} className="h-1.5 rounded-full bg-line" />
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* 2-B. Top Primary CTA Banner (미결제 시 점수 직후 노출) */}
       {!isPremium && !unlockToken && !deepReport && (
         <>
@@ -713,6 +796,55 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               열람 유효기간: 결제일로부터 90일간 이용 가능
             </p>
           </div>
+
+          {(() => {
+            const fullGaugeItems = buildCompatGaugeItems(data.publicBreakdown, deepReport.breakdown);
+            if (!fullGaugeItems) return null;
+            return (
+              <div className="w-full bg-white rounded-2xl p-4 shadow-md border border-line">
+                <div className="flex items-center justify-between mb-2.5">
+                  <h3 className="text-sm font-black text-plum">두 사람의 5가지 궁합 지표 전체</h3>
+                  <span className="text-[11px] font-bold text-coral">잠금 해제 완료</span>
+                </div>
+                <div className="space-y-2.5">
+                  {fullGaugeItems.map((item) => {
+                    if (item.score === null || !item.step) return null;
+                    return (
+                      <div key={item.key} className="text-left">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-extrabold text-ink truncate">{item.label}</span>
+                            <span className="rounded-md bg-coral-soft px-1.5 py-0.5 text-[11px] font-bold text-coral-deep shrink-0">
+                              {item.step.stepLabel}
+                            </span>
+                          </div>
+                          <span className="text-xs font-extrabold text-plum tabular-nums shrink-0">
+                            {item.score}/{item.max}
+                          </span>
+                        </div>
+                        <div
+                          className="mt-1 grid gap-1"
+                          style={{ gridTemplateColumns: `repeat(${item.totalCells}, minmax(0, 1fr))` }}
+                        >
+                          {Array.from({ length: item.totalCells }).map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`h-1.5 rounded-full ${
+                                idx < item.step!.filledCells ? "bg-coral" : "bg-line"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {item.isPublic && item.description && (
+                          <p className="mt-0.5 text-[11px] text-text-3 leading-tight">{item.description}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
           
           <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-plum">
             <h3 className="text-lg font-black text-plum mb-3">우리 관계의 핵심 에너지</h3>

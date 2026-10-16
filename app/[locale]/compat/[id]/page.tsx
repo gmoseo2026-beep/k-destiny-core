@@ -10,6 +10,7 @@ import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
 import { resolveCompatPageEntitlement } from "@/lib/entitlement";
+import { pickPublicBreakdown } from "@/lib/compatGauge";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -104,6 +105,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
       score: true,
       keywords: true,
       summaryKo: true,
+      breakdown: true,
       personA: true,
       personB: true,
     },
@@ -118,7 +120,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   const pA = compat.personA as { name?: string; gender?: string } | null;
   const pB = compat.personB as { name?: string; gender?: string } | null;
 
-  // 프라이버시 보호: 클라이언트에는 표시용 필드만 전달
+  // 프라이버시 보호: 클라이언트에는 표시용 필드만 전달 (세부 지표도 공개 3축만 전달하고 잠긴 2축은 내려보내지 않는다)
   const initialData = {
     id: compat.id,
     shareToken: compat.shareToken,
@@ -126,6 +128,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
     score: compat.score,
     keywords: compat.keywords,
     summaryKo: compat.summaryKo,
+    publicBreakdown: pickPublicBreakdown(compat.breakdown),
     personA: {
       name: pA?.name || "나",
       gender: pA?.gender || "M",
