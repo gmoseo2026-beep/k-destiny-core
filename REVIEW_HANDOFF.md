@@ -570,3 +570,13 @@
 - 검토에서 고친 것: ① 화면 두 곳이 서버 파일(`lib/compatInvite.ts`)을 가져와 **lunar-javascript 만세력 표가 브라우저 코드에 실렸다**(빌드 산출물에서 "癸亥"·"SolarUtil" 확인) → 브라우저용 `lib/compatInviteClient.ts` 분리, 분리 후 0건. ② 생년월일 해시에 코드에 적힌 대체 pepper가 있었다 → 기존 궁합과 같은 fail-closed, 서버 오류 문구는 손님에게 숨김. ③ 동시에 두 사람이 채우면 궁합이 둘 생길 수 있었다 → `updateMany`로 1회 선점. ④ `compat_created via=half_invite`, `compat_invite_opened isSender`. ⑤ 개인정보처리방침에 "생년월일을 추정할 수 있는 값" 명시.
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 453 통과(초대 9건) · build exit 0.
 - 판정(배포 후 21일, 11-06): `compat_invite_shared` ≥ 10 또는 입력 진입자의 3%, `compat_invite_completed` ≥ 3, 직접 `compat_created`가 줄지 않으면 유지. 공유 3건 미만 또는 완성 0건이면 입력 화면 전환 버튼을 접는다.
+
+---
+
+# 2026-10-16 · P-009 제휴 정산 정확도 + 제휴사별 성과 보기 병합(Gemini 구현, Claude 검토·수정)
+- 결정서: `docs/uiux/decisions/P-009.md`. 커밋 797703e(A) · 9d73915(B) + 검토 수정 b12cdb3.
+- A: `/go`가 `kd_ref`(httpOnly 아님, "<코드>.<초>")를 함께 심고, 인앱 "외부 브라우저로 열기"·링크 복사 주소에 `ksrc`·`ksrct`를 붙인다. `middleware.ts`가 등록된 코드·30일 안 시각만 받아 쿠키를 다시 심고(더 최근 클릭이 있으면 유지, 클릭 수는 안 셈) 두 값을 뺀 주소로 302.
+- B: `/ko/partner/<partner>/<key>`(key = HMAC(PARTNER_REPORT_SECRET, partner) 앞 32자, 비밀값 없으면 404). 그 제휴사 코드의 클릭·가입·결제·매출·정산 기준(부가세·환불 제외)만. GA·픽셀 안 보냄, noindex, robots 차단. 관리자 `/ko/admin/campaigns`에 제휴사별 공유 주소 복사.
+- 운영: `PARTNER_REPORT_SECRET`을 10-16 서버 `.env`에서 직접 생성(값은 어디에도 출력하지 않음).
+- 검토에서 고친 것: ① `lib/inAppBrowser`(화면 7곳이 씀)가 `lib/campaignLinks`를 가져와 **전체 제휴 목록·수수료율이 공개 JS에 실렸다** → 브라우저용 `lib/campaignHandoff.ts` 분리(형식만 확인, 등록 여부는 서버가 확인), 빌드 산출물에서 0건 확인. ② 제휴사 화면 클라이언트가 집계 파일 값을 가져와 같은 문제 → `lib/rateLabel.ts`. ③ 커플다이어리에 `rsRate 0.3`이 들어가 제휴사 화면에 예상 정산액이 떴다 → 삭제(2026년 말까지 무료 제휴). ④ 회원 경로(`User.campaign`) 결제가 기간 제한 없이 실적으로 잡혔다 → `attributedCampaign`: 가입 후 30일 안만(관리자·제휴사 화면 같은 기준). 관리자 화면의 기존 누적 숫자가 조금 줄 수 있다.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 467 통과 · build exit 0.
