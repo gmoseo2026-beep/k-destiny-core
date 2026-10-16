@@ -179,7 +179,7 @@ function PayCompleteContent() {
         objectType: "feed",
         content: {
           title: "콩닥 — 내가 결제한 궁합 리포트 보관함 💌",
-          description: "결제 완료된 궁합 결과 링크입니다. 언제든 다시 열어보세요!",
+          description: "결제한 브라우저로 열어야 바로 보입니다. 다른 앱에서 보려면 가입해 계정에 보관해 두세요.",
           imageUrl: `${origin}/og-image.png`,
           link: {
             mobileWebUrl: link,

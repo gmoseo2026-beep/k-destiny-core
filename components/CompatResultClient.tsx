@@ -887,6 +887,17 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                 </span>
               </button>
 
+              <p className="text-[11px] text-caption leading-relaxed text-center px-1">
+                이미 결제하셨나요? 결제한 브라우저에서 다시 열거나, 계정에 저장해 두셨다면{" "}
+                <Link
+                  href={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/compat/${data.shareToken || data.id}`)}`}
+                  className="font-bold text-plum underline underline-offset-2 hover:text-coral transition-colors"
+                >
+                  로그인
+                </Link>
+                해 주세요.
+              </p>
+
               {upsellSets.length > 0 && (
                 <div className="mt-3">
                   <SetUpsell
