@@ -176,7 +176,12 @@ export default function CompatNewClient({ locale, refToken, productId, initialPr
         trackEvent("teaser_created", {
           productId: product.id,
           tier: product.tier,
-          via: fromVia === "next" ? "next_reading" : "compat_continue",
+          via:
+            fromVia === "next"
+              ? "next_reading"
+              : fromVia === "saved_detail"
+              ? "saved_detail"
+              : "compat_continue",
         });
         setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
       } catch (err) {

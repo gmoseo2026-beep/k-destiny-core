@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
 import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, discountBadge } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
-import ProductViewTracker from "@/components/ProductViewTracker";
+import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
 import type { SectionOutline } from "@/lib/prompts/sectionOutline";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
+import { loadLastCouple, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag, type TagCategory } from "@/components/ui/Tag";
@@ -50,10 +51,21 @@ export function StandardProductDetail({
   sections,
 }: StandardProductDetailProps) {
   const [toast, setToast] = useState<string | null>(null);
+  const [lastCouple, setLastCouple] = useState<LastCouple | null>(null);
+  const [lastPerson, setLastPerson] = useState<LastPerson | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setLastCouple(loadLastCouple());
+      setLastPerson(loadLastPerson());
+    });
+  }, []);
 
   const gradientClass =
     CATEGORY_GRADIENTS[product.category] || "from-[#FF8FA8] to-[#E0245A]";
   const categoryName = CATEGORY_NAMES[product.category] || "운세";
+
+  const isAnnual = product.id === "annual_2026" || product.id === "annual_2027";
 
   // Next path for form input
   const nextPath =
@@ -64,6 +76,33 @@ export function StandardProductDetail({
       : product.target === "couple"
       ? `/${locale}/compat/new?productId=${product.id}`
       : `/${locale}/fortune/new?productId=${product.id}`;
+
+  // 같은 탭(sessionStorage)에 방금 입력한 정보가 있으면 마운트 후 바로 보기 경로를 계산한다(총운 제외).
+  const savedInfo = (() => {
+    if (isAnnual) return null;
+    if (product.target === "couple" && lastCouple) {
+      const nameA = lastCouple.a.name || "나";
+      const nameB = lastCouple.b.name || "상대방";
+      const href =
+        product.id === "compat_basic"
+          ? `/${locale}/compat/${encodeURIComponent(lastCouple.compatId)}`
+          : `/${locale}/compat/new?productId=${encodeURIComponent(product.id)}&from=${encodeURIComponent(lastCouple.compatId)}&via=saved_detail`;
+      return {
+        href,
+        hint: `방금 본 두 사람(${nameA} · ${nameB}) 정보가 남아 있어요`,
+        buttonLabel: "저장된 두 사람 정보로 바로 보기",
+      };
+    }
+    if (product.target === "individual" && lastPerson) {
+      const personLabel = lastPerson.name ? `${lastPerson.name} 님의 ` : "";
+      return {
+        href: `/${locale}/fortune/new?productId=${encodeURIComponent(product.id)}&auto=1`,
+        hint: `방금 입력한 ${personLabel}생년월일 정보가 남아 있어요`,
+        buttonLabel: "저장된 내 정보로 바로 보기",
+      };
+    }
+    return null;
+  })();
 
   // Related products (same target, visible, excluding self, limit 3)
   const relatedProducts = allProducts
@@ -320,6 +359,38 @@ export function StandardProductDetail({
               {toast}
             </div>
           )}
+
+          {savedInfo && (
+            <div className="mt-4 rounded-2xl border border-coral/30 bg-coral-soft p-3.5">
+              <p className="mb-2 text-xs font-bold text-coral-deep">
+                {savedInfo.hint}
+              </p>
+              <ProductCtaLink
+                href={savedInfo.href}
+                productId={product.id}
+                tier={product.tier}
+                target={product.target}
+                isFree={Boolean(product.isFree)}
+                location="saved_info_hero"
+                className="block w-full"
+              >
+                <Button size="md" fullWidth>
+                  {savedInfo.buttonLabel}
+                </Button>
+              </ProductCtaLink>
+              <ProductCtaLink
+                href={nextPath}
+                productId={product.id}
+                tier={product.tier}
+                target={product.target}
+                isFree={Boolean(product.isFree)}
+                location="hero"
+                className="mt-2 block text-center text-xs font-bold text-text-2 underline underline-offset-4 hover:text-coral transition-colors"
+              >
+                다른 생년월일로 새로 입력하기
+              </ProductCtaLink>
+            </div>
+          )}
         </section>
 
         {/* 이 상품이 들어 있는 세트 */}
@@ -522,6 +593,21 @@ export function StandardProductDetail({
 
       {/* 8. Fixed Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-line z-40 max-w-[480px] mx-auto shadow-lg">
+        {savedInfo && (
+          <ProductCtaLink
+            href={savedInfo.href}
+            productId={product.id}
+            tier={product.tier}
+            target={product.target}
+            isFree={Boolean(product.isFree)}
+            location="saved_info_sticky"
+            className="mb-2 block w-full"
+          >
+            <Button size="lg" fullWidth>
+              {savedInfo.buttonLabel}
+            </Button>
+          </ProductCtaLink>
+        )}
         <Link
           prefetch
           href={nextPath}
@@ -534,16 +620,24 @@ export function StandardProductDetail({
               location: "bottom_fixed",
             })
           }
-          className="block w-full"
+          className={
+            savedInfo
+              ? "block w-full text-center text-xs font-bold text-text-2 underline underline-offset-4 py-1 hover:text-coral transition-colors"
+              : "block w-full"
+          }
         >
-          <Button
-            size="lg"
-            fullWidth
-          >
-            {product.isFree
-              ? "무료로 보기"
-              : `무료로 ${product.target === "couple" ? "궁합" : "운세"} 먼저 보기`}
-          </Button>
+          {savedInfo ? (
+            "다른 생년월일로 새로 입력하기"
+          ) : (
+            <Button
+              size="lg"
+              fullWidth
+            >
+              {product.isFree
+                ? "무료로 보기"
+                : `무료로 ${product.target === "couple" ? "궁합" : "운세"} 먼저 보기`}
+            </Button>
+          )}
         </Link>
         {!product.isFree && (
           <p className="text-[11px] text-caption text-center mt-1.5 font-medium">
