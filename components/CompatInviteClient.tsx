@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/gtag";
 import { saveLastPerson } from "@/lib/reportHandoff";
-import { relationLabel } from "@/lib/compatInvite";
+import { loadSentInvites, relationLabel } from "@/lib/compatInviteClient";
 
 interface CompatInviteClientProps {
   locale: string;
@@ -75,7 +75,10 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
           nameA: safeNameA,
           relation: safeRelation,
         });
-        trackEvent("compat_invite_opened", { relation: safeRelation });
+        trackEvent("compat_invite_opened", {
+          relation: safeRelation,
+          isSender: loadSentInvites().some((item) => item.token === token),
+        });
       } catch {
         if (alive) setViewState({ status: "expired" });
       }
@@ -148,7 +151,7 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
       });
 
       trackEvent("compat_invite_completed", { relation: viewState.relation });
-      trackEvent("compat_created", { relation: viewState.relation, via: "invite" });
+      trackEvent("compat_created", { relation: viewState.relation, via: "half_invite" });
 
       router.push(`/${locale}/compat/${json.shareToken}`);
     } catch (err) {

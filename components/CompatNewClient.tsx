@@ -26,7 +26,7 @@ import {
   saveSentInvite,
   removeSentInvite,
   relationLabel,
-} from "@/lib/compatInvite";
+} from "@/lib/compatInviteClient";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 

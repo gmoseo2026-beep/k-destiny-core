@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import prisma from "@/lib/prisma";
-import { isValidInviteToken, relationLabel } from "@/lib/compatInvite";
+import { isValidInviteToken, relationLabel } from "@/lib/compatInviteClient";
 
 export const runtime = "nodejs";
 

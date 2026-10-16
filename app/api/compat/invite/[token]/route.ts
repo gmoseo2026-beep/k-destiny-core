@@ -9,6 +9,7 @@ import type { SajuResult } from "@/lib/saju";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 import { logGeneration } from "@/lib/reports/genLog";
 import {
+  InviteInputError,
   buildSafeInvitePerson,
   isValidInviteToken,
   isValidStoredSafePerson,
@@ -125,10 +126,8 @@ export async function POST(req: Request, context: RouteContext) {
     try {
       safePersonB = buildSafeInvitePerson(body.personB, "상대방");
     } catch (err) {
-      return NextResponse.json(
-        { error: err instanceof Error ? err.message : "입력값이 올바르지 않습니다." },
-        { status: 400 }
-      );
+      if (!(err instanceof InviteInputError)) throw err;
+      return NextResponse.json({ error: err.message }, { status: 400 });
     }
 
     const now = new Date();
@@ -175,6 +174,27 @@ export async function POST(req: Request, context: RouteContext) {
       );
     }
 
+    // 1회 완성 선점: 동시에 두 요청이 와도 하나만 통과한다(나머지는 완성된 결과로 안내)
+    const claim = await prisma.compatInvite.updateMany({
+      where: { id: invite.id, completedAt: null, expiresAt: { gt: now } },
+      data: { completedAt: now },
+    });
+    if (claim.count === 0) {
+      const latest = await prisma.compatInvite.findUnique({
+        where: { id: invite.id },
+        select: { completedShareToken: true, completedCompatId: true },
+      });
+      return NextResponse.json(
+        {
+          status: "completed",
+          error: "이미 완성된 초대장이에요.",
+          shareToken: latest?.completedShareToken ?? null,
+          compatId: latest?.completedCompatId ?? null,
+        },
+        { status: 409 }
+      );
+    }
+
     const safePersonA = invite.personA;
     const compatResult = calculateCompatibility(
       {
@@ -195,33 +215,42 @@ export async function POST(req: Request, context: RouteContext) {
 
     // [DECISION] Compatibility.sourceCompatId에는 "invite:..." 문자열을 넣지 않는다 (null 유지).
     // 유입 연결은 CompatInvite.completedCompatId로 잇는다.
-    const compat = await prisma.compatibility.create({
-      data: {
-        userId,
-        personA: safePersonA as unknown as Prisma.InputJsonValue,
-        personB: safePersonB as unknown as Prisma.InputJsonValue,
-        relation: invite.relation,
-        score: compatResult.score,
-        keywords: compatResult.keywords,
-        breakdown: compatResult.breakdown as unknown as Prisma.InputJsonValue,
-        shareToken,
-        sourceCompatId: null,
-      },
-      select: {
-        id: true,
-        shareToken: true,
-        score: true,
-        keywords: true,
-        relation: true,
-      },
-    });
+    let compat;
+    try {
+      compat = await prisma.compatibility.create({
+        data: {
+          userId,
+          personA: safePersonA as unknown as Prisma.InputJsonValue,
+          personB: safePersonB as unknown as Prisma.InputJsonValue,
+          relation: invite.relation,
+          score: compatResult.score,
+          keywords: compatResult.keywords,
+          breakdown: compatResult.breakdown as unknown as Prisma.InputJsonValue,
+          shareToken,
+          sourceCompatId: null,
+        },
+        select: {
+          id: true,
+          shareToken: true,
+          score: true,
+          keywords: true,
+          relation: true,
+        },
+      });
+    } catch (err) {
+      // 궁합을 못 만들었으면 선점을 풀어 다시 채울 수 있게 한다
+      await prisma.compatInvite.updateMany({
+        where: { id: invite.id, completedCompatId: null },
+        data: { completedAt: null },
+      });
+      throw err;
+    }
 
     // [SECURITY] 완성되는 순간 CompatInvite.personA를 즉시 비운다({})
     await prisma.compatInvite.update({
       where: { id: invite.id },
       data: {
         personA: {} as Prisma.InputJsonValue,
-        completedAt: now,
         completedCompatId: compat.id,
         completedShareToken: compat.shareToken,
       },

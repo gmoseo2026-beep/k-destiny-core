@@ -1,11 +1,10 @@
 import crypto from "crypto";
 import { calculateFourPillars, type SajuResult } from "@/lib/saju";
 
-export const INVITE_TTL_MS = 72 * 60 * 60 * 1000; // 72시간
-export const SENT_INVITES_STORAGE_KEY = "kongdak_sent_invites";
-const MAX_SENT_INVITES = 5;
+export * from "@/lib/compatInviteClient";
 
-export type CompatRelation = "love" | "crush" | "friend";
+/** 손님 입력이 잘못됐을 때만 쓰는 오류(문구를 그대로 보여 줘도 되는 것) */
+export class InviteInputError extends Error {}
 
 export interface InvitePersonInput {
   name?: string;
@@ -22,30 +21,6 @@ export interface SafeInvitePerson {
   dayMaster: SajuResult["dayMaster"];
   elementsScore: SajuResult["elementsScore"];
   fourPillars: SajuResult["fourPillars"];
-}
-
-export interface StoredSentInvite {
-  token: string;
-  createdAt: number;
-}
-
-const VALID_RELATIONS: ReadonlySet<string> = new Set(["love", "crush", "friend"]);
-
-export function normalizeRelation(rel: unknown): CompatRelation {
-  if (typeof rel === "string" && VALID_RELATIONS.has(rel)) {
-    return rel as CompatRelation;
-  }
-  return "love";
-}
-
-export function relationLabel(rel: string): string {
-  if (rel === "crush") return "썸 · 호감";
-  if (rel === "friend") return "친구 · 지인";
-  return "연인 · 커플";
-}
-
-export function isValidInviteToken(token: unknown): token is string {
-  return typeof token === "string" && /^[a-f0-9]{24}$/.test(token);
 }
 
 export function isValidDob(dob: unknown): dob is string {
@@ -73,8 +48,12 @@ export function isValidGender(g: unknown): g is "M" | "F" {
   return g === "M" || g === "F";
 }
 
+// app/api/compat/route.ts 와 같은 해시(비밀 pepper 필수 — 미설정 시 fail-closed)
 function createBirthHash(dob: string, time: string | null | undefined, gender: string): string {
-  const pepper = process.env.BIRTH_HASH_PEPPER || "kongdak-invite-fallback-pepper";
+  const pepper = process.env.BIRTH_HASH_PEPPER;
+  if (!pepper) {
+    throw new Error("BIRTH_HASH_PEPPER 미설정 — PII 단방향 해시를 안전하게 생성할 수 없습니다.");
+  }
   return crypto
     .createHash("sha256")
     .update(`${dob}_${time || "none"}_${gender}_${pepper}`)
@@ -90,13 +69,13 @@ export function buildSafeInvitePerson(
   fallbackName: string
 ): SafeInvitePerson {
   if (!isValidDob(input.dob)) {
-    throw new Error("올바른 생년월일(1900년 이후 및 현재 이전의 유효한 날짜)을 입력해주세요.");
+    throw new InviteInputError("올바른 생년월일(1900년 이후 및 현재 이전의 유효한 날짜)을 입력해주세요.");
   }
   if (!isValidTime(input.time)) {
-    throw new Error("출생 시간은 HH:mm 형식이어야 합니다.");
+    throw new InviteInputError("출생 시간은 HH:mm 형식이어야 합니다.");
   }
   if (!isValidGender(input.gender)) {
-    throw new Error("성별은 'M' 또는 'F'여야 합니다.");
+    throw new InviteInputError("성별은 'M' 또는 'F'여야 합니다.");
   }
 
   const saju = calculateFourPillars(
@@ -130,59 +109,4 @@ export function isValidStoredSafePerson(value: unknown): value is SafeInvitePers
     Boolean(obj.elementsScore && typeof obj.elementsScore === "object") &&
     Boolean(obj.fourPillars && typeof obj.fourPillars === "object")
   );
-}
-
-/**
- * 보낸 사람의 브라우저(localStorage)에는 { token, createdAt }만 저장한다.
- * 이름·생년월일 등 개인정보는 저장하지 않는다.
- */
-export function loadSentInvites(now = Date.now()): StoredSentInvite[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(SENT_INVITES_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    const valid = parsed
-      .filter((item): item is StoredSentInvite => {
-        if (!item || typeof item !== "object") return false;
-        const rec = item as Record<string, unknown>;
-        return (
-          isValidInviteToken(rec.token) &&
-          typeof rec.createdAt === "number" &&
-          Number.isFinite(rec.createdAt) &&
-          now - rec.createdAt < INVITE_TTL_MS
-        );
-      })
-      .map((item) => ({ token: item.token, createdAt: item.createdAt }))
-      .slice(0, MAX_SENT_INVITES);
-    return valid;
-  } catch {
-    return [];
-  }
-}
-
-export function saveSentInvite(token: string, createdAt = Date.now()): void {
-  if (typeof window === "undefined" || !isValidInviteToken(token)) return;
-  try {
-    const existing = loadSentInvites(createdAt).filter((item) => item.token !== token);
-    const next: StoredSentInvite[] = [{ token, createdAt }, ...existing].slice(0, MAX_SENT_INVITES);
-    window.localStorage.setItem(SENT_INVITES_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // localStorage 접근 불가 환경 무시
-  }
-}
-
-export function removeSentInvite(token: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const next = loadSentInvites().filter((item) => item.token !== token);
-    if (next.length === 0) {
-      window.localStorage.removeItem(SENT_INVITES_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(SENT_INVITES_STORAGE_KEY, JSON.stringify(next));
-    }
-  } catch {
-    // localStorage 접근 불가 환경 무시
-  }
 }

@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { getClientIp, checkRateLimit } from "@/lib/rateLimiter";
 import {
   INVITE_TTL_MS,
+  InviteInputError,
   buildSafeInvitePerson,
   normalizeRelation,
   type InvitePersonInput,
@@ -38,10 +39,8 @@ export async function POST(req: Request) {
     try {
       safePersonA = buildSafeInvitePerson(body.personA, "나");
     } catch (err) {
-      return NextResponse.json(
-        { error: err instanceof Error ? err.message : "입력값이 올바르지 않습니다." },
-        { status: 400 }
-      );
+      if (!(err instanceof InviteInputError)) throw err;
+      return NextResponse.json({ error: err.message }, { status: 400 });
     }
 
     const safeRelation = normalizeRelation(body.relation);

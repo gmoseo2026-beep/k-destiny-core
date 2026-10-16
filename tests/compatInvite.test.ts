@@ -25,6 +25,7 @@ vi.mock("@/lib/reports/genLog", () => ({
 const mockInviteCreate = vi.fn();
 const mockInviteFindUnique = vi.fn();
 const mockInviteUpdate = vi.fn();
+const mockInviteUpdateMany = vi.fn();
 const mockInviteDeleteMany = vi.fn();
 const mockCompatCreate = vi.fn();
 
@@ -34,6 +35,7 @@ vi.mock("@/lib/prisma", () => ({
       create: (...args: unknown[]) => mockInviteCreate(...args),
       findUnique: (...args: unknown[]) => mockInviteFindUnique(...args),
       update: (...args: unknown[]) => mockInviteUpdate(...args),
+      updateMany: (...args: unknown[]) => mockInviteUpdateMany(...args),
       deleteMany: (...args: unknown[]) => mockInviteDeleteMany(...args),
     },
     compatibility: {
@@ -68,6 +70,8 @@ describe("P-008 반쪽 궁합 초대장 단위 테스트", () => {
       allowed: true,
     });
     mockInviteDeleteMany.mockResolvedValue({ count: 0 });
+    mockInviteUpdateMany.mockResolvedValue({ count: 1 });
+    process.env.BIRTH_HASH_PEPPER = "test-only-pepper";
   });
 
   it("1) 원문 미저장: 초대장 생성 시 personA에 dob·time 원문이 들어가지 않는다", async () => {
@@ -174,7 +178,10 @@ describe("P-008 반쪽 궁합 초대장 단위 테스트", () => {
     expect(updatedInviteData!.personA).toEqual({});
     expect(updatedInviteData!.completedCompatId).toBe("compat_done_1");
     expect(updatedInviteData!.completedShareToken).toBe("b1b2c3d4e5f60123456789ab");
-    expect(updatedInviteData!.completedAt).toBeInstanceOf(Date);
+    // 완성 시각은 1회 선점(updateMany, completedAt: null 조건)에서 찍힌다
+    const claimArgs = mockInviteUpdateMany.mock.calls[0][0] as { where: Record<string, unknown>; data: Record<string, unknown> };
+    expect(claimArgs.where.completedAt).toBeNull();
+    expect(claimArgs.data.completedAt).toBeInstanceOf(Date);
 
     // Compatibility.sourceCompatId에는 "invite:..." 문자열을 넣지 않는다 (null)
     expect(createdCompatData).not.toBeNull();
@@ -429,5 +436,52 @@ describe("P-008 반쪽 궁합 초대장 단위 테스트", () => {
     );
     expect(completeRes.status).toBe(429);
     expect(mockCompatCreate).not.toHaveBeenCalled();
+  });
+
+  it("8) 동시에 두 번 완성: 선점(updateMany)에 진 요청은 궁합을 만들지 않고 409로 완성된 결과를 안내한다", async () => {
+    const safePersonA = buildSafeInvitePerson({ name: "김콩닥", dob: "1995-05-15", time: null, gender: "F" }, "나");
+    mockInviteFindUnique
+      .mockResolvedValueOnce({
+        id: "inv_race",
+        token: VALID_TOKEN,
+        creatorId: null,
+        personA: safePersonA,
+        relation: "love",
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+        completedAt: null,
+        completedCompatId: null,
+        completedShareToken: null,
+      })
+      .mockResolvedValueOnce({ completedShareToken: "b1b2c3d4e5f60123456789ab", completedCompatId: "compat_first" });
+    mockInviteUpdateMany.mockResolvedValueOnce({ count: 0 });
+
+    const res = await completeInvitePOST(
+      new Request(`http://localhost:3000/api/compat/invite/${VALID_TOKEN}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personB: { name: "이설렘", dob: "1993-10-20", time: null, gender: "M" },
+          consentSharedResult: true,
+        }),
+      }),
+      { params: Promise.resolve({ token: VALID_TOKEN }) }
+    );
+    expect(res.status).toBe(409);
+    expect((await res.json()).shareToken).toBe("b1b2c3d4e5f60123456789ab");
+    expect(mockCompatCreate).not.toHaveBeenCalled();
+  });
+
+  it("9) 해시 비밀값이 없으면 만들지 않고 500(문구에 내부 사정을 드러내지 않는다)", async () => {
+    delete process.env.BIRTH_HASH_PEPPER;
+    const res = await createInvitePOST(
+      new Request("http://localhost:3000/api/compat/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personA: { name: "김콩닥", dob: "1995-05-15", time: null, gender: "F" }, relation: "love" }),
+      })
+    );
+    expect(res.status).toBe(500);
+    expect(JSON.stringify(await res.json())).not.toContain("PEPPER");
+    expect(mockInviteCreate).not.toHaveBeenCalled();
   });
 });

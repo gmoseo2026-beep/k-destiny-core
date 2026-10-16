@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { BASE_URL } from "@/lib/seo";
-import { isValidInviteToken } from "@/lib/compatInvite";
+import { isValidInviteToken } from "@/lib/compatInviteClient";
 import CompatInviteClient from "@/components/CompatInviteClient";
 
 interface PageProps {
