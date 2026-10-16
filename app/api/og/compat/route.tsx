@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import prisma from "@/lib/prisma";
+import { isValidInviteToken, relationLabel } from "@/lib/compatInvite";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,7 @@ async function getPretendardFont(): Promise<ArrayBuffer> {
  *
  * Query Params:
  * - shareToken: DB에서 결과 조회용 토큰
+ * - inviteToken: 반쪽 궁합 초대장 토큰 (nameA와 ?만 표시)
  * - score, nameA, nameB, k1, k2, k3 (fallback용 파라미터)
  * - w: 가로 너비 (기본 1200, 스토리 1080)
  * - h: 세로 높이 (기본 630, 스토리 1350)
@@ -32,6 +34,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const shareToken = searchParams.get("shareToken");
+    const inviteToken = searchParams.get("inviteToken");
     const download = searchParams.get("download") === "true";
 
     let score = searchParams.get("score") || "91";
@@ -55,8 +58,52 @@ export async function GET(req: NextRequest) {
     const height = clampDim(searchParams.get("h"), 630, 200, 1350);
     const isStory = height > 1000; // 1080x1350 세로 스토리 모드 여부
 
-    // DB에서 shareToken으로 최신 정보 조회
-    if (shareToken) {
+    // [P-008] 반쪽 궁합 초대장 카드: nameA와 ?만 그린다(점수·관계 외 정보 없음)
+    if (inviteToken) {
+      let inviteRelation = "love";
+      nameA = "상대방";
+      nameB = "?";
+      score = "?";
+
+      if (isValidInviteToken(inviteToken)) {
+        const invite = await prisma.compatInvite
+          .findUnique({
+            where: { token: inviteToken },
+            select: {
+              personA: true,
+              relation: true,
+              completedCompatId: true,
+            },
+          })
+          .catch(() => null);
+
+        if (invite) {
+          inviteRelation = invite.relation;
+          const pA = invite.personA as { name?: unknown } | null;
+          if (typeof pA?.name === "string" && pA.name.trim()) {
+            nameA = pA.name.trim();
+          } else if (invite.completedCompatId) {
+            const completedCompat = await prisma.compatibility
+              .findUnique({
+                where: { id: invite.completedCompatId },
+                select: { personA: true },
+              })
+              .catch(() => null);
+            const cpA = completedCompat?.personA as { name?: unknown } | null;
+            if (typeof cpA?.name === "string" && cpA.name.trim()) {
+              nameA = cpA.name.trim();
+            }
+          }
+        }
+      }
+
+      keywords = [
+        `${relationLabel(inviteRelation)} 반쪽 초대장`,
+        `${nameA}님 입력 완료`,
+        "내 생년월일만 채우면 완성",
+      ];
+    } else if (shareToken) {
+      // DB에서 shareToken으로 최신 정보 조회
       const compat = await prisma.compatibility.findUnique({
         where: { shareToken },
         select: {
