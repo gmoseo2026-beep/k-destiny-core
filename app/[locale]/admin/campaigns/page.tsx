@@ -11,7 +11,7 @@ import {
   partnerDisplayName,
   partnerRsRate,
 } from "@/lib/campaignLinks";
-import { buildCampaignReport, rateLabel, type CampaignTotals, type ClickRow } from "@/lib/campaignStats";
+import { attributedCampaign, buildCampaignReport, rateLabel, type CampaignTotals, type ClickRow } from "@/lib/campaignStats";
 import { partnerShareUrl } from "@/lib/partnerReport";
 import PartnerShareLinks, { type PartnerShareItem } from "@/components/admin/PartnerShareLinks";
 
@@ -34,7 +34,7 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
     // 배너를 누른 기기에서 만든 주문 + 배너로 가입한 회원이 (다른 기기에서라도) 만든 주문
     prisma.order.findMany({
       where: { OR: [{ campaign: { in: tags } }, { user: { campaign: { in: tags } } }] },
-      select: { campaign: true, status: true, amount: true, createdAt: true, user: { select: { campaign: true } } },
+      select: { campaign: true, status: true, amount: true, createdAt: true, user: { select: { campaign: true, createdAt: true } } },
     }),
   ]);
 
@@ -49,7 +49,7 @@ export default async function AdminCampaignsPage({ params }: { params: Promise<{
     clicks,
     members.flatMap((m) => (m.campaign ? [{ campaign: m.campaign, createdAt: m.createdAt }] : [])),
     orders.flatMap((o) => {
-      const campaign = o.campaign ?? o.user?.campaign ?? null;
+      const campaign = attributedCampaign(o);
       return campaign ? [{ campaign, status: o.status, amount: o.amount, createdAt: o.createdAt }] : [];
     }),
     DAYS_SHOWN

@@ -7,7 +7,7 @@ import {
   linksForPartner,
   parseCampaignCounterKey,
 } from "@/lib/campaignLinks";
-import { buildPartnerReportViewData, type ClickRow } from "@/lib/campaignStats";
+import { attributedCampaign, buildPartnerReportViewData, type ClickRow } from "@/lib/campaignStats";
 import { verifyPartnerReportKey } from "@/lib/partnerReport";
 import PartnerReportClient from "@/components/partner/PartnerReportClient";
 
@@ -59,7 +59,7 @@ export default async function PartnerReportPage({
         status: true,
         amount: true,
         createdAt: true,
-        user: { select: { campaign: true } },
+        user: { select: { campaign: true, createdAt: true } },
       },
     }),
   ]);
@@ -75,7 +75,7 @@ export default async function PartnerReportPage({
     clicks,
     members.flatMap((m) => (m.campaign ? [{ campaign: m.campaign, createdAt: m.createdAt }] : [])),
     orders.flatMap((o) => {
-      const campaign = o.campaign ?? o.user?.campaign ?? null;
+      const campaign = attributedCampaign(o);
       return campaign ? [{ campaign, status: o.status, amount: o.amount, createdAt: o.createdAt }] : [];
     })
   );

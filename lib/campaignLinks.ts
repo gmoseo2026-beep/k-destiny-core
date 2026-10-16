@@ -8,12 +8,14 @@
  * 새 제휴·새 광고 소재가 생기면 CAMPAIGN_LINKS 에 줄을 추가한다(코드는 영문 소문자·숫자·하이픈).
  * 광고 플랫폼이 주소 뒤에 붙이는 클릭 표시(fbclid 등)는 도착 주소로 그대로 넘긴다 — 픽셀이 그 값으로 광고 클릭을 알아본다.
  */
+import { CAMPAIGN_HANDOFF_CODE_PARAM, CAMPAIGN_HANDOFF_TIME_PARAM, formatCampaignRef } from "@/lib/campaignHandoff";
+
 export interface CampaignLink {
   /** 주소에 쓰는 짧은 코드 */
   code: string;
   /** 제휴사·채널 구분 이름(예: "couplediary", "instagram", "google", "naver") */
   partner: string;
-  /** 수익 배분 비율(예: 0.3 = 30%). 정산 대상 제휴사에만 둔다 */
+  /** 수익 배분 비율(예: 0.3 = 30%). 합의한 제휴사에만 둔다(커플다이어리는 2026년 말까지 무료 제휴라 없음) */
   rsRate?: number;
   /** 관리자 화면에 보이는 설명 */
   label: string;
@@ -28,7 +30,6 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd1",
     partner: "couplediary",
-    rsRate: 0.3,
     label: "커플다이어리 · 배너 02 「우리 궁합, 몇 점일까?」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b02_score" },
@@ -36,7 +37,6 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd2",
     partner: "couplediary",
-    rsRate: 0.3,
     label: "커플다이어리 · 배너 06 「기념일엔 우리 궁합 리포트」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b06_anniversary" },
@@ -44,7 +44,6 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd3",
     partner: "couplediary",
-    rsRate: 0.3,
     label: "커플다이어리 · 배너 07 「티격태격도 케미라면?」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b07_fight" },
@@ -52,7 +51,6 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd4",
     partner: "couplediary",
-    rsRate: 0.3,
     label: "커플다이어리 · 배너 09 「30초, 생일 두 개면 궁합 끝!」",
     path: "/compat/new",
     utm: { source: "couplediary", medium: "app_banner", campaign: "couplediary_2026", content: "b09_30sec" },
@@ -188,18 +186,6 @@ export const CAMPAIGN_COOKIE_DAYS = 30;
 /** 배너를 누른 시각(초). 가입이 그 뒤에 일어났는지 보려고 함께 심는다. */
 export const CAMPAIGN_TIME_COOKIE = "kd_src_t";
 
-/**
- * 인앱 브라우저 → 외부 브라우저로 넘어갈 때 제휴 코드·누른 시각을 주소에 실어 보내기 위한 쿠키(httpOnly 아님).
- * 형식: "<코드>.<초>" (예: "cd1.1791248400"). 코드만 담고 개인정보는 없다.
- */
-export const CAMPAIGN_REF_COOKIE = "kd_ref";
-export const CAMPAIGN_HANDOFF_CODE_PARAM = "ksrc";
-export const CAMPAIGN_HANDOFF_TIME_PARAM = "ksrct";
-
-export function formatCampaignRef(code: string, clickSec: number): string {
-  return `${code}.${clickSec}`;
-}
-
 function cookieValue(header: string | null | undefined, name: string): string | null {
   if (!header) return null;
   for (const part of header.split(";")) {
@@ -214,47 +200,14 @@ function cookieValue(header: string | null | undefined, name: string): string | 
   return null;
 }
 
-/** kd_ref 쿠키에서 제휴 코드와 누른 시각(초)을 꺼낸다. 등록된 코드가 아니면 null. */
-export function parseCampaignRefFromCookieHeader(
-  header: string | null | undefined
-): { code: string; clickSec: number | null } | null {
-  const value = cookieValue(header, CAMPAIGN_REF_COOKIE);
-  if (!value) return null;
-  const withTime = /^([a-z0-9-]{2,20})\.([0-9]{9,11})$/.exec(value);
-  if (withTime) {
-    const link = findCampaignLink(withTime[1]);
-    return link ? { code: link.code, clickSec: Number(withTime[2]) } : null;
-  }
-  const codeOnly = /^([a-z0-9-]{2,20})$/.exec(value);
-  if (codeOnly) {
-    const link = findCampaignLink(codeOnly[1]);
-    return link ? { code: link.code, clickSec: null } : null;
-  }
-  return null;
-}
-
-/**
- * 외부 브라우저로 여는 주소(또는 복사 주소)에 kd_ref 가 있으면 ksrc·ksrct 를 붙인다.
- * kd_ref 가 없거나 등록된 코드가 아니면 원래 주소를 그대로 돌려준다.
- */
-export function appendCampaignHandoffParams(
-  targetUrl: string,
-  cookieHeader?: string | null,
-  nowMs: number = Date.now()
-): string {
-  const rawCookie = cookieHeader !== undefined ? cookieHeader : typeof document !== "undefined" ? document.cookie : null;
-  const ref = parseCampaignRefFromCookieHeader(rawCookie);
-  if (!ref) return targetUrl;
-  try {
-    const u = new URL(targetUrl);
-    u.searchParams.set(CAMPAIGN_HANDOFF_CODE_PARAM, ref.code);
-    const sec = ref.clickSec !== null ? ref.clickSec : Math.floor(nowMs / 1000);
-    u.searchParams.set(CAMPAIGN_HANDOFF_TIME_PARAM, String(sec));
-    return u.toString();
-  } catch {
-    return targetUrl;
-  }
-}
+// 외부 브라우저 전환용 쿠키·주소 값(브라우저에서도 쓰는 부분)은 lib/campaignHandoff.ts — 제휴 목록을 브라우저로 보내지 않으려고 나눴다.
+export {
+  CAMPAIGN_REF_COOKIE,
+  CAMPAIGN_HANDOFF_CODE_PARAM,
+  CAMPAIGN_HANDOFF_TIME_PARAM,
+  formatCampaignRef,
+  appendCampaignHandoffParams,
+} from "@/lib/campaignHandoff";
 
 export interface CampaignHandoffResolution {
   /** 기존 쿠키가 더 최근 클릭이면 false(덮어쓰지 않음) */

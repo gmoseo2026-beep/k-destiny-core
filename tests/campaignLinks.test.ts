@@ -136,8 +136,8 @@ describe("P-009 A · 외부 브라우저 전환 시 제휴 표시 유지", () =>
     expect(externalBrowserUrl(target, "a=1; b=2")).toBe(target);
     expect(appendCampaignHandoffParams(target, null, nowMs)).toBe(target);
 
-    // 등록 안 된 코드가 든 kd_ref 는 무시
-    expect(externalBrowserUrl(target, `${CAMPAIGN_REF_COOKIE}=not-a-code.${nowSec}`)).toBe(target);
+    // 형식이 틀린 kd_ref 는 무시(등록 여부는 브라우저가 아니라 받는 서버가 본다 — 아래 resolveCampaignHandoff)
+    expect(externalBrowserUrl(target, `${CAMPAIGN_REF_COOKIE}=Not A Code!.${nowSec}`)).toBe(target);
   });
 
   it("등록 안 된 ksrc 코드는 무시한다", () => {
@@ -218,3 +218,30 @@ describe("P-009 A · 외부 브라우저 전환 시 제휴 표시 유지", () =>
   });
 });
 
+describe("P-009 검토 수정", () => {
+  it("브라우저 코드는 제휴 목록을 가져오지 않는다(제휴사·수수료율이 공개 JS 에 실리지 않게)", async () => {
+    const { readFileSync } = await import("fs");
+    for (const f of ["lib/campaignHandoff.ts", "lib/inAppBrowser.ts", "lib/rateLabel.ts", "components/partner/PartnerReportClient.tsx"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).not.toMatch(/from "@\/lib\/campaignLinks"/);
+      expect(src, f).not.toMatch(/import \{[^}]*(?!type)\w+[^}]*\} from "@\/lib\/campaignStats"/);
+    }
+  });
+
+  it("커플다이어리는 무료 제휴라 수수료율이 없다", async () => {
+    const { partnerRsRate } = await import("@/lib/campaignLinks");
+    expect(partnerRsRate("couplediary")).toBeUndefined();
+  });
+
+  it("회원 경로 결제는 가입 후 30일 안의 것만 제휴 실적으로 친다", async () => {
+    const { attributedCampaign } = await import("@/lib/campaignStats");
+    const signup = new Date("2026-10-01T00:00:00Z");
+    const day = 24 * 60 * 60 * 1000;
+    const user = { campaign: "couplediary:b02_score", createdAt: signup };
+    expect(attributedCampaign({ campaign: null, createdAt: new Date(signup.getTime() + 29 * day), user })).toBe("couplediary:b02_score");
+    expect(attributedCampaign({ campaign: null, createdAt: new Date(signup.getTime() + 31 * day), user })).toBeNull();
+    // 결제 때 남은 표시가 있으면 그것이 먼저
+    expect(attributedCampaign({ campaign: "instagram:x", createdAt: new Date(signup.getTime() + 31 * day), user })).toBe("instagram:x");
+    expect(attributedCampaign({ campaign: null, createdAt: signup, user: null })).toBeNull();
+  });
+});

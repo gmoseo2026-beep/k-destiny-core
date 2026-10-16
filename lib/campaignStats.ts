@@ -4,6 +4,7 @@
  */
 import {
   type CampaignLink,
+  CAMPAIGN_COOKIE_DAYS,
   campaignTag,
   kstDateKey,
   linksForPartner,
@@ -73,9 +74,23 @@ export function recentKstDates(n: number, now: Date = new Date()): string[] {
 }
 
 /** 비율 표기("12.5%"). 분모가 0이면 "—". */
-export function rateLabel(part: number, whole: number): string {
-  if (whole <= 0) return "—";
-  return `${Math.round((part / whole) * 1000) / 10}%`;
+export { rateLabel } from "@/lib/rateLabel";
+
+/**
+ * 주문을 어느 제휴 덕으로 칠지. 결제 때 남은 표시(쿠키, 마지막 클릭 30일)가 먼저다.
+ * 없으면 그 회원이 제휴로 가입한 경우(가입은 클릭 뒤에만 인정) **가입 후 30일 안의 결제만** 센다 —
+ * 제휴사와 합의한 "클릭 후 30일"보다 넓게 세지 않으려고(다른 기기·나중 결제가 끝없이 잡히지 않게).
+ */
+export function attributedCampaign(o: {
+  campaign: string | null;
+  createdAt: Date;
+  user: { campaign: string | null; createdAt: Date } | null;
+}): string | null {
+  if (o.campaign) return o.campaign;
+  if (!o.user?.campaign) return null;
+  const windowMs = CAMPAIGN_COOKIE_DAYS * 24 * 60 * 60 * 1000;
+  const sinceSignup = o.createdAt.getTime() - o.user.createdAt.getTime();
+  return sinceSignup >= 0 && sinceSignup <= windowMs ? o.user.campaign : null;
 }
 
 export function buildCampaignReport(

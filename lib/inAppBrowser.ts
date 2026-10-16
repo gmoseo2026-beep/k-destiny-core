@@ -1,5 +1,5 @@
 import { trackEvent } from "@/lib/gtag";
-import { appendCampaignHandoffParams } from "@/lib/campaignLinks";
+import { appendCampaignHandoffParams } from "@/lib/campaignHandoff";
 
 /**
  * In-App Browser Detection Utility

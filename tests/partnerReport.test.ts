@@ -131,7 +131,9 @@ describe("P-009 B · 제휴사별 성과 보기 (열쇠 검증·정산·개인�
     expect(view.periods.this_month.summary.paid).toBe(1);
     expect(view.periods.this_month.summary.revenue).toBe(9900);
     expect(view.periods.this_month.summary.settlementBase).toBe(9000);
-    expect(view.periods.this_month.summary.estimatedPayout).toBe(2700);
+    // 커플다이어리는 2026년 말까지 무료 제휴라 수수료율이 없다 → 예상 정산액을 보여 주지 않는다
+    expect(view.periods.this_month.summary.estimatedPayout).toBeNull();
+    expect(view.rsRate).toBeNull();
   });
 
   it("다른 partner 의 코드가 섞이지 않으며 관리자 화면 숫자와 제휴사 화면 숫자가 일치한다", () => {

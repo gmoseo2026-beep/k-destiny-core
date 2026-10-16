@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  rateLabel,
-  type PartnerPeriodKey,
-  type PartnerReportViewData,
-} from "@/lib/campaignStats";
+import { rateLabel } from "@/lib/rateLabel";
+import type { PartnerPeriodKey, PartnerReportViewData } from "@/lib/campaignStats";
 
 const PERIOD_TABS: Array<{ key: PartnerPeriodKey; label: string }> = [
   { key: "this_month", label: "이번 달" },
