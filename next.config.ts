@@ -89,6 +89,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // 제휴처에 보내는 안내물 예시(공개용 이미지). 메일 첨부 때 다른 사이트에서 읽을 수 있게 허용한다.
+        source: "/partner-kit/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Cache-Control", value: "public, max-age=86400" },
+        ],
+      },
+      {
         source: "/mascot/:path*",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
