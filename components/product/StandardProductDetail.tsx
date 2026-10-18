@@ -635,6 +635,8 @@ export function StandardProductDetail({
             >
               {product.isFree
                 ? "무료로 보기"
+                : product.target === "couple" && product.id !== "compat_basic"
+                ? `${product.name} 무료 미리보기`
                 : `무료로 ${product.target === "couple" ? "궁합" : "운세"} 먼저 보기`}
             </Button>
           )}
