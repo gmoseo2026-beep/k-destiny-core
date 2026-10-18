@@ -601,3 +601,14 @@
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 471 통과 · build exit 0 · `.next/static` 만세력 0건.
 - 기준값(GA4 10-05~10-18, 이벤트 수): checkout_open 115 → checkout_close_fast 56(49%) · checkout_submit 26(23%) · purchase_confirmed 18. teaser_created 229. checkout_open에는 무료 궁합 결과 화면(이번에 안 바꿈)도 섞여 있다.
 - 판정(10-25, 부족하면 11-01): 3초 안 닫기 49% → 30% 이하, 열림 → 진행 23% → 30% 이상, 미리보기 100건당 결제 유지. 결제창 열림이 절반 아래로 줄고 결제도 줄면 되돌린다.
+
+---
+
+# 2026-10-18 · P-012 단품 상세 "결과 예시" 병합(Gemini 구현, Claude 검토)
+- 결정서: `docs/uiux/decisions/P-012.md`. 커밋 0d47256(A 샘플) · 84b7c8b(B 화면).
+- A: `scripts/build_standard_samples.ts`가 가상 인물(지민 / 지민·서준)로 실제 생성 경로(`calculateFourPillars`·`calculateCompatibility`·`sajuContextBlock`/`compatContextBlock`·`buildStandardPrompt`·`generateJson`+검증기)를 그대로 돌려 유료 단품 12개 전체 리포트를 `data/samples/standard/*.json`에 저장. DB는 사전 읽기만. 저장 전 검사 `lib/reports/standardSampleGuard.ts`.
+- B: 서버 페이지가 그 상품 샘플 1개만 읽어(`lib/reports/standardSamplePreview.ts`) 점수·제목·요약·첫 장 앞 300자(문장 끝)·나머지 장 첫 문장 60자만 props로 넘김. "이런 내용을 확인할 수 있어요" 아래 "결과 예시"(가상 인물 표시, 워터마크, 끝 흐림, 정적 잠금 줄). 새 이벤트 `sample_preview_view { productId }`.
+- 검토: 12개 샘플 본문을 직접 읽음 — 한자·전문용어·단정 표현 0, 실제 리포트와 같은 "흙 기운/바다 물 기운" 비유. 매운맛 총운은 상품 성격대로 직설적("이대로 가면 … 낭비될 겁니다"). 건강운에 병명·진단 표현 없음. 수정 없음.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 476 통과 · build exit 0 · `.next/static`에 만세력·프롬프트·샘플 뒷부분 문장 0건. 상품 상세는 동적 페이지(엣지 캐시 대상 아님).
+- 기준값(GA4 10-05~10-18): `view_item` 690회/272명 → `product_cta_click` 53회/18명(사용자 기준 6.6%).
+- 판정(10-25~11-01): 상세 → 하단 버튼 비율이 6.6%보다 오르는지, `sample_preview_view`/`view_item`(예시까지 내려 본 비율), 상세에서 시작한 미리보기의 결제가 줄지 않는지.
