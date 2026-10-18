@@ -205,6 +205,29 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "reunion" },
     utm: { source: "redate", medium: "partner", campaign: "partner_2026", content: "reunion" },
   },
+  // ── 제휴 3차(2026-10-18): 사장님이 고른 앱·플랫폼 3곳. 합의 전이라 rsRate 없음
+  {
+    code: "kd-somssi",
+    partner: "somssidang",
+    label: "솜씨당 · 커플 클래스 무료 궁합",
+    path: "/compat/new",
+    utm: { source: "somssidang", medium: "partner", campaign: "partner_2026", content: "class" },
+  },
+  {
+    code: "kd-glam",
+    partner: "glam",
+    label: "글램 · 연애운(솔로)",
+    path: "/fortune/new",
+    query: { productId: "love_single" },
+    utm: { source: "glam", medium: "partner", campaign: "partner_2026", content: "love_single" },
+  },
+  {
+    code: "kd-datepop",
+    partner: "datepop",
+    label: "데이트팝 · 데이트 무료 궁합",
+    path: "/compat/new",
+    utm: { source: "datepop", medium: "partner", campaign: "partner_2026", content: "date" },
+  },
   // ── 검색 광고(2026-10-14): 구글·네이버 광고그룹마다 하나. 도착 화면은 검색어의 뜻에 맞춘 입력 화면이다
   // (인스타 광고에서 홈보다 입력 화면이 입력 완료율이 높았다 — 위 주석). 브랜드 검색만 홈으로 보낸다.
   ...(["google", "naver"] as const).flatMap((src): CampaignLink[] => {
@@ -250,6 +273,9 @@ const PARTNER_NAMES: Record<string, string> = {
   harufilm: "하루필름",
   photogray: "포토그레이",
   redate: "리데이트",
+  somssidang: "솜씨당",
+  glam: "글램",
+  datepop: "데이트팝",
 };
 
 export const partnerDisplayName = (partner: string): string => PARTNER_NAMES[partner] ?? partner;
