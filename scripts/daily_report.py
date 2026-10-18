@@ -199,7 +199,6 @@ def get_revenue_stats() -> str:
         return f"💰 <b>매출</b>\n  ❌ 조회 실패: {e}"
 
 # ── 5. Error Log Summary ────────────────────────────────────────────
-NOISE = re.compile(r"Server Action|nextjs\.org|ignore-listed")
 ERR_STATE = PM2_LOG_DIR / ".daily_report_errlines"
 
 def get_error_summary() -> str:
@@ -218,28 +217,102 @@ def get_error_summary() -> str:
         prev = len(lines)  # 첫 실행: 과거 누적분은 건너뛴다
     if prev > len(lines):
         prev = 0  # 로그가 비워졌다
-    fresh = [l for l in lines[prev:] if not NOISE.search(l)]
+    fresh = lines[prev:]
     if not DRY_RUN:
         try:
             ERR_STATE.write_text(str(len(lines)))
         except Exception:
             pass
+    return summarize_errors(fresh)
 
-    errs = [l for l in fresh if re.search(r"Error|ERR|FATAL", l)]
-    db_limit = sum("EMAXCONNSESSION" in l for l in fresh)
-    counts = {}
-    for l in errs:
-        key = re.sub(r".*Error: ?", "", l).strip()[:80]
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-    top = "".join(f"\n    ⚠️ {n}회 {html.escape(k)}" for k, n in sorted(counts.items(), key=lambda x: -x[1])[:3])
-    if not errs:
-        return "🚨 <b>에러 로그</b>\n  ✅ 지난 보고 이후 새 에러 없음"
-    return (
-        f"🚨 <b>에러 로그</b> (지난 보고 이후)\n"
-        f"  • 에러: {len(errs)}건 · DB 연결 한도 초과: {db_limit}건"
-        f"{top}"
-    )
+
+# 로그 한 건이 여러 줄(스택·{ … } 객체·안내 주소)로 찍힌다 → 줄이 아니라 "건"으로 묶어서 센다.
+_CONT = re.compile(r"^(\s|\}|\]|Read more:|https://next-auth\.js\.org/errors)")
+_NOT_ERROR = re.compile(r"Error|ERR|FATAL|failed|실패|⨯")
+
+# 손님에게 영향이 없는 기록(2026-10-19 사장님 요청: "진짜 오류만 에러로"). 위에서부터 먼저 맞는 것으로 분류.
+_INFO_RULES = [
+    ("scanner", re.compile(r"Failed to find Server Action|Failed to parse body as FormData")),
+    ("disconnect", re.compile(r"destination stream closed early|failed to pipe response")),
+    ("admin_auth", re.compile(r"인증이 필요합니다")),
+    ("ai_retry", re.compile(r"^\[gen:[^\]]+\] (invalid|error) model=|^Failed with \S+, trying fallback")),
+    ("catalog_fallback", re.compile(r"^\[getEffectiveCatalog\]")),
+]
+_INFO_LABEL = {
+    "login_cancel": "로그인 화면에서 손님이 취소",
+    "scanner": "외부 스캐너·예전 화면에서 온 요청(거절됨)",
+    "disconnect": "손님이 페이지를 닫아 응답이 끊김",
+    "admin_auth": "로그인 안 한 관리자 화면 접근(차단됨)",
+    "ai_retry": "AI 생성 재시도(최종 실패는 위 퍼널의 '생성 실패'에)",
+    "catalog_fallback": "상품 목록 DB 지연 → 기본값 사용",
+}
+
+
+def _group_events(lines):
+    events, cur = [], []
+    for l in lines:
+        if not l.strip():
+            continue
+        if cur and _CONT.match(l):
+            cur.append(l)
+            continue
+        if cur:
+            events.append(cur)
+        cur = [l]
+    if cur:
+        events.append(cur)
+    return events
+
+
+def summarize_errors(fresh) -> str:
+    """새로 쌓인 에러 로그 줄 → 텔레그램 문단. 진짜 오류와 '참고'(손님 영향 없음)를 나눠 보여 준다."""
+    real, info, logins = {}, {}, {}
+    db_limit = 0
+    for ev in _group_events(fresh):
+        head = ev[0].strip()
+        body = "\n".join(ev)
+        if "EMAXCONNSESSION" in body:
+            db_limit += 1
+        # next-auth 로그인 취소: 취소 한 번에 HANDLER_ERROR·CALLBACK_ERROR 두 건이 찍힌다 → HANDLER 쪽만 센다
+        if "access_denied" in body and "[next-auth]" in head:
+            if "OAUTH_CALLBACK_HANDLER_ERROR" in head:
+                m = re.search(r"providerId: '(\w+)'", body)
+                p = m.group(1) if m else "기타"
+                logins[p] = logins.get(p, 0) + 1
+            continue
+        kind = next((k for k, rx in _INFO_RULES if rx.search(head)), None)
+        if kind:
+            info[kind] = info.get(kind, 0) + 1
+            continue
+        if not _NOT_ERROR.search(body):
+            continue  # 경고·안내성 출력
+        key = re.sub(r"^⨯\s*", "", head)
+        if "[next-auth]" in head and len(ev) > 1:
+            # 코드만으로는 이유를 모른다 → 다음 줄(안내 주소 뒤의 이유)까지
+            reason = re.sub(r"https://\S+\s*", "", ev[1]).strip(" {")
+            key = f"{head.replace('[next-auth][error]', 'next-auth ')} {reason}"
+        key = re.sub(r"\s+", " ", key)[:90]
+        real[key] = real.get(key, 0) + 1
+
+    out = ["🚨 <b>에러 로그</b> (지난 보고 이후)"]
+    n_real = sum(real.values())
+    if n_real:
+        out.append(f"  • 진짜 에러: {n_real}건 · DB 연결 한도 초과: {db_limit}건")
+        for k, n in sorted(real.items(), key=lambda x: -x[1])[:3]:
+            out.append(f"    ⚠️ {n}회 {html.escape(k)}")
+    else:
+        out.append("  ✅ 손님에게 영향 준 에러 없음")
+    if logins:
+        info["login_cancel"] = sum(logins.values())
+    if info:
+        out.append("  ℹ️ 참고(손님 영향 없음):")
+        for k in ("login_cancel", "scanner", "disconnect", "admin_auth", "ai_retry", "catalog_fallback"):
+            if info.get(k):
+                extra = ""
+                if k == "login_cancel":
+                    extra = " (" + ", ".join(f"{p} {n}" for p, n in sorted(logins.items())) + ")"
+                out.append(f"    · {_INFO_LABEL[k]} {info[k]}건{extra}")
+    return "\n".join(out)
 
 # ── Main Pipeline ────────────────────────────────────────────────────
 def main():
