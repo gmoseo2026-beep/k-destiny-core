@@ -13,6 +13,8 @@ const SERVER_ONLY = [
   "@/lib/destinyGen",
   "@/lib/premium/generate",
   "@/lib/gen/",
+  "@/data/samples/standard",
+  "@/lib/reports/standardSamplePreview",
 ];
 
 function walk(dir: string, out: string[] = []): string[] {

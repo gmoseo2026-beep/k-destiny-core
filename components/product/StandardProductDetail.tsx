@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, User, Share2, Check, ArrowRight } from "lucide-react";
+import { ArrowLeft, User, Share2, Check, ArrowRight, Lock, Sparkles } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
 import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, discountBadge } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
+import { useSeenOnce } from "@/lib/useSeenOnce";
 import type { SectionOutline } from "@/lib/prompts/sectionOutline";
+import type { StandardSamplePreview } from "@/lib/reports/standardSamplePreview";
+import { getTeaserBlurCopy } from "@/lib/teaserBlurCopy";
+import { ScoreGauge } from "@/components/ui/ScoreGauge";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
 import { loadLastCouple, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
 import { Button } from "@/components/ui/Button";
@@ -41,6 +45,8 @@ interface StandardProductDetailProps {
   allProducts: CatalogItem[];
   /** 섹션 제목·소개(서버가 sectionOutlineFor 로 만들어 넘긴다. 프롬프트 원문은 넘기지 않는다) */
   sections?: SectionOutline[];
+  /** 가상 인물로 실제 생성한 결과 예시 조각(서버 페이지가 1개만 읽어 조각으로 넘긴다) */
+  samplePreview?: StandardSamplePreview | null;
 }
 
 export function StandardProductDetail({
@@ -49,10 +55,18 @@ export function StandardProductDetail({
   preview,
   allProducts,
   sections,
+  samplePreview,
 }: StandardProductDetailProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [lastCouple, setLastCouple] = useState<LastCouple | null>(null);
   const [lastPerson, setLastPerson] = useState<LastPerson | null>(null);
+  const sampleSectionRef = useRef<HTMLElement>(null);
+
+  useSeenOnce(sampleSectionRef, () => {
+    if (samplePreview) {
+      trackEvent("sample_preview_view", { productId: product.id });
+    }
+  });
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -472,6 +486,92 @@ export function StandardProductDetail({
             </div>
           )}
         </section>
+
+        {/* 4-1. Sample Preview (결과 예시 — 가상 인물로 실제 생성한 리포트 일부) */}
+        {samplePreview && (
+          <section ref={sampleSectionRef} className="px-4 py-6 border-t border-line">
+            <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap">
+              <h3 className="text-base sm:text-lg font-extrabold text-ink tracking-tight">
+                결과 예시
+              </h3>
+              <span className="rounded-full bg-surface-soft border border-line px-2.5 py-1 text-[11px] font-bold text-text-2">
+                {samplePreview.targetLabel}
+              </span>
+            </div>
+
+            <div className="relative overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-2xs">
+              {/* 배경 워터마크 (장식) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-[0.045] -rotate-12"
+              >
+                <span className="text-7xl font-black tracking-widest text-ink">
+                  예시
+                </span>
+              </div>
+
+              <div className="relative z-10 flex flex-col gap-4">
+                {/* 점수 + Headline + Summary */}
+                <div className="flex flex-col items-center text-center border-b border-line pb-4">
+                  <div className="scale-90 origin-bottom">
+                    <ScoreGauge score={samplePreview.score} color="#E0245A" />
+                  </div>
+                  <p className="mt-2 text-base sm:text-lg font-black text-ink leading-snug tracking-tight">
+                    &ldquo;{samplePreview.headline}&rdquo;
+                  </p>
+                  <p className="mt-1.5 text-xs sm:text-sm text-text-2 leading-relaxed">
+                    {samplePreview.summary}
+                  </p>
+                </div>
+
+                {/* 첫 섹션 앞부분 + 끝 흐림 표현 */}
+                <div className="rounded-2xl bg-surface-soft/70 border border-line p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles className="w-4 h-4 text-coral shrink-0" />
+                    <h4 className="text-xs sm:text-sm font-extrabold text-ink">
+                      {samplePreview.firstSection.title}
+                    </h4>
+                  </div>
+                  <p className="text-xs sm:text-sm text-ink leading-relaxed whitespace-pre-line">
+                    {samplePreview.firstSection.bodyExcerpt}
+                  </p>
+                  <div className="relative mt-1">
+                    <p aria-hidden="true" className="select-none text-xs sm:text-sm leading-relaxed text-ink blur-[5px]">
+                      {getTeaserBlurCopy(product.id)}
+                    </p>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface-soft/70 to-surface-soft" />
+                  </div>
+                </div>
+
+                {/* 나머지 섹션: 제목 + 첫 문장 한 줄씩 + 자물쇠 아이콘 (정적, 버튼 아님) */}
+                {samplePreview.lockedSections.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    {samplePreview.lockedSections.map((sec, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface-soft px-3.5 py-3 text-left"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-xs font-bold text-ink truncate">
+                            {sec.title}
+                          </span>
+                          <p className="mt-0.5 text-[11px] text-text-2 truncate">
+                            {sec.firstSentence}
+                          </p>
+                        </div>
+                        <Lock className="w-4 h-4 text-coral shrink-0" aria-hidden="true" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <p className="mt-2.5 text-center text-xs font-medium text-caption">
+              내 생년월일로 보면 점수와 내용이 달라져요
+            </p>
+          </section>
+        )}
 
         {/* 5. Recommended For (이런 분께 추천해요) */}
         {product.recommendFor && product.recommendFor.length > 0 && (
