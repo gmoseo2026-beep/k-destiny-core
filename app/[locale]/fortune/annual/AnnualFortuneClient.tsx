@@ -10,7 +10,16 @@ import { grantingCatalogIds } from "@/lib/productIdentity";
 import { loadLastPerson } from "@/lib/reportHandoff";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
-import { getProduct, priceLabel } from "@/lib/catalog";
+import {
+  getProduct,
+  priceLabel,
+  listPrice,
+  formatWon,
+  isOnSeasonPromo,
+  discountBadge,
+  SEASON_PROMO_LABEL,
+  SEASON_PROMO_UNTIL,
+} from "@/lib/catalog";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
@@ -117,6 +126,41 @@ const SECTION_CONFIG = [
   { key: "relationship", title: "인간관계 & 사교운", icon: Users, color: "text-indigo-500", bg: "bg-indigo-500/10" },
 ] as const;
 
+export interface AnnualSeasonPromoInfo {
+  inputLine: string;
+  strikePriceLabel: string;
+  priceLabel: string;
+  badgeText: string;
+}
+
+/**
+ * 연말 특가 대상 총운 상품(현재 annual_2026)이고 특가 기간 중일 때만 표시할 문구·배지 정보를 만든다.
+ * 특가가 아닌 연도(2027)이거나 특가 기간이 끝난 뒤에는 null을 돌려줘 화면에서 자동으로 사라진다.
+ */
+export function getAnnualSeasonPromo(
+  year: number,
+  now: number = Date.now(),
+): AnnualSeasonPromoInfo | null {
+  const product = getProduct(`annual_${year}`);
+  if (!product || !isOnSeasonPromo(product.id, now)) return null;
+  const strike = listPrice(product);
+  if (!strike) return null;
+  const price = priceLabel(product);
+  return {
+    inputLine: `${SEASON_PROMO_LABEL} · 전체 리포트 ${formatWon(strike)} → ${price} · ${SEASON_PROMO_UNTIL}`,
+    strikePriceLabel: formatWon(strike),
+    priceLabel: price,
+    badgeText: discountBadge(product, now),
+  };
+}
+
+export function getAnnualScoreRating(score: number): { label: string; badgeBg: string } {
+  if (score >= 90) return { label: "최고의 상승운", badgeBg: "bg-coral text-white" };
+  if (score >= 80) return { label: "안정된 도약", badgeBg: "bg-[#FFC24B] text-ink" };
+  if (score >= 70) return { label: "노력이 결실 맺는 해", badgeBg: "bg-emerald-500 text-white" };
+  return { label: "지혜롭게 준비하는 해", badgeBg: "bg-[#6A2C70] text-white" };
+}
+
 export default function AnnualFortuneClient({
   locale,
   year = 2026,
@@ -130,6 +174,7 @@ export default function AnnualFortuneClient({
 
   const annualProduct = getProduct(`annual_${year}`);
   const annualPrice = annualProduct ? priceLabel(annualProduct) : "4,900원";
+  const seasonPromo = getAnnualSeasonPromo(year);
 
   // Input form state (for guests or users without profile)
   const [showInputForm, setShowInputForm] = useState(!initialHasProfile);
@@ -469,6 +514,11 @@ export default function AnnualFortuneClient({
           <p className="text-xs sm:text-sm text-text-2 mt-1.5 leading-relaxed font-medium">
             생년월일만 넣으면 3초 만에 무료로 총운 점수와 연애운 확인
           </p>
+          {seasonPromo && (
+            <p className="mt-2 inline-flex items-center rounded-full bg-coral-soft px-3 py-1 text-xs font-extrabold text-coral-deep">
+              {seasonPromo.inputLine}
+            </p>
+          )}
         </div>
 
         {paidNotice === "paid" && (
@@ -699,14 +749,7 @@ export default function AnnualFortuneClient({
 
   const isLocked = Boolean(data.locked);
 
-  const getScoreRating = (score: number) => {
-    if (score >= 90) return { label: "대길 · 최고의 상승운", badgeBg: "bg-coral text-white" };
-    if (score >= 80) return { label: "길함 · 안정된 도약", badgeBg: "bg-[#FFC24B] text-ink" };
-    if (score >= 70) return { label: "평탄 · 노력 결실의 해", badgeBg: "bg-emerald-500 text-white" };
-    return { label: "변화 · 지혜로운 대비", badgeBg: "bg-[#6A2C70] text-white" };
-  };
-
-  const scoreRating = getScoreRating(data.yearScore);
+  const scoreRating = getAnnualScoreRating(data.yearScore);
 
   return (
     <div className="w-full max-w-md md:max-w-2xl flex flex-col gap-6 pb-32 sm:pb-36 pt-2">
@@ -771,6 +814,16 @@ export default function AnnualFortuneClient({
                   <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors">
                     결정적인 건 잠겨 있어요 — 전체 리포트 열기
                   </span>
+                  {seasonPromo && (
+                    <>
+                      <span className="text-xs font-bold text-text-3 line-through">
+                        {seasonPromo.strikePriceLabel}
+                      </span>
+                      <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">
+                        {seasonPromo.badgeText}
+                      </span>
+                    </>
+                  )}
                   <Badge variant="popular">
                     {annualPrice}
                   </Badge>
@@ -830,13 +883,12 @@ export default function AnnualFortuneClient({
                   <div className="bg-surface-soft rounded-xl p-3 border border-line text-xs sm:text-sm font-bold text-ink leading-snug">
                     &ldquo;{hookText}&rdquo;
                   </div>
-
-                  <p className="text-xs text-text-2 leading-relaxed font-medium">
-                    {year}년 이 영역에서 펼쳐지는 구체적 기회의 시기와 피해야 할 함정, 사주 기운의 실전 조언이 전체 리포트에 담겨 있습니다.
-                  </p>
                 </Card>
               );
             })}
+            <p className="px-1 text-center text-xs font-medium leading-relaxed text-text-2">
+              영역마다 좋은 때와 조심할 때, 바로 쓸 수 있는 조언이 전체 리포트에 있어요
+            </p>
           </div>
         )}
 
@@ -999,9 +1051,24 @@ export default function AnnualFortuneClient({
           {/* 단건 리포트 안내 카드 — 기간권 UI 동면(D4) */}
           <div className="mb-5 text-left max-w-sm mx-auto">
             <div className="bg-surface-soft p-3 rounded-2xl border border-line">
-              <span className="text-[10px] font-extrabold text-coral block mb-0.5">단건 리포트</span>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-[10px] font-extrabold text-coral">단건 리포트</span>
+                {seasonPromo && (
+                  <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">
+                    {seasonPromo.badgeText}
+                  </span>
+                )}
+              </div>
               <span className="text-xs font-black text-ink block">{year} 총운 1회</span>
-              <span className="text-[10px] text-text-3 leading-tight block mt-0.5">{annualPrice} · 90일 보관</span>
+              <span className="text-[10px] text-text-3 leading-tight flex items-center gap-1.5 mt-0.5">
+                {seasonPromo && (
+                  <span className="font-bold text-text-3 line-through">
+                    {seasonPromo.strikePriceLabel}
+                  </span>
+                )}
+                <span className={seasonPromo ? "font-extrabold text-coral" : ""}>{annualPrice}</span>
+                <span>· 90일 보관</span>
+              </span>
             </div>
           </div>
 
@@ -1065,8 +1132,18 @@ export default function AnnualFortuneClient({
                 <Lock className="w-3 h-3 text-coral" />
                 {year} 총운 전체 열기
               </span>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                {seasonPromo && (
+                  <span className="text-xs font-bold text-text-3 line-through">
+                    {seasonPromo.strikePriceLabel}
+                  </span>
+                )}
                 <span className="text-sm sm:text-base font-black text-coral">{annualPrice}</span>
+                {seasonPromo && (
+                  <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">
+                    {seasonPromo.badgeText}
+                  </span>
+                )}
               </div>
             </div>
 
