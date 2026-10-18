@@ -591,3 +591,13 @@
 - 검토: diff 직접 확인(가격·결제·엔진·스키마·이벤트 이름 변경 없음, 새 이벤트 없음 — 기존 이벤트에 `source_screen` 값만 같이 보냄). 수정 없음.
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 467 통과 · build exit 0 · `.next/static`에 "癸亥"/"SolarUtil" 0건.
 - 판정(배포 후 7일, 10-25): 비교 전 10-12~10-18 궁합 173 · 미리보기 64(궁합 100건당 37) · 결제 9. 목표 궁합 100건당 미리보기 55 이상, `teaser_created via=free_result` 수, 결제 건수. 표본이 작으면 14일까지.
+
+---
+
+# 2026-10-18 · P-011 미리보기 읽기 버튼 → 결제 안내 카드로 이동 병합(Gemini 구현, Claude 검토)
+- 결정서: `docs/uiux/decisions/P-011.md`. 커밋 f7b516d.
+- 바꾼 것: 두 사람·한 사람 상품 미리보기의 "이어서 읽기"·"답 보기"·잠금 카드·총운 달 티저/잠금 영역은 결제창 대신 결제 안내 카드(`#teaser-unlock`)로 스크롤하고 1.2초 강조(`revealUnlockPanel`, 카드가 없으면 예전처럼 결제창). 안내 카드 버튼·하단 고정 바는 그대로 결제창. `click_unlock_teaser`에 `to: "panel" | "checkout"` 추가(한도 화면은 값 없음).
+- 검토: diff 직접 확인, 수정 없음. 강조용 `ring-coral` 클래스가 빌드 CSS에 들어간 것 확인.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 471 통과 · build exit 0 · `.next/static` 만세력 0건.
+- 기준값(GA4 10-05~10-18, 이벤트 수): checkout_open 115 → checkout_close_fast 56(49%) · checkout_submit 26(23%) · purchase_confirmed 18. teaser_created 229. checkout_open에는 무료 궁합 결과 화면(이번에 안 바꿈)도 섞여 있다.
+- 판정(10-25, 부족하면 11-01): 3초 안 닫기 49% → 30% 이하, 열림 → 진행 23% → 30% 이상, 미리보기 100건당 결제 유지. 결제창 열림이 절반 아래로 줄고 결제도 줄면 되돌린다.
