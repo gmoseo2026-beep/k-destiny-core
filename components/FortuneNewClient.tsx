@@ -15,7 +15,7 @@ import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import StandardReportView from "@/components/report/StandardReportView";
-import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
+import TeaserUnlockPanel, { revealUnlockPanel, trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
@@ -332,8 +332,8 @@ export default function FortuneNewClient({
                     key={t}
                     type="button"
                     onClick={() => {
-                      if (product) trackTeaserUnlock(product.id, "locked_card");
-                      handleOpenCheckout();
+                      if (product) trackTeaserUnlock(product.id, "locked_card", "panel");
+                      if (!revealUnlockPanel()) handleOpenCheckout();
                     }}
                     className="flex items-center justify-between gap-2 rounded-2xl border border-coral/25 bg-coral-soft px-4 py-3 text-left text-sm font-bold text-ink transition-all active:scale-[0.98]"
                   >
@@ -353,8 +353,8 @@ export default function FortuneNewClient({
                     key={key}
                     type="button"
                     onClick={() => {
-                      if (product) trackTeaserUnlock(product.id, "locked_card");
-                      handleOpenCheckout();
+                      if (product) trackTeaserUnlock(product.id, "locked_card", "panel");
+                      if (!revealUnlockPanel()) handleOpenCheckout();
                     }}
                     className="flex w-full items-center justify-between gap-3 rounded-2xl border border-line bg-surface-soft p-4 text-left transition-all active:scale-[0.98]"
                   >
@@ -378,8 +378,8 @@ export default function FortuneNewClient({
             onLockedClick={
               product && !product.isFree
                 ? () => {
-                    trackTeaserUnlock(product.id, "locked_card");
-                    handleOpenCheckout();
+                    trackTeaserUnlock(product.id, "locked_card", "panel");
+                    if (!revealUnlockPanel()) handleOpenCheckout();
                   }
                 : undefined
             }

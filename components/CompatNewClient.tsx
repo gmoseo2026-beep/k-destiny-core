@@ -13,7 +13,7 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
-import TeaserUnlockPanel, { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
+import TeaserUnlockPanel, { revealUnlockPanel, trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import PreviewLimitPanel from "@/components/report/PreviewLimitPanel";
 import { saveLastCouple, loadLastCouple, saveLastPerson, loadLastPerson, type LastCouple, type LastPerson } from "@/lib/reportHandoff";
 import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
@@ -656,8 +656,8 @@ export default function CompatNewClient({
               catalogId={product.id}
               lockedSpecs={lockedSpecs}
               onLockedClick={() => {
-                trackTeaserUnlock(product.id, "locked_card");
-                handleOpenCheckout();
+                trackTeaserUnlock(product.id, "locked_card", "panel");
+                if (!revealUnlockPanel()) handleOpenCheckout();
               }}
             />
 

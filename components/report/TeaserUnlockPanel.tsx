@@ -16,9 +16,42 @@ import { priceLabel, listPrice, formatWon, discountBadge, type CatalogItem } fro
  *   퍼널 = teaser_created → click_unlock_teaser → checkout_open → purchase_confirmed
  */
 export type TeaserUnlockSource = "inline" | "sticky" | "locked_card" | "limit";
+export type TeaserUnlockTarget = "panel" | "checkout";
 
-export function trackTeaserUnlock(productId: string, source: TeaserUnlockSource) {
-  trackEvent("click_unlock_teaser", { productId, source });
+let highlightTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function trackTeaserUnlock(
+  productId: string,
+  source: TeaserUnlockSource,
+  to?: TeaserUnlockTarget,
+) {
+  trackEvent("click_unlock_teaser", { productId, source, ...(to ? { to } : {}) });
+}
+
+export function revealUnlockPanel(): boolean {
+  if (typeof document === "undefined") return false;
+  const el = document.getElementById("teaser-unlock");
+  if (!el) return false;
+
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  el.scrollIntoView({
+    block: "center",
+    behavior: reduceMotion ? "auto" : "smooth",
+  });
+  el.focus({ preventScroll: true });
+
+  el.classList.add("ring-2", "ring-coral");
+  if (highlightTimer) clearTimeout(highlightTimer);
+  highlightTimer = setTimeout(() => {
+    el.classList.remove("ring-2", "ring-coral");
+    highlightTimer = null;
+  }, 1200);
+
+  return true;
 }
 
 interface TeaserUnlockPanelProps {
@@ -54,13 +87,18 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
   useSeenOnce(cardRef, () => trackEvent("view_paywall", { productId: product.id, tier: product.tier, source: "teaser_card" }));
 
   const handle = (source: TeaserUnlockSource) => {
-    trackTeaserUnlock(product.id, source);
+    trackTeaserUnlock(product.id, source, "checkout");
     onUnlock(source);
   };
 
   return (
     <>
-      <div ref={cardRef} className="rounded-3xl border border-coral/30 bg-white p-5 text-left shadow-[0_4px_16px_rgba(255,92,119,0.12)]">
+      <div
+        id="teaser-unlock"
+        ref={cardRef}
+        tabIndex={-1}
+        className="rounded-3xl border border-coral/30 bg-white p-5 text-left shadow-[0_4px_16px_rgba(255,92,119,0.12)] outline-none transition-shadow"
+      >
         <p className="text-xs font-bold text-coral">여기까지가 무료 미리보기예요</p>
         <h3 className="mt-1 text-lg font-black leading-snug text-ink">
           {lockedCount > 0 ? `남은 ${lockedCount}개 이야기가 준비돼 있어요` : "전체 리포트가 준비돼 있어요"}
