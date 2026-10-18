@@ -216,6 +216,8 @@ export default function CompatNewClient({
               ? "next_reading"
               : fromVia === "saved_detail"
               ? "saved_detail"
+              : fromVia === "free_result"
+              ? "free_result"
               : "compat_continue",
         });
         setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });

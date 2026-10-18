@@ -102,10 +102,17 @@ describe("P-007 nextReadings — 두 사람 상품 고정 매핑 및 보유·노
     expect(res.set).toBeNull();
   });
 
-  it("이동 주소 생성: 정통 궁합은 /compat/<compatId>, 그 외 상품·세트는 /compat/new?productId=<id>&from=<compatId>&via=next", () => {
+  it("이동 주소 생성: 정통 궁합은 /compat/<compatId>, 그 외 상품·세트는 /compat/new?productId=<id>&from=<compatId>&via=<via>", () => {
     expect(nextReadingHref("compat_basic", "cmp_abc", "ko")).toBe("/ko/compat/cmp_abc");
+    expect(nextReadingHref("compat_basic", "cmp_abc", "ko", "free_result")).toBe("/ko/compat/cmp_abc");
     expect(nextReadingHref("inner_mind", "cmp_abc", "ko")).toBe(
       "/ko/compat/new?productId=inner_mind&from=cmp_abc&via=next",
+    );
+    expect(nextReadingHref("inner_mind", "cmp_abc", "ko", "free_result")).toBe(
+      "/ko/compat/new?productId=inner_mind&from=cmp_abc&via=free_result",
+    );
+    expect(nextReadingHref("secret_love", "cmp_abc", "ko", "free_result")).toBe(
+      "/ko/compat/new?productId=secret_love&from=cmp_abc&via=free_result",
     );
     expect(nextReadingHref("set_this_person", "cmp_abc", "ko")).toBe(
       "/ko/compat/new?productId=set_this_person&from=cmp_abc&via=next",

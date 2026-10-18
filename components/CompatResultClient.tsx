@@ -785,6 +785,19 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         )}
       </Card>
 
+      {isLocked && data.relation !== "friend" && (
+        <div className="w-full mt-6">
+          <NextReadingRecommendations
+            currentCatalogId="compat_basic"
+            compatId={data.id}
+            locale={locale}
+            visibleIds={visibleIds}
+            sourceScreen="compat_free"
+            variant="free_preview"
+          />
+        </div>
+      )}
+
       {/* Premium Section */}
       {deepReport ? (
         <div className="w-full mt-8 flex flex-col gap-6">

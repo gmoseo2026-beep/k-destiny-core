@@ -22,7 +22,8 @@ export interface NextReadingRecommendationsProps {
   compatId: string;
   locale?: string;
   visibleIds?: string[];
-  sourceScreen: "report_view" | "compat_unlocked";
+  sourceScreen: "report_view" | "compat_unlocked" | "compat_free";
+  variant?: "owned" | "free_preview";
 }
 
 export default function NextReadingRecommendations({
@@ -31,7 +32,9 @@ export default function NextReadingRecommendations({
   locale = "ko",
   visibleIds,
   sourceScreen,
+  variant = "owned",
 }: NextReadingRecommendationsProps) {
+  const isFreePreview = variant === "free_preview";
   const { status: sessionStatus } = useSession();
   const checkKey = `${compatId}:${currentCatalogId}:${sessionStatus}`;
   const [resolved, setResolved] = useState<{
@@ -115,10 +118,12 @@ export default function NextReadingRecommendations({
     };
   }, [checkKey, compatId, currentCatalogId, sessionStatus]);
 
-  const isReady = resolved?.key === checkKey && resolved.ok;
-  const { singles, set: setItem } = isReady
-    ? getNextReadings({ currentCatalogId, ownedCatalogIds: resolved.ownedCatalogIds, visibleIds })
+  const isReady = isFreePreview ? true : resolved?.key === checkKey && resolved.ok;
+  const ownedCatalogIds = resolved?.key === checkKey && resolved.ok ? resolved.ownedCatalogIds : [];
+  const { singles, set: rawSetItem } = isReady
+    ? getNextReadings({ currentCatalogId, ownedCatalogIds, visibleIds })
     : { singles: [], set: null };
+  const setItem = isFreePreview ? null : rawSetItem;
 
   const hasRecommendations = isReady && (singles.length > 0 || Boolean(setItem));
 
@@ -128,6 +133,7 @@ export default function NextReadingRecommendations({
       trackEvent("view_next_reading", {
         fromProductId: currentCatalogId,
         sourceScreen,
+        source_screen: sourceScreen,
       });
     },
     hasRecommendations,
@@ -144,13 +150,17 @@ export default function NextReadingRecommendations({
   return (
     <section
       ref={containerRef}
-      aria-label="두 사람 사주로 이어서 볼 수 있는 풀이"
+      aria-label={isFreePreview ? "이 두 사람으로 더 보기" : "두 사람 사주로 이어서 볼 수 있는 풀이"}
       className="w-full rounded-2xl border border-[#FFD9E0] bg-[#FFF8FA] p-4 text-left shadow-xs"
     >
       <div className="mb-3">
-        <h3 className="text-sm font-black text-ink">두 사람 사주로 이어서 볼 수 있어요</h3>
+        <h3 className="text-sm font-black text-ink">
+          {isFreePreview ? "이 두 사람으로 더 보기" : "두 사람 사주로 이어서 볼 수 있어요"}
+        </h3>
         <p className="text-[11px] font-medium text-text-2 mt-0.5">
-          생년월일을 다시 넣지 않고 바로 미리보기로 이어져요
+          {isFreePreview
+            ? "다시 입력 없이 · 무료 미리보기"
+            : "생년월일을 다시 넣지 않고 바로 미리보기로 이어져요"}
         </p>
       </div>
 
@@ -159,13 +169,14 @@ export default function NextReadingRecommendations({
           {singles.map((item) => (
             <Link
               key={item.id}
-              href={nextReadingHref(item.id, compatId, locale)}
+              href={nextReadingHref(item.id, compatId, locale, isFreePreview ? "free_result" : "next")}
               onClick={() =>
                 trackEvent("click_next_reading", {
                   fromProductId: currentCatalogId,
                   toProductId: item.id,
                   isSet: false,
                   sourceScreen,
+                  source_screen: sourceScreen,
                 })
               }
               className="group w-full flex items-center justify-between gap-2.5 p-3 rounded-xl bg-white hover:bg-cream/60 border border-line transition-all duration-150 active:scale-[0.98]"
@@ -176,12 +187,26 @@ export default function NextReadingRecommendations({
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs sm:text-sm font-extrabold text-ink truncate">{item.name}</h4>
-                  <p className="text-[11px] font-medium text-text-2 truncate mt-0.5">{item.hook}</p>
+                  <p
+                    className={
+                      isFreePreview
+                        ? "text-[11px] font-medium text-text-2 line-clamp-2 leading-snug mt-0.5"
+                        : "text-[11px] font-medium text-text-2 truncate mt-0.5"
+                    }
+                  >
+                    {item.hook}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-1">
-                <span className="text-xs font-black text-coral whitespace-nowrap">{priceLabel(item)}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-0.5 transition-transform" />
+                {isFreePreview ? (
+                  <span className="text-xs font-black text-coral whitespace-nowrap">무료 미리보기 →</span>
+                ) : (
+                  <>
+                    <span className="text-xs font-black text-coral whitespace-nowrap">{priceLabel(item)}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
               </div>
             </Link>
           ))}
@@ -198,6 +223,7 @@ export default function NextReadingRecommendations({
                 toProductId: setItem.id,
                 isSet: true,
                 sourceScreen,
+                source_screen: sourceScreen,
               })
             }
             className="group w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white hover:bg-cream/60 border border-line transition-all duration-150 active:scale-[0.98]"

@@ -80,16 +80,21 @@ export function getNextReadings({
 }
 
 /**
- * 같은 두 사람(compatId) 정보로 다음 풀이를 여는 이동 주소 생성 (P-007 §2-3).
+ * 같은 두 사람(compatId) 정보로 다음 풀이를 여는 이동 주소 생성 (P-007 §2-3, P-010 §A-4).
  * - 정통 궁합(compat_basic): /compat/<compatId>
- * - 그 외 단품·세트: /compat/new?productId=<id>&from=<compatId>&via=next
+ * - 그 외 단품·세트: /compat/new?productId=<id>&from=<compatId>&via=<via>
  */
-export function nextReadingHref(productId: string, compatId: string, locale = "ko"): string {
+export function nextReadingHref(
+  productId: string,
+  compatId: string,
+  locale = "ko",
+  via = "next",
+): string {
   const encodedCompatId = encodeURIComponent(compatId);
   if (productId === "compat_basic") {
     return `/${locale}/compat/${encodedCompatId}`;
   }
-  return `/${locale}/compat/new?productId=${encodeURIComponent(productId)}&from=${encodedCompatId}&via=next`;
+  return `/${locale}/compat/new?productId=${encodeURIComponent(productId)}&from=${encodedCompatId}&via=${encodeURIComponent(via)}`;
 }
 
 export interface MineOrderSummary {
