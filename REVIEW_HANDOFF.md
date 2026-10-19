@@ -622,3 +622,13 @@
 - 검토: diff 직접 확인, 수정 없음.
 - 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 480 통과 · build exit 0 · 만세력 0건.
 - 판정(14일, 11-01): 2026 총운 결제(10-13~10-18 0건), annual_2026 checkout_open. 결제가 계속 없으면 화면이 아니라 상품(10월에 "2026 한 해") 문제로 보고 사장님께 배너에 2027 신년운을 넣는 안을 제안.
+
+---
+
+# 2026-10-19 · P-014 외국인용 무료 궁합 1단계(en/ja/zh) + 반지대학 언어 선택 화면 병합(Gemini 구현, Claude 검토)
+- 결정서: `docs/uiux/decisions/P-014.md`(사장님 10-19 결정: 반지대학 홍대·명동 외국인 40~50% → 영어·일본어·중국어 간체, 궁합만, 결제는 2단계 페이팔 $4.99). 커밋 8adb000(A) · 9a2a7da(B) · a9dda72(C).
+- A: `/ko/welcome` 언어 선택(휴대폰 언어 버튼 강조, 자동 이동 없음, utm 전달, `welcome_language_click`) → 한국어 `/ko/compat/new`, 외국어 `/{en|ja|zh}/couple`. 외국어 화면은 `components/global/`에 새로 만듦(한국어 Compat 컴포넌트 미사용). 결제·잠금·세트 없음. 키워드·세부 점수 번역 표는 `messages/{en,ja,zh}.json` `Couple`. `/welcome`·`/couple`·`/legal`에서는 한국어 Navbar/Footer 대신 `GlobalChrome`. `kd-ringuniv` 도착 `/welcome`.
+- B: `Compatibility.locale`(추가 칸, 운영 DB에 Claude가 10-19 `ALTER TABLE … ADD COLUMN IF NOT EXISTS "locale" TEXT` 적용). `generate-compat`은 요청이 아니라 궁합의 locale로 언어 결정, `buildCompatPrompt(…, lang)` 외국어 분기(한국어 경로 문자열 불변 — 테스트), `validateCompatOutputLanguage`(한글 0, 영어는 한자 0) 실패 시 1회 재생성. `LOCALE_CONFIG.zh`.
+- C: `/{en|ja|zh}/legal/{terms,privacy,refund}` 영어 한 벌(noindex), 외국어 공유 카드.
+- 검토: diff 직접 확인, 수정 없음. 참고 — 외국어 무료 해석의 "아직 말하지 않은 것" 줄은 답(심층 궁합)이 2단계라 지금은 열린 질문으로만 남는다.
+- 검증: tsc 0 · 바꾼 파일 lint 0 · vitest 494 통과 · build exit 0 · `.next/static` 만세력·프롬프트 0건.
