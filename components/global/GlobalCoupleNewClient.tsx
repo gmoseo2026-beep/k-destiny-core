@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronUp, Heart, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import KongdakMascot from "@/components/KongdakMascot";
 import GlobalChrome from "@/components/global/GlobalChrome";
 import type { GlobalCoupleLocale } from "@/lib/globalCoupleLocale";
 import { trackEvent } from "@/lib/gtag";
@@ -170,15 +171,18 @@ export default function GlobalCoupleNewClient({
 
     return (
       <Card className="p-5 space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          {/* 한국어판 결과 카드와 같은 짝: A = 콩이(빨강), B = 닥이(하양) */}
           <span
-            className={`w-6 h-6 rounded-full text-xs font-extrabold flex items-center justify-center text-white ${
-              which === "A" ? "bg-[#FF5C77]" : "bg-[#6A2C70]"
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+              which === "A" ? "bg-[#FFE8EE]" : "bg-[#F3E8F5]"
             }`}
           >
-            {which}
+            <KongdakMascot size={34} expression={which === "A" ? "canon" : "canon_white"} alt="" />
           </span>
-          <h2 className="text-sm font-black text-[#2B2430]">{title}</h2>
+          <h2 className="text-sm font-black text-[#2B2430]">
+            {title} <span aria-hidden>{which === "A" ? "💗" : "💜"}</span>
+          </h2>
         </div>
 
         {/* Name (Optional) */}
@@ -199,7 +203,7 @@ export default function GlobalCoupleNewClient({
         {/* Solar Date of Birth */}
         <div>
           <label className="block text-xs font-bold text-text-2 mb-1.5">
-            {t("dob_label")}
+            <span aria-hidden>🎂 </span>{t("dob_label")}
           </label>
           <div className="grid grid-cols-3 gap-2">
             <select
@@ -261,7 +265,7 @@ export default function GlobalCoupleNewClient({
                   : "bg-white border-line text-text-2"
               }`}
             >
-              {t("gender_female")}
+              <span aria-hidden>👩 </span>{t("gender_female")}
             </button>
             <button
               type="button"
@@ -272,7 +276,7 @@ export default function GlobalCoupleNewClient({
                   : "bg-white border-line text-text-2"
               }`}
             >
-              {t("gender_male")}
+              <span aria-hidden>👨 </span>{t("gender_male")}
             </button>
           </div>
         </div>
@@ -289,6 +293,7 @@ export default function GlobalCoupleNewClient({
             className="w-full flex items-center justify-between py-1 text-xs font-bold text-text-3 hover:text-[#2B2430]"
           >
             <span>
+              <span aria-hidden>⏰ </span>
               {showTime ? t("time_toggle_close") : t("time_toggle_open")}
             </span>
             {showTime ? (
@@ -351,18 +356,28 @@ export default function GlobalCoupleNewClient({
   return (
     <GlobalChrome locale={locale}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Hero Intro Banner */}
-        <div className="rounded-3xl bg-gradient-to-br from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] p-5 text-white text-center shadow-md">
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-extrabold mb-2">
-            <Sparkles className="w-3 h-3" />
+        {/* Hero — 한국어판처럼 콩이·닥이 캐릭터가 먼저 반긴다 */}
+        <div className="relative overflow-hidden rounded-3xl bg-white border border-[#FFD9E0] px-5 pt-5 pb-4 text-center shadow-[0_6px_20px_rgba(255,92,119,0.12)]">
+          <span aria-hidden className="absolute left-4 top-4 text-lg">✨</span>
+          <span aria-hidden className="absolute right-5 top-6 text-base">💕</span>
+          <div className="flex justify-center">
+            <KongdakMascot size={96} expression="couple" animate="bounce" priority alt="" />
+          </div>
+          <div className="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full bg-[#FFE8EE] text-[11px] font-extrabold text-[#E0245A]">
+            <span aria-hidden>💞</span>
             <span>K-SAJU COUPLE CHEMISTRY</span>
           </div>
-          <h1 className="text-lg sm:text-xl font-black leading-snug">
+          <h1 className="mt-2 text-xl font-black leading-snug text-[#2B2430] break-keep">
             {t("title")}
           </h1>
-          <p className="text-xs text-white/90 mt-1.5 leading-relaxed">
+          <p className="text-xs text-text-2 mt-1.5 leading-relaxed">
             {t("saju_intro")}
           </p>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-bold text-[#6A2C70]">
+            <span className="rounded-full bg-[#FFF6F1] border border-[#FFE0D2] px-2.5 py-1">⏱️ {t("hero_chip_time")}</span>
+            <span className="rounded-full bg-[#FFF6F1] border border-[#FFE0D2] px-2.5 py-1">🎁 {t("hero_chip_free")}</span>
+            <span className="rounded-full bg-[#FFF6F1] border border-[#FFE0D2] px-2.5 py-1">🙌 {t("hero_chip_signup")}</span>
+          </div>
         </div>
 
         {/* Person A */}
@@ -430,6 +445,7 @@ export default function GlobalCoupleNewClient({
         >
           <Heart className="w-4 h-4 fill-current" />
           <span>{isLoading ? t("submitting_btn") : t("submit_btn")}</span>
+          {!isLoading && <span aria-hidden>💞</span>}
         </Button>
 
         <p className="text-center text-[11px] text-text-3 pt-1">

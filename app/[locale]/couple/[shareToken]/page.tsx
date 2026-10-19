@@ -6,6 +6,7 @@ import GlobalCoupleResultClient, {
 } from "@/components/global/GlobalCoupleResultClient";
 import { pickPublicBreakdown } from "@/lib/compatGauge";
 import {
+  GLOBAL_COUPLE_META,
   isGlobalCoupleLocale,
   resolveGlobalCoupleGuardRedirect,
   type GlobalCoupleLocale,
@@ -32,7 +33,7 @@ export async function generateMetadata({
   if (!isGlobalCoupleLocale(locale)) {
     return {
       metadataBase: new URL(siteUrl),
-      title: "Korean Couple Compatibility — kongdak",
+      title: GLOBAL_COUPLE_META.en.title,
       robots: { index: false, follow: false },
     };
   }
@@ -68,9 +69,9 @@ export async function generateMetadata({
     compat.shareToken
   )}&lang=${locale}`;
 
-  const title = `${nameA} ❤️ ${nameB}'s Compatibility: ${compat.score} pts — kongdak`;
-  const description =
-    "Check your Korean birth-date compatibility in 30 seconds on kongdak.kr";
+  const meta = GLOBAL_COUPLE_META[locale];
+  const title = meta.resultTitle(nameA, nameB, compat.score);
+  const description = meta.description;
 
   return {
     metadataBase: new URL(siteUrl),
@@ -88,7 +89,7 @@ export async function generateMetadata({
           url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: `${nameA} ❤️ ${nameB}'s Compatibility`,
+          alt: title,
         },
       ],
     },

@@ -69,3 +69,25 @@ export function buildWelcomeTargetHref(
   const qs = outgoing.toString();
   return qs ? `${basePath}?${qs}` : basePath;
 }
+
+/** 외국어 궁합 화면의 탭 제목·설명(브라우저 탭과 공유 미리보기에 보인다). */
+export const GLOBAL_COUPLE_META: Record<
+  GlobalCoupleLocale,
+  { title: string; description: string; resultTitle: (a: string, b: string, score: number) => string }
+> = {
+  en: {
+    title: "Korean Couple Compatibility — kongdak",
+    description: "Korean birth-date compatibility — how two birthdays click in love.",
+    resultTitle: (a, b, s) => `${a} ❤️ ${b}'s Compatibility: ${s} pts — kongdak`,
+  },
+  ja: {
+    title: "韓国式カップル相性 — kongdak",
+    description: "生年月日だけで、ふたりの相性を30秒でチェック。",
+    resultTitle: (a, b, s) => `${a} ❤️ ${b} の相性: ${s}点 — kongdak`,
+  },
+  zh: {
+    title: "韩式情侣缘分合盘 — kongdak",
+    description: "只需出生日期，30秒看看你们的缘分。",
+    resultTitle: (a, b, s) => `${a} ❤️ ${b} 的缘分：${s}分 — kongdak`,
+  },
+};

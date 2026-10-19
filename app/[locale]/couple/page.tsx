@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import GlobalCoupleNewClient from "@/components/global/GlobalCoupleNewClient";
 import {
+  GLOBAL_COUPLE_META,
   isGlobalCoupleLocale,
   resolveGlobalCoupleGuardRedirect,
 } from "@/lib/globalCoupleLocale";
@@ -11,15 +12,15 @@ interface PageProps {
   searchParams: Promise<{ ref?: string }>;
 }
 
-export const metadata: Metadata = {
-  title: "Korean Couple Compatibility — kongdak",
-  description:
-    "Korean birth-date compatibility — how two birthdays click in love.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const meta = GLOBAL_COUPLE_META[isGlobalCoupleLocale(locale) ? locale : "en"];
+  return {
+    title: meta.title,
+    description: meta.description,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function GlobalCoupleNewPage({
   params,

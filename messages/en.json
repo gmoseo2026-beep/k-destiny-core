@@ -632,6 +632,9 @@
         "자연스러운 온도 차": "Natural Contrast",
         "한쪽 템포가 뚜렷함": "Clear Lead & Pace"
       }
-    }
+    },
+    "hero_chip_time": "30 seconds",
+    "hero_chip_free": "Free",
+    "hero_chip_signup": "No sign-up"
   }
 }

@@ -274,7 +274,7 @@ export default function GlobalCoupleResultClient({
           <div className="relative flex items-center justify-between w-full max-w-xs mx-auto mb-4 px-2">
             <div className="flex flex-col items-center gap-1.5 z-10">
               <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md p-1 border border-white/30 shadow-md flex items-center justify-center">
-                <KongdakMascot size={50} expression="canon" animate="pulse" />
+                <KongdakMascot size={50} expression="canon" animate="pulse" alt="kongdak" />
               </div>
               <span className="text-xs font-bold text-white bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm truncate max-w-[92px]">
                 {data.personA.name}
@@ -284,6 +284,7 @@ export default function GlobalCoupleResultClient({
             <div className="flex flex-col items-center justify-center flex-1 px-1 z-10">
               <div className="w-14 h-12 flex items-center justify-center">
                 <KongdakMascot
+                  alt="kongdak"
                   size={52}
                   expression="couple"
                   animate="heartbeat"
@@ -297,6 +298,7 @@ export default function GlobalCoupleResultClient({
             <div className="flex flex-col items-center gap-1.5 z-10">
               <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md p-1 border border-white/30 shadow-md flex items-center justify-center">
                 <KongdakMascot
+                  alt="kongdak"
                   size={50}
                   expression="canon_white"
                   animate="pulse"
@@ -310,7 +312,7 @@ export default function GlobalCoupleResultClient({
 
           {/* Score Number */}
           <div className="flex items-center justify-center gap-3 my-2">
-            <KongdakMascot size={60} score={data.score} animate="heartbeat" />
+            <KongdakMascot size={60} score={data.score} animate="heartbeat" alt="kongdak" />
             <div className="flex items-baseline gap-1.5">
               <span className="text-6xl font-black tracking-tight drop-shadow-md">
                 {data.score}

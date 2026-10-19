@@ -126,9 +126,9 @@ export default function GlobalChrome({
               </a>
             </div>
             <p>
-              Company: DI Company (디아이컴퍼니) | CEO: Soo-kyung Choi (최수경) |
+              Company: DI Company | CEO: Soo-kyung Choi |
               Business Reg. No.: 263-08-01950 | E-Commerce Permit:
-              2021-Seoul-Seodaemun-1718 (제2021-서울서대문-1718호) | Address: 100,
+              2021-Seoul-Seodaemun-1718 | Address: 100,
               Hongeun-jungang-ro 1-gil, Seodaemun-gu, Seoul, Republic of Korea
             </p>
           </div>
