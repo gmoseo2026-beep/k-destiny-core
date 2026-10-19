@@ -112,6 +112,7 @@
     },
     "hero_chip_time": "30秒",
     "hero_chip_free": "免费",
-    "hero_chip_signup": "无需注册"
+    "hero_chip_signup": "无需注册",
+    "picker_close": "关闭"
   }
 }

@@ -635,6 +635,7 @@
     },
     "hero_chip_time": "30 seconds",
     "hero_chip_free": "Free",
-    "hero_chip_signup": "No sign-up"
+    "hero_chip_signup": "No sign-up",
+    "picker_close": "Close"
   }
 }

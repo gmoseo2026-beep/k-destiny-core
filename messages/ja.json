@@ -582,6 +582,7 @@
     },
     "hero_chip_time": "30秒",
     "hero_chip_free": "無料",
-    "hero_chip_signup": "登録不要"
+    "hero_chip_signup": "登録不要",
+    "picker_close": "閉じる"
   }
 }

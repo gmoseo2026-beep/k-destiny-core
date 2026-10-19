@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp, Heart } from "lucide-react";
 import KongdakMascot from "@/components/KongdakMascot";
+import PickSelect from "@/components/global/PickSelect";
 import GlobalChrome from "@/components/global/GlobalChrome";
 import type { GlobalCoupleLocale } from "@/lib/globalCoupleLocale";
 import { trackEvent } from "@/lib/gtag";
@@ -75,6 +76,14 @@ export default function GlobalCoupleNewClient({
     setErrorMsg(null);
 
     if (!yearA || !monthA || !dayA || !yearB || !monthB || !dayB) {
+      setErrorMsg(t("error_dob"));
+      return;
+    }
+    // 2월 30일처럼 없는 날짜(일을 먼저 고르고 달을 바꾼 경우)는 보내지 않는다
+    if (
+      Number(dayA) > getDaysInMonth(yearA, monthA) ||
+      Number(dayB) > getDaysInMonth(yearB, monthB)
+    ) {
       setErrorMsg(t("error_dob"));
       return;
     }
@@ -206,47 +215,31 @@ export default function GlobalCoupleNewClient({
             <span aria-hidden>🎂 </span>{t("dob_label")}
           </label>
           <div className="grid grid-cols-3 gap-2">
-            <select
+            <PickSelect
               value={year}
-              onChange={(e) => setYear(e.target.value)}
-              aria-label={`${title} ${t("year_placeholder")}`}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm font-semibold text-[#2B2430] focus:outline-none focus:border-[#FF5C77]"
-            >
-              <option value="">{t("year_placeholder")}</option>
-              {years.map((y) => (
-                <option key={y} value={String(y)}>
-                  {y}
-                </option>
-              ))}
-            </select>
-
-            <select
+              onChange={setYear}
+              options={years.map((y) => ({ value: String(y), label: String(y) }))}
+              placeholder={t("year_placeholder")}
+              label={`${title} · ${t("year_placeholder")}`}
+              closeLabel={t("picker_close")}
+              scrollHint="1995"
+            />
+            <PickSelect
               value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              aria-label={`${title} ${t("month_placeholder")}`}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm font-semibold text-[#2B2430] focus:outline-none focus:border-[#FF5C77]"
-            >
-              <option value="">{t("month_placeholder")}</option>
-              {months.map((m) => (
-                <option key={m} value={String(m)}>
-                  {m}
-                </option>
-              ))}
-            </select>
-
-            <select
+              onChange={setMonth}
+              options={months.map((m) => ({ value: String(m), label: String(m) }))}
+              placeholder={t("month_placeholder")}
+              label={`${title} · ${t("month_placeholder")}`}
+              closeLabel={t("picker_close")}
+            />
+            <PickSelect
               value={day}
-              onChange={(e) => setDay(e.target.value)}
-              aria-label={`${title} ${t("day_placeholder")}`}
-              className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm font-semibold text-[#2B2430] focus:outline-none focus:border-[#FF5C77]"
-            >
-              <option value="">{t("day_placeholder")}</option>
-              {days.map((d) => (
-                <option key={d} value={String(d)}>
-                  {d}
-                </option>
-              ))}
-            </select>
+              onChange={setDay}
+              options={days.map((d) => ({ value: String(d), label: String(d) }))}
+              placeholder={t("day_placeholder")}
+              label={`${title} · ${t("day_placeholder")}`}
+              closeLabel={t("picker_close")}
+            />
           </div>
         </div>
 
@@ -306,41 +299,39 @@ export default function GlobalCoupleNewClient({
           {showTime && (
             <div className="mt-2.5 space-y-2">
               <div className="grid grid-cols-3 gap-2">
-                <select
+                <PickSelect
                   value={ampm}
-                  onChange={(e) => setAmpm(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-2.5 py-2 text-xs font-semibold text-[#2B2430]"
-                >
-                  <option value="">{t("time_unknown")}</option>
-                  <option value="AM">{t("time_am")}</option>
-                  <option value="PM">{t("time_pm")}</option>
-                </select>
-                <select
+                  onChange={setAmpm}
+                  options={[
+                    { value: "", label: t("time_unknown") },
+                    { value: "AM", label: t("time_am") },
+                    { value: "PM", label: t("time_pm") },
+                  ]}
+                  placeholder={t("time_unknown")}
+                  label={`${title} · ${t("time_toggle_open")}`}
+                  closeLabel={t("picker_close")}
+                  className="text-xs px-2.5 py-2"
+                />
+                <PickSelect
                   value={hour}
+                  onChange={setHour}
                   disabled={!ampm}
-                  onChange={(e) => setHour(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-2.5 py-2 text-xs font-semibold text-[#2B2430] disabled:opacity-40"
-                >
-                  {hours.map((h) => (
-                    <option key={h} value={String(h)}>
-                      {h}
-                      {t("time_hour_unit")}
-                    </option>
-                  ))}
-                </select>
-                <select
+                  options={hours.map((h) => ({ value: String(h), label: `${h}${t("time_hour_unit")}` }))}
+                  placeholder={`1${t("time_hour_unit")}`}
+                  label={`${title} · ${t("time_toggle_open")}`}
+                  closeLabel={t("picker_close")}
+                  className="text-xs px-2.5 py-2"
+                />
+                <PickSelect
                   value={min}
+                  onChange={setMin}
                   disabled={!ampm}
-                  onChange={(e) => setMin(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-2.5 py-2 text-xs font-semibold text-[#2B2430] disabled:opacity-40"
-                >
-                  {minutes.map((m) => (
-                    <option key={m} value={String(m)}>
-                      {String(m).padStart(2, "0")}
-                      {t("time_min_unit")}
-                    </option>
-                  ))}
-                </select>
+                  options={minutes.map((m) => ({ value: String(m), label: `${String(m).padStart(2, "0")}${t("time_min_unit")}` }))}
+                  placeholder={`00${t("time_min_unit")}`}
+                  label={`${title} · ${t("time_toggle_open")}`}
+                  closeLabel={t("picker_close")}
+                  className="text-xs px-2.5 py-2"
+                />
               </div>
             </div>
           )}
