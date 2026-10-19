@@ -4,10 +4,24 @@ import fs from "fs/promises";
 import path from "path";
 import prisma from "@/lib/prisma";
 import { isValidInviteToken, relationLabel } from "@/lib/compatInviteClient";
+import enMessages from "@/messages/en.json";
+import jaMessages from "@/messages/ja.json";
+import zhMessages from "@/messages/zh.json";
 
 export const runtime = "nodejs";
 
+type GlobalOgLocale = "en" | "ja" | "zh";
+
+const COUPLE_KEYWORD_MAPS: Record<GlobalOgLocale, Record<string, string>> = {
+  en: (enMessages.Couple?.keywords ?? {}) as Record<string, string>,
+  ja: (jaMessages.Couple?.keywords ?? {}) as Record<string, string>,
+  zh: (zhMessages.Couple?.keywords ?? {}) as Record<string, string>,
+};
+
+const CJK_OR_KANA_RE = /[\u3040-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/;
+
 let fontDataCache: ArrayBuffer | null = null;
+const cjkSubsetCache = new Map<string, ArrayBuffer>();
 
 async function getPretendardFont(): Promise<ArrayBuffer> {
   if (!fontDataCache) {
@@ -19,6 +33,60 @@ async function getPretendardFont(): Promise<ArrayBuffer> {
 }
 
 /**
+ * Fetch a lightweight Google Fonts TTF/OTF subset for Japanese/Chinese characters so
+ * Satori never renders tofu (□). Returns null on timeout/offline so caller can fall back to English.
+ */
+async function fetchCjkFontSubset(
+  locale: GlobalOgLocale,
+  text: string
+): Promise<ArrayBuffer | null> {
+  const uniqueChars = Array.from(new Set(Array.from(text))).join("");
+  if (!uniqueChars) return null;
+  const family = locale === "ja" ? "Noto+Sans+JP" : "Noto+Sans+SC";
+  const cacheKey = `${family}:${uniqueChars}`;
+  const cached = cjkSubsetCache.get(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const cssUrl = `https://fonts.googleapis.com/css2?family=${family}:wght@700&text=${encodeURIComponent(
+      uniqueChars
+    )}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    const cssRes = await fetch(cssUrl, {
+      headers: {
+        // Older UA makes Google Fonts return truetype/opentype instead of woff2 (which Satori doesn't support)
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1",
+      },
+      signal: controller.signal,
+    });
+    if (!cssRes.ok) {
+      clearTimeout(timer);
+      return null;
+    }
+    const cssText = await cssRes.text();
+    const match = cssText.match(/src:\s*url\(([^)]+)\)\s*format\(['"](?:truetype|opentype)['"]\)/);
+    if (!match?.[1]) {
+      clearTimeout(timer);
+      return null;
+    }
+    const fontRes = await fetch(match[1], { signal: controller.signal });
+    clearTimeout(timer);
+    if (!fontRes.ok) return null;
+    const buf = await fontRes.arrayBuffer();
+    if (cjkSubsetCache.size > 60) {
+      const firstKey = cjkSubsetCache.keys().next().value;
+      if (firstKey) cjkSubsetCache.delete(firstKey);
+    }
+    cjkSubsetCache.set(cacheKey, buf);
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * GET /api/og/compat
  * 콩닥 궁합 공유 카드 및 인스타 스토리용 이미지 동적 생성 (@vercel/og)
  *
@@ -26,6 +94,7 @@ async function getPretendardFont(): Promise<ArrayBuffer> {
  * - shareToken: DB에서 결과 조회용 토큰
  * - inviteToken: 반쪽 궁합 초대장 토큰 (nameA와 ?만 표시)
  * - score, nameA, nameB, k1, k2, k3 (fallback용 파라미터)
+ * - lang: "en" | "ja" | "zh" (외국어 공유 카드 지정용)
  * - w: 가로 너비 (기본 1200, 스토리 1080)
  * - h: 세로 높이 (기본 630, 스토리 1350)
  * - download: "true"일 경우 Content-Disposition: attachment 헤더 추가
@@ -36,10 +105,16 @@ export async function GET(req: NextRequest) {
     const shareToken = searchParams.get("shareToken");
     const inviteToken = searchParams.get("inviteToken");
     const download = searchParams.get("download") === "true";
+    const langParam = searchParams.get("lang");
+
+    let cardLocale: GlobalOgLocale | null =
+      !inviteToken && (langParam === "en" || langParam === "ja" || langParam === "zh")
+        ? langParam
+        : null;
 
     let score = searchParams.get("score") || "91";
-    let nameA = searchParams.get("nameA") || "나";
-    let nameB = searchParams.get("nameB") || "상대방";
+    let nameA = searchParams.get("nameA") || (cardLocale ? "Person A" : "나");
+    let nameB = searchParams.get("nameB") || (cardLocale ? "Person B" : "상대방");
     let keywords = [
       searchParams.get("k1") || "천생연분",
       searchParams.get("k2") || "기운 찰떡궁합",
@@ -103,16 +178,31 @@ export async function GET(req: NextRequest) {
         "내 생년월일만 채우면 완성",
       ];
     } else if (shareToken) {
-      // DB에서 shareToken으로 최신 정보 조회
-      const compat = await prisma.compatibility.findUnique({
-        where: { shareToken },
-        select: {
-          score: true,
-          keywords: true,
-          personA: true,
-          personB: true,
-        },
-      });
+      // DB에서 shareToken으로 최신 정보 조회 (locale 컬럼이 아직 없는 DB에서도 안전하게 동작하도록 폴백)
+      const compat = await prisma.compatibility
+        .findUnique({
+          where: { shareToken },
+          select: {
+            score: true,
+            keywords: true,
+            personA: true,
+            personB: true,
+            locale: true,
+          },
+        })
+        .catch(async () =>
+          prisma.compatibility
+            .findUnique({
+              where: { shareToken },
+              select: {
+                score: true,
+                keywords: true,
+                personA: true,
+                personB: true,
+              },
+            })
+            .catch(() => null)
+        );
 
       if (compat) {
         score = String(compat.score);
@@ -123,10 +213,40 @@ export async function GET(req: NextRequest) {
         const pB = compat.personB as { name?: string } | null;
         if (pA?.name) nameA = pA.name;
         if (pB?.name) nameB = pB.name;
+        const dbLocale = (compat as { locale?: string | null }).locale;
+        if (dbLocale === "en" || dbLocale === "ja" || dbLocale === "zh") {
+          cardLocale = dbLocale;
+        }
       }
     }
 
     const pretendardFont = await getPretendardFont();
+    let cjkFont: ArrayBuffer | null = null;
+
+    if (cardLocale) {
+      if (nameA === "나") nameA = "Person A";
+      if (nameB === "상대방") nameB = "Person B";
+
+      const rawKeywords = [...keywords];
+      const dict = COUPLE_KEYWORD_MAPS[cardLocale];
+      const enDict = COUPLE_KEYWORD_MAPS.en;
+      keywords = rawKeywords
+        .map((kw) => dict[kw] || enDict[kw] || (!/[가-힣]/.test(kw) ? kw : ""))
+        .filter(Boolean);
+
+      const combinedText = `${nameA}${nameB}${keywords.join("")}`;
+      if (CJK_OR_KANA_RE.test(combinedText)) {
+        cjkFont = await fetchCjkFontSubset(cardLocale, combinedText);
+        if (!cjkFont) {
+          // If Google Fonts subset cannot be fetched, fall back to English keywords & safe names so □ never renders
+          keywords = rawKeywords
+            .map((kw) => enDict[kw] || (!CJK_OR_KANA_RE.test(kw) && !/[가-힣]/.test(kw) ? kw : ""))
+            .filter(Boolean);
+          if (CJK_OR_KANA_RE.test(nameA)) nameA = "Person A";
+          if (CJK_OR_KANA_RE.test(nameB)) nameB = "Person B";
+        }
+      }
+    }
 
     const response = new ImageResponse(
       (
@@ -140,7 +260,7 @@ export async function GET(req: NextRequest) {
             justifyContent: "space-between",
             background: "linear-gradient(145deg, #FF8AA1 0%, #FF5C77 45%, #6A2C70 100%)",
             padding: isStory ? "80px 60px" : "48px 60px",
-            fontFamily: "Pretendard, sans-serif",
+            fontFamily: cjkFont ? "Pretendard, NotoCJK, sans-serif" : "Pretendard, sans-serif",
             color: "#ffffff",
           }}
         >
@@ -179,16 +299,29 @@ export async function GET(req: NextRequest) {
               />
               <circle cx="50" cy="14" r="4" fill="#FFC24B" />
             </svg>
-            <span
-              style={{
-                fontSize: isStory ? "36px" : "30px",
-                fontWeight: 800,
-                letterSpacing: "-0.02em",
-                color: "#ffffff",
-              }}
-            >
-              콩닥 <span style={{ opacity: 0.85, fontSize: isStory ? "24px" : "20px", fontWeight: 600 }}>kongdak</span>
-            </span>
+            {cardLocale ? (
+              <span
+                style={{
+                  fontSize: isStory ? "36px" : "30px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  color: "#ffffff",
+                }}
+              >
+                kongdak
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: isStory ? "36px" : "30px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  color: "#ffffff",
+                }}
+              >
+                콩닥 <span style={{ opacity: 0.85, fontSize: isStory ? "24px" : "20px", fontWeight: 600 }}>kongdak</span>
+              </span>
+            )}
           </div>
 
           {/* Center Card Content */}
@@ -222,7 +355,9 @@ export async function GET(req: NextRequest) {
               <span>{nameA}</span>
               <span style={{ color: "#FFC24B", fontSize: isStory ? "36px" : "28px" }}>❤️</span>
               <span>{nameB}</span>
-              <span style={{ opacity: 0.9, fontSize: isStory ? "32px" : "26px", fontWeight: 500 }}>의 궁합</span>
+              <span style={{ opacity: 0.9, fontSize: isStory ? "32px" : "26px", fontWeight: 500 }}>
+                {cardLocale ? "'s Compatibility" : "의 궁합"}
+              </span>
             </div>
 
             {/* Score Display */}
@@ -254,7 +389,7 @@ export async function GET(req: NextRequest) {
                   marginLeft: "8px",
                 }}
               >
-                점
+                {cardLocale ? "pts" : "점"}
               </span>
             </div>
 
@@ -299,16 +434,29 @@ export async function GET(req: NextRequest) {
               border: "1px solid rgba(255, 255, 255, 0.25)",
             }}
           >
-            <span
-              style={{
-                fontSize: isStory ? "26px" : "20px",
-                fontWeight: 700,
-                color: "#FFF6F1",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              ✨ 내 궁합도 30초면 확인 → <span style={{ color: "#FFC24B" }}>kongdak.kr</span>
-            </span>
+            {cardLocale ? (
+              <span
+                style={{
+                  fontSize: isStory ? "26px" : "20px",
+                  fontWeight: 700,
+                  color: "#FFF6F1",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                ✨ Check your compatibility in 30s → <span style={{ color: "#FFC24B" }}>kongdak.kr</span>
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: isStory ? "26px" : "20px",
+                  fontWeight: 700,
+                  color: "#FFF6F1",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                ✨ 내 궁합도 30초면 확인 → <span style={{ color: "#FFC24B" }}>kongdak.kr</span>
+              </span>
+            )}
           </div>
         </div>
       ),
@@ -322,6 +470,16 @@ export async function GET(req: NextRequest) {
             style: "normal",
             weight: 700,
           },
+          ...(cjkFont
+            ? [
+                {
+                  name: "NotoCJK",
+                  data: cjkFont,
+                  style: "normal" as const,
+                  weight: 700 as const,
+                },
+              ]
+            : []),
         ],
       }
     );
