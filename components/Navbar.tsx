@@ -35,6 +35,10 @@ export default function Navbar({ visibleProducts = [] }: NavbarProps) {
 
   // Check if current page is Home
   const isHome = pathname === "/" || pathname === "";
+  const isGlobalOrWelcome =
+    pathname === "/welcome" ||
+    pathname.startsWith("/couple") ||
+    pathname.startsWith("/legal");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,6 +47,8 @@ export default function Navbar({ visibleProducts = [] }: NavbarProps) {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  if (isGlobalOrWelcome) return null;
 
   return (
     <>

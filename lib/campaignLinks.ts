@@ -174,7 +174,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     label: "반지대학 · 매장 QR 무료 궁합",
     // 10-19 합의: 홍대본점·명동캠퍼스 시범, QR 하나, 본사 정산 30%
     rsRate: 0.3,
-    path: "/compat/new",
+    path: "/welcome",
     utm: { source: "ringuniv", medium: "partner", campaign: "partner_2026", content: "store_qr" },
   },
   {

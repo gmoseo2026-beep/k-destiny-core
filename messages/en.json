@@ -521,5 +521,117 @@
     "expiry_desc": "Your premium access will expire in {days} days. Renew now to maintain your cosmic connection.",
     "btn_upgrade": "Renew Plan",
     "btn_hide_today": "Don't show today"
+  },
+  "Couple": {
+    "title": "Korean Couple Compatibility",
+    "saju_intro": "Korean birth-date compatibility — how two birthdays click in love.",
+    "person_a_title": "Person A (You)",
+    "person_b_title": "Person B (Partner)",
+    "default_name_a": "Person A",
+    "default_name_b": "Person B",
+    "name_label": "Name or Nickname (optional)",
+    "name_placeholder_a": "e.g. Alex",
+    "name_placeholder_b": "e.g. Jamie",
+    "dob_label": "Date of Birth (Solar)",
+    "year_placeholder": "Year",
+    "month_placeholder": "Month",
+    "day_placeholder": "Day",
+    "gender_label": "Gender",
+    "gender_female": "Female",
+    "gender_male": "Male",
+    "time_toggle_open": "Add birth time (optional)",
+    "time_toggle_close": "Hide birth time",
+    "time_unknown": "Don't know birth time",
+    "time_am": "AM",
+    "time_pm": "PM",
+    "time_hour_unit": "h",
+    "time_min_unit": "m",
+    "timezone_note": "Birth time is optional. If born outside Korea, leaving birth time blank gives a more accurate reading.",
+    "submit_btn": "Check Our Compatibility",
+    "submitting_btn": "Reading Your Chemistry...",
+    "error_dob": "Please select both dates of birth.",
+    "error_general": "Something went wrong. Please try again.",
+    "result_header": "Korean Couple Compatibility",
+    "red_thread_badge": "Red Thread of Fate",
+    "score_unit": "pts",
+    "best_match_badge": "Soulmate-Level Match Discovered!",
+    "mood_90": "Heart-Fluttering Match Made in Heaven!",
+    "mood_80": "Electric Chemistry & Natural Rhythm",
+    "mood_70": "Sweet & Exciting Romantic Spark",
+    "mood_60": "Charming Push-and-Pull Chemistry",
+    "mood_low": "Opposites Attract — Growing Closer Together",
+    "gauge_section_title": "Compatibility Breakdown",
+    "gauge_section_sub": "3 Key Harmony Indicators",
+    "ai_section_title": "Our Real Chemistry",
+    "ai_scenes_intro": "Do these moments sound like {nameA} & {nameB}?",
+    "ai_unsaid_title": "What Neither of You Has Said Yet",
+    "ai_loading_title": "Reading the spark between you two...",
+    "ai_loading_sub": "Translating your birthday rhythm into warm insights",
+    "ai_error_msg": "We couldn't finish generating your reading right now.",
+    "ai_retry_btn": "Try Generating Again",
+    "share_copy_btn": "Copy Link",
+    "share_copied_toast": "Link copied to clipboard!",
+    "share_native_btn": "Share",
+    "try_again_btn": "Try Again",
+    "disclaimer": "For entertainment and self-reflection.",
+    "keywords": {
+      "천생연분": "Match Made in Heaven",
+      "다정한 짝꿍": "Sweet & Caring Partners",
+      "거울 같은 소울메이트": "Mirror-Like Soulmates",
+      "서로를 자극하는 관계": "Inspiring & Exciting Spark",
+      "서로의 부족함을 채워주는": "Completing Each Other",
+      "기운 찰떡궁합": "Effortless Energy Harmony",
+      "떨어질 수 없는 케미": "Inseparable Chemistry",
+      "티격태격 밀당 케미": "Playful Push & Pull",
+      "에너지의 완벽한 조화": "Perfect Balance of Energy",
+      "운명적인 이끌림": "Magnetic Attraction",
+      "알아가는 재미": "Joy of Discovering Each Other",
+      "맞춰가는 즐거움": "Finding Our Own Rhythm",
+      "함께 성장하는 인연": "Growing Stronger Together",
+      "서서히 스며드는 케미": "Slow-Burn Warm Chemistry"
+    },
+    "gauges": {
+      "axes": {
+        "stem": {
+          "label": "Natural Personality Fit",
+          "description": "How naturally your core personalities blend together"
+        },
+        "balance": {
+          "label": "Shared Energy Balance",
+          "description": "How evenly and steadily things flow when you are together"
+        },
+        "yinYang": {
+          "label": "Emotional Tempo & Warmth",
+          "description": "Harmony between taking the lead and warmly supporting each other"
+        },
+        "complement": {
+          "label": "How You Complement Each Other",
+          "description": ""
+        },
+        "branch": {
+          "label": "Daily & Emotional Rhythm",
+          "description": ""
+        }
+      },
+      "steps": {
+        "찰떡 호흡": "Effortless Sync",
+        "서로 북돋는 흐름": "Uplifting Flow",
+        "비슷해 편안한 결": "Cozy & Alike",
+        "다름을 맞춰 가는 사이": "Learning Each Other",
+        "빈틈없이 채워 줌": "Seamless Complement",
+        "부분적으로 채워 줌": "Helpful Balance",
+        "각자 장점이 뚜렷함": "Distinct Strengths",
+        "가까울수록 편안함": "Closer & Cozier",
+        "무난하고 안정적": "Steady & Calm",
+        "섬세한 배려가 필요": "Needs Gentle Care",
+        "속도 조절이 꼭 필요": "Pace Yourselves",
+        "고르고 단단한 균형": "Solid & Even Balance",
+        "대체로 고른 편": "Mostly Balanced",
+        "특정 색깔이 뚜렷함": "Vivid Distinct Vibe",
+        "온도가 딱 맞음": "Just the Right Warmth",
+        "자연스러운 온도 차": "Natural Contrast",
+        "한쪽 템포가 뚜렷함": "Clear Lead & Pace"
+      }
+    }
   }
 }

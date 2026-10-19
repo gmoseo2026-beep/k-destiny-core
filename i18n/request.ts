@@ -69,8 +69,13 @@ export default getRequestConfig(async ({requestLocale}) => {
     usableOverride[ns] = value;
   }
 
+  const merged = mergeWithinKoShape(koMessages as Messages, usableOverride);
+  if (isPlainObject(localeMessages.Couple)) {
+    merged.Couple = localeMessages.Couple;
+  }
+
   return {
     locale,
-    messages: mergeWithinKoShape(koMessages as Messages, usableOverride)
+    messages: merged
   };
 });

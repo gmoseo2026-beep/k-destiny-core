@@ -1,11 +1,19 @@
 "use client";
 
-import { Link } from "@/i18n/routing";
+import { Link, usePathname } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { Mail } from "lucide-react";
 
 export default function Footer() {
   const t = useTranslations("Footer");
+  const pathname = usePathname();
+  if (
+    pathname === "/welcome" ||
+    pathname.startsWith("/couple") ||
+    pathname.startsWith("/legal")
+  ) {
+    return null;
+  }
 
   return (
     <footer className="relative z-10 w-full border-t border-line bg-surface text-caption py-8 px-4 mt-auto">
