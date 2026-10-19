@@ -66,7 +66,9 @@ function generateSecureShareToken(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { personA, personB, relation = "love", ref } = body;
+    const { personA, personB, relation = "love", ref, locale } = body;
+    const validLocale: "en" | "ja" | "zh" | null =
+      locale === "en" || locale === "ja" || locale === "zh" ? locale : null;
 
     // 1. 필수 필드 및 생년월일 유효성 엄격 검증
     if (!isValidDateString(personA?.dob) || !isValidDateString(personB?.dob)) {
@@ -113,9 +115,26 @@ export async function POST(req: NextRequest) {
     const birthHashA = createBirthHash(personA.dob, personA.time, personA.gender);
     const birthHashB = createBirthHash(personB.dob, personB.time, personB.gender);
 
+    const defaultNameA =
+      validLocale === "en"
+        ? "Person A"
+        : validLocale === "ja"
+        ? "あなた"
+        : validLocale === "zh"
+        ? "我"
+        : "나";
+    const defaultNameB =
+      validLocale === "en"
+        ? "Person B"
+        : validLocale === "ja"
+        ? "お相手"
+        : validLocale === "zh"
+        ? "对方"
+        : "상대방";
+
     // 저장용 최소 객체 (서버 내부용: 사주 해석 등에 필요한 최소 데이터)
     const safePersonA = {
-      name: personA.name ? String(personA.name).slice(0, 20) : "나",
+      name: personA.name ? String(personA.name).slice(0, 20) : defaultNameA,
       gender: personA.gender,
       birthHash: birthHashA,
       dayMaster: sajuA.dayMaster,
@@ -124,7 +143,7 @@ export async function POST(req: NextRequest) {
     };
 
     const safePersonB = {
-      name: personB.name ? String(personB.name).slice(0, 20) : "상대방",
+      name: personB.name ? String(personB.name).slice(0, 20) : defaultNameB,
       gender: personB.gender,
       birthHash: birthHashB,
       dayMaster: sajuB.dayMaster,
@@ -163,6 +182,7 @@ export async function POST(req: NextRequest) {
         breakdown: compatResult.breakdown,
         shareToken,
         sourceCompatId,
+        ...(validLocale ? { locale: validLocale } : {}),
       },
     });
 

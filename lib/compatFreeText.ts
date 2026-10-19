@@ -12,6 +12,8 @@ export const COMPAT_FREE_MARKS = {
   scenes: "[맞히는 장면]",
   unsaid: "[아직 말하지 않은 것]",
   legacyClash: "[부딪히기 쉬운 순간]",
+  globalScenes: "[SCENES]",
+  globalUnsaid: "[UNSAID]",
 } as const;
 
 export type CompatFreeView =
@@ -35,6 +37,23 @@ export function parseCompatFreeText(raw: string | null | undefined): CompatFreeV
     const unsaidBody = unsaidAt >= 0 ? text.slice(unsaidAt + COMPAT_FREE_MARKS.unsaid.length) : "";
     const scenes = lines(sceneBody).slice(0, 2);
     if (scenes.length > 0) return { kind: "scenes", scenes, unsaid: lines(unsaidBody).join(" ") };
+  }
+
+  const globalSceneAt = text.indexOf(COMPAT_FREE_MARKS.globalScenes);
+  if (globalSceneAt >= 0) {
+    const globalUnsaidAt = text.indexOf(COMPAT_FREE_MARKS.globalUnsaid, globalSceneAt);
+    const sceneBody = text.slice(
+      globalSceneAt + COMPAT_FREE_MARKS.globalScenes.length,
+      globalUnsaidAt >= 0 ? globalUnsaidAt : undefined
+    );
+    const unsaidBody =
+      globalUnsaidAt >= 0
+        ? text.slice(globalUnsaidAt + COMPAT_FREE_MARKS.globalUnsaid.length)
+        : "";
+    const scenes = lines(sceneBody).slice(0, 2);
+    if (scenes.length > 0) {
+      return { kind: "scenes", scenes, unsaid: lines(unsaidBody).join(" ") };
+    }
   }
 
   const clashAt = text.indexOf(COMPAT_FREE_MARKS.legacyClash);

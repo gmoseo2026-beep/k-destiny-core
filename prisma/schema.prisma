@@ -212,6 +212,7 @@ model Compatibility {
   // 4. 바이럴 추적
   shareToken     String   @unique
   sourceCompatId String?
+  locale         String?  // null 또는 "ko" = 한국어, "en" | "ja" | "zh" = 외국어
   createdAt      DateTime @default(now())
 }
 

@@ -30,6 +30,7 @@ export const LOCALE_CONFIG: Record<string, { name: string; toneGuide: string }> 
   de: { name: "German (Deutsch)", toneGuide: "Schreibe in einem warmen, klaren, leise mystischen Deutsch – wie ein weiser Freund im Gespräch." },
   fr: { name: "French (Français)", toneGuide: "Écris dans un français chaleureux, clair et discrètement mystique, comme un ami sage qui parle." },
   ja: { name: "Japanese (日本語)", toneGuide: "親しい人に静かに語りかけるような、やさしく明快な日本語で。神秘的でも大げさにせず、詩的な飾りより具体的な情景と真心が伝わるように。" },
+  zh: { name: "Simplified Chinese (简体中文)", toneGuide: "请使用温柔、亲切、口语化的现代简体中文，像一位知心的朋友一样静静地娓娓道来。不要堆砌华丽的辞藻，写出具体生动的相处日常场景与真诚的感受。" },
 };
 
 /**
@@ -171,7 +172,68 @@ SHARPNESS RULES:
 - "~할 수 있어요", "~일 거예요"를 연달아 쓰지 않는다. 일반론("서로 배려하세요", "솔직하게 대화하세요")으로 채우지 않는다.
 - 오락·자기이해를 위한 풀이다. 미래를 단정적으로 예언하지 않는다.`;
 
-export function buildCompatPrompt(isPremium: boolean, contextBlock: string, toneGuide: string, openQuestion?: string | null): string {
+const GLOBAL_COMPAT_LANG_LABEL: Record<"en" | "ja" | "zh", string> = {
+  en: "English",
+  ja: "日本語",
+  zh: "简体中文",
+};
+
+export function validateCompatOutputLanguage(
+  text: string,
+  lang?: "en" | "ja" | "zh"
+): { ok: boolean; reason?: string } {
+  if (!lang) return { ok: true };
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return { ok: false, reason: "empty" };
+  if (/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(trimmed)) {
+    return { ok: false, reason: "contains_hangul" };
+  }
+  if (lang === "en" && /[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/.test(trimmed)) {
+    return { ok: false, reason: "contains_hanja" };
+  }
+  return { ok: true };
+}
+
+export function buildCompatPrompt(
+  isPremium: boolean,
+  contextBlock: string,
+  toneGuide: string,
+  openQuestion?: string | null,
+  lang?: "en" | "ja" | "zh"
+): string {
+  if (lang === "en" || lang === "ja" || lang === "zh") {
+    const targetLang = GLOBAL_COMPAT_LANG_LABEL[lang];
+    const langRule = `Write every sentence strictly in ${targetLang}. No Korean (Hangul). No Saju technical jargon or its literal translations (such as Five Elements, Heavenly Stems, Earthly Branches, Day Master). No deterministic predictions; keep a warm entertainment & self-understanding tone.${
+      lang === "en" ? " Absolutely NO Chinese characters (Hanja/Kanji)." : ""
+    }`;
+
+    return `WRITING STYLE — follow strictly:
+1) LANGUAGE RULE: ${langRule}
+2) STORYTELLING & SPECIFICITY: Write like a warm, perceptive friend talking over coffee. Describe concrete everyday couple moments (texting tempo, making plans, making up after a small disagreement, gift-giving, spending habits) and clearly name who does what.
+3) NO COPY FROM INTERNAL KOREAN NOTES: The context block below contains internal Korean reference labels for natural energy and keywords. Translate the underlying personality dynamics into natural ${targetLang}; NEVER output any Korean characters (Hangul) or quote the raw keywords.
+
+TONE: ${toneGuide}
+
+${contextBlock}
+
+Write a short "free preview" compatibility reading in ${targetLang}.
+CRITICAL PRINCIPLE:
+- Two vivid everyday scenes that make the couple think "How did it know that about us?" + ONE thing still unsaid between them, left open.
+- Do NOT conclude, judge the match, give advice, or explain elemental causes.
+
+OUTPUT FORMAT (plain ${targetLang} text, using the exact ASCII markers [SCENES] and [UNSAID] on their own lines, no markdown, no bullet symbols):
+${COMPAT_FREE_MARKS.globalScenes}
+<line 1: ONE sentence in ${targetLang}. A concrete everyday scene when these two are together (texting, scheduling a date, after a small disagreement, gifts, etc.), naming who does what.>
+<line 2: ONE sentence in ${targetLang}. A second concrete scene on a different everyday topic, naming who does what.>
+${COMPAT_FREE_MARKS.globalUnsaid}
+<line 3: ONE sentence in ${targetLang}. Point to one specific unspoken habit between them (e.g. one person quietly swallowing a small hurt or hesitating before bringing something up) while leaving open WHICH of the two it is.>
+
+RULES:
+1. Exactly 3 sentences in total, written 100% in ${targetLang} with ZERO Korean (Hangul) characters.
+2. Each of the two marker lines (${COMPAT_FREE_MARKS.globalScenes} and ${COMPAT_FREE_MARKS.globalUnsaid}) must appear exactly once on its own line.
+3. No advice, no deterministic prophecy, and no Saju technical jargon.`;
+  }
+
   if (isPremium) {
     // 무료 화면이 약속한 답(2026-10-03): 잠금 목록 첫 줄 "먼저 서운함을 삼키는 쪽" + 무료 해석의 열린 질문
     const promised = `PROMISED ANSWERS (the free preview told the reader these are inside — answer them plainly, by name):
