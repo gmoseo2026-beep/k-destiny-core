@@ -95,8 +95,10 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   // 10-08~10-21 틱톡 광고는 홈(/?ttclid=)으로 들어와 방문 약 1,600번에 궁합 2개·미리보기 0·주문 0이었다.
   ...["b1", "b2", "b3", "a1", "a2", "a3"].map((v): CampaignLink => {
     const ig = CAMPAIGN_IG_VIDEO[v];
-    const who = v.startsWith("b") ? " · 여성 대상" : "";
-    return { ...ig, code: `tt-${v}`, partner: "tiktok", label: ig.label.replace("인스타 광고", "틱톡 광고") + who, utm: { ...ig.utm, source: "tiktok" } };
+    // 10-21 사장님: 리워드 할인이 광고 하나에만 적용돼 tt-b2 하나에 영상 B1~B6 을 번갈아 걸고 남녀 20~40세로 집행.
+    // 그래서 tt-b2 의 결제는 영상 6개 합계다(영상별 성과는 틱톡 광고 관리자에서 본다).
+    const label = v === "b2" ? "틱톡 광고 · B 속마음 · 영상 B1~B6 공통(리워드 광고, 남녀 20~40세)" : ig.label.replace("인스타 광고", "틱톡 광고") + (v.startsWith("b") ? " · 여성 대상" : "");
+    return { ...ig, code: `tt-${v}`, partner: "tiktok", label, utm: { ...ig.utm, source: "tiktok" } };
   }),
   // 같은 B 영상에 첫 3초 자막만 남성 상황으로 바꾼 3종(2026-10-21 사장님 제작, 영상 B4~B6)
   ...([
