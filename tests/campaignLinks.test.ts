@@ -56,6 +56,17 @@ describe("제휴 배너 전용 주소", () => {
     expect(q.get("utm_content")).toBe("b02_score");
   });
 
+  it("틱톡 광고 주소는 인스타와 같은 입력 화면으로 가고 ttclid 를 넘긴다", () => {
+    const path = campaignTargetPath(findCampaignLink("tt-b1")!, "ko", new URLSearchParams("ttclid=E.C.P.abc-123"));
+    const q = new URLSearchParams(path.split("?")[1]);
+    expect(path.startsWith("/ko/compat/new?")).toBe(true);
+    expect(q.get("productId")).toBe("inner_mind");
+    expect(q.get("utm_source")).toBe("tiktok");
+    expect(q.get("utm_content")).toBe("vb_hook1");
+    expect(q.get("ttclid")).toBe("E.C.P.abc-123");
+    expect(new URLSearchParams(campaignTargetPath(findCampaignLink("tt-a1")!, "ko").split("?")[1]).has("productId")).toBe(false);
+  });
+
   it("광고 소재 주소는 상품 입력 화면으로 가고, 광고 클릭 표시만 넘긴다", () => {
     const link = findCampaignLink("ig-b1")!;
     const incoming = new URLSearchParams("fbclid=IwAR0abc_DEF-123&evil=%3Cscript%3E&productId=wealth&utm_source=fake");

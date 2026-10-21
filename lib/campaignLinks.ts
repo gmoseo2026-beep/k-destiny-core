@@ -26,6 +26,28 @@ export interface CampaignLink {
   utm: { source: string; medium: string; campaign: string; content: string };
 }
 
+// 인스타 영상 광고 소재(아래 ig-a1~ig-b3). 틱톡 광고도 같은 영상을 써서 여기서 나눠 쓴다.
+const igVideo = (v: string, label: string, content: string): [string, Omit<CampaignLink, "code" | "partner">] => {
+  const inner = v.startsWith("b");
+  return [
+    v,
+    {
+      label,
+      path: "/compat/new",
+      ...(inner ? { query: { productId: "inner_mind" } } : {}),
+      utm: { source: "instagram", medium: "paid_social", campaign: inner ? "video_b_innermind" : "video_a_score", content },
+    },
+  ];
+};
+const CAMPAIGN_IG_VIDEO: Record<string, Omit<CampaignLink, "code" | "partner">> = Object.fromEntries([
+  igVideo("b1", "인스타 광고 · B 속마음 · 도입1 「답장은 오는데, 마음은 모르겠을 때」", "vb_hook1"),
+  igVideo("b2", "인스타 광고 · B 속마음 · 도입2 「그 사람, 지금 나를 어떻게 생각할까?」", "vb_hook2"),
+  igVideo("b3", "인스타 광고 · B 속마음 · 도입3 「읽씹 3일째. 끝난 걸까, 바쁜 걸까」", "vb_hook3"),
+  igVideo("a1", "인스타 광고 · A 점수 내기 · 도입1 「우리 궁합, 몇 점 나올 것 같아?」", "va_hook1"),
+  igVideo("a2", "인스타 광고 · A 점수 내기 · 도입2 「남친은 90점이래. 나는 60점 봤는데…」", "va_hook2"),
+  igVideo("a3", "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」", "va_hook3"),
+]);
+
 export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd1",
@@ -59,51 +81,7 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   // 도착 화면은 상품 입력 화면이다. 10-09~10-11 사흘간 홈으로 보냈더니 인스타 클릭 대비 입력 완료가
   // 13.5%(192클릭 중 26) → 7.9%(593클릭 중 47)로 떨어지고, 대부분 무료 궁합으로만 가서 결제 시도가 0건이었다.
   // 홈으로 다시 바꾸려면 이 숫자부터 확인할 것(REVIEW_HANDOFF.md 2026-10-11).
-  {
-    code: "ig-b1",
-    partner: "instagram",
-    label: "인스타 광고 · B 속마음 · 도입1 「답장은 오는데, 마음은 모르겠을 때」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook1" },
-  },
-  {
-    code: "ig-b2",
-    partner: "instagram",
-    label: "인스타 광고 · B 속마음 · 도입2 「그 사람, 지금 나를 어떻게 생각할까?」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook2" },
-  },
-  {
-    code: "ig-b3",
-    partner: "instagram",
-    label: "인스타 광고 · B 속마음 · 도입3 「읽씹 3일째. 끝난 걸까, 바쁜 걸까」",
-    path: "/compat/new",
-    query: { productId: "inner_mind" },
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_b_innermind", content: "vb_hook3" },
-  },
-  {
-    code: "ig-a1",
-    partner: "instagram",
-    label: "인스타 광고 · A 점수 내기 · 도입1 「우리 궁합, 몇 점 나올 것 같아?」",
-    path: "/compat/new",
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook1" },
-  },
-  {
-    code: "ig-a2",
-    partner: "instagram",
-    label: "인스타 광고 · A 점수 내기 · 도입2 「남친은 90점이래. 나는 60점 봤는데…」",
-    path: "/compat/new",
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook2" },
-  },
-  {
-    code: "ig-a3",
-    partner: "instagram",
-    label: "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」",
-    path: "/compat/new",
-    utm: { source: "instagram", medium: "paid_social", campaign: "video_a_score", content: "va_hook3" },
-  },
+  ...["b1", "b2", "b3", "a1", "a2", "a3"].map((v): CampaignLink => ({ code: `ig-${v}`, partner: "instagram", ...CAMPAIGN_IG_VIDEO[v] })),
   // ── 인스타그램 프로필 링크(무료 릴스 업로드용). 릴스 설명글의 주소는 눌러지지 않아서 프로필 링크로 보낸다.
   {
     code: "ig-bio",
@@ -113,6 +91,12 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "inner_mind" },
     utm: { source: "instagram", medium: "organic_social", campaign: "reels_organic", content: "bio_link" },
   },
+  // ── 틱톡 영상 광고(2026-10-21): 인스타와 같은 영상·도입이라 코드만 tt- 로 바꿔 만든다.
+  // 10-08~10-21 틱톡 광고는 홈(/?ttclid=)으로 들어와 방문 약 1,600번에 궁합 2개·미리보기 0·주문 0이었다.
+  ...["b1", "b2", "b3", "a1", "a2", "a3"].map((v): CampaignLink => {
+    const ig = CAMPAIGN_IG_VIDEO[v];
+    return { ...ig, code: `tt-${v}`, partner: "tiktok", label: ig.label.replace("인스타 광고", "틱톡 광고"), utm: { ...ig.utm, source: "tiktok" } };
+  }),
   // ── 크리에이터 제휴 1차(2026-10-16 제안 메일). 회신 전이라 수익 배분율(rsRate)은 합의 후에 넣는다.
   {
     code: "kd-kimdal",
@@ -261,6 +245,7 @@ export const partnerRsRate = (partner: string): number | undefined =>
 const PARTNER_NAMES: Record<string, string> = {
   couplediary: "커플다이어리",
   instagram: "인스타그램",
+  tiktok: "틱톡",
   google: "구글 검색",
   naver: "네이버 검색",
   kimdal: "김달",
