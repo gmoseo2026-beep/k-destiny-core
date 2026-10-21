@@ -65,6 +65,10 @@ describe("제휴 배너 전용 주소", () => {
     expect(q.get("utm_content")).toBe("vb_hook1");
     expect(q.get("ttclid")).toBe("E.C.P.abc-123");
     expect(new URLSearchParams(campaignTargetPath(findCampaignLink("tt-a1")!, "ko").split("?")[1]).has("productId")).toBe(false);
+    // 남성 대상 자막(B4~B6)도 속마음 입력 화면으로, 소재별로 따로 잡힌다
+    const m = new URLSearchParams(campaignTargetPath(findCampaignLink("tt-b6")!, "ko").split("?")[1]);
+    expect(m.get("productId")).toBe("inner_mind");
+    expect(m.get("utm_content")).toBe("vb_hook6");
   });
 
   it("광고 소재 주소는 상품 입력 화면으로 가고, 광고 클릭 표시만 넘긴다", () => {

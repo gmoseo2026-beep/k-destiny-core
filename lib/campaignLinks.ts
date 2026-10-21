@@ -95,8 +95,22 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   // 10-08~10-21 틱톡 광고는 홈(/?ttclid=)으로 들어와 방문 약 1,600번에 궁합 2개·미리보기 0·주문 0이었다.
   ...["b1", "b2", "b3", "a1", "a2", "a3"].map((v): CampaignLink => {
     const ig = CAMPAIGN_IG_VIDEO[v];
-    return { ...ig, code: `tt-${v}`, partner: "tiktok", label: ig.label.replace("인스타 광고", "틱톡 광고"), utm: { ...ig.utm, source: "tiktok" } };
+    const who = v.startsWith("b") ? " · 여성 대상" : "";
+    return { ...ig, code: `tt-${v}`, partner: "tiktok", label: ig.label.replace("인스타 광고", "틱톡 광고") + who, utm: { ...ig.utm, source: "tiktok" } };
   }),
+  // 같은 B 영상에 첫 3초 자막만 남성 상황으로 바꾼 3종(2026-10-21 사장님 제작, 영상 B4~B6)
+  ...([
+    ["b4", "「'괜찮아'가 진짜 괜찮은 건지 모를 때」"],
+    ["b5", "「썸녀 답장, 이게 관심 있는 걸까?」"],
+    ["b6", "「여자친구가 서운하다는데 이유를 모르겠을 때」"],
+  ] as const).map(([v, hook]): CampaignLink => ({
+    code: `tt-${v}`,
+    partner: "tiktok",
+    label: `틱톡 광고 · B 속마음 · 도입${v.slice(1)} ${hook} · 남성 대상`,
+    path: "/compat/new",
+    query: { productId: "inner_mind" },
+    utm: { source: "tiktok", medium: "paid_social", campaign: "video_b_innermind", content: `vb_hook${v.slice(1)}` },
+  })),
   // ── 크리에이터 제휴 1차(2026-10-16 제안 메일). 회신 전이라 수익 배분율(rsRate)은 합의 후에 넣는다.
   {
     code: "kd-kimdal",
