@@ -5,6 +5,7 @@ import MarketingConsentSync from './MarketingConsentSync';
 import CampaignSignupSync from './CampaignSignupSync';
 import PwaTracker from './PwaTracker';
 import MetaPixel from './MetaPixel';
+import TikTokPixel from './TikTokPixel';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <CampaignSignupSync />
       <PwaTracker />
       <MetaPixel />
+      <TikTokPixel />
       {children}
     </SessionProvider>
   );

@@ -1,4 +1,5 @@
 import { trackMeta } from "@/lib/metaPixel";
+import { trackTikTok } from "@/lib/tiktokPixel";
 
 /**
  * Tiny GA4 event helper — safe to call anywhere on the client.
@@ -51,6 +52,12 @@ export function trackEvent(name: string, params?: Record<string, string | number
   // 메타 픽셀(광고 성과 측정)에도 알린다 — 관계있는 이벤트만 골라 보낸다(lib/metaPixel.ts). GA 가 막혀 있어도 보낸다.
   try {
     trackMeta(name, params);
+  } catch {
+    // Analytics must never break the app
+  }
+  // 틱톡 픽셀도 같은 방식(lib/tiktokPixel.ts)
+  try {
+    trackTikTok(name, params);
   } catch {
     // Analytics must never break the app
   }
