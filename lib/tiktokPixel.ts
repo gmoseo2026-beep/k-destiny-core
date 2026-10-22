@@ -17,7 +17,7 @@ export const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "DBCV7
 
 export interface TikTokEvent {
   /** 틱톡 표준 이벤트 이름 */
-  name: "ViewContent" | "SubmitForm" | "InitiateCheckout" | "AddPaymentInfo" | "CompletePayment";
+  name: "ViewContent" | "SubmitForm" | "InitiateCheckout" | "AddPaymentInfo" | "Purchase";
   params: Record<string, string | number | { content_id: string; content_type: "product" }[]>;
   /** 같은 결제를 두 번 세지 않게 하는 값 */
   eventId?: string;
@@ -34,7 +34,7 @@ const num = (v: unknown): number | undefined => (typeof v === "number" && Number
  *   teaser_created   → SubmitForm         생년월일을 넣고 무료 미리보기를 봄
  *   checkout_open    → InitiateCheckout   결제창을 엶
  *   begin_checkout   → AddPaymentInfo     결제 수단 화면(PG)으로 넘어감
- *   purchase         → CompletePayment    결제 완료(금액 포함)
+ *   purchase         → Purchase           결제 완료(금액 포함). 틱톡의 예전 이름 CompletePayment 대신 지금 문서의 Purchase(10-22, 광고 관리자 최적화 이벤트 "구매")
  */
 export function tiktokEventFor(name: string, params?: Params): TikTokEvent | null {
   const productId = str(params?.productId);
@@ -57,7 +57,7 @@ export function tiktokEventFor(name: string, params?: Params): TikTokEvent | nul
       const eventId = str(params?.transaction_id);
       // 금액이나 영수증 번호가 없는 결제 신호는 보내지 않는다(잘못된 매출이 잡히지 않게)
       if (value === undefined || !eventId) return null;
-      return { name: "CompletePayment", params: { ...contents, value, currency: "KRW" }, eventId };
+      return { name: "Purchase", params: { ...contents, value, currency: "KRW" }, eventId };
     }
     default:
       return null;

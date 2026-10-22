@@ -18,7 +18,7 @@ describe("틱톡 픽셀 — 이벤트 연결", () => {
     expect(tiktokEventFor("checkout_open", { productId: "inner_mind" })?.name).toBe("InitiateCheckout");
     expect(tiktokEventFor("begin_checkout", { productId: "inner_mind", value: 4900 })?.params).toMatchObject({ value: 4900, currency: "KRW" });
     expect(tiktokEventFor("purchase", { transaction_id: "ord_1", value: 4900, productId: "inner_mind" })).toEqual({
-      name: "CompletePayment",
+      name: "Purchase",
       params: { contents: [{ content_id: "inner_mind", content_type: "product" }], value: 4900, currency: "KRW" },
       eventId: "ord_1",
     });
