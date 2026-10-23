@@ -28,6 +28,10 @@ const IN_APP_BROWSER_PATTERNS = [
   // TikTok
   'BytedanceWebview',
   'TikTok',
+  'musical_ly',
+  // 2026-10 틱톡 앱 UA 는 끝에 " trill"(또는 "trill_47.0.3")만 붙고 BytedanceWebview 가 없다 — 틱톡 광고 손님이
+  // 일반 브라우저로 잡혀 결제 실패 안내(크롬에서 다시 결제하기)가 뜨지 않았다(10-23 실제 사례)
+  ' trill',
   // Pinterest
   'Pinterest',
   // LinkedIn
@@ -84,11 +88,12 @@ export function isIOS(): boolean {
 }
 
 /** 어떤 인앱인지 식별 (isInAppBrowser()가 true일 때만 의미) */
-export function getInAppProvider(): 'kakao'|'line'|'instagram'|'threads'|'facebook'|'naver'|'other'|null {
+export function getInAppProvider(): 'kakao'|'line'|'instagram'|'threads'|'facebook'|'naver'|'tiktok'|'other'|null {
   if (typeof navigator === 'undefined') return null;
   if (!isInAppBrowser()) return null;
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes('kakaotalk')) return 'kakao';
+  if (ua.includes('bytedancewebview') || ua.includes('musical_ly') || ua.includes(' trill') || ua.includes('tiktok')) return 'tiktok';
   if (ua.includes('line')) return 'line';
   // 스레드를 먼저 본다(스레드 UA 는 "Barcelona")
   if (ua.includes('barcelona') || ua.includes('threads')) return 'threads';

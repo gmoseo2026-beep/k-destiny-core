@@ -8,6 +8,7 @@ import KongdakMascot from "@/components/KongdakMascot";
 import { rememberUnlockToken, rememberOrderToken, trackPurchase, recallPayReturn } from "@/lib/payments/client";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
+import { isInAppBrowser, isIOS, getInAppProvider, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -26,6 +27,11 @@ function PayCompleteContent() {
   const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
   // 결제 실패·취소 시 돌아갈 화면(결제를 시작한 곳)
   const [retryHref, setRetryHref] = useState<string | null>(null);
+  // 앱 안 브라우저(틱톡·인스타 등)에서 결제가 실패·취소된 경우: 같은 곳에서 다시 해도 또 막히는 일이 잦아
+  // (10-21 인스타 5번, 10-23 틱톡 6번 연속 실패) 크롬·사파리에서 이어서 결제하도록 먼저 안내한다.
+  const [inApp] = useState(() => typeof window !== "undefined" && isInAppBrowser());
+  const [showCopy, setShowCopy] = useState(false);
+  const [retryCopied, setRetryCopied] = useState(false);
   // 이메일 없이 결제한 비회원(모바일): 결제가 끝난 뒤에 이메일을 선택으로 받는다
   const [emailOrderId, setEmailOrderId] = useState<string | null>(null);
   const [emailValue, setEmailValue] = useState("");
@@ -359,7 +365,60 @@ function PayCompleteContent() {
             </Link>
           )}
 
-          {status === "error" && retryHref && (
+          {status === "error" && inApp && (
+            <>
+              <p className="text-xs text-text-2 leading-relaxed -mt-2 mb-1">
+                앱 안에서는 카드·간편결제 앱으로 넘어가다 결제가 끊기는 경우가 있어요.
+                {isIOS() ? " 사파리에서 열면" : " 크롬에서 열면"} 보던 화면 그대로 이어서 결제할 수 있어요.
+              </p>
+              {!showCopy ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    trackEvent("payment_retry_external", { provider: getInAppProvider() ?? "other", ios: isIOS() });
+                    const target = window.location.origin + (retryHref ?? `/${locale}`);
+                    if (!openInExternalBrowser(target)) setShowCopy(true);
+                  }}
+                  className="w-full bg-coral hover:bg-coral-deep text-white py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.96] block text-center"
+                >
+                  {isIOS() ? "사파리에서 다시 결제하기" : "크롬에서 다시 결제하기"}
+                </button>
+              ) : (
+                <div className="rounded-2xl bg-surface-soft border border-line p-4 text-left text-xs text-text-2 leading-relaxed">
+                  <p>
+                    화면 오른쪽 위 <b>···</b> 또는 공유 버튼 → <b>브라우저로 열기</b>를 눌러 주세요.
+                    메뉴가 없으면 아래 링크를 복사해 사파리 주소창에 붙여 넣으면 돼요.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(externalBrowserUrl(window.location.origin + (retryHref ?? `/${locale}`)));
+                        setRetryCopied(true);
+                        trackEvent("payment_retry_copy", { provider: getInAppProvider() ?? "other" });
+                      } catch {
+                        // 복사가 막힌 앱이면 위 메뉴 안내만으로 진행한다
+                      }
+                    }}
+                    className="mt-3 w-full bg-white border border-coral/40 text-coral-deep py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.96]"
+                  >
+                    {retryCopied ? "복사했어요" : "링크 복사하기"}
+                  </button>
+                </div>
+              )}
+              {retryHref && (
+                <Link
+                  href={retryHref}
+                  onClick={() => trackEvent("payment_retry_click", { inapp: true })}
+                  className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"
+                >
+                  이 앱에서 다시 시도하기
+                </Link>
+              )}
+            </>
+          )}
+
+          {status === "error" && !inApp && retryHref && (
             <>
               <p className="text-xs text-text-2 leading-relaxed -mt-2 mb-1">
                 결제되지 않았어요. 다른 카드나 간편결제로 다시 시도할 수 있어요.

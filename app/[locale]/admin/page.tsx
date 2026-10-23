@@ -521,6 +521,7 @@ async function loadAdminDashboardData() {
     "naver:m": "네이버 앱 (모바일)",
     "kakao:m": "카카오톡 앱 (모바일)",
     "threads:m": "스레드 앱 (모바일)",
+    "tiktok:m": "틱톡 앱 (모바일)",
     "browser:pc": "일반 브라우저 (PC)",
     "__null__": "기록 전 (미기록)",
   };

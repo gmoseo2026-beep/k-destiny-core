@@ -51,3 +51,22 @@ describe("접속 환경 라벨", () => {
     expect((await load(PC)).clientEnvLabel()).toBe("browser:pc");
   });
 });
+
+describe("틱톡 앱 안 브라우저 인식(10-23 실제 UA)", () => {
+  const TT_NEW = "Mozilla/5.0 (Linux; Android 14; SM-S918N Build/UP1A.231005.007) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.43 Mobile Safari/537.36 trill";
+  const TT_VER = "Mozilla/5.0 (Linux; Android 12; SM-G977N Build/SP1A.210812.016) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.8059.43 Mobile Safari/537.36 trill_47.0.3";
+  const TT_OLD = "Mozilla/5.0 (Linux; Android 10; M2006C3MNG; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/87.0 Mobile Safari/537.36 musical_ly_2023102050 JsSdk/1.0 BytedanceWebview/d8a21c6";
+
+  it.each([TT_NEW, TT_VER, TT_OLD])("앱 안 브라우저로 보고 tiktok:m 으로 기록한다", async (ua) => {
+    const m = await load(ua);
+    expect(m.isInAppBrowser()).toBe(true);
+    expect(m.getInAppProvider()).toBe("tiktok");
+    expect(m.clientEnvLabel()).toBe("tiktok:m");
+  });
+
+  it("일반 크롬은 그대로 browser:m", async () => {
+    const m = await load(CHROME);
+    expect(m.isInAppBrowser()).toBe(false);
+    expect(m.clientEnvLabel()).toBe("browser:m");
+  });
+});
