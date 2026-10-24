@@ -167,7 +167,8 @@ describe("세트 추천·가격 비교", () => {
     expect(setsContaining("wealth", allIds).map((s) => s.id)).toEqual(["set_me", "set_2027"]);
     expect(setsContaining("wealth", allIds.filter((id) => id !== "set_me")).map((s) => s.id)).toEqual(["set_2027"]);
     expect(setsContaining("set_me", allIds)).toEqual([]);
-    expect(setsContaining("compat_basic", allIds).map((s) => s.id)).toEqual(["set_this_person"]);
+    // 확신 패키지(10-24)가 4,600원으로 더 많이 아껴 먼저 온다
+    expect(setsContaining("compat_basic", allIds).map((s) => s.id)).toEqual(["set_sure", "set_this_person"]);
     expect(setsContaining("career", allIds).map((s) => s.id)).toContain("set_career");
     expect(setsContaining("annual_2026", allIds).map((s) => s.id)).toContain("set_career");
   });

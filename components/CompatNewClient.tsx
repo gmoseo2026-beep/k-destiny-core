@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { revealUnlockPanel, trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
@@ -692,6 +692,9 @@ export default function CompatNewClient({
 
 
         <GuestCheckoutModal
+          options={checkoutOptionsFor(product, visibleIds ?? [])}
+          selectedId={checkoutId ?? undefined}
+          onSelect={(id) => setCheckoutId(id)}
           isOpen={checkoutModalOpen}
           onClose={() => setCheckoutModalOpen(false)}
           title={`${checkoutProduct?.name ?? product.name} 열람`}

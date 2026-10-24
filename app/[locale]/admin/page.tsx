@@ -283,6 +283,7 @@ async function loadAdminDashboardData() {
   const campaignMap = new Map<string, FunnelBucket>();
   const payMethodMap = new Map<string, FunnelBucket>([
     ["KAKAOPAY", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
+    ["NAVERPAY", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
     ["CARD", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
     ["__null__", { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 }],
   ]);
@@ -331,7 +332,7 @@ async function loadAdminDashboardData() {
       const envKey = o.clientEnv || "__null__";
       const campKey = o.campaign || "__null__";
       const rawPayMethod = o.payMethod;
-      const pmKey = rawPayMethod === "KAKAOPAY" || rawPayMethod === "CARD" ? rawPayMethod : "__null__";
+      const pmKey = rawPayMethod === "KAKAOPAY" || rawPayMethod === "NAVERPAY" || rawPayMethod === "CARD" ? rawPayMethod : "__null__";
 
       addBucket(clientEnvMap, envKey, o.status, o.amount);
       addBucket(campaignMap, campKey, o.status, o.amount);
@@ -558,10 +559,11 @@ async function loadAdminDashboardData() {
 
   const PAY_METHOD_LABELS: Record<string, string> = {
     KAKAOPAY: "카카오페이 바로가기",
+    NAVERPAY: "네이버페이 바로가기",
     CARD: "일반 결제창 (카드·간편결제)",
     "__null__": "기록 전 (미기록)",
   };
-  const byPayMethod = ["KAKAOPAY", "CARD", "__null__"].map((key) => {
+  const byPayMethod = ["KAKAOPAY", "NAVERPAY", "CARD", "__null__"].map((key) => {
     const b = payMethodMap.get(key) || { attempts: 0, paid: 0, pending: 0, canceled: 0, amount: 0 };
     return {
       key,

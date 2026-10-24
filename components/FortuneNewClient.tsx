@@ -10,7 +10,7 @@ import { Lock } from "lucide-react";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
@@ -437,6 +437,9 @@ export default function FortuneNewClient({
 
         {/* Checkout Modal */}
         <GuestCheckoutModal
+          options={checkoutOptionsFor(getProduct(currentProductId), visibleIds ?? [])}
+          selectedId={checkoutId ?? undefined}
+          onSelect={(id) => setCheckoutId(id)}
           isOpen={checkoutModalOpen}
           onClose={() => setCheckoutModalOpen(false)}
           title={`${checkoutProduct?.name || "사주"} 리포트 열람`}

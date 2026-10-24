@@ -18,7 +18,14 @@ interface GuestCheckoutModalProps {
   initialName?: string;
   initialEmail?: string;
   initialPhone?: string;
-  onSubmit: (buyer: { fullName: string; email: string; phoneNumber: string; payMethod?: "KAKAOPAY" }) => Promise<void>;
+  /**
+   * 결제 창 안에서 고를 수 있는 상품(2026-10-24): 지금 상품 + 그 상품이 든 세트. 2개 이상일 때만 보인다.
+   * separate = 따로 살 때 합계(세트만). 고르면 onSelect 로 부모가 결제할 상품을 바꾼다(제목·가격도 부모가 바꿔 내려 준다).
+   */
+  options?: { id: string; name: string; price: number; desc?: string; separate?: number }[];
+  selectedId?: string;
+  onSelect?: (id: string) => void;
+  onSubmit: (buyer: { fullName: string; email: string; phoneNumber: string; payMethod?: "KAKAOPAY" | "NAVERPAY" }) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -61,6 +68,9 @@ export default function GuestCheckoutModal({
   initialPhone = "",
   onSubmit,
   isLoading = false,
+  options = [],
+  selectedId,
+  onSelect,
 }: GuestCheckoutModalProps) {
   const [fullName, setFullName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
@@ -73,9 +83,11 @@ export default function GuestCheckoutModal({
   // KG이니시스는 모바일 결제에서 이름만 필수다(휴대폰·이메일은 PC 결제에서만 필수 — 포트원 V2 문서).
   const [isMobile] = useState(() => typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
   const openedAtRef = useRef(0);
+  const exitShownRef = useRef(false);
+  const [exitAsk, setExitAsk] = useState(false);
   const submittedRef = useRef(false);
   // 어느 버튼으로 제출했는지(카카오페이 바로가기 / 일반 결제창)
-  const methodRef = useRef<"KAKAOPAY" | undefined>(undefined);
+  const methodRef = useRef<"KAKAOPAY" | "NAVERPAY" | undefined>(undefined);
 
   const shownPrice = priceLabel;
   const pid = productId || orderName || "unknown";
@@ -87,9 +99,11 @@ export default function GuestCheckoutModal({
         setEmail(initialEmail);
         setPhoneNumber(initialPhone);
         setErrorMsg(null);
+        setExitAsk(false);
       });
       openedAtRef.current = Date.now();
       submittedRef.current = false;
+      exitShownRef.current = false;
       trackEvent("checkout_open", { productId: pid, guest: !session?.user, mobile: isMobile, app: clientEnvLabel() });
     }
     // 모달이 열릴 때 한 번만 기록한다(세션 로딩으로 다시 기록하지 않음)
@@ -99,8 +113,19 @@ export default function GuestCheckoutModal({
   if (!isOpen) return null;
 
   // 결제하지 않고 닫은 경우만 기록한다(결제 진행 뒤 부모가 닫는 것은 제외) — 어디서, 얼마 만에 나가는지 보려고
+  // 닫기 직전 한 번만: 단품을 보고 있고 아끼는 세트가 있으면 "세트로 바꾸기"를 권한다(가짜 할인 대신 실제 묶음 가격, 2026-10-24)
+  const bestSet = options
+    .filter((o) => o.separate && o.separate > o.price)
+    .sort((a, b) => (b.separate! - b.price) - (a.separate! - a.price))[0];
+  const onSingle = !!selectedId && options.length > 1 && options[0].id === selectedId;
   const closeByUser = (reason: "x" | "cancel" | "backdrop") => {
     if (isLoading) return;
+    if (!submittedRef.current && !exitShownRef.current && bestSet && onSingle && onSelect) {
+      exitShownRef.current = true;
+      setExitAsk(true);
+      trackEvent("checkout_exit_offer_view", { productId: pid, set: bestSet.id, app: clientEnvLabel() });
+      return;
+    }
     if (!submittedRef.current) {
       const seconds = Math.round((Date.now() - openedAtRef.current) / 1000);
       // 이유(x·cancel·backdrop)와 3초 안에 닫았는지를 이름으로도 보낸다 — 매개변수는 맞춤 측정기준을
@@ -165,7 +190,7 @@ export default function GuestCheckoutModal({
       guest: !session?.user,
       mobile: isMobile,
       app: clientEnvLabel(),
-      method: payMethod === "KAKAOPAY" ? "kakaopay" : "card_window",
+      method: payMethod ? payMethod.toLowerCase() : "card_window",
     });
     await onSubmit({
       // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
@@ -204,6 +229,42 @@ export default function GuestCheckoutModal({
           ✕
         </button>
 
+        {exitAsk && bestSet && (
+          <div className="absolute inset-0 z-10 flex items-end sm:items-center justify-center bg-ink/40 p-4 rounded-t-3xl sm:rounded-3xl">
+            <div className="w-full rounded-3xl bg-white p-5 text-center shadow-xl">
+              <KongdakMascot size={48} animate="none" expression="flutter" />
+              <p className="mt-2 text-base font-black text-ink">잠깐만요, 이렇게도 볼 수 있어요</p>
+              <p className="mt-1 text-xs leading-relaxed text-text-2">
+                <b className="text-ink">{bestSet.name}</b>로 바꾸면 {bestSet.desc ? `${bestSet.desc}를 ` : ""}
+                한 번에 {bestSet.price.toLocaleString("ko-KR")}원에 볼 수 있어요.
+                <br />
+                따로 사는 것보다 <b className="text-coral-deep">{(bestSet.separate! - bestSet.price).toLocaleString("ko-KR")}원</b> 아껴요.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  trackEvent("checkout_exit_offer_accept", { productId: pid, set: bestSet.id, app: clientEnvLabel() });
+                  onSelect?.(bestSet.id);
+                  setExitAsk(false);
+                }}
+                className="mt-4 w-full rounded-2xl bg-coral py-3.5 text-sm font-bold text-white transition-all active:scale-[0.96]"
+              >
+                {bestSet.name}로 바꾸기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setExitAsk(false);
+                  closeByUser("x");
+                }}
+                className="mt-2 w-full py-2 text-xs font-medium text-text-3 active:scale-[0.96]"
+              >
+                괜찮아요, 닫을게요
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Modal Header */}
         <div className="flex items-center gap-3 mb-4 pr-8">
           <KongdakMascot size={42} animate="none" expression="flutter" />
@@ -212,6 +273,54 @@ export default function GuestCheckoutModal({
             <p className="text-xs text-text-3">결제하면 바로 전체가 열려요</p>
           </div>
         </div>
+
+        {/* 상품 고르기(단품 · 세트 · 확신 패키지) — 고를 것이 2개 이상일 때 */}
+        {options.length > 1 && onSelect && (
+          <div className="mb-4 flex flex-col gap-2" role="radiogroup" aria-label="상품 선택">
+            {(() => {
+              const best = Math.max(...options.map((o) => (o.separate ? o.separate - o.price : 0)));
+              return options.map((o) => {
+                const on = o.id === selectedId;
+                const save = o.separate ? o.separate - o.price : 0;
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    disabled={isLoading}
+                    onClick={() => {
+                      if (on) return;
+                      trackEvent("checkout_option_select", { from: selectedId ?? "", to: o.id, app: clientEnvLabel() });
+                      onSelect(o.id);
+                    }}
+                    className={`relative flex items-center gap-3 rounded-2xl border p-3 text-left transition-all active:scale-[0.98] ${
+                      on ? "border-coral bg-coral-soft/60 ring-1 ring-coral" : "border-line bg-white"
+                    }`}
+                  >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-coral" : "border-line"}`}>
+                      {on && <span className="h-2 w-2 rounded-full bg-coral" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-sm font-extrabold text-ink">{o.name}</span>
+                        {save > 0 && save === best && (
+                          <span className="rounded-full bg-gold/25 px-1.5 py-0.5 text-[10px] font-extrabold text-plum">가장 많이 아껴요</span>
+                        )}
+                      </span>
+                      {o.desc && <span className="mt-0.5 block truncate text-[11px] text-text-3">{o.desc}</span>}
+                    </span>
+                    <span className="shrink-0 text-right">
+                      {save > 0 && <span className="block text-[11px] text-text-3 line-through">{o.separate!.toLocaleString("ko-KR")}원</span>}
+                      <span className="block text-sm font-black text-ink">{o.price.toLocaleString("ko-KR")}원</span>
+                      {save > 0 && <span className="block text-[10px] font-bold text-coral-deep">{save.toLocaleString("ko-KR")}원 아껴요</span>}
+                    </span>
+                  </button>
+                );
+              });
+            })()}
+          </div>
+        )}
 
         {/* Order Info Card */}
         <div className="bg-surface-soft rounded-2xl p-3.5 mb-4 border border-line flex justify-between items-center">
@@ -302,6 +411,21 @@ export default function GuestCheckoutModal({
                 {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
               </button>
 
+              {/* 네이버페이 바로가기(2026-10-24): 네이버 앱 손님이 많아 카카오페이처럼 결제창을 건너뛴다 */}
+              <button
+                type="submit"
+                onClick={() => {
+                  methodRef.current = "NAVERPAY";
+                }}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#03C75A] px-6 py-4 text-base font-extrabold text-white shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-white text-[12px] font-black leading-none text-[#03C75A]" aria-hidden>
+                  N
+                </span>
+                {isLoading ? "결제창 연결 중..." : `네이버페이로 ${shownPrice} 결제`}
+              </button>
+
               <Button
                 type="submit"
                 variant="secondary"
@@ -312,7 +436,7 @@ export default function GuestCheckoutModal({
                   methodRef.current = undefined;
                 }}
               >
-                카드·네이버페이·삼성페이로 결제
+                카드·삼성페이로 결제
               </Button>
             </>
           ) : (

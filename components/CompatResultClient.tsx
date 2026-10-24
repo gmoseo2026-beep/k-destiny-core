@@ -25,7 +25,7 @@ import {
   forgetUnlockToken,
   subscribeUnlockToken,
 } from "@/lib/payments/client";
-import { getProduct, priceLabel, setsContaining } from "@/lib/catalog";
+import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
@@ -1060,7 +1060,10 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
       {/* Guest Checkout Modal */}
       <GuestCheckoutModal
-        isOpen={checkoutModalOpen}
+        options={checkoutOptionsFor(getProduct("compat_basic"), visibleIds ?? [])}
+          selectedId={checkoutId ?? undefined}
+          onSelect={(id) => setCheckoutId(id)}
+          isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
         title={checkoutId === "compat_basic" ? "심층 궁합 리포트 잠금 해제" : `${checkoutProduct?.name} 열람`}
         orderName={checkoutProduct?.name || "콩닥 심층 궁합 리포트"}

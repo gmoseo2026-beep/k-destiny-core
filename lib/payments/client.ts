@@ -8,10 +8,10 @@ export interface BuyerInfo {
   email: string;
   phoneNumber: string;
   /**
-   * 결제 수단 바로가기(2026-10-05). "KAKAOPAY" 면 이니시스 결제창(약관 3개 + 수단 고르기)을 건너뛰고
-   * 카카오페이 화면으로 바로 간다. 없으면 기존처럼 카드 결제창(그 안에서 간편결제 선택).
+   * 결제 수단 바로가기(2026-10-05 카카오페이, 2026-10-24 네이버페이). 값이 있으면 이니시스 결제창(약관 3개 + 수단 고르기)을
+   * 건너뛰고 그 간편결제 화면으로 바로 간다. 없으면 기존처럼 카드 결제창(그 안에서 간편결제 선택).
    */
-  payMethod?: "KAKAOPAY";
+  payMethod?: "KAKAOPAY" | "NAVERPAY";
 }
 
 export interface PayOptions {
@@ -136,7 +136,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
       env: clientEnvLabel(),
-      payMethod: opts.buyer.payMethod === "KAKAOPAY" ? "KAKAOPAY" : "CARD",
+      payMethod: opts.buyer.payMethod ?? "CARD",
     }),
   });
 
@@ -151,13 +151,13 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     return { ok: false, reason: "FAILED" };
   }
   // 결제창을 여는 시점(GA4 표준 이벤트). 서버가 정한 금액으로 기록한다.
-  const direct = opts.buyer.payMethod === "KAKAOPAY";
+  const direct = opts.buyer.payMethod;
   trackEvent("begin_checkout", {
     productId: opts.productId,
     value: order.amount,
     currency: "KRW",
     app: clientEnvLabel(),
-    method: direct ? "kakaopay" : "card_window",
+    method: direct ? direct.toLowerCase() : "card_window",
   });
 
   const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
@@ -183,9 +183,9 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
     orderName,
     totalAmount: order.amount,
     currency: "CURRENCY_KRW",
-    // 카카오페이 바로가기: 포트원 V2 "간편결제 UI 직접 호출"(payMethod EASY_PAY + easyPayProvider)
+    // 간편결제 바로가기: 포트원 V2 "간편결제 UI 직접 호출"(payMethod EASY_PAY + easyPayProvider)
     ...(direct
-      ? { payMethod: "EASY_PAY" as const, easyPay: { easyPayProvider: "KAKAOPAY" as const } }
+      ? { payMethod: "EASY_PAY" as const, easyPay: { easyPayProvider: direct } }
       : { payMethod: "CARD" as const }),
     customer: {
       fullName: opts.buyer.fullName,
@@ -204,7 +204,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       stage: "pg",
       code: String(res.code).slice(0, 60),
       app: clientEnvLabel(),
-      method: direct ? "kakaopay" : "card_window",
+      method: direct ? direct.toLowerCase() : "card_window",
     });
     if (!isCancelled) {
       alert(`결제 실패: ${res.message || res.code}`);

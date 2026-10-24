@@ -617,6 +617,34 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 20
   },
+  // 확신 패키지(2026-10-24 사장님 결정): 한 사람에 대한 궁합 리포트 5종 묶음. 결제 창에서 단품·세트와 함께 3단으로 보여 준다.
+  // 세트는 취소선 정가를 두지 않는다(catalog 불변식). 아끼는 금액은 단품 합계(separatePrice, 24,500원)와 비교해 보여 준다.
+  {
+    id: "set_sure",
+    type: "SET",
+    name: "그 사람 확신 패키지",
+    description: "정통 궁합 + 속마음 + 짝사랑 속마음 + 갈등과 해법 + 결혼 궁합",
+    category: "cat-compat",
+    target: "couple",
+    price: 19900,
+    originalPrice: 19900,
+    icon: "Sparkles",
+    promptKey: "SET",
+    items: ["compat_basic", "inner_mind", "secret_love", "conflict", "marriage"],
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
+    icon3d: "/icons3d/set_this_person.webp",
+    gridLabel: "확신 패키지",
+    hook: "궁합부터 속마음, 다툼, 결혼까지 그 사람에 대한 리포트 5가지를 한 번에",
+    subtitle: "그 사람에 대해 궁금한 걸 한 번에 다 확인해 보세요",
+    recommendFor: [
+      "그 사람에 대해 궁금한 게 하나가 아닌 분",
+      "썸·연애·결혼까지 흐름을 길게 보고 싶은 분",
+      "따로 사는 것보다 4,600원 아끼고 싶은 분"
+    ],
+    featuredOrder: 19
+  },
   {
     id: "set_reunion",
     type: "SET",
@@ -907,6 +935,25 @@ export function setsContaining(catalogId: string, visibleIds: readonly string[])
   // 따로 사는 것보다 싸지 않은 세트는 권하지 않는다(가격을 바꾸다 역전되는 경우의 안전장치)
   return CATALOG.filter((p) => p.type === "SET" && p.items?.includes(catalogId) && visibleIds.includes(p.id) && separatePrice(p) > p.price)
     .sort((a, b) => separatePrice(b) - b.price - (separatePrice(a) - a.price) || (b.items?.length ?? 0) - (a.items?.length ?? 0));
+}
+
+/**
+ * 결제 창 안의 상품 고르기(2026-10-24): 지금 단품 + 그 단품이 든 세트 중 아끼는 금액이 큰 2개, 싼 순서.
+ * 단품이 아니거나(세트·무료) 고를 세트가 없으면 빈 배열 — 결제 창은 고르기 칸을 숨긴다.
+ */
+export function checkoutOptionsFor(
+  base: CatalogItem | undefined,
+  visibleIds: readonly string[]
+): { id: string; name: string; price: number; desc?: string; separate?: number }[] {
+  if (!base || base.type === "SET" || base.isFree) return [];
+  const sets = setsContaining(base.id, visibleIds).slice(0, 2);
+  if (sets.length === 0) return [];
+  return [
+    { id: base.id, name: base.name, price: base.price, desc: "이 리포트만" },
+    ...sets
+      .sort((a, b) => a.price - b.price)
+      .map((s) => ({ id: s.id, name: s.name, price: s.price, desc: s.description, separate: separatePrice(s) })),
+  ];
 }
 
 /**
