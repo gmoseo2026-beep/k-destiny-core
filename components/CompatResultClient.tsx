@@ -587,7 +587,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       )}
 
       {/* Main Score Card */}
-      <div className="w-full bg-gradient-to-br from-[#FF8AA1] via-[coral] to-[plum] rounded-3xl p-6 sm:p-8 text-white text-center shadow-lg relative overflow-hidden mt-4">
+      <div className="w-full bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,92,119,0.28),transparent_60%),linear-gradient(180deg,#3A1B40_0%,#22142A_100%)] border border-white/10 rounded-3xl p-6 sm:p-8 text-white text-center shadow-[0_12px_32px_rgba(0,0,0,0.35)] relative overflow-hidden mt-4">
         <div className="absolute bottom-4 left-6 text-white/10 text-3xl font-black select-none pointer-events-none">kongdak</div>
 
         <h2 className="text-sm sm:text-base font-extrabold text-white/90 uppercase tracking-wider mb-4">

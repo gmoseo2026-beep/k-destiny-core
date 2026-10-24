@@ -200,7 +200,7 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
   return (
     <form onSubmit={handleComplete} className="w-full max-w-md mx-auto flex flex-col gap-5 pb-12">
       {/* 상단 반쪽 초대장 비주얼 카드 */}
-      <div className="w-full bg-gradient-to-br from-[#FF8AA1] via-[coral] to-[plum] rounded-3xl p-6 text-white text-center shadow-lg relative overflow-hidden">
+      <div className="w-full bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,92,119,0.28),transparent_60%),linear-gradient(180deg,#3A1B40_0%,#22142A_100%)] border border-white/10 rounded-3xl p-6 text-white text-center shadow-[0_12px_32px_rgba(0,0,0,0.35)] relative overflow-hidden">
         <span className="inline-flex items-center gap-1 bg-black/25 backdrop-blur-sm text-gold px-3 py-1 rounded-full text-xs font-extrabold mb-3">
           💌 {relationLabel(relation)} 반쪽 초대장
         </span>
