@@ -11,6 +11,8 @@ import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { fetchHomeRanking } from "@/lib/home/ranking";
 import { prisma } from "@/lib/prisma";
 import { swrCached } from "@/lib/swrCache";
+import { fetchVisitorCount } from "@/lib/home/visitors";
+import VisitorPill from "@/components/home/VisitorPill";
 import { canonicalUrlFor } from "@/lib/seo";
 import { countAvailableCouponsForUser, getRecentPublicReviews } from "@/lib/reviews";
 import type { CatalogItem } from "@/lib/catalog";
@@ -38,10 +40,11 @@ export default async function Home({ params }: PageProps) {
   const isMember = Boolean(userId);
   const memberName = session?.user?.name?.trim() || "회원";
 
-  const [ranking, recentReviews, couponCount] = await Promise.all([
+  const [ranking, recentReviews, couponCount, visitorData] = await Promise.all([
     swrCached("home:ranking", 60_000, () => fetchHomeRanking(prisma, visibleProducts)),
     swrCached("home:reviews", 60_000, () => getRecentPublicReviews(6)),
     isMember ? countAvailableCouponsForUser(userId) : Promise.resolve(0),
+    swrCached("home:visitors", 60_000, () => fetchVisitorCount(prisma)),
   ]);
 
   const catalogById: Record<string, CatalogItem> = Object.fromEntries(
@@ -70,9 +73,13 @@ export default async function Home({ params }: PageProps) {
           </Link>
         </div>
       ) : (
-        <div className="mx-auto w-full max-w-[480px] px-4 empty:hidden">
-          <OwnedReportNotice locale={locale} source="home" className="mt-2" />
-        </div>
+        <>
+          {/* "벌써 N명이 함께했어요"(2026-10-09 사장님 결정 A안) — P-017 개편 때 빠졌던 것을 다크 톤으로 복원 */}
+          <VisitorPill count={visitorData.count} />
+          <div className="mx-auto w-full max-w-[480px] px-4 empty:hidden">
+            <OwnedReportNotice locale={locale} source="home" className="mt-2" />
+          </div>
+        </>
       )}
 
       {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + 인기 TOP 5 + 2열 포스터 격자 */}

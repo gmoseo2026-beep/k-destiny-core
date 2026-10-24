@@ -12,7 +12,7 @@ export default function VisitorPill({ count }: { count: number }) {
   if (!shouldDisplayVisitorPill(count)) return null;
   return (
     <div className="flex justify-center px-4 pt-3.5">
-      <div className="inline-flex items-center gap-2 rounded-full border border-coral/30 bg-white py-1 pl-1.5 pr-3.5 shadow-[0_4px_14px_rgba(255,92,119,0.16)]">
+      <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] py-1 pl-1.5 pr-3.5 shadow-[0_4px_14px_rgba(0,0,0,0.25)] backdrop-blur-sm">
         <span className="flex" aria-hidden>
           {FACES.map((name, i) => (
             <Image
@@ -21,12 +21,12 @@ export default function VisitorPill({ count }: { count: number }) {
               alt=""
               width={24}
               height={24}
-              className={`h-6 w-6 rounded-full border-2 border-white bg-[#FFE3EA] object-cover ${i === 0 ? "" : "-ml-2.5"}`}
+              className={`h-6 w-6 rounded-full border-2 border-[#140B18] bg-[#22142A] object-cover ${i === 0 ? "" : "-ml-2.5"}`}
             />
           ))}
         </span>
-        <span className="text-[13px] font-bold tracking-tight text-ink">
-          벌써 <b className="font-black text-coral">{count.toLocaleString("ko-KR")}명</b>이 함께했어요
+        <span className="text-[13px] font-bold tracking-tight text-[#F6EEF3]">
+          벌써 <b className="font-black text-[#FF5C77]">{count.toLocaleString("ko-KR")}명</b>이 함께했어요
         </span>
       </div>
     </div>
