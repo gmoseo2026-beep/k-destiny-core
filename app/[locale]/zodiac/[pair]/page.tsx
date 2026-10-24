@@ -84,7 +84,7 @@ export default async function ZodiacPairPage({ params }: PageProps) {
           ]}
         />
 
-        <header className="rounded-3xl bg-gradient-to-br from-[#FF8AA1] via-coral to-plum p-6 text-center text-white">
+        <header className="rounded-3xl bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,92,119,0.28),transparent_60%),linear-gradient(180deg,#3A1B40_0%,#22142A_100%)] border border-white/10 p-6 text-center text-white">
           <p className="text-3xl" aria-hidden>
             {a.emoji} {same ? "" : "×"} {same ? "" : b.emoji}
           </p>

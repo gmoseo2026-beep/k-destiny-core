@@ -106,7 +106,7 @@ export default function WelcomeLanguageClient() {
                 className={`w-full rounded-2xl px-4 py-3.5 text-left transition-all flex items-center justify-between gap-3 ${
                   isHighlighted
                     ? "bg-gradient-to-r from-[#FF8AA1] via-[#FF5C77] to-[#6A2C70] text-white shadow-md ring-2 ring-[#FF5C77]/30"
-                    : "bg-[#FFF6F1]/70 hover:bg-[#FFF0F3] text-[#2B2430] border border-[#FFE3EA]"
+                    : "bg-[#22142A] hover:bg-[#2C1A36] text-[#F6EEF3] border border-white/10"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -116,14 +116,14 @@ export default function WelcomeLanguageClient() {
                   <div className="min-w-0">
                     <div
                       className={`text-sm font-extrabold leading-snug ${
-                        isHighlighted ? "text-white" : "text-[#2B2430]"
+                        isHighlighted ? "text-white" : "text-[#F6EEF3]"
                       }`}
                     >
                       {opt.label}
                     </div>
                     <div
                       className={`text-[11px] mt-0.5 truncate ${
-                        isHighlighted ? "text-white/85" : "text-text-3"
+                        isHighlighted ? "text-white/85" : "text-[#B9A9BF]"
                       }`}
                     >
                       {opt.sublabel}
@@ -134,7 +134,7 @@ export default function WelcomeLanguageClient() {
                   className={`text-xs font-extrabold shrink-0 px-2.5 py-1 rounded-full ${
                     isHighlighted
                       ? "bg-white/20 text-white"
-                      : "bg-white text-[#FF5C77] border border-[#FFD9E0]"
+                      : "bg-white/10 text-[#FF5C77] border border-white/15"
                   }`}
                 >
                   →
