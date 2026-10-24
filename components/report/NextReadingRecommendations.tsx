@@ -150,12 +150,12 @@ export default function NextReadingRecommendations({
   return (
     <section
       ref={containerRef}
-      aria-label={isFreePreview ? "이 두 사람으로 더 보기" : "두 사람 사주로 이어서 볼 수 있는 풀이"}
+      aria-label={isFreePreview ? "이 두 사람으로 더 보기" : "같은 두 사람으로 이어서 보기"}
       className="w-full rounded-2xl border border-[#FFD9E0] bg-[#FFF8FA] p-4 text-left shadow-xs"
     >
       <div className="mb-3">
         <h3 className="text-sm font-black text-ink">
-          {isFreePreview ? "이 두 사람으로 더 보기" : "두 사람 사주로 이어서 볼 수 있어요"}
+          {isFreePreview ? "이 두 사람으로 더 보기" : "같은 두 사람으로 이어서 보기"}
         </h3>
         <p className="text-[11px] font-medium text-text-2 mt-0.5">
           {isFreePreview

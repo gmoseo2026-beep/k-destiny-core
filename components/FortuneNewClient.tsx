@@ -281,6 +281,54 @@ export default function FortuneNewClient({
     void handleSubmitRef.current?.({ preventDefault() {} } as React.FormEvent);
   }, [autoPreview, initialProfile, formValues.year, formValues.month, formValues.day, currentProductId]);
 
+  const checkoutModalNode = (
+    <GuestCheckoutModal
+      options={checkoutOptionsFor(getProduct(currentProductId), visibleIds ?? [])}
+      selectedId={checkoutId ?? undefined}
+      onSelect={(id) => setCheckoutId(id)}
+      isOpen={checkoutModalOpen}
+      onClose={() => setCheckoutModalOpen(false)}
+      title={`${checkoutProduct?.name || "사주"} 리포트 열람`}
+      orderName={checkoutProduct?.name || "콩닥 사주 리포트"}
+      priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : "4,900원"}
+      initialName={session?.user?.name || formValues.name || ""}
+      initialEmail={session?.user?.email || ""}
+      initialPhone=""
+      isLoading={isProcessingPayment}
+      onSubmit={async (buyer: BuyerInfo) => {
+        try {
+          setIsProcessingPayment(true);
+          const formatted = formatBirthInput(formValues);
+          savePendingInput(checkoutId, formatted);
+
+          const res = await requestPortOnePayment({
+            productId: checkoutId,
+            buyer,
+            locale,
+          });
+
+          if (res.ok) {
+            trackEvent("purchase_confirmed", {
+              productId: checkoutId,
+              tier: checkoutProduct?.tier || "standard",
+              amount: res.amount,
+            });
+            if (checkoutId.startsWith("annual_")) {
+              router.push(`/${locale}/fortune/annual?year=${checkoutId.replace("annual_", "")}`);
+            } else {
+              router.push(`/${locale}/report/new?c=${checkoutId}`);
+            }
+          }
+        } catch (e: unknown) {
+          alert(e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.");
+        } finally {
+          setIsProcessingPayment(false);
+          setCheckoutModalOpen(false);
+        }
+      }}
+    />
+  );
+
   // Result View
   if (resultData) {
     const outline = (teaserProduct && sectionOutlines[teaserProduct.promptKey]) || [];
@@ -436,51 +484,7 @@ export default function FortuneNewClient({
 
 
         {/* Checkout Modal */}
-        <GuestCheckoutModal
-          options={checkoutOptionsFor(getProduct(currentProductId), visibleIds ?? [])}
-          selectedId={checkoutId ?? undefined}
-          onSelect={(id) => setCheckoutId(id)}
-          isOpen={checkoutModalOpen}
-          onClose={() => setCheckoutModalOpen(false)}
-          title={`${checkoutProduct?.name || "사주"} 리포트 열람`}
-          orderName={checkoutProduct?.name || "콩닥 사주 리포트"}
-          priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : "4,900원"}
-          initialName={session?.user?.name || formValues.name || ""}
-          initialEmail={session?.user?.email || ""}
-          initialPhone=""
-          isLoading={isProcessingPayment}
-          onSubmit={async (buyer: BuyerInfo) => {
-            try {
-              setIsProcessingPayment(true);
-              const formatted = formatBirthInput(formValues);
-              savePendingInput(checkoutId, formatted);
-
-              const res = await requestPortOnePayment({
-                productId: checkoutId,
-                buyer,
-                locale,
-              });
-
-              if (res.ok) {
-                trackEvent("purchase_confirmed", {
-                  productId: checkoutId,
-                  tier: checkoutProduct?.tier || "standard",
-                  amount: res.amount,
-                });
-                if (checkoutId.startsWith("annual_")) {
-                  router.push(`/${locale}/fortune/annual?year=${checkoutId.replace("annual_", "")}`);
-                } else {
-                  router.push(`/${locale}/report/new?c=${checkoutId}`);
-                }
-              }
-            } catch (e: unknown) {
-              alert(e instanceof Error ? e.message : "결제 진행 중 오류가 발생했습니다.");
-            } finally {
-              setIsProcessingPayment(false);
-              setCheckoutModalOpen(false);
-            }
-          }}
-        />
+        {checkoutModalNode}
 
         <InAppPaymentChoice isOpen={inAppOpen} onClose={() => setInAppOpen(false)} />
       </div>
@@ -547,6 +551,7 @@ export default function FortuneNewClient({
       >
         결과 확인하기 ✨
       </Button>
+      {checkoutModalNode}
     </form>
   );
 }

@@ -171,6 +171,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   const locale = opts.locale || "ko";
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
   rememberPayReturn(opts);
+  rememberPendingPayment({ orderId: order.orderId, productId: opts.productId, at: Date.now() });
 
   // orderName은 서버 응답의 orderName을 쓴다
   const orderName = order.orderName || "콩닥 사주 리포트";
@@ -252,6 +253,73 @@ export function recallPayReturn(): string | null {
 }
 
 /**
+ * [P-016-1] 결제 중단 복귀 안내용 상태 저장 (sessionStorage, 10분 유효).
+ * 결제창을 열기 직전에 `{ orderId, productId, at }`을 기록하고,
+ * 결제를 시작한 화면으로 다시 돌아왔을 때(pageshow / visibilitychange) 10분 이내면 복귀 안내 시트를 띄운다.
+ * 결제 완료 화면에 도착하거나 결제가 완료되면 삭제한다.
+ */
+const PAY_PENDING_KEY = "kongdak_pay_pending";
+export const PAY_PENDING_TTL_MS = 10 * 60 * 1000;
+
+export interface PendingPayment {
+  orderId: string;
+  productId: string;
+  at: number;
+}
+
+export function rememberPendingPayment(p: { orderId: string; productId: string; at?: number }): void {
+  if (typeof window === "undefined" || !p.orderId || !p.productId) return;
+  try {
+    const payload: PendingPayment = {
+      orderId: p.orderId,
+      productId: p.productId,
+      at: typeof p.at === "number" ? p.at : Date.now(),
+    };
+    window.sessionStorage.setItem(PAY_PENDING_KEY, JSON.stringify(payload));
+  } catch {}
+}
+
+export function recallPendingPayment(now: number = Date.now()): PendingPayment | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(PAY_PENDING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingPayment> | null;
+    if (
+      !parsed ||
+      typeof parsed.orderId !== "string" ||
+      !parsed.orderId ||
+      typeof parsed.productId !== "string" ||
+      !parsed.productId ||
+      typeof parsed.at !== "number" ||
+      !Number.isFinite(parsed.at)
+    ) {
+      window.sessionStorage.removeItem(PAY_PENDING_KEY);
+      return null;
+    }
+    const elapsed = now - parsed.at;
+    if (elapsed < 0 || elapsed > PAY_PENDING_TTL_MS) {
+      window.sessionStorage.removeItem(PAY_PENDING_KEY);
+      return null;
+    }
+    return {
+      orderId: parsed.orderId,
+      productId: parsed.productId,
+      at: parsed.at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingPayment(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(PAY_PENDING_KEY);
+  } catch {}
+}
+
+/**
  * GA4 표준 구매 이벤트 — 매출이 보고서에 잡히게 한다(같은 transaction_id 는 GA4 가 중복 제거).
  * PC(팝업) 결제와 모바일(리다이렉트 → 결제 완료 화면) 결제가 같은 함수를 쓴다.
  * 예전에는 모바일 결제가 이 이벤트를 보내지 않아 GA4 매출이 실제보다 훨씬 적게 잡혔다(2026-10-04).
@@ -290,6 +358,7 @@ export async function verifyAndCompletePayment(
       const orderId = result?.orderId || paymentId;
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
+      clearPendingPayment();
       rememberOrderToken(catalogId, orderId, compatId);
       trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.

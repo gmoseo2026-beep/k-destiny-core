@@ -1,3 +1,40 @@
+# REVIEW_HANDOFF — P-016-1 (결제 중단 복귀 안내) & P-016-3 (결제 후 이어보기 + 소식 받기 동의)
+
+> **작성 일시**: 2026-10-24
+> **범위**: `docs/uiux/decisions/P-016.md` §P-016-1 (결제 중단 복귀 안내) 및 §P-016-3 (결제 후 — 이어보기 + 소식 받기 동의)
+> **검증 상태**: `tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors · `vitest` 70파일 525개 통과(1 skip) · `npm run build` exit 0
+> **DB 변경 (SQL)**: 없음 (`User.marketingConsent` · `marketingConsentAt` · `contactEmail` 및 `/api/user/marketing-consent` 기존 스키마·라우트 그대로 재사용)
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `lib/payments/client.ts` | **[P-016-1 §1]** `requestPortOnePayment`에서 포트원 결제창 호출 직전 `sessionStorage`(`kongdak_pay_pending`)에 `{ orderId, productId, at }`를 저장하는 `rememberPendingPayment` 추가. 10분 유효기간 검사 함수 `recallPendingPayment` 및 삭제 함수 `clearPendingPayment`(PC 인라인 검증 완료 시에도 즉시 삭제) 추가 |
+| `components/GuestCheckoutModal.tsx` | **[P-016-1 §2·§3]** 결제를 시작한 화면으로 돌아왔을 때(`pageshow` / `visibilitychange`, 같은 탭) 10분 이내의 `kongdak_pay_pending` 저장값이 있으면 하단 안내 시트(`"결제가 끝나지 않았나요?"`) 노출. 인앱 브라우저면 `[크롬(사파리)에서 이어서 결제하기]`(`openInExternalBrowser`, `lib/inAppBrowser.ts`) + `[다시 결제하기]`(결제 모달 재오픈) 제공. 이벤트 `pay_resume_view`, `pay_resume_external`, `pay_resume_retry` 발사 |
+| `components/FortuneNewClient.tsx` | **[P-016-1 §2]** 모바일 리다이렉트 후 뒤로 가기로 전체 새로고침되어도 `GuestCheckoutModal`이 마운트되어 복귀 안내 시트가 즉시 뜨도록 입력 폼 뷰에도 모달 노드 연결 |
+| `app/[locale]/pay/complete/page.tsx` | **[P-016-1 §2]** 결제 완료 화면 도착 시 `clearPendingPayment()`로 저장값 즉시 삭제. **[P-016-3 §2]** 결제 성공 화면에서 `"(선택) 새 운세 나오면 알려 드릴게요"` 체크박스(**기본 체크 안 함 `false`**) 제공 — 회원은 `/api/user/marketing-consent` 호출(이미 동의한 회원은 미노출), 비회원은 `lib/marketingConsent.ts` `rememberOptIn`에 기록해 가입·보관 시 `MarketingConsentSync`가 자동 반영 |
+| `components/report/StandardReportView.tsx` | **[P-016-3 §1]** 전체 리포트(`mode="full"`)의 마지막 섹션에 `useSeenOnce`를 연결해 끝까지 읽었을 때 `onLastSectionSeen` 콜백 호출 |
+| `components/report/ReportViewClient.tsx` | **[P-016-3 §1]** `StandardReportView`의 마지막 섹션이 노출된 시점(`reachedLastSection`)에 `"같은 두 사람으로 이어서 보기"` 카드(`NextReadingRecommendations`) 노출 |
+| `components/CompatResultClient.tsx` | **[P-016-3 §1]** 심층 궁합(`deepReport`)의 마지막 섹션(`나와 찰떡인 이상형 사주 기운`)이 노출된 시점(`reachedDeepEnd`)에 `"같은 두 사람으로 이어서 보기"` 카드 노출 |
+| `components/report/NextReadingRecommendations.tsx` | **[P-016-3 §1]** 결제 완료 리포트 하단 추천 카드(`variant="owned"`) 제목을 `"같은 두 사람으로 이어서 보기"`로 변경 (관련 단품 2개 + 세트, 이미 산 것 제외, 클릭 시 같은 생년월일로 미리보기 바로 생성) |
+| `tests/payResumeAndPostPay.test.ts` (신규) | `rememberPendingPayment` · `recallPendingPayment`(10분 이내 복원 / 10분 초과 만료 삭제) · `clearPendingPayment`, 마케팅 동의 기본 미체크(`rememberOptIn` / `takeOptIn`), `getNextReadings` · `nextReadingHref` 단위 테스트 4건 |
+
+## 2. 결정론 로직 요약
+- 사주·궁합 엔진(`lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`) 및 `lib/compatPercentile.ts` 수정 없음.
+- 결제 중단 복귀 판단(`recallPendingPayment`)은 `now - at <= 10 * 60 * 1000` 조건만 검사하는 순수 시간 비교 함수.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- 결제 금액·주문 생성·검증 로직(`app/api/payments/*`) 일절 변경 없음.
+- `sessionStorage`의 `kongdak_pay_pending`에는 `{ orderId, productId, at }`만 저장하며 생년월일·이름 등 PII는 저장하지 않음. 결제 완료 화면 도착 시 즉시 삭제됨.
+- 마케팅 수신 동의 체크박스는 **기본 체크 안 된 상태(`false`)**로 렌더링되며, 이미 동의한 회원에게는 중복 노출하지 않음.
+- `compat_created` · `teaser_created` 이벤트 발사 시점 불변.
+- 추가된 GA4 이벤트: `pay_resume_view`, `pay_resume_external`, `pay_resume_retry`.
+
+## 4. 스스로 의심 지점
+- iOS 인스타그램·스레드 인앱 브라우저는 `openInExternalBrowser`의 스킴 강제 이동이 OS 정책상 막혀 있어 `false`를 반환하므로, 복귀 시트 안에서 즉시 `"현재 링크 복사하기"` 폴백 안내가 펼쳐지도록 처리했습니다.
+
+---
+
 # REVIEW_HANDOFF — P-016-2 (무료 결과 + 대화형 입력 + 홈 세로 3:4 표지 4종)
 
 > **작성 일시**: 2026-10-24

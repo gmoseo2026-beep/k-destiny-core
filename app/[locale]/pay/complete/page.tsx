@@ -5,7 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
-import { rememberUnlockToken, rememberOrderToken, trackPurchase, recallPayReturn } from "@/lib/payments/client";
+import {
+  rememberUnlockToken,
+  rememberOrderToken,
+  trackPurchase,
+  recallPayReturn,
+  clearPendingPayment,
+} from "@/lib/payments/client";
+import { rememberOptIn } from "@/lib/marketingConsent";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { isInAppBrowser, isIOS, getInAppProvider, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
@@ -36,12 +43,18 @@ function PayCompleteContent() {
   const [emailOrderId, setEmailOrderId] = useState<string | null>(null);
   const [emailValue, setEmailValue] = useState("");
   const [emailState, setEmailState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  // [P-016-3 §2] 선택 동의("새 운세 나오면 알려 드릴게요", 기본 체크 안 함) — 기존 marketingConsent 재사용
+  const [mktAgreed, setMktAgreed] = useState(false);
+  const [mktAlreadyConsented, setMktAlreadyConsented] = useState(false);
 
   const ranRef = useRef(false);
 
   useEffect(() => {
     if (ranRef.current) return; // 재실행(특히 URL 정리 후) 방지
     ranRef.current = true;
+
+    // [P-016-1 §2] 결제 완료 화면 도착 시 결제 중단 복귀용 저장값을 지운다
+    clearPendingPayment();
 
     // sp 대신 마운트 시점의 실제 주소에서 읽는다(정리 전에 확정)
     const url = new URL(window.location.href);
@@ -144,6 +157,45 @@ function PayCompleteContent() {
   }, []);
 
   const [copied, setCopied] = useState(false);
+
+  // [P-016-3 §2] 회원이면 이미 마케팅 수신 동의가 켜져 있는지 확인(켜져 있으면 다시 묻지 않는다, 기본 체크는 절대 안 함)
+  useEffect(() => {
+    if (status !== "success" || !isMember) return;
+    let alive = true;
+    fetch("/api/user/marketing-consent", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { consent?: boolean } | null) => {
+        if (!alive || !d) return;
+        if (d.consent) setMktAlreadyConsented(true);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [status, isMember]);
+
+  const handleToggleMktConsent = (checked: boolean) => {
+    setMktAgreed(checked);
+    if (isMember) {
+      fetch("/api/user/marketing-consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agree: checked,
+          ...(checked && emailValue.trim() ? { email: emailValue.trim() } : {}),
+        }),
+      })
+        .then((r) => {
+          if (r.ok) {
+            trackEvent(checked ? "marketing_optin" : "marketing_optout", { source: "pay_complete" });
+          }
+        })
+        .catch(() => {});
+    } else {
+      rememberOptIn(checked);
+      trackEvent(checked ? "marketing_optin" : "marketing_optout", { source: "pay_complete", guest: true });
+    }
+  };
 
   const handleSaveEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,6 +396,28 @@ function PayCompleteContent() {
             {emailState === "error" && <p className="mt-1.5 text-[11px] text-red-500">이메일 주소를 확인해 주세요.</p>}
             <p className="mt-1.5 text-[11px] text-text-3">남기지 않아도 리포트는 바로 볼 수 있어요.</p>
           </Card>
+        )}
+
+        {status === "success" && !mktAlreadyConsented && (
+          <label className="w-full mb-5 flex items-start gap-2.5 rounded-2xl border border-line bg-surface-soft px-4 py-3 text-left cursor-pointer transition-colors hover:border-coral/40">
+            <input
+              type="checkbox"
+              checked={mktAgreed}
+              onChange={(e) => handleToggleMktConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-line accent-coral focus:ring-coral"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-xs font-bold text-ink">
+                <span className="text-text-3 font-semibold mr-1">(선택)</span>
+                새 운세 나오면 알려 드릴게요
+              </span>
+              <span className="text-[11px] text-text-3 leading-snug">
+                {isMember
+                  ? "시즌 운세·신규 풀이가 열릴 때만 알려 드려요. 보관함에서 언제든 끌 수 있어요."
+                  : "체크 후 가입하고 보관하면 새 운세 소식을 받아볼 수 있어요."}
+              </span>
+            </span>
+          </label>
         )}
 
         <div className="w-full flex flex-col gap-3">

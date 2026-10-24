@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { ScoreGauge } from "@/components/ui/ScoreGauge";
 import { ReportSection } from "@/components/ui/ReportSection";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { getTeaserBlurCopy } from "@/lib/teaserBlurCopy";
+import { useSeenOnce } from "@/lib/useSeenOnce";
 import { Lock, Sparkles, CheckCircle2, XCircle, Heart, MessageCircleQuestion } from "lucide-react";
 
 interface LockedSectionInfo {
@@ -22,6 +23,8 @@ interface StandardReportViewProps {
   lockedSpecs?: LockedSectionInfo[];
   /** 티저의 잠긴 칸을 누르면 결제 안내를 연다(없으면 누를 수 없는 카드) */
   onLockedClick?: () => void;
+  /** [P-016-3 §1] 전체 리포트를 끝까지 읽었을 때(마지막 섹션 노출 시) 호출 */
+  onLastSectionSeen?: () => void;
 }
 
 function isFullReport(mode: "teaser" | "full", data: StandardReport | StandardTeaser): data is StandardReport {
@@ -35,8 +38,13 @@ export default function StandardReportView({
   catalogId,
   lockedSpecs = [],
   onLockedClick,
+  onLastSectionSeen,
 }: StandardReportViewProps) {
-  if (isFullReport(mode, data)) {
+  const lastSectionRef = useRef<HTMLDivElement | null>(null);
+  const full = isFullReport(mode, data);
+  useSeenOnce(lastSectionRef, () => onLastSectionSeen?.(), full && Boolean(onLastSectionSeen));
+
+  if (full) {
     return (
       <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
         {/* Score & Headline Card */}
@@ -53,15 +61,16 @@ export default function StandardReportView({
         {/* 4 Full Sections */}
         <div className="flex flex-col gap-4">
           {data.sections.map((section, idx) => (
-            <ReportSection
-              key={section.key || idx}
-              title={section.title}
-              icon={<Sparkles className="w-5 h-5 text-coral" />}
-            >
-              <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
-                {section.body}
-              </div>
-            </ReportSection>
+            <div key={section.key || idx} ref={idx === data.sections.length - 1 ? lastSectionRef : undefined}>
+              <ReportSection
+                title={section.title}
+                icon={<Sparkles className="w-5 h-5 text-coral" />}
+              >
+                <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
+                  {section.body}
+                </div>
+              </ReportSection>
+            </div>
           ))}
         </div>
 

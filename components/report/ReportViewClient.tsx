@@ -67,6 +67,7 @@ export default function ReportViewClient({
   const [errorCode, setErrorCode] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [reachedLastSection, setReachedLastSection] = useState(false);
 
   const fetchReportRef = useRef<() => Promise<void>>(async () => {});
 
@@ -249,9 +250,10 @@ export default function ReportViewClient({
         mode="full"
         score={reportData.score}
         data={reportData.data as StandardReport}
+        onLastSectionSeen={() => setReachedLastSection(true)}
       />
 
-      {product?.target === "couple" && reportData.compatId && (
+      {product?.target === "couple" && reportData.compatId && reachedLastSection && (
         <NextReadingRecommendations
           currentCatalogId={reportData.catalogId}
           compatId={reportData.compatId}

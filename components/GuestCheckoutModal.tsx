@@ -5,7 +5,13 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isIOS, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
+import {
+  recallPendingPayment,
+  clearPendingPayment,
+  recallPayReturn,
+  type PendingPayment,
+} from "@/lib/payments/client";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -89,17 +95,27 @@ export default function GuestCheckoutModal({
   // 어느 버튼으로 제출했는지(카카오페이 바로가기 / 일반 결제창)
   const methodRef = useRef<"KAKAOPAY" | "NAVERPAY" | undefined>(undefined);
 
+  // [P-016-1] 결제 중단 복귀 안내 상태
+  const [resumePending, setResumePending] = useState<PendingPayment | null>(null);
+  const [resumeForceOpen, setResumeForceOpen] = useState(false);
+  const [resumeShowCopy, setResumeShowCopy] = useState(false);
+  const [resumeCopied, setResumeCopied] = useState(false);
+  const resumeSeenOrderRef = useRef<string | null>(null);
+
+  const modalOpen = isOpen || resumeForceOpen;
+
   const shownPrice = priceLabel;
   const pid = productId || orderName || "unknown";
 
   useEffect(() => {
-    if (isOpen) {
+    if (modalOpen) {
       queueMicrotask(() => {
         setFullName(initialName);
         setEmail(initialEmail);
         setPhoneNumber(initialPhone);
         setErrorMsg(null);
         setExitAsk(false);
+        setResumePending(null);
       });
       openedAtRef.current = Date.now();
       submittedRef.current = false;
@@ -108,9 +124,202 @@ export default function GuestCheckoutModal({
     }
     // 모달이 열릴 때 한 번만 기록한다(세션 로딩으로 다시 기록하지 않음)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialName, initialEmail, initialPhone, productId, tier, orderName, priceLabel]);
+  }, [modalOpen, initialName, initialEmail, initialPhone, productId, tier, orderName, priceLabel]);
 
-  if (!isOpen) return null;
+  // [P-016-1] 결제를 시작한 화면으로 돌아왔을 때(pageshow / visibilitychange, 같은 탭)
+  // 10분 안의 저장값이 있으면 하단 안내창을 띄운다.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkPending = () => {
+      if (isOpen || resumeForceOpen || isLoading) return;
+      const pending = recallPendingPayment();
+      if (!pending) {
+        setResumePending(null);
+        return;
+      }
+      // 다른 앱(카카오톡·카드 앱)에서 결제를 끝내고 돌아온 경우가 있다 — 안내를 띄우기 전에 서버에 결제 상태를 묻고,
+      // 이미 결제됐으면 결제 완료 화면으로 보낸다(두 번 결제 방지). 확인이 안 되면 그대로 안내한다.
+      const showSheet = () => {
+        setResumePending(pending);
+      setResumeShowCopy(false);
+      setResumeCopied(false);
+      if (resumeSeenOrderRef.current !== pending.orderId) {
+        resumeSeenOrderRef.current = pending.orderId;
+        trackEvent("pay_resume_view", {
+          productId: pending.productId,
+          app: clientEnvLabel(),
+          inapp: inApp,
+        });
+      }
+      };
+      fetch("/api/payments/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId: pending.orderId }),
+      })
+        .then((r) => {
+          if (r.ok) {
+            clearPendingPayment();
+            const loc = window.location.pathname.split("/")[1] || "ko";
+            window.location.href = `/${loc}/pay/complete?paymentId=${encodeURIComponent(pending.orderId)}`;
+            return;
+          }
+          showSheet();
+        })
+        .catch(showSheet);
+    };
+
+    const onPageShow = () => checkPending();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkPending();
+      }
+    };
+
+    // 뒤로 가기로 전체 새로고침되어 마운트된 경우에도 확인
+    const timer = window.setTimeout(checkPending, 120);
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [isOpen, resumeForceOpen, isLoading, inApp]);
+
+  if (!modalOpen && !resumePending) return null;
+
+  if (!modalOpen && resumePending) {
+    const dismissResume = () => {
+      clearPendingPayment();
+      setResumePending(null);
+    };
+
+    const handleResumeExternal = () => {
+      trackEvent("pay_resume_external", {
+        productId: resumePending.productId,
+        app: clientEnvLabel(),
+        ios: isIOS(),
+      });
+      const ret = recallPayReturn();
+      const targetUrl = ret ? window.location.origin + ret : window.location.href;
+      if (!openInExternalBrowser(targetUrl)) {
+        setResumeShowCopy(true);
+      }
+    };
+
+    const handleResumeCopy = async () => {
+      const ret = recallPayReturn();
+      const targetUrl = ret ? window.location.origin + ret : window.location.href;
+      try {
+        await navigator.clipboard.writeText(externalBrowserUrl(targetUrl));
+        setResumeCopied(true);
+      } catch {
+        // 복사가 막힌 인앱이면 메뉴 안내만으로 진행
+      }
+    };
+
+    const handleResumeRetry = () => {
+      trackEvent("pay_resume_retry", {
+        productId: resumePending.productId,
+        app: clientEnvLabel(),
+        inapp: inApp,
+      });
+      if (onSelect && resumePending.productId && options.some((o) => o.id === resumePending.productId)) {
+        onSelect(resumePending.productId);
+      }
+      setResumePending(null);
+      setResumeForceOpen(true);
+    };
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) dismissResume();
+        }}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="결제가 끝나지 않았나요?"
+          className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-safe-sheet sm:p-7 shadow-xl border border-line relative flex flex-col gap-3.5"
+        >
+          <button
+            type="button"
+            onClick={dismissResume}
+            className="absolute top-4 right-4 text-text-3 hover:text-ink p-1.5 rounded-full transition-colors active:scale-95"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+
+          <div className="flex items-center gap-3 pr-8">
+            <KongdakMascot size={44} animate="none" expression="flutter" />
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-ink">결제가 끝나지 않았나요?</h3>
+              <p className="text-xs text-text-2 mt-0.5 leading-relaxed">
+                {inApp
+                  ? "앱 안에서는 카드·간편결제 앱으로 넘어가다 끊기는 경우가 있어요."
+                  : "결제창이 닫혔거나 결제가 완료되지 않았어요. 바로 이어서 진행할 수 있어요."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 mt-1">
+            {inApp && (
+              <>
+                {!resumeShowCopy ? (
+                  <button
+                    type="button"
+                    onClick={handleResumeExternal}
+                    className="w-full rounded-2xl bg-coral hover:bg-coral-deep py-3.5 px-4 text-sm font-extrabold text-white shadow-xs transition-all active:scale-[0.96]"
+                  >
+                    {isIOS() ? "사파리에서 이어서 결제하기" : "크롬에서 이어서 결제하기"}
+                  </button>
+                ) : (
+                  <div className="rounded-2xl bg-surface-soft border border-line p-3.5 text-left text-xs text-text-2 leading-relaxed">
+                    <p>
+                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-ink">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 사파리에 붙여 넣어 주세요.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleResumeCopy}
+                      className="mt-2.5 w-full rounded-xl border border-coral/40 bg-white py-2.5 font-bold text-coral-deep text-xs transition-all active:scale-[0.96]"
+                    >
+                      {resumeCopied ? "복사했어요" : "현재 링크 복사하기"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={handleResumeRetry}
+              className={`w-full rounded-2xl py-3.5 px-4 text-sm font-extrabold transition-all active:scale-[0.96] ${
+                inApp
+                  ? "bg-surface-soft border border-line text-ink hover:bg-surface"
+                  : "bg-coral hover:bg-coral-deep text-white shadow-xs"
+              }`}
+            >
+              다시 결제하기
+            </button>
+
+            <button
+              type="button"
+              onClick={dismissResume}
+              className="mx-auto py-1 text-xs font-semibold text-text-3 underline underline-offset-2"
+            >
+              다음에 할게요
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // 결제하지 않고 닫은 경우만 기록한다(결제 진행 뒤 부모가 닫는 것은 제외) — 어디서, 얼마 만에 나가는지 보려고
   // 닫기 직전 한 번만: 단품을 보고 있고 아끼는 세트가 있으면 "세트로 바꾸기"를 권한다(가짜 할인 대신 실제 묶음 가격, 2026-10-24)
@@ -142,6 +351,7 @@ export default function GuestCheckoutModal({
         app: clientEnvLabel(),
       });
     }
+    setResumeForceOpen(false);
     onClose();
   };
 
@@ -192,14 +402,18 @@ export default function GuestCheckoutModal({
       app: clientEnvLabel(),
       method: payMethod ? payMethod.toLowerCase() : "card_window",
     });
-    await onSubmit({
-      // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
-      fullName: trimmedName.length >= 2 ? trimmedName : "콩닥 고객",
-      // 모바일은 이메일을 묻지 않는다(회원이면 계정 이메일이 들어 있다). 결제 완료 화면에서 선택으로 받는다.
-      email: isMobile ? initialEmail.trim() : trimmedEmail,
-      phoneNumber: isMobile ? "" : cleanPhone,
-      ...(payMethod ? { payMethod } : {}),
-    });
+    try {
+      await onSubmit({
+        // 모바일은 이름 칸이 없다 → 앞에서 입력한 이름(있으면)을 쓰고, 없으면 일반 호칭으로 보낸다
+        fullName: trimmedName.length >= 2 ? trimmedName : "콩닥 고객",
+        // 모바일은 이메일을 묻지 않는다(회원이면 계정 이메일이 들어 있다). 결제 완료 화면에서 선택으로 받는다.
+        email: isMobile ? initialEmail.trim() : trimmedEmail,
+        phoneNumber: isMobile ? "" : cleanPhone,
+        ...(payMethod ? { payMethod } : {}),
+      });
+    } finally {
+      setResumeForceOpen(false);
+    }
   };
 
   const inputClass =

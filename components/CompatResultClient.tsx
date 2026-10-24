@@ -288,6 +288,11 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
   // 미결제 paywall 렌더 시 1회 측정
   const hasTrackedLockedOffer = React.useRef(false);
+
+  // [P-016-3 §1] 심층 궁합 리포트를 끝까지 읽었을 때(마지막 섹션 노출 시) "같은 두 사람으로 이어서 보기" 노출
+  const deepLastSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const [reachedDeepEnd, setReachedDeepEnd] = useState(false);
+  useSeenOnce(deepLastSectionRef, () => setReachedDeepEnd(true), Boolean(deepReport));
   useEffect(() => {
     if (!isPremium && !unlockToken && !deepReport && data?.id && !hasTrackedLockedOffer.current) {
       hasTrackedLockedOffer.current = true;
@@ -1026,19 +1031,24 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </div>
           </div>
 
-          <div className="w-full bg-gradient-to-r from-[#FF8AA1]/10 to-[plum]/10 rounded-2xl p-6 shadow-sm border border-coral/20 text-center">
+          <div
+            ref={deepLastSectionRef}
+            className="w-full bg-gradient-to-r from-[#FF8AA1]/10 to-[plum]/10 rounded-2xl p-6 shadow-sm border border-coral/20 text-center"
+          >
             <h3 className="text-base font-black text-plum mb-2">나와 찰떡인 이상형 사주 기운</h3>
             <p className="text-sm font-bold text-coral mb-1">{deepReport.idealMatchEnergy.energyName}</p>
             <p className="text-xs text-ink font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
           </div>
 
-          <NextReadingRecommendations
-            currentCatalogId="compat_basic"
-            compatId={data.id}
-            locale={locale}
-            visibleIds={visibleIds}
-            sourceScreen="compat_unlocked"
-          />
+          {reachedDeepEnd && (
+            <NextReadingRecommendations
+              currentCatalogId="compat_basic"
+              compatId={data.id}
+              locale={locale}
+              visibleIds={visibleIds}
+              sourceScreen="compat_unlocked"
+            />
+          )}
 
           {/* Guest Retention & Account Binding Banner */}
           {!session?.user?.id && (
