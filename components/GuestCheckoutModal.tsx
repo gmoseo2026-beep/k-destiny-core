@@ -235,11 +235,11 @@ export default function GuestCheckoutModal({
               <KongdakMascot size={48} animate="none" expression="flutter" />
               <p className="mt-2 text-base font-black text-ink">잠깐만요, 이렇게도 볼 수 있어요</p>
               <p className="mt-1 text-xs leading-relaxed text-text-2">
-                <b className="text-ink">{bestSet.name}</b>로 바꾸면 {bestSet.desc ? `${bestSet.desc}를 ` : ""}
-                한 번에 {bestSet.price.toLocaleString("ko-KR")}원에 볼 수 있어요.
+                <b className="text-ink">{bestSet.name}</b>로 바꾸면 한 번에 {bestSet.price.toLocaleString("ko-KR")}원이에요.
                 <br />
                 따로 사는 것보다 <b className="text-coral-deep">{(bestSet.separate! - bestSet.price).toLocaleString("ko-KR")}원</b> 아껴요.
               </p>
+              {bestSet.desc && <p className="mt-1.5 text-[11px] leading-relaxed text-text-3">{bestSet.desc}</p>}
               <button
                 type="button"
                 onClick={() => {
@@ -322,8 +322,8 @@ export default function GuestCheckoutModal({
           </div>
         )}
 
-        {/* Order Info Card */}
-        <div className="bg-surface-soft rounded-2xl p-3.5 mb-4 border border-line flex justify-between items-center">
+        {/* Order Info Card — 고르기 칸이 있으면 같은 내용이라 숨긴다 */}
+        <div className={`bg-surface-soft rounded-2xl p-3.5 mb-4 border border-line justify-between items-center ${options.length > 1 && onSelect ? "hidden" : "flex"}`}>
           <div>
             <span className="text-xs font-bold text-ink block">{orderName}</span>
             <span className="text-[11px] text-text-3">결제 후 즉시 열람 · 한 번 결제로 끝</span>

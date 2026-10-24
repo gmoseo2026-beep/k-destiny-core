@@ -623,7 +623,7 @@ export const CATALOG: CatalogItem[] = [
     id: "set_sure",
     type: "SET",
     name: "그 사람 확신 패키지",
-    description: "정통 궁합 + 속마음 + 짝사랑 속마음 + 갈등과 해법 + 결혼 궁합",
+    description: "정통 궁합 + 속마음 + 속궁합 + 갈등과 해법 + 결혼 궁합",
     category: "cat-compat",
     target: "couple",
     price: 19900,
@@ -636,11 +636,11 @@ export const CATALOG: CatalogItem[] = [
     accessDays: 90,
     icon3d: "/icons3d/set_this_person.webp",
     gridLabel: "확신 패키지",
-    hook: "궁합부터 속마음, 다툼, 결혼까지 그 사람에 대한 리포트 5가지를 한 번에",
+    hook: "궁합·속마음·속궁합·다툼·결혼까지, 그 사람에 대한 리포트 5가지를 한 번에",
     subtitle: "그 사람에 대해 궁금한 걸 한 번에 다 확인해 보세요",
     recommendFor: [
       "그 사람에 대해 궁금한 게 하나가 아닌 분",
-      "썸·연애·결혼까지 흐름을 길게 보고 싶은 분",
+      "썸·연애부터 속궁합·결혼까지 흐름을 길게 보고 싶은 분",
       "따로 사는 것보다 4,600원 아끼고 싶은 분"
     ],
     featuredOrder: 19
