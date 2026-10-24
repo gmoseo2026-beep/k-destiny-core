@@ -107,7 +107,17 @@ function PayCompleteContent() {
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
 
-          if (result?.catalogId) {
+          // 같은 결제를 다시 열었으면(서버가 오래된 주문이라 하거나 이 기기에서 이미 보냈으면) 매출 신호를 또 보내지 않는다
+          const sentKey = "kd_purchase_sent";
+          let alreadySent = false;
+          try {
+            const sent: string[] = JSON.parse(window.localStorage.getItem(sentKey) || "[]");
+            alreadySent = Boolean(result?.receiptId && sent.includes(result.receiptId));
+            if (result?.receiptId && !alreadySent) window.localStorage.setItem(sentKey, JSON.stringify([...sent, result.receiptId].slice(-20)));
+          } catch {
+            // 저장소를 못 쓰면 서버의 fresh 값만으로 판단한다
+          }
+          if (result?.catalogId && result?.fresh !== false && !alreadySent) {
             const catItem = getProduct(result.catalogId);
             trackEvent("purchase_confirmed", {
               productId: result.catalogId,

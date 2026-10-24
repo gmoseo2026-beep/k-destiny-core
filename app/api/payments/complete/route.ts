@@ -88,6 +88,9 @@ export async function POST(req: NextRequest) {
         catalogId: toCatalogId(order.productType, order.productKey, order.compatId),
         // 비회원이 이메일 없이 결제한 경우(모바일) → 결제 완료 화면이 이메일을 선택으로 받는다
         needsEmail: !order.userId && !order.email,
+        // 결제 완료 화면을 나중에 다시 연 경우(사파리 탭 복원·뒤로가기 등)에는 매출 신호(GA4·메타·틱톡)를 또 보내지 않게 한다.
+        // 결제는 주문을 만든 뒤 몇 분 안에 끝나므로, 주문이 2시간보다 오래됐으면 "다시 연 것"으로 본다(2026-10-24: 다음 날 아침 재방문 3건).
+        fresh: Date.now() - order.createdAt.getTime() < 2 * 60 * 60 * 1000,
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
