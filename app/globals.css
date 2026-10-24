@@ -286,3 +286,12 @@ button:active, [role="button"]:active {
   .pb-safe-bar { padding-bottom: calc(10px + min(env(safe-area-inset-bottom, 0px), 34px)); }
   .pb-safe-sheet { padding-bottom: calc(20px + min(env(safe-area-inset-bottom, 0px), 34px)); }
 }
+
+/* 가로로 넘기는 줄(홈 포스터 슬라이드·상품 줄)의 스크롤바 숨김 — 컴포넌트들이 쓰던 no-scrollbar 가 정의돼 있지 않아 안드로이드 크롬에 막대가 보였다(2026-10-24) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
