@@ -10,12 +10,12 @@ export function Tag({ className = '', category = 'default', children, ...props }
   const baseStyles = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border';
   
   const categoryStyles = {
-    fortune: 'text-[#5B34D6] border-[#5B34D6]/20 bg-[#F4F0FF]',
-    compat: 'text-coral-deep border-coral/20 bg-coral-soft',
-    wealth: 'text-[#8A5A00] border-[#C98A0B]/20 bg-[#FFF8E6]',
-    reunion: 'text-[#C9362F] border-[#C9362F]/20 bg-[#FFF0EF]',
-    career: 'text-[#2A5FD0] border-[#2A5FD0]/20 bg-[#EFF5FF]',
-    default: 'text-text-2 border-line bg-surface-soft',
+    fortune: 'text-[#C4B5FD] border-[#8B5CF6]/35 bg-[#8B5CF6]/15',
+    compat: 'text-[#FF8AA1] border-[#FF5C77]/35 bg-[#FF5C77]/15',
+    wealth: 'text-[#FFC24B] border-[#FFC24B]/35 bg-[#FFC24B]/15',
+    reunion: 'text-[#FF8AA1] border-[#FF5C77]/35 bg-[#FF5C77]/15',
+    career: 'text-[#93C5FD] border-[#3B82F6]/35 bg-[#3B82F6]/15',
+    default: 'text-[#B9A9BF] border-white/[0.08] bg-[#22142A]',
   };
 
   const classes = [

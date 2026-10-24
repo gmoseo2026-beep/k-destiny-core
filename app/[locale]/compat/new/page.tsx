@@ -25,7 +25,7 @@ export async function generateMetadata({
   searchParams: Promise<{ productId?: string }>;
 }): Promise<Metadata> {
   await params;
-  const canonical = canonicalUrlFor('/compat/new');
+  const canonical = canonicalUrlFor("/compat/new");
   // ?productId= 로 공유된 링크는 그 상품의 질문 카드를 보여 준다(입력 화면이 곧 상품 랜딩이다)
   const { productId } = await searchParams;
   const shared = productId ? getProduct(productId) : undefined;
@@ -66,7 +66,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
   let profile = null;
   if (session?.user?.id) {
     profile = await prisma.userSajuProfile.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
   }
 
@@ -74,9 +74,9 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
   const visibleIds = (await getEffectiveCatalog()).filter((p) => isViewableFor(p, preview)).map((p) => p.id);
 
   return (
-    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] px-4 py-8 flex flex-col items-center">
       {product?.isHidden && preview && (
-        <div className="w-full max-w-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
+        <div className="w-full max-w-md bg-[#FFC24B]/15 border border-[#FFC24B]/30 text-[#FFC24B] text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
           🔒 미리보기 — 미공개 상품
         </div>
       )}

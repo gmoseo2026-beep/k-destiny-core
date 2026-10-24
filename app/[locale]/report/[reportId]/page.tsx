@@ -26,15 +26,15 @@ export default async function ReportViewPage({ params }: PageProps) {
     .map((p) => p.id);
 
   return (
-    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] px-4 py-8 flex flex-col items-center">
       {/* Top Header */}
       <header className="w-full max-w-md flex items-center justify-between mb-6">
         <Link href={`/${locale}`} className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coral-light to-coral flex items-center justify-center text-white text-xs font-black shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF8AA1] to-[#FF5C77] flex items-center justify-center text-white text-xs font-black shadow-sm">
             콩
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-plum">
-            콩닥 <span className="text-xs font-semibold text-muted">kongdak</span>
+          <span className="font-extrabold text-lg tracking-tight text-[#F6EEF3]">
+            콩닥 <span className="text-xs font-semibold text-[#B9A9BF]">kongdak</span>
           </span>
         </Link>
       </header>

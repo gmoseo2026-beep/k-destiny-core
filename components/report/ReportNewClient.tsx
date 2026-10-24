@@ -300,16 +300,16 @@ export default function ReportNewClient({
   if (orderGone) {
     return (
       <Card className="w-full max-w-md mx-auto p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-[#FF5C77]/15 text-[#FF5C77] flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-ink mb-2">지금은 열 수 없는 결제예요</h2>
-        <p className="text-sm text-caption mb-6 leading-relaxed">
+        <h2 className="text-xl font-bold text-[#F6EEF3] mb-2">지금은 열 수 없는 결제예요</h2>
+        <p className="text-sm text-[#B9A9BF] mb-6 leading-relaxed">
           환불됐거나 열람 기간이 지난 결제예요. 무료 미리보기는 상품 페이지에서 그대로 볼 수 있어요.
         </p>
         <Link
           href={`/${locale}/products/${catalogId}`}
-          className="inline-block w-full py-3.5 bg-coral hover:bg-coral-deep text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
+          className="inline-block w-full py-3.5 bg-[#FF5C77] hover:opacity-95 text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
         >
           상품 페이지로 이동
         </Link>
@@ -321,16 +321,16 @@ export default function ReportNewClient({
   if (!orderId) {
     return (
       <Card className="w-full max-w-md mx-auto p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-[#FF5C77]/15 text-[#FF5C77] flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-ink mb-2">결제 정보가 없어요</h2>
-        <p className="text-sm text-caption mb-6 leading-relaxed">
+        <h2 className="text-xl font-bold text-[#F6EEF3] mb-2">결제 정보가 없어요</h2>
+        <p className="text-sm text-[#B9A9BF] mb-6 leading-relaxed">
           리포트 생성을 위한 결제 내역을 확인할 수 없습니다. 상품 페이지에서 결제를 완료해 주세요.
         </p>
         <Link
           href={`/${locale}/products/${catalogId}`}
-          className="inline-block w-full py-3.5 bg-coral hover:bg-coral-deep text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
+          className="inline-block w-full py-3.5 bg-[#FF5C77] hover:opacity-95 text-white font-bold rounded-2xl shadow-xs transition-all text-center active:scale-[0.96]"
         >
           상품 페이지로 이동
         </Link>
@@ -382,7 +382,7 @@ export default function ReportNewClient({
           {setItems.map((item) => (
             <div
               key={item.catalogId}
-              className="bg-white rounded-2xl p-4 border border-line shadow-xs flex items-center justify-between gap-3"
+              className="bg-[#22142A] rounded-2xl p-4 border border-white/[0.08] flex items-center justify-between gap-3"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-surface-soft flex items-center justify-center text-coral shrink-0">
@@ -462,12 +462,12 @@ export default function ReportNewClient({
   return (
     <div className="w-full max-w-md mx-auto">
       {errorMsg ? (
-        <div className="bg-white rounded-3xl p-8 border border-plum/10 shadow-sm text-center">
-          <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
+        <div className="bg-[#22142A] rounded-3xl p-8 border border-white/[0.08] text-center">
+          <div className="w-16 h-16 rounded-full bg-[#FF5C77]/15 text-[#FF5C77] flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-ink mb-2">리포트 생성 중 문제가 발생했어요</h2>
-          <p className="text-sm text-muted mb-6 leading-relaxed">{errorMsg}</p>
+          <h2 className="text-xl font-bold text-[#F6EEF3] mb-2">리포트 생성 중 문제가 발생했어요</h2>
+          <p className="text-sm text-[#B9A9BF] mb-6 leading-relaxed">{errorMsg}</p>
           <button
             type="button"
             onClick={() => {

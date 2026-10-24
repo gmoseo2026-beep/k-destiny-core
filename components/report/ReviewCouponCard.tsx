@@ -43,13 +43,13 @@ export default function ReviewCouponCard({
 
   if (issuedCoupon) {
     return (
-      <Card variant="soft" className="w-full p-5 text-left border border-coral/30 bg-[#FFF8FA]">
-        <div className="flex items-center gap-2 text-coral-deep font-extrabold text-sm mb-1.5">
-          <CheckCircle2 className="w-4 h-4 text-coral shrink-0" />
+      <Card variant="soft" className="w-full p-5 text-left border border-[#FFC24B]/35 bg-[#22142A]">
+        <div className="flex items-center gap-2 text-[#FFC24B] font-extrabold text-sm mb-1.5">
+          <CheckCircle2 className="w-4 h-4 text-[#FFC24B] shrink-0" />
           <span>소중한 후기 고마워요! 1,000원 쿠폰이 발급됐어요</span>
         </div>
-        <p className="text-xs text-text-2 leading-relaxed">
-          다음 운세·궁합을 결제할 때 결제 창에서 <b className="text-ink">1,000원이 자동으로 할인</b>돼요 (발급일로부터 30일간 유효).
+        <p className="text-xs text-[#B9A9BF] leading-relaxed">
+          다음 운세·궁합을 결제할 때 결제 창에서 <b className="text-[#F6EEF3]">1,000원이 자동으로 할인</b>돼요 (발급일로부터 30일간 유효).
         </p>
       </Card>
     );
@@ -96,17 +96,17 @@ export default function ReviewCouponCard({
   };
 
   return (
-    <Card className="w-full p-5 text-left border border-[#FFD9E0] bg-white">
+    <Card className="w-full p-5 text-left border border-white/[0.08] bg-[#22142A]">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5">
-          <Gift className="w-4 h-4 text-coral shrink-0" />
-          <h3 className="text-sm font-black text-ink">후기 남기고 다음 구매 1,000원 할인받기</h3>
+          <Gift className="w-4 h-4 text-[#FFC24B] shrink-0" />
+          <h3 className="text-sm font-black text-[#F6EEF3]">후기 남기고 다음 구매 1,000원 할인받기</h3>
         </div>
-        <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[10px] font-extrabold text-coral-deep shrink-0">
+        <span className="rounded-full bg-[#FFC24B]/15 px-2 py-0.5 text-[10px] font-extrabold text-[#FFC24B] shrink-0">
           즉시 발급
         </span>
       </div>
-      <p className="text-xs text-text-2 leading-relaxed mb-3">
+      <p className="text-xs text-[#B9A9BF] leading-relaxed mb-3">
         리포트가 어땠는지 짧게 남겨 주시면 다음 결제에 바로 쓸 수 있는 1,000원 쿠폰을 드려요.
       </p>
 
@@ -122,12 +122,12 @@ export default function ReviewCouponCard({
             >
               <Star
                 className={`w-6 h-6 ${
-                  n <= rating ? "fill-[#FFC24B] text-[#FFC24B]" : "text-line"
+                  n <= rating ? "fill-[#FFC24B] text-[#FFC24B]" : "text-white/20"
                 }`}
               />
             </button>
           ))}
-          <span className="ml-1.5 text-xs font-bold text-ink">{rating}점</span>
+          <span className="ml-1.5 text-xs font-bold text-[#F6EEF3]">{rating}점</span>
         </div>
 
         <div>
@@ -138,10 +138,10 @@ export default function ReviewCouponCard({
             onChange={(e) => setText(e.target.value)}
             placeholder="가장 공감됐던 문장이나 솔직한 소감을 적어 주세요 (200자 이내)"
             disabled={submitting}
-            className="w-full rounded-xl border border-line bg-surface-soft px-3.5 py-2.5 text-xs sm:text-sm text-ink placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-coral/40 resize-none"
+            className="w-full rounded-xl border border-white/[0.08] bg-[#140B18] px-3.5 py-2.5 text-xs sm:text-sm text-[#F6EEF3] placeholder:text-[#B9A9BF]/60 focus:outline-none focus:ring-2 focus:ring-coral/40 resize-none"
           />
-          <div className="mt-1 flex items-center justify-between text-[11px] text-text-3">
-            <span>{errorMsg ? <span className="text-red-500 font-semibold">{errorMsg}</span> : "실제 열람 구매자 후기로 등록돼요"}</span>
+          <div className="mt-1 flex items-center justify-between text-[11px] text-[#B9A9BF]">
+            <span>{errorMsg ? <span className="text-red-400 font-semibold">{errorMsg}</span> : "실제 열람 구매자 후기로 등록돼요"}</span>
             <span>{text.length}/200</span>
           </div>
         </div>

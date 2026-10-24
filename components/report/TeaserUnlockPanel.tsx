@@ -7,15 +7,6 @@ import { useSeenOnce } from "@/lib/useSeenOnce";
 import { priceLabel, listPrice, formatWon, discountBadge, type CatalogItem } from "@/lib/catalog";
 import { getTeaserMaskedLines } from "@/lib/teaserBlurCopy";
 
-/**
- * 맛보기(티저) 화면의 결제 안내 — 본문 아래 안내 카드 + 화면 하단 고정 바.
- *
- * 이전에는 맨 아래 버튼 하나("전체 리포트 열기 (6,900원 · 회원 첫 결제 4,900원)")뿐이라
- * 무엇이 열리는지·얼마인지 한눈에 안 보였다. 여기서 열리는 분량·혜택·가격을 나눠 보여 준다.
- *
- * GA4: click_unlock_teaser { productId, source: "inline" | "sticky" | "locked_card" }
- *   퍼널 = teaser_created → click_unlock_teaser → checkout_open → purchase_confirmed
- */
 export type TeaserUnlockSource = "inline" | "sticky" | "locked_card" | "limit";
 export type TeaserUnlockTarget = "panel" | "checkout";
 
@@ -76,7 +67,6 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
       if (el) setShowSticky(el.getBoundingClientRect().top > window.innerHeight - 80);
     };
     update();
-    // 레이아웃에 따라 창이 아닌 안쪽 영역이 스크롤되므로 capture 로 모든 스크롤을 받는다
     document.addEventListener("scroll", update, { capture: true, passive: true });
     window.addEventListener("resize", update);
     return () => {
@@ -85,7 +75,6 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
     };
   }, []);
 
-  // view_paywall = 결제 안내 카드가 실제로 화면에 보인 순간(렌더·클릭이 아니라)
   useSeenOnce(cardRef, () => trackEvent("view_paywall", { productId: product.id, tier: product.tier, source: "teaser_card" }));
 
   const handle = (source: TeaserUnlockSource) => {
@@ -99,21 +88,21 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
         id="teaser-unlock"
         ref={cardRef}
         tabIndex={-1}
-        className="rounded-3xl border border-coral/30 bg-white p-5 text-left shadow-[0_4px_16px_rgba(255,92,119,0.12)] outline-none transition-shadow"
+        className="rounded-3xl border border-[#FF5C77]/35 bg-[#22142A] p-5 text-left shadow-[0_8px_28px_rgba(0,0,0,0.35)] outline-none transition-shadow"
       >
-        <p className="text-xs font-bold text-coral">여기까지가 무료 미리보기예요</p>
-        <h3 className="mt-1 text-lg font-black leading-snug text-ink">
+        <p className="text-xs font-bold text-[#FF8AA1]">여기까지가 무료 미리보기예요</p>
+        <h3 className="mt-1 text-lg font-black leading-snug text-[#F6EEF3]">
           {lockedCount > 0 ? `남은 ${lockedCount}개 이야기가 준비돼 있어요` : "전체 리포트가 준비돼 있어요"}
         </h3>
 
         {/* P-016-2 §3: 핵심 단어를 ●●●로 가린 문장 2줄 (원문 단어는 브라우저로 내려보내지 않음) */}
-        <div className="mt-3 rounded-2xl border border-coral/25 bg-coral-soft/60 p-3.5 space-y-2">
-          <p className="text-[11px] font-extrabold text-coral-deep flex items-center gap-1">
+        <div className="mt-3 rounded-2xl border border-[#FF5C77]/25 bg-[#140B18] p-3.5 space-y-2">
+          <p className="text-[11px] font-extrabold text-[#FF8AA1] flex items-center gap-1">
             <Lock className="h-3 w-3 shrink-0" />
             잠긴 파트 핵심 문장 미리보기
           </p>
           {maskedLines.map((line, idx) => (
-            <p key={idx} className="text-xs sm:text-sm font-bold leading-snug text-ink">
+            <p key={idx} className="text-xs sm:text-sm font-bold leading-snug text-[#F6EEF3]">
               &ldquo;{line}&rdquo;
             </p>
           ))}
@@ -122,23 +111,23 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
         {lockedCount > 0 && (
           <ul className="mt-3 flex flex-col gap-1.5">
             {lockedTitles.map((t) => (
-              <li key={t} className="flex items-center gap-2 text-sm text-text-2">
-                <Lock className="h-3.5 w-3.5 shrink-0 text-coral" />
+              <li key={t} className="flex items-center gap-2 text-sm text-[#B9A9BF]">
+                <Lock className="h-3.5 w-3.5 shrink-0 text-[#FF5C77]" />
                 <span className="truncate">{t}</span>
               </li>
             ))}
           </ul>
         )}
 
-        <ul className="mt-4 flex flex-col gap-1 border-t border-line pt-3 text-xs text-text-2">
+        <ul className="mt-4 flex flex-col gap-1 border-t border-white/[0.08] pt-3 text-xs text-[#B9A9BF]">
           <li className="flex items-center gap-1.5">
-            <Check className="h-3.5 w-3.5 text-coral" /> 결제하면 바로 전체 열람
+            <Check className="h-3.5 w-3.5 text-[#FF5C77]" /> 결제하면 바로 전체 열람
           </li>
           <li className="flex items-center gap-1.5">
-            <Check className="h-3.5 w-3.5 text-coral" /> {product.accessDays}일 동안 언제든 다시 보기
+            <Check className="h-3.5 w-3.5 text-[#FF5C77]" /> {product.accessDays}일 동안 언제든 다시 보기
           </li>
           <li className="flex items-center gap-1.5">
-            <Check className="h-3.5 w-3.5 text-coral" /> 한 번 결제로 끝, 추가 요금 없음
+            <Check className="h-3.5 w-3.5 text-[#FF5C77]" /> 한 번 결제로 끝, 추가 요금 없음
           </li>
         </ul>
 
@@ -146,18 +135,18 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
           <div>
             {strike && (
               <span className="mb-0.5 flex items-center gap-1.5">
-                <span className="text-xs font-bold text-text-3 line-through">{formatWon(strike)}</span>
-                <span className="rounded bg-coral-soft px-1.5 py-0.5 text-[10px] font-extrabold text-coral-deep">{discountBadge(product)}</span>
+                <span className="text-xs font-bold text-[#8E7D96] line-through">{formatWon(strike)}</span>
+                <span className="rounded bg-[#FF5C77]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#FF8AA1]">{discountBadge(product)}</span>
               </span>
             )}
-            <span className="block text-2xl font-black text-ink">{price}</span>
+            <span className="block text-2xl font-black text-[#F6EEF3]">{price}</span>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => handle("inline")}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-coral px-6 py-4 text-base font-bold text-white shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all hover:bg-coral active:scale-[0.97]"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-[#FF5C77] px-6 py-4 text-base font-bold text-white shadow-[0_4px_16px_rgba(255,92,119,0.25)] transition-all hover:opacity-95 active:scale-[0.97]"
         >
           전체 리포트 바로 열기
           <ArrowRight className="h-4 w-4" />
@@ -167,20 +156,20 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
       {/* 하단 고정 바 — 안내 카드까지 내려가기 전에도 바로 결제 */}
       <div
         aria-hidden={!showSticky}
-        className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ${showSticky ? "translate-y-0" : "pointer-events-none translate-y-full"} border-t border-[#FFD9E0] bg-white/95 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md`}
+        className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ${showSticky ? "translate-y-0" : "pointer-events-none translate-y-full"} border-t border-white/[0.08] bg-[#140B18]/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.45)] backdrop-blur-md`}
       >
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col text-left">
-            <span className="flex items-center gap-1 truncate text-[11px] font-bold text-caption">
-              <Lock className="h-3 w-3 shrink-0 text-coral" />
+            <span className="flex items-center gap-1 truncate text-[11px] font-bold text-[#B9A9BF]">
+              <Lock className="h-3 w-3 shrink-0 text-[#FF5C77]" />
               {product.name} 전체 보기
             </span>
-            <span className="mt-0.5 text-base font-black text-coral">{price}</span>
+            <span className="mt-0.5 text-base font-black text-[#FF5C77]">{price}</span>
           </div>
           <button
             type="button"
             onClick={() => handle("sticky")}
-            className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-coral px-5 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,92,119,0.3)] transition-all hover:bg-coral active:scale-[0.96]"
+            className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-[#FF5C77] px-5 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,92,119,0.3)] transition-all hover:opacity-95 active:scale-[0.96]"
           >
             지금 열기
             <ArrowRight className="h-3.5 w-3.5" />

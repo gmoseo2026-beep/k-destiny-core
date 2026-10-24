@@ -1,3 +1,44 @@
+# REVIEW_HANDOFF — P-017 ("콩닥 나이트" 전체 디자인 통일 — 로그인 전·후 전체)
+
+> **작성 일시**: 2026-10-24
+> **범위**: `docs/uiux/decisions/P-017.md` 전체 (표지 15장 신규 생성·최적화 → 콩닥 나이트 색 토큰 → 공통 카드 3종·리퀴드 글래스 독·비로그인 첫 방문 시트 → 홈 4섹션 통일 → 상품 상세·입력·무료 결과·결제 창·완료·보관함·리포트·로그인 전 화면 다크 톤 통일)
+> **검증 상태**: `tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors · `vitest` 73파일 544개 통과(1 skip) · `npm run build` exit 0
+> **DB 변경 (SQL)**: 없음
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `public/covers/cover_{compat_basic,marriage,conflict,cheating,secret_love,charm,career,wealth,health,annual_2026,spicy_annual,free_personality,premium_2027_daeun,premium_naming,premium_date_pick}.webp` (15장 신규) | **[P-017 §2]** `SNS/광고영상_2026-10/참조이미지/doogeun_cat_canon.png` 참조 + P-017 표지 프롬프트로 15장 모두 생성 후 3:4(`900×1200`), 23KB~69KB(`<= 300KB`) `.webp`로 저장. 글자·숫자·로고 없음, 하단 1/3 타이틀 오버레이용 어두운 여백 확보 |
+| `lib/catalog.ts` | **[P-017 §2]** `CatalogItem.cover` 필드, 단품·프리미엄 19개 전체의 표지 경로 반환 헬퍼 `getProductCover()`, 세트 4종에 포함된 단품 표지 2~3장 배열을 반환하는 `getSetCoverStack()` 추가 |
+| `app/globals.css` & `app/[locale]/layout.tsx` | **[P-017 §1]** 콩닥 나이트 단일 팔레트(`--kd-bg: #140B18`, `--kd-card: #22142A`, `--kd-line: rgba(255,255,255,0.08)`, `--kd-text: #F6EEF3`, `--kd-sub: #B9A9BF`, `--coral: #FF5C77`, `--gold: #FFC24B`) 및 `<meta name="theme-color" content="#140B18" />` 적용, 레거시 밝은 유틸리티를 다크 토큰으로 오버라이드 |
+| `components/cards/KongdakCards.tsx` (신규) | **[P-017 §3]** 사이트 전체가 공유하는 3가지 카드 컴포넌트(`PosterCard` 3:4 포스터 카드, `ListRowCard` 정사각 표지 썸네일 행 카드, `SetStackCard` 단품 표지 2~3장 겹침 세트 카드) 및 이미지 로드 실패 시 두근이 마스코트 폴백 구현 (`select_item` 이벤트 유지) |
+| `components/MobileBottomTabBar.tsx` | **[P-017 §4]** 진짜 반투명 리퀴드 글래스 하단 독(`bg-[#180E20]/60 backdrop-blur-xl border border-white/20 rounded-full`) 및 5탭(`홈` · `궁합` · `신년·운세` · `전체(/products)` · `보관함(/me)`) 적용, 활성 탭 알약(`bg-white/15 border-white/25`), `dock_tab_click` 이벤트 발사. 하단 고정 CTA 바가 있는 상세/입력/결과 경로에서는 숨김 유지 |
+| `components/Navbar.tsx` | **[P-017 §5]** 상단 바를 `bg-[#140B18]/80 backdrop-blur-md`로 통일하고, 햄버거 서랍에서 하단 독과 겹치는 상품 나열을 제거하여 계정·지원 메뉴(`내 쿠폰함`, `이용 안내`, `고객센터(카카오 채널)`, `약관·개인정보`, `로그인/로그아웃`)만 깔끔하게 구성 |
+| `lib/welcome.ts` (신규), `components/WelcomeLoginSheet.tsx` (신규), `app/api/auth/[...nextauth]/route.ts` | **[P-017 §6]** 비로그인 첫 방문 시 1회 하단 시트(두근이 + 사실 기반 3줄 혜택 + 노란 카카오 3초 시작 버튼 `#FEE500` + `24시간 동안 안 보기` / `먼저 둘러볼게요`) 노출(`welcome_sheet_view`, `welcome_sheet_login_click`, `welcome_sheet_dismiss`). `WELCOME_COUPON_AMOUNT = 0` 기본값 유지 및 `> 0` 변경 시 자동 가입 쿠폰 발급 훅 연결 |
+| `app/[locale]/page.tsx`, `lib/home/explore.ts`, `components/home/{HomeHeroCompact,HomeRankingView,HomeExplore,TrustBanner}.tsx` | **[P-017 §7]** 로그인 전·후 모두 동일한 4섹션 다크 홈으로 통합: ① 상단 카테고리 칩 6개 + 폭 86% 3:4 포스터 슬라이드 4장 ② 지금 많이 보는 사주 TOP 5(`ListRowCard`, 집계 0건 시 섹션 자동 숨김) ③ 고민별 2열 3:4 `PosterCard` 그리드 + `SetStackCard` 모음 ④ 실제 구매자 후기 피드(`ProductReviewsSection` + 해당 상품 `ListRowCard`, 후기 0개 시 숨김). 로그인 회원은 맨 위에 1줄 요약 바(`"OO님 · 쿠폰 N장 · 이어보기 →"`)만 추가 |
+| `app/[locale]/products/page.tsx` (신규) & `components/product/ProductsExplorerClient.tsx` (신규) | **[P-017 §4·§7]** 하단 독 `"전체"` 탭(`/products`) 전용 전체 상품 탐색 페이지(카테고리 칩 필터 + 2열 `PosterCard` + `SetStackCard`) 추가 |
+| `lib/reviews.ts` & `components/product/ProductReviewsSection.tsx` | **[P-017 §7 ④]** 홈 전체 후기 피드 조회용 `getRecentPublicReviews(limit)` 추가 및 후기 카드 아래에 해당 상품의 `ListRowCard` 연결(후기 0개면 `null` 반환) |
+| `components/product/{StandardProductDetail,SetUpsell}.tsx` & `components/premium/PremiumProductDetail.tsx` | **[P-017 §8]** 상품 상세 상단을 3D 아이콘 박스에서 3:4 표지 포스터 헤더(세트 상품은 단품 표지 겹침 헤더)로 교체하고, 샘플 미리보기·세트 비교(`SetStackCard`)·하단 고정 CTA 바를 콩닥 나이트 다크 토큰으로 통일 |
+| `components/GuestCheckoutModal.tsx` & `app/[locale]/pay/complete/page.tsx` | **[P-017 §8]** 결제 모달 상단에 주문 상품의 정사각 표지 썸네일(`getProductCover`) 표시, 쿠폰 자동 적용 박스·결제 수단 버튼·중단 복귀 배너·결제 완료 페이지를 다크 톤으로 통일 |
+| `components/ui/{Card,ReportSection,Button,ScoreGauge,Tag}.tsx`, `components/report/*`, `components/{MeClient,CompatNewClient,CompatResultClient,FortuneNewClient,FortuneLoading,GuestKeepBanner,OwnedReportNotice}.tsx`, `components/forms/BirthFields.tsx`, `components/member/*`, `app/[locale]/{me,login,compat/new,compat/[id],fortune/new,fortune/annual,report/[reportId],report/new}/**` | **[P-017 §1·§8]** 입력·미리보기·무료 궁합 결과·리포트 열람·보관함·로그인 화면의 밝은 크림/흰색 카드를 모두 콩닥 나이트(`#140B18` / `#22142A` / `#F6EEF3` / `#B9A9BF`)로 통일하고, 유료·프리미엄 리포트 상단에 해당 상품의 3:4 표지 배너 추가 |
+| `tests/p017Design.test.ts` (신규) | **[P-017 검증]** 카탈로그 19개 단품·프리미엄 상품의 `.webp` 표지 존재 및 300KB 이하 검증, 세트 상품 `getSetCoverStack` 검증, `WELCOME_COUPON_AMOUNT === 0` 및 쿠폰 발급 로직 검증, 5탭 리퀴드 글래스 독 및 6개 홈 카테고리 칩 필터 검증 |
+
+## 2. 결정론 로직 요약
+- 사주·궁합 엔진(`lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`) 및 `lib/compatPercentile.ts` 수정 없음.
+- `getProductCover` 및 `getSetCoverStack`은 카탈로그 ID에 매핑된 정적 `.webp` 표지 경로만 결정론적으로 반환함.
+- `WELCOME_COUPON_AMOUNT`는 `0`으로 고정되어 있어 현재 가입 쿠폰을 발급하지 않으며, 추후 양수(예: `1000`)로 변경할 때만 `WELCOME-${userId}` 코드로 1회 발급됨.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- 결제·가격·쿠폰 할인 계산(`app/api/payments/*`) 및 주문 로직 변경 없음.
+- `compat_created` · `teaser_created` 이벤트 발사 시점 및 조건 변경 없음.
+- 신규 GA4 이벤트: `dock_tab_click`, `welcome_sheet_view`, `welcome_sheet_login_click`, `welcome_sheet_dismiss`.
+
+## 4. 스스로 의심 지점
+- `public/covers/*.webp` 19장 모두 `900×1200`(3:4), 23KB~92KB로 300KB 이하이며, 혹시라도 네트워크 오류로 표지 이미지 로드가 실패할 경우에는 `KongdakCards.tsx`와 `HomeHeroCompact.tsx`의 `onError` 폴백이 어두운 플럼 그라디언트 배경 위 두근이 마스코트 + 카테고리 라벨을 보여주어 레이아웃이 깨지지 않습니다.
+
+---
+
 # REVIEW_HANDOFF — P-016-5 (홈·리포트 디자인 개편)
 
 > **작성 일시**: 2026-10-24

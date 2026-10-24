@@ -33,7 +33,8 @@ export interface CatalogItem {
   passCovered?: boolean;    // 레거시 기간권 보유자 열람 허용 (compat_basic, annual_*)
 
   // T2 신규 필드
-  icon3d: string;           // 3D 아이콘 웹 경로 (예: "/icons3d/wealth.webp")
+  icon3d: string;           // 3D 아이콘 웹 경로 (예: "/icons3d/wealth.webp") — P-017부터 화면 표시는 cover 를 사용
+  cover?: string;           // 3:4 표지 포스터 웹 경로 (예: "/covers/cover_wealth.webp")
   gridLabel: string;        // 4칸 격자용 짧은 이름 (6자 안팎)
   hook: string;             // 한 줄 후킹 문구 (두근이 말투, 해요체)
   recommendFor: string[];   // 이런 분께 추천해요 (정확히 3개)
@@ -975,4 +976,55 @@ export function getSetsByTarget(target: ProductTarget): CatalogItem[] {
 
 export function getAllProducts(): CatalogItem[] {
   return CATALOG.filter((p) => p.tier === "standard" && !p.isHidden);
+}
+
+const SINGLE_COVER_PATHS: Readonly<Record<string, string>> = {
+  free_personality: "/covers/cover_free_personality.webp",
+  annual_2026: "/covers/cover_annual_2026.webp",
+  annual_2027: "/covers/cover_2027.webp",
+  wealth: "/covers/cover_wealth.webp",
+  love_single: "/covers/cover_love_single.webp",
+  career: "/covers/cover_career.webp",
+  charm: "/covers/cover_charm.webp",
+  health: "/covers/cover_health.webp",
+  spicy_annual: "/covers/cover_spicy_annual.webp",
+  compat_basic: "/covers/cover_compat_basic.webp",
+  reunion: "/covers/cover_reunion.webp",
+  inner_mind: "/covers/cover_inner_mind.webp",
+  cheating: "/covers/cover_cheating.webp",
+  marriage: "/covers/cover_marriage.webp",
+  conflict: "/covers/cover_conflict.webp",
+  secret_love: "/covers/cover_secret_love.webp",
+  premium_2027_daeun: "/covers/cover_premium_2027_daeun.webp",
+  premium_naming: "/covers/cover_premium_naming.webp",
+  premium_date_pick: "/covers/cover_premium_date_pick.webp",
+};
+
+/** 단품·프리미엄·세트의 대표 3:4 표지 경로를 돌려준다 */
+export function getProductCover(productOrId: CatalogItem | string | undefined): string {
+  if (!productOrId) return "/covers/cover_compat_basic.webp";
+  const item = typeof productOrId === "string" ? getProduct(productOrId) : productOrId;
+  const id = typeof productOrId === "string" ? productOrId : productOrId.id;
+  if (id in SINGLE_COVER_PATHS) return SINGLE_COVER_PATHS[id];
+  if (item?.cover) return item.cover;
+  if (item?.type === "SET" && item.items && item.items.length > 0) {
+    for (const childId of item.items) {
+      if (childId in SINGLE_COVER_PATHS) return SINGLE_COVER_PATHS[childId];
+    }
+  }
+  return "/covers/cover_compat_basic.webp";
+}
+
+/** 세트 카드에 겹쳐 보여 줄 구성 상품 표지 2~3장 */
+export function getSetCoverStack(product: CatalogItem): string[] {
+  if (product.type !== "SET" || !product.items || product.items.length === 0) {
+    return [getProductCover(product)];
+  }
+  return product.items.slice(0, 3).map((id) => getProductCover(id));
+}
+
+for (const item of CATALOG) {
+  if (!item.cover) {
+    item.cover = getProductCover(item);
+  }
 }

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { getProductCover } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 
 interface ResumeEntry {
@@ -38,8 +39,8 @@ export default function ResumeCard({ locale, source, className = "" }: { locale:
   if (items.length === 0) return null;
 
   return (
-    <section className={`w-full rounded-2xl border border-coral/30 bg-coral-soft p-4 ${className}`} aria-label="지난번에 보던 것">
-      <h2 className="text-sm font-extrabold text-coral-deep">지난번에 보던 것, 이어서 볼까요?</h2>
+    <section className={`w-full rounded-2xl border border-[#FF5C77]/30 bg-[#22142A] p-4 ${className}`} aria-label="지난번에 보던 것">
+      <h2 className="text-sm font-extrabold text-[#F6EEF3]">지난번에 보던 것, 이어서 볼까요?</h2>
       <div className="mt-2.5 flex flex-col gap-2">
         {items.map((it) => (
           <Link
@@ -47,14 +48,16 @@ export default function ResumeCard({ locale, source, className = "" }: { locale:
             href={it.href}
             prefetch={false}
             onClick={() => trackEvent("resume_card_click", { productId: it.catalogId, kind: it.kind, source })}
-            className="flex items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-xs transition-all active:scale-[0.98]"
+            className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-[#140B18] p-3 text-left transition-all active:scale-[0.98]"
           >
-            <Image src={it.icon3d} alt="" width={40} height={40} className="shrink-0 object-contain" />
+            <div className="relative h-[56px] w-[42px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#22142A]">
+              <Image src={getProductCover(it.catalogId)} alt="" fill sizes="42px" className="object-cover" />
+            </div>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-extrabold text-ink">{it.name}</span>
-              <span className="block truncate text-xs text-text-2">{it.hook}</span>
+              <span className="block text-sm font-extrabold text-[#F6EEF3]">{it.name}</span>
+              <span className="block truncate text-xs text-[#B9A9BF]">{it.hook}</span>
             </span>
-            <span className="flex shrink-0 items-center gap-0.5 text-xs font-bold text-coral-deep">
+            <span className="flex shrink-0 items-center gap-0.5 text-xs font-bold text-[#FF5C77]">
               이어보기
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />
             </span>

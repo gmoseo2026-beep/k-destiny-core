@@ -1,56 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFFFFF;
-  --background-alt: #FAFAFA;
-  --foreground: #1A1A1A;
-  --ink: #1A1A1A;
-  --text-2: #4A4550;
-  --caption: #6B6470;
-  --line: #EDE8E6;
-  --surface: #F4F1EF;
-  --surface-soft: #FAF7F6;
-  --coral: #E0245A;
+  /* P-017 콩닥 나이트 단일 다크 토큰 */
+  --kd-bg: #140B18;
+  --kd-card: #22142A;
+  --kd-line: rgba(255, 255, 255, 0.08);
+  --kd-text: #F6EEF3;
+  --kd-sub: #B9A9BF;
+
+  --background: #140B18;
+  --background-alt: #1A0F20;
+  --foreground: #F6EEF3;
+  --ink: #F6EEF3;
+  --text-2: #D8CBE0;
+  --caption: #B9A9BF;
+  --line: rgba(255, 255, 255, 0.08);
+  --surface: #22142A;
+  --surface-soft: #1B1022;
+  --coral: #FF5C77;
   --coral-light: #FF8AA1;
-  --coral-soft: #FFE8EE;
-  --coral-deep: #B01D48;
+  --coral-soft: rgba(255, 92, 119, 0.14);
+  --coral-deep: #E0245A;
   --plum: #6A2C70;
-  --plum-deep: #3A1F33;
+  --plum-deep: #22142A;
   --gold: #FFC24B;
   --gold-soft: #F2D08F;
-  --cream: #FFF6F1;
-  --hero-from: #FFE3EA;
-  --hero-to: #FFC7D4;
+  --cream: #140B18;
+  --hero-from: #140B18;
+  --hero-to: #22142A;
   
   --cat-fortune: #8B5CF6;
-  --cat-compat: #E0245A;
-  --cat-wealth: #F59E0B;
-  --cat-reunion: #EF4444;
-  --cat-career: #3B82F6;
+  --cat-compat: #FF5C77;
+  --cat-wealth: #FFC24B;
+  --cat-reunion: #FF5C77;
+  --cat-career: #60A5FA;
 
   /* Category Banner Gradients (white title text contrast >= 3:1) */
-  --cat-fortune-from: #9B7BF7;
-  --cat-fortune-to: #5B34D6;
-  --cat-compat-from: #FF8FA8;
-  --cat-compat-to: #E0245A;
-  --cat-wealth-from: #F7C85A;
-  --cat-wealth-to: #C98A0B;
-  --cat-reunion-from: #FF9A8B;
-  --cat-reunion-to: #C9362F;
-  --cat-career-from: #7FA9FF;
-  --cat-career-to: #2A5FD0;
-  --cat-premium-from: #5B3354;
-  --cat-premium-to: #2A1526;
+  --cat-fortune-from: #22142A;
+  --cat-fortune-to: #140B18;
+  --cat-compat-from: #22142A;
+  --cat-compat-to: #140B18;
+  --cat-wealth-from: #22142A;
+  --cat-wealth-to: #140B18;
+  --cat-reunion-from: #22142A;
+  --cat-reunion-to: #140B18;
+  --cat-career-from: #22142A;
+  --cat-career-to: #140B18;
+  --cat-premium-from: #22142A;
+  --cat-premium-to: #140B18;
 
-  /* Premium tokens */
-  --premium-bg: #14101A;
-  --premium-surface: #1E1726;
-  --premium-line: #3A2E45;
-  --premium-gold: #D9B26A;
+  /* Premium tokens (aligned with Kongdak Night) */
+  --premium-bg: #140B18;
+  --premium-surface: #22142A;
+  --premium-line: rgba(255, 255, 255, 0.12);
+  --premium-gold: #FFC24B;
   --premium-gold-soft: #F3E3BF;
-  --premium-text: #F6F1EA;
-  --premium-muted: #B9AEC4;
-  --cat-premium: #D9B26A;
+  --premium-text: #F6EEF3;
+  --premium-muted: #B9A9BF;
+  --cat-premium: #FFC24B;
 
   /* Global motion tokens: 0.15s cubic-bezier(0.4, 0, 0.2, 1) */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
@@ -58,6 +65,11 @@
 }
 
 @theme inline {
+  --color-kd-bg: var(--kd-bg);
+  --color-kd-card: var(--kd-card);
+  --color-kd-line: var(--kd-line);
+  --color-kd-text: var(--kd-text);
+  --color-kd-sub: var(--kd-sub);
   --color-background: var(--background);
   --color-background-alt: var(--background-alt);
   --color-foreground: var(--foreground);
@@ -223,8 +235,8 @@ html:lang(ja) body {
 
 /* Select option styling */
 select option {
-  background: #FFF6F1;
-  color: #2B2430;
+  background: #22142A;
+  color: #F6EEF3;
 }
 
 /* Global Button & Interactive Element 0.15s click physics */

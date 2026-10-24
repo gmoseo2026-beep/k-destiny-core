@@ -73,13 +73,13 @@ export default function DailyFortuneCard({ isPassActive }: { isPassActive: boole
   }
 
   return (
-    <section className="mb-4 rounded-2xl border-[1.5px] border-coral/50 bg-white p-4" aria-label="오늘의 운세">
+    <section className="mb-4 rounded-2xl border border-[#FF5C77]/35 bg-[#22142A] p-4" aria-label="오늘의 운세">
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
+        <span className="flex items-center gap-1.5 text-xs font-extrabold text-[#FF8AA1]">
           <Sun className="w-3.5 h-3.5" aria-hidden />
           오늘의 운세 · {todayLabel()}
         </span>
-        <span className="rounded-full bg-coral-soft px-2 py-0.5 text-[10px] font-bold text-coral-deep">매일 새로</span>
+        <span className="rounded-full bg-[#FF5C77]/15 px-2 py-0.5 text-[10px] font-bold text-[#FF8AA1]">매일 새로</span>
       </div>
 
       {state.kind === "loading" ? (

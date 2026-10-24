@@ -52,12 +52,12 @@ export default function OwnedReportNotice({ locale, catalogId, source, className
 
   const shown = orders.slice(0, MAX_SHOWN);
   return (
-    <div className={`w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left ${className}`}>
-      <p className="flex items-center gap-1.5 text-sm font-extrabold text-emerald-800">
+    <div className={`w-full rounded-2xl border border-emerald-400/25 bg-[#22142A] p-4 text-left ${className}`}>
+      <p className="flex items-center gap-1.5 text-sm font-extrabold text-emerald-300">
         <CheckCircle2 className="h-4 w-4" />
         {catalogId ? "이미 결제한 리포트예요" : "이 기기에서 결제한 리포트"}
       </p>
-      <p className="mt-1 text-xs leading-relaxed text-emerald-900/80">
+      <p className="mt-1 text-xs leading-relaxed text-[#B9A9BF]">
         {catalogId ? "다시 결제하지 않아도 돼요. 아래에서 바로 열 수 있어요." : "결제한 리포트를 다시 열 수 있어요."}
       </p>
       <div className="mt-3 flex flex-col gap-2">
@@ -71,10 +71,10 @@ export default function OwnedReportNotice({ locale, catalogId, source, className
               key={`${o.orderId}:${o.compatId ?? ""}`}
               href={deviceOrderHref(locale, o, catalogId ?? o.catalogId)}
               onClick={() => trackEvent("owned_report_open", { productId: o.catalogId, source })}
-              className="flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink shadow-2xs transition-all active:scale-[0.97]"
+              className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-[#140B18] px-4 py-3 text-sm font-bold text-[#F6EEF3] transition-all active:scale-[0.97]"
             >
               <span className="truncate">{label} 다시 보기</span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-emerald-700" />
+              <ArrowRight className="h-4 w-4 shrink-0 text-emerald-300" />
             </Link>
           );
         })}

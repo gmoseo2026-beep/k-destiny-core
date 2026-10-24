@@ -10,7 +10,7 @@ import { Lock } from "lucide-react";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
+import { getProduct, getProductCover, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
@@ -350,22 +350,22 @@ export default function FortuneNewClient({
             signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/fortune/new?productId=${currentProductId}&auto=1`)}`}
           />
         ) : resultData.isAnnual && resultData.annualData ? (
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-plum/10 text-left">
-            <div className="text-4xl font-black text-coral text-center mb-4">
+          <div className="bg-[#22142A] p-6 rounded-3xl border border-white/[0.08] text-left">
+            <div className="text-4xl font-black text-[#FF5C77] text-center mb-4">
               {resultData.annualData.yearScore}점
             </div>
-            <h3 className="font-bold text-lg mb-2 text-ink text-center">
+            <h3 className="font-bold text-lg mb-2 text-[#F6EEF3] text-center">
               &ldquo;{resultData.annualData.headline}&rdquo;
             </h3>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            <p className="text-sm text-[#B9A9BF] mb-4 leading-relaxed">
               {resultData.annualData.summary}
             </p>
 
-            <div className="bg-cream p-4 rounded-2xl border border-[#FFD9E0]/50 mt-4">
-              <h4 className="font-bold text-coral text-sm mb-2">무료 맛보기</h4>
-              <p className="text-sm leading-relaxed">{resultData.annualData.freeSection?.text}</p>
+            <div className="bg-[#140B18] p-4 rounded-2xl border border-white/[0.08] mt-4">
+              <h4 className="font-bold text-[#FF8AA1] text-sm mb-2">무료 맛보기</h4>
+              <p className="text-sm leading-relaxed text-[#F6EEF3]">{resultData.annualData.freeSection?.text}</p>
               {resultData.annualData.freeSection?.clipped && (
-                <p aria-hidden className="mt-1 select-none text-sm leading-relaxed blur-[5px]">
+                <p aria-hidden className="mt-1 select-none text-sm leading-relaxed blur-[5px] text-[#B9A9BF]">
                   이 뒤에는 그 흐름이 몇 월에 가장 크게 움직이는지, 그때 무엇을 잡고 무엇을 흘려보내면 되는지가 이어져요.
                 </p>
               )}
@@ -443,7 +443,7 @@ export default function FortuneNewClient({
                 <Link
                   key={rec.id}
                   href={`/${locale}/products/${rec.id}`}
-                  className="bg-white p-4 rounded-2xl border border-plum/10 shadow-xs hover:border-coral transition-colors flex flex-col justify-between"
+                  className="bg-[#22142A] p-4 rounded-2xl border border-white/[0.08] hover:border-[#FF5C77]/50 transition-colors flex flex-col justify-between"
                 >
                   <div>
                     <span className="text-xs font-bold text-ink block mb-1">{rec.name}</span>
@@ -495,20 +495,20 @@ export default function FortuneNewClient({
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-6 pb-12 mx-auto">
       <OwnedReportNotice locale={locale} catalogId={currentProductId} source="fortune_new" />
-      {/* 3D Product Icon 72px & Title */}
+      {/* 3:4 Product Cover & Title */}
       {product && (
         <div className="flex flex-col items-center justify-center -mb-2">
-          <div className="w-[72px] h-[72px] relative mb-2">
+          <div className="relative mb-2.5 h-[108px] w-[81px] overflow-hidden rounded-2xl border border-white/10 bg-[#22142A] shadow-md">
             <Image
-              src={product.icon3d}
+              src={getProductCover(product)}
               alt=""
-              width={72}
-              height={72}
+              fill
+              sizes="81px"
               priority
-              className="object-contain drop-shadow-sm"
+              className="object-cover"
             />
           </div>
-          <h2 className="text-base font-extrabold text-ink">{product.name}</h2>
+          <h2 className="text-base font-extrabold text-[#F6EEF3]">{product.name}</h2>
         </div>
       )}
 

@@ -18,19 +18,21 @@ interface BirthFieldsProps {
   onChange: (patch: Partial<BirthValues>) => void;
   disabled?: boolean;
   showName?: boolean;
-  /** 놓이는 화면의 바탕. 프리미엄(어두운 바탕) 화면은 "dark" — 밝은 칸을 그대로 쓰면 글씨가 안 보인다(2026-10-15). */
+  /** 놓이는 화면의 바탕. P-017부터 전 화면 콩닥 나이트 다크 테마를 사용한다. */
   tone?: "light" | "dark";
 }
 
 const TONE = {
   light: {
-    label: "block text-xs font-semibold text-text-2 mb-1",
-    field: "w-full border border-line rounded-xl p-3 text-sm text-ink placeholder:text-text-3 focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral",
-    star: "text-coral",
+    label: "block text-xs font-semibold text-[#B9A9BF] mb-1",
+    field:
+      "w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] bg-[#140B18] [color-scheme:dark] focus:outline-none focus:border-[#FF5C77] disabled:opacity-50 focus-visible:ring-2 ring-[#FF5C77]",
+    star: "text-[#FF5C77]",
   },
   dark: {
     label: "block text-xs font-semibold text-[#D8CEE0] mb-1",
-    field: "w-full border border-[#4A3D56] rounded-xl p-3 text-sm text-[#F6F1EA] placeholder:text-[#9A8FA6] bg-[#1E1726] [color-scheme:dark] focus:outline-none focus:border-[#D9B26A] disabled:opacity-50 focus-visible:ring-2 ring-[#D9B26A]",
+    field:
+      "w-full border border-[#4A3D56] rounded-xl p-3 text-sm text-[#F6F1EA] placeholder:text-[#9A8FA6] bg-[#140B18] [color-scheme:dark] focus:outline-none focus:border-[#D9B26A] disabled:opacity-50 focus-visible:ring-2 ring-[#D9B26A]",
     star: "text-[#D9B26A]",
   },
 } as const;
@@ -83,7 +85,7 @@ export function parseBirthInput(input: {
   }
 
   return {
-    name: input.name === "나" ? "" : (input.name || ""),
+    name: input.name === "나" ? "" : input.name || "",
     year: y,
     month: m ? String(parseInt(m, 10)) : "",
     day: d ? String(parseInt(d, 10)) : "",
@@ -112,9 +114,7 @@ export default function BirthFields({
     <div className="flex flex-col gap-3.5 w-full">
       {showName && (
         <div>
-          <label className={t.label}>
-            이름 또는 닉네임 (선택)
-          </label>
+          <label className={t.label}>이름 또는 닉네임 (선택)</label>
           <input
             type="text"
             value={values.name}
@@ -191,9 +191,7 @@ export default function BirthFields({
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label className={t.label}>
-              태어난 시간 (선택)
-            </label>
+            <label className={t.label}>태어난 시간 (선택)</label>
             <div className="grid grid-cols-3 gap-2">
               <select
                 value={values.ampm}

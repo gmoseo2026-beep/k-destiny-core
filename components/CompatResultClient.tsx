@@ -727,12 +727,12 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     item: card.key,
                   })
                 }
-                className="group flex flex-col items-center justify-between rounded-2xl border border-[#FFD9E0] bg-[#FFF8FA] p-3 text-center transition-all hover:border-coral hover:bg-coral-soft/60 active:scale-[0.96]"
+                className="group flex flex-col items-center justify-between rounded-2xl border border-white/[0.08] bg-[#140B18] p-3 text-center transition-all hover:border-coral hover:bg-coral-soft/60 active:scale-[0.96]"
               >
                 <span className="text-xs font-extrabold text-ink group-hover:text-coral-deep">
                   {card.label}
                 </span>
-                <span className="my-1.5 inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-sm font-black text-coral shadow-2xs border border-[#FFE4EA]">
+                <span className="my-1.5 inline-flex items-center gap-1 rounded-lg bg-[#22142A] px-2.5 py-1 text-sm font-black text-coral shadow-2xs border border-[#FF5C77]/30">
                   <Lock className="h-3 w-3 shrink-0" />
                   <span>???</span>
                 </span>
@@ -834,7 +834,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             onClick={() => {
               openCompatCheckout("compat_basic", "click_top_cta");
             }}
-            className="w-full mt-4 bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+            className="w-full mt-4 bg-[#22142A] hover:bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-9 h-9 rounded-xl bg-coral-soft flex items-center justify-center text-coral-deep shrink-0">
@@ -905,7 +905,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       item: "cut_sentence_preview",
                     })
                   }
-                  className="flex w-full items-center justify-between rounded-xl border border-[#FFD9E0] bg-[#FFF8FA] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
+                  className="flex w-full items-center justify-between rounded-xl border border-[#FF5C77]/30 bg-[#140B18] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
                 >
                   <span>이어지는 {callB}의 속마음 미리보기</span>
                   <span className="inline-flex items-center gap-1 text-coral">
@@ -953,7 +953,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     item: "cut_sentence_preview",
                   })
                 }
-                className="mt-3 flex w-full items-center justify-between rounded-xl border border-[#FFD9E0] bg-[#FFF8FA] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
+                className="mt-3 flex w-full items-center justify-between rounded-xl border border-[#FF5C77]/30 bg-[#140B18] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
               >
                 <span>이어지는 {callB}의 속마음 미리보기</span>
                 <span className="inline-flex items-center gap-1 text-coral">
@@ -990,14 +990,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </p>
           </div>
           
-          <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-plum">
-            <h3 className="text-lg font-black text-plum mb-3">우리 관계의 핵심 에너지</h3>
+          <div className="w-full bg-[#22142A] rounded-2xl p-6 shadow-md border-t-4 border-[#FF5C77]">
+            <h3 className="text-lg font-black text-[#F6EEF3] mb-3">우리 관계의 핵심 에너지</h3>
             {(() => {
               const { lead, rest } = splitLeadSentence(deepReport.coreDynamic);
               return (
                 <>
                   {lead && (
-                    <div className="mb-3 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                    <div className="mb-3 rounded-2xl border border-[#FF5C77]/30 bg-[#140B18] px-3.5 py-2.5 shadow-2xs">
                       <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
                         한 줄 결론
                       </span>
@@ -1006,34 +1006,34 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       </p>
                     </div>
                   )}
-                  <p className="text-sm text-ink leading-relaxed font-medium">{rest}</p>
+                  <p className="text-[17px] text-[#F6EEF3] leading-[1.75] font-medium">{rest}</p>
                 </>
               );
             })()}
           </div>
 
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-white rounded-2xl p-6 shadow-md border-l-4 border-[#FF8AA1]">
+            <div className="flex-1 bg-[#22142A] rounded-2xl p-6 shadow-md border-l-4 border-[#FF8AA1]">
               <h3 className="text-base font-black text-coral mb-3">시너지 강점</h3>
-              <ul className="text-sm text-ink leading-relaxed space-y-2 font-medium list-disc list-inside">
+              <ul className="text-[17px] text-[#F6EEF3] leading-[1.75] space-y-2 font-medium list-disc list-inside">
                 {deepReport.strengths.map((s, i) => <li key={i}>{s}</li>)}
               </ul>
             </div>
-            <div className="flex-1 bg-white rounded-2xl p-6 shadow-md border-l-4 border-gray-400">
-              <h3 className="text-base font-black text-gray-700 mb-3">주의할 점</h3>
-              <ul className="text-sm text-ink leading-relaxed space-y-2 font-medium list-disc list-inside">
+            <div className="flex-1 bg-[#22142A] rounded-2xl p-6 shadow-md border-l-4 border-[#8E7D96]">
+              <h3 className="text-base font-black text-[#B9A9BF] mb-3">주의할 점</h3>
+              <ul className="text-[17px] text-[#F6EEF3] leading-[1.75] space-y-2 font-medium list-disc list-inside">
                 {deepReport.cautions.map((c, i) => <li key={i}>{c}</li>)}
               </ul>
             </div>
           </div>
 
-          <div className="w-full bg-cream rounded-2xl p-6 shadow-md border border-[#FFD9E0]/50">
+          <div className="w-full bg-[#22142A] rounded-2xl p-6 shadow-md border border-white/[0.08]">
             <h3 className="text-lg font-black text-coral mb-4 text-center">갈등 포인트 & 대처법</h3>
             <div className="space-y-4">
               {deepReport.conflictsAndSolutions.map((cs, i) => (
-                <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                  <div className="font-bold text-plum text-sm mb-1">Q. {cs.trigger}</div>
-                  <div className="text-sm text-ink font-medium leading-relaxed pl-4 border-l-2 border-gold bg-cream/30 p-2 rounded-r-md">
+                <div key={i} className="bg-[#140B18] rounded-xl p-4 border border-white/[0.08]">
+                  <div className="font-bold text-[#FF8AA1] text-sm mb-1">Q. {cs.trigger}</div>
+                  <div className="text-[17px] text-[#F6EEF3] font-medium leading-[1.75] pl-4 border-l-2 border-gold bg-[#22142A] p-2 rounded-r-md">
                     {cs.solution}
                   </div>
                 </div>
@@ -1041,14 +1041,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             </div>
           </div>
 
-          <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-gold">
+          <div className="w-full bg-[#22142A] rounded-2xl p-6 shadow-md border-t-4 border-gold">
             <h3 className="text-base font-black text-ink mb-3">연애 조언 & 애정운</h3>
             {(() => {
               const { lead, rest } = splitLeadSentence(deepReport.actionableAdvice);
               return (
                 <>
                   {lead && (
-                    <div className="mb-3 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                    <div className="mb-3 rounded-2xl border border-[#FF5C77]/30 bg-[#140B18] px-3.5 py-2.5 shadow-2xs">
                       <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
                         한 줄 결론
                       </span>
@@ -1057,22 +1057,22 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                       </p>
                     </div>
                   )}
-                  <p className="text-sm text-ink leading-relaxed font-medium mb-4">{rest}</p>
+                  <p className="text-[17px] text-[#F6EEF3] leading-[1.75] font-medium mb-4">{rest}</p>
                 </>
               );
             })()}
-            <div className="bg-cream p-4 rounded-xl text-sm text-plum font-bold">
+            <div className="bg-[#140B18] border border-white/[0.08] p-4 rounded-xl text-sm text-[#FF8AA1] font-bold">
               이번 달 애정운: {deepReport.monthlyFortune}
             </div>
           </div>
 
           <div
             ref={deepLastSectionRef}
-            className="w-full bg-gradient-to-r from-[#FF8AA1]/10 to-[plum]/10 rounded-2xl p-6 shadow-sm border border-coral/20 text-center"
+            className="w-full bg-[#22142A] rounded-2xl p-6 shadow-sm border border-[#FF5C77]/25 text-center"
           >
-            <h3 className="text-base font-black text-plum mb-2">나와 찰떡인 이상형 사주 기운</h3>
+            <h3 className="text-base font-black text-[#F6EEF3] mb-2">나와 찰떡인 이상형 사주 기운</h3>
             <p className="text-sm font-bold text-coral mb-1">{deepReport.idealMatchEnergy.energyName}</p>
-            <p className="text-xs text-ink font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
+            <p className="text-xs text-[#B9A9BF] font-medium leading-relaxed">{deepReport.idealMatchEnergy.traits}</p>
           </div>
 
           {reachedDeepEnd && (
@@ -1087,18 +1087,18 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
           {/* Guest Retention & Account Binding Banner */}
           {!session?.user?.id && (
-            <div className="w-full bg-[#FFF0F3] border border-[#FFD9E0] rounded-2xl p-5 text-left shadow-sm">
+            <div className="w-full bg-[#22142A] border border-white/[0.08] rounded-2xl p-5 text-left shadow-sm">
               <div className="flex items-center gap-2 mb-2 text-xs font-bold text-coral">
                 <span>비회원 결과 보관 안내</span>
               </div>
-              <p className="text-xs text-[#6A5E72] leading-relaxed mb-4">
+              <p className="text-xs text-[#B9A9BF] leading-relaxed mb-4">
                 결제한 리포트는 지금 이 브라우저에 보관돼 있어요. 같은 브라우저에서는 링크로 다시 볼 수 있고, 기기를 바꾸거나 캐시를 지운 뒤에도 보려면 무료 회원가입으로 내 계정에 저장해 두세요.
               </p>
               <div className="flex flex-col sm:flex-row gap-2.5">
                 <button
                   type="button"
                   onClick={handleShareLink}
-                  className="flex-1 bg-white border border-[#FFD9E0] text-plum py-2.5 px-3 rounded-xl text-xs font-bold shadow-xs hover:bg-cream transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  className="flex-1 bg-[#140B18] border border-white/[0.12] text-[#F6EEF3] py-2.5 px-3 rounded-xl text-xs font-bold shadow-xs hover:bg-white/[0.06] transition-all flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   <Link2 className="w-3.5 h-3.5" />
                   <span>결과 링크 복사하기</span>
@@ -1174,7 +1174,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
                     { icon: <Heart className="w-4 h-4 text-coral" />, title: "둘을 붙잡아 두는 진짜 이유", desc: "점수 뒤에 있는 두 사람의 결, 서로에게 끌리는 지점" },
                     { icon: <Lightbulb className="w-4 h-4 text-[#C98A0B]" />, title: "이번 달, 대화하기 좋은 때와 조심할 순간", desc: "중요한 얘기를 꺼내기 좋은 흐름과 피해야 할 한 번" },
                   ].map((it) => (
-                    <div key={it.title} className="p-3 bg-white rounded-xl border border-line flex flex-col gap-1.5">
+                    <div key={it.title} className="p-3 bg-[#140B18] rounded-xl border border-white/[0.08] flex flex-col gap-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           {it.icon}
@@ -1329,7 +1329,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           aria-hidden={isPaywallVisible}
           className={`fixed bottom-0 left-0 right-0 z-40 transition-transform duration-200 ${
             !isPaywallVisible ? "translate-y-0" : "pointer-events-none translate-y-full"
-          } bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4`}
+          } bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] shadow-[0_-8px_24px_rgba(0,0,0,0.45)] py-3 px-4`}
         >
           <div className="max-w-md md:max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div className="flex flex-col text-left">

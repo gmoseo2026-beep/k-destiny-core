@@ -305,12 +305,12 @@ export default function GuestCheckoutModal({
           role="dialog"
           aria-modal="true"
           aria-label="결제가 끝나지 않았나요?"
-          className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-safe-sheet sm:p-7 shadow-xl border border-line relative flex flex-col gap-3.5"
+          className="bg-[#22142A] text-[#F6EEF3] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 pb-safe-sheet sm:p-7 shadow-xl border border-white/[0.08] relative flex flex-col gap-3.5"
         >
           <button
             type="button"
             onClick={dismissResume}
-            className="absolute top-4 right-4 text-text-3 hover:text-ink p-1.5 rounded-full transition-colors active:scale-95"
+            className="absolute top-4 right-4 text-[#B9A9BF] hover:text-[#F6EEF3] p-1.5 rounded-full transition-colors active:scale-95"
             aria-label="닫기"
           >
             ✕
@@ -319,8 +319,8 @@ export default function GuestCheckoutModal({
           <div className="flex items-center gap-3 pr-8">
             <KongdakMascot size={44} animate="none" expression="flutter" />
             <div>
-              <h3 className="text-base sm:text-lg font-black text-ink">결제가 끝나지 않았나요?</h3>
-              <p className="text-xs text-text-2 mt-0.5 leading-relaxed">
+              <h3 className="text-base sm:text-lg font-black text-[#F6EEF3]">결제가 끝나지 않았나요?</h3>
+              <p className="text-xs text-[#B9A9BF] mt-0.5 leading-relaxed">
                 {inApp
                   ? "앱 안에서는 카드·간편결제 앱으로 넘어가다 끊기는 경우가 있어요."
                   : "결제창이 닫혔거나 결제가 완료되지 않았어요. 바로 이어서 진행할 수 있어요."}
@@ -340,14 +340,14 @@ export default function GuestCheckoutModal({
                     {isIOS() ? "사파리에서 이어서 결제하기" : "크롬에서 이어서 결제하기"}
                   </button>
                 ) : (
-                  <div className="rounded-2xl bg-surface-soft border border-line p-3.5 text-left text-xs text-text-2 leading-relaxed">
+                  <div className="rounded-2xl bg-[#140B18] border border-white/[0.08] p-3.5 text-left text-xs text-[#B9A9BF] leading-relaxed">
                     <p>
-                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-ink">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 사파리에 붙여 넣어 주세요.
+                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-[#F6EEF3]">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 사파리에 붙여 넣어 주세요.
                     </p>
                     <button
                       type="button"
                       onClick={handleResumeCopy}
-                      className="mt-2.5 w-full rounded-xl border border-coral/40 bg-white py-2.5 font-bold text-coral-deep text-xs transition-all active:scale-[0.96]"
+                      className="mt-2.5 w-full rounded-xl border border-coral/40 bg-[#22142A] py-2.5 font-bold text-[#FF5C77] text-xs transition-all active:scale-[0.96]"
                     >
                       {resumeCopied ? "복사했어요" : "현재 링크 복사하기"}
                     </button>
@@ -361,7 +361,7 @@ export default function GuestCheckoutModal({
               onClick={handleResumeRetry}
               className={`w-full rounded-2xl py-3.5 px-4 text-sm font-extrabold transition-all active:scale-[0.96] ${
                 inApp
-                  ? "bg-surface-soft border border-line text-ink hover:bg-surface"
+                  ? "bg-[#140B18] border border-white/[0.08] text-[#F6EEF3] hover:border-white/20"
                   : "bg-coral hover:bg-coral-deep text-white shadow-xs"
               }`}
             >
@@ -371,7 +371,7 @@ export default function GuestCheckoutModal({
             <button
               type="button"
               onClick={dismissResume}
-              className="mx-auto py-1 text-xs font-semibold text-text-3 underline underline-offset-2"
+              className="mx-auto py-1 text-xs font-semibold text-[#B9A9BF] underline underline-offset-2"
             >
               다음에 할게요
             </button>
@@ -477,11 +477,11 @@ export default function GuestCheckoutModal({
   };
 
   const inputClass =
-    "w-full px-3.5 py-2.5 bg-surface-soft border border-line rounded-xl text-sm text-ink focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-text-3";
+    "w-full px-3.5 py-2.5 bg-[#140B18] border border-white/[0.08] rounded-xl text-sm text-[#F6EEF3] focus:outline-none focus:ring-2 focus:ring-coral/40 transition-all placeholder:text-[#B9A9BF]/60";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) closeByUser("backdrop");
       }}
@@ -490,30 +490,30 @@ export default function GuestCheckoutModal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="bg-white w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-6 pb-safe-sheet sm:p-7 shadow-xl border border-line relative flex flex-col"
+        className="bg-[#22142A] text-[#F6EEF3] w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-6 pb-safe-sheet sm:p-7 shadow-xl border border-white/[0.08] relative flex flex-col"
       >
         {/* Close Button */}
         <button
           type="button"
           onClick={() => closeByUser("x")}
           disabled={isLoading}
-          className="absolute top-4 right-4 text-text-3 hover:text-ink p-1.5 rounded-full transition-colors active:scale-95"
+          className="absolute top-4 right-4 text-[#B9A9BF] hover:text-[#F6EEF3] p-1.5 rounded-full transition-colors active:scale-95"
           aria-label="닫기"
         >
           ✕
         </button>
 
         {exitAsk && bestSet && (
-          <div className="absolute inset-0 z-10 flex items-end sm:items-center justify-center bg-ink/40 p-4 rounded-t-3xl sm:rounded-3xl">
-            <div className="w-full rounded-3xl bg-white p-5 text-center shadow-xl">
+          <div className="absolute inset-0 z-10 flex items-end sm:items-center justify-center bg-black/75 p-4 rounded-t-3xl sm:rounded-3xl">
+            <div className="w-full rounded-3xl bg-[#22142A] border border-white/15 p-5 text-center shadow-xl">
               <KongdakMascot size={48} animate="none" expression="flutter" />
-              <p className="mt-2 text-base font-black text-ink">잠깐만요, 이렇게도 볼 수 있어요</p>
-              <p className="mt-1 text-xs leading-relaxed text-text-2">
-                <b className="text-ink">{bestSet.name}</b>로 바꾸면 한 번에 {bestSet.price.toLocaleString("ko-KR")}원이에요.
+              <p className="mt-2 text-base font-black text-[#F6EEF3]">잠깐만요, 이렇게도 볼 수 있어요</p>
+              <p className="mt-1 text-xs leading-relaxed text-[#B9A9BF]">
+                <b className="text-[#F6EEF3]">{bestSet.name}</b>로 바꾸면 한 번에 {bestSet.price.toLocaleString("ko-KR")}원이에요.
                 <br />
-                따로 사는 것보다 <b className="text-coral-deep">{(bestSet.separate! - bestSet.price).toLocaleString("ko-KR")}원</b> 아껴요.
+                따로 사는 것보다 <b className="text-[#FFC24B]">{(bestSet.separate! - bestSet.price).toLocaleString("ko-KR")}원</b> 아껴요.
               </p>
-              {bestSet.desc && <p className="mt-1.5 text-[11px] leading-relaxed text-text-3">{bestSet.desc}</p>}
+              {bestSet.desc && <p className="mt-1.5 text-[11px] leading-relaxed text-[#B9A9BF]">{bestSet.desc}</p>}
               <button
                 type="button"
                 onClick={() => {
@@ -531,7 +531,7 @@ export default function GuestCheckoutModal({
                   setExitAsk(false);
                   closeByUser("x");
                 }}
-                className="mt-2 w-full py-2 text-xs font-medium text-text-3 active:scale-[0.96]"
+                className="mt-2 w-full py-2 text-xs font-medium text-[#B9A9BF] active:scale-[0.96]"
               >
                 괜찮아요, 닫을게요
               </button>
@@ -543,8 +543,8 @@ export default function GuestCheckoutModal({
         <div className="flex items-center gap-3 mb-4 pr-8">
           <KongdakMascot size={42} animate="none" expression="flutter" />
           <div>
-            <h3 className="text-lg font-black text-ink">{title}</h3>
-            <p className="text-xs text-text-3">결제하면 바로 전체가 열려요</p>
+            <h3 className="text-lg font-black text-[#F6EEF3]">{title}</h3>
+            <p className="text-xs text-[#B9A9BF]">결제하면 바로 전체가 열려요</p>
           </div>
         </div>
 
@@ -569,25 +569,25 @@ export default function GuestCheckoutModal({
                       onSelect(o.id);
                     }}
                     className={`relative flex items-center gap-3 rounded-2xl border p-3 text-left transition-all active:scale-[0.98] ${
-                      on ? "border-coral bg-coral-soft/60 ring-1 ring-coral" : "border-line bg-white"
+                      on ? "border-[#FF5C77] bg-[#FF5C77]/15 ring-1 ring-[#FF5C77]" : "border-white/[0.08] bg-[#140B18]/80"
                     }`}
                   >
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-coral" : "border-line"}`}>
-                      {on && <span className="h-2 w-2 rounded-full bg-coral" />}
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-[#FF5C77]" : "border-white/25"}`}>
+                      {on && <span className="h-2 w-2 rounded-full bg-[#FF5C77]" />}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-sm font-extrabold text-ink">{o.name}</span>
+                        <span className="text-sm font-extrabold text-[#F6EEF3]">{o.name}</span>
                         {save > 0 && save === best && (
-                          <span className="rounded-full bg-gold/25 px-1.5 py-0.5 text-[10px] font-extrabold text-plum">가장 많이 아껴요</span>
+                          <span className="rounded-full bg-[#FFC24B]/20 px-1.5 py-0.5 text-[10px] font-extrabold text-[#FFC24B]">가장 많이 아껴요</span>
                         )}
                       </span>
-                      {o.desc && <span className="mt-0.5 block truncate text-[11px] text-text-3">{o.desc}</span>}
+                      {o.desc && <span className="mt-0.5 block truncate text-[11px] text-[#B9A9BF]">{o.desc}</span>}
                     </span>
                     <span className="shrink-0 text-right">
-                      {save > 0 && <span className="block text-[11px] text-text-3 line-through">{o.separate!.toLocaleString("ko-KR")}원</span>}
-                      <span className="block text-sm font-black text-ink">{o.price.toLocaleString("ko-KR")}원</span>
-                      {save > 0 && <span className="block text-[10px] font-bold text-coral-deep">{save.toLocaleString("ko-KR")}원 아껴요</span>}
+                      {save > 0 && <span className="block text-[11px] text-[#B9A9BF] line-through">{o.separate!.toLocaleString("ko-KR")}원</span>}
+                      <span className="block text-sm font-black text-[#FFC24B]">{o.price.toLocaleString("ko-KR")}원</span>
+                      {save > 0 && <span className="block text-[10px] font-bold text-[#FF8AA1]">{save.toLocaleString("ko-KR")}원 아껴요</span>}
                     </span>
                   </button>
                 );
@@ -597,26 +597,26 @@ export default function GuestCheckoutModal({
         )}
 
         {/* Order Info Card — 고르기 칸이 있으면 같은 내용이라 숨긴다 */}
-        <div className={`bg-surface-soft rounded-2xl p-3.5 mb-4 border border-line justify-between items-center ${options.length > 1 && onSelect ? "hidden" : "flex"}`}>
+        <div className={`bg-[#140B18]/80 rounded-2xl p-3.5 mb-4 border border-white/[0.08] justify-between items-center ${options.length > 1 && onSelect ? "hidden" : "flex"}`}>
           <div>
-            <span className="text-xs font-bold text-ink block">{orderName}</span>
-            <span className="text-[11px] text-text-3">결제 후 즉시 열람 · 한 번 결제로 끝</span>
+            <span className="text-xs font-bold text-[#F6EEF3] block">{orderName}</span>
+            <span className="text-[11px] text-[#B9A9BF]">결제 후 즉시 열람 · 한 번 결제로 끝</span>
           </div>
           <div className="text-right">
             {activeCoupon && baseNumericPrice > 0 && (
-              <span className="block text-[11px] text-text-3 line-through">{priceLabel}</span>
+              <span className="block text-[11px] text-[#B9A9BF] line-through">{priceLabel}</span>
             )}
-            <span className="text-base font-black text-coral">{shownPrice}</span>
+            <span className="text-base font-black text-[#FFC24B]">{shownPrice}</span>
           </div>
         </div>
 
         {/* [P-016-4 §3] 후기 작성 보상 1,000원 쿠폰 자동 적용 안내 (최종 금액은 서버가 계산·검증) */}
         {activeCoupon && (
-          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-2xl border border-coral/35 bg-coral-soft/70 px-3.5 py-2.5 text-left">
-            <span className="text-xs font-extrabold text-coral-deep">
+          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-2xl border border-[#FFC24B]/35 bg-[#FFC24B]/10 px-3.5 py-2.5 text-left">
+            <span className="text-xs font-extrabold text-[#FFC24B]">
               🎁 후기 작성 쿠폰 자동 적용
             </span>
-            <span className="text-xs font-black text-coral">
+            <span className="text-xs font-black text-[#FFC24B]">
               -{activeCoupon.amount.toLocaleString("ko-KR")}원 할인
             </span>
           </div>

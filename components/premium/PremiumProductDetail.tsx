@@ -4,17 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ShieldCheck, Printer, Clock } from "lucide-react";
 import type { CatalogItem } from "@/lib/catalog";
-import { priceLabel, listPrice, formatWon, discountBadge } from "@/lib/catalog";
+import { priceLabel, listPrice, formatWon, discountBadge, getProductCover } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
 import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
 import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
 
-// Import static sample previews
 import sample2027 from "@/data/samples/premium_2027_daeun.json";
 import sampleNaming from "@/data/samples/premium_naming.json";
 import sampleDates from "@/data/samples/premium_date_selection.json";
 
-// 샘플 1순위 이름의 글자 기운. 오행 미상(null) 글자는 빼고, 모두 미상이면 빈 문자열(항목 생략).
 const sampleElementWords = ((sampleNaming.engine.names[0]?.elements ?? []) as (Element | null)[])
   .filter((e): e is Element => e !== null && e in ELEMENT_WORD)
   .map((e) => ELEMENT_WORD[e])
@@ -29,8 +27,8 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
   const is2027 = product.id === "premium_2027_daeun";
   const isNaming = product.id === "premium_naming";
   const isDates = product.id === "premium_date_pick";
+  const coverSrc = getProductCover(product);
 
-  // Product specific content configuration
   const specDetails = is2027
     ? {
         headline: "인생 10년의 지도와 2027년의 청사진",
@@ -73,63 +71,67 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
   const nextPath = `/${locale}/premium/${product.id}/new`;
 
   return (
-    <main className="min-h-screen bg-[#14101A] text-[#F6F1EA] pb-32">
+    <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] pb-32">
       <SerifFont />
       <ProductViewTracker productId={product.id} tier={product.tier} />
 
       {/* Top sticky navigation */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-[#14101A]/80 backdrop-blur-md border-b border-[#3A2E45]/80 z-50 flex items-center justify-between px-4 max-w-4xl mx-auto">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#140B18]/90 backdrop-blur-md border-b border-white/[0.08] z-50 flex items-center justify-between px-4 max-w-4xl mx-auto">
         <Link
           href={`/${locale}`}
-          className="flex items-center gap-1.5 text-xs text-[#B9AEC4] hover:text-[#F6F1EA] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[#B9A9BF] hover:text-[#F6EEF3] transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>돌아가기</span>
         </Link>
-        <span className="font-serif-kr text-sm font-semibold text-[#F3E3BF]">
+        <span className="font-serif-kr text-sm font-semibold text-[#FFC24B]">
           {product.name}
         </span>
         <div className="w-12" />
       </header>
 
-      <div className="pt-20 max-w-2xl mx-auto px-4 sm:px-6">
-        {/* 1. Hero Section with cat-premium gradient and 3D icon */}
+      <div className="pt-16 max-w-2xl mx-auto px-4 sm:px-6">
         <OwnedReportNotice locale={locale} catalogId={product.id} source="product" className="mb-4" />
-        <section className="relative text-center py-10 md:py-14 rounded-3xl bg-gradient-to-b from-[#5B3354] to-[#2A1526] border border-[#7A4570]/40 overflow-hidden mb-8 shadow-xl">
-          <svg className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-10" aria-hidden="true">
-            <defs>
-              <pattern id="premium-heart-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M20 32s-10-6.5-14-12.5C2 13 4 7 10 7c3.5 0 7 3 10 5.5C23 9.5 26.5 7 30 7c6 0 8 6 4 12.5C30 25.5 20 32 20 32z" fill="white" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#premium-heart-pattern)" />
-          </svg>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-24 h-24 relative mb-4">
-              <Image src={product.icon3d} alt="" width={96} height={96} className="object-contain drop-shadow-lg" priority />
-            </div>
-            <div className="mb-3">
+
+        {/* 1. 상단 3:4 표지 포스터 (3D 이모지 제거, 통일된 나이트 표지 사용) */}
+        <section className="relative mx-auto aspect-[3/4] w-full max-w-[380px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#22142A] mb-8 shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+          <Image
+            src={coverSrc}
+            alt={product.name}
+            fill
+            sizes="(max-width: 480px) 92vw, 380px"
+            priority
+            className="object-cover"
+          />
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-end p-6 text-center"
+            style={{
+              background:
+                "linear-gradient(180deg, transparent 35%, rgba(20,11,24,0.88) 70%, #140B18 100%)",
+            }}
+          >
+            <div className="mb-2.5">
               <PremiumBadge text="KONGDAK SIGNATURE" />
             </div>
-            <h1 className="font-serif-kr text-3xl sm:text-4xl font-bold tracking-tight text-[#F6F1EA] mb-3 leading-tight">
+            <h1 className="font-serif-kr text-2xl sm:text-3xl font-bold tracking-tight text-[#F6EEF3] mb-2 leading-tight">
               {product.name}
             </h1>
-            <p className="text-sm sm:text-base text-[#F3E3BF] font-medium max-w-lg mx-auto mb-3 leading-relaxed px-4">
+            <p className="text-xs sm:text-sm text-[#FFC24B] font-semibold max-w-md mx-auto mb-1.5 leading-relaxed">
               {specDetails.headline}
             </p>
-            <p className="text-xs sm:text-sm text-[#B9AEC4] max-w-md mx-auto leading-relaxed px-4">
+            <p className="text-xs text-[#B9A9BF] max-w-md mx-auto leading-relaxed">
               {product.description}
             </p>
           </div>
         </section>
 
         {/* 2. What's in this report */}
-        <section className="py-10 border-b border-[#3A2E45]/80">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-serif-kr text-xl font-bold text-[#F6F1EA]">
+        <section className="py-10 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+            <h2 className="font-serif-kr text-xl font-bold text-[#F6EEF3]">
               이 리포트에 담기는 내용
             </h2>
-            <span className="text-xs text-[#D9B26A] font-medium bg-[#1E1726] border border-[#D9B26A]/30 px-2.5 py-1 rounded-full">
+            <span className="text-xs text-[#FFC24B] font-medium bg-[#22142A] border border-[#FFC24B]/30 px-2.5 py-1 rounded-full">
               {specDetails.volume}
             </span>
           </div>
@@ -138,16 +140,16 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
             {specDetails.chapters.map((chap) => (
               <div
                 key={chap.num}
-                className="p-4 rounded-xl bg-[#1E1726]/70 border border-[#3A2E45]/60 flex items-start gap-4"
+                className="p-4 rounded-xl bg-[#22142A] border border-white/[0.08] flex items-start gap-4"
               >
-                <span className="font-mono text-xs font-bold text-[#D9B26A] bg-[#14101A] px-2 py-0.5 rounded border border-[#D9B26A]/30 shrink-0 mt-0.5">
+                <span className="font-mono text-xs font-bold text-[#FFC24B] bg-[#140B18] px-2 py-0.5 rounded border border-[#FFC24B]/30 shrink-0 mt-0.5">
                   {chap.num}
                 </span>
                 <div>
-                  <h3 className="font-serif-kr text-sm sm:text-base font-bold text-[#F6F1EA] mb-0.5">
+                  <h3 className="font-serif-kr text-sm sm:text-base font-bold text-[#F6EEF3] mb-0.5">
                     {chap.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#B9AEC4] leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#B9A9BF] leading-relaxed">
                     {chap.desc}
                   </p>
                 </div>
@@ -157,54 +159,53 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
         </section>
 
         {/* 3. Sample Preview with watermark */}
-        <section className="py-10 border-b border-[#3A2E45]/80">
+        <section className="py-10 border-b border-white/[0.08]">
           <div className="text-center mb-6">
-            <span className="text-xs tracking-widest text-[#D9B26A] uppercase font-semibold">
+            <span className="text-xs tracking-widest text-[#FFC24B] uppercase font-semibold">
               SAMPLE PREVIEW
             </span>
-            <h2 className="font-serif-kr text-xl font-bold text-[#F6F1EA] mt-1">
+            <h2 className="font-serif-kr text-xl font-bold text-[#F6EEF3] mt-1">
               리포트 미리보기
             </h2>
           </div>
 
-          <div className="relative rounded-2xl bg-[#1E1726] border border-[#D9B26A]/40 p-6 overflow-hidden shadow-xl">
-            {/* Watermark */}
+          <div className="relative rounded-2xl bg-[#22142A] border border-[#FFC24B]/35 p-6 overflow-hidden shadow-xl">
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-10 select-none rotate-[-20deg]">
               <span className="text-4xl sm:text-6xl font-black text-white whitespace-nowrap">
                 예시 · 가상 인물
               </span>
             </div>
 
-            <div className="relative z-10 space-y-4 text-xs sm:text-sm text-[#B9AEC4]">
-              <div className="flex items-center justify-between border-b border-[#3A2E45] pb-3">
-                <span className="text-[#D9B26A] font-semibold">
+            <div className="relative z-10 space-y-4 text-xs sm:text-sm text-[#B9A9BF]">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <span className="text-[#FFC24B] font-semibold">
                   {specDetails.sample.meta.targetName}
                 </span>
-                <span className="text-xs bg-[#14101A] px-2 py-1 rounded text-[#F3E3BF]">
+                <span className="text-xs bg-[#140B18] px-2 py-1 rounded text-[#FFC24B]">
                   실제 엔진 산출 데이터
                 </span>
               </div>
 
               {is2027 && (
                 <div>
-                  <p className="text-[#F6F1EA] font-serif-kr font-bold text-base mb-1">
+                  <p className="text-[#F6EEF3] font-serif-kr font-bold text-base mb-1">
                     {sample2027.sections.overview.headline}
                   </p>
-                  <p className="text-xs text-[#B9AEC4] mb-3">
-                    총운 점수: <strong className="text-[#D9B26A]">{sample2027.engine.yearScore}점</strong> · 키워드: {sample2027.sections.overview.keywords.join(", ")}
+                  <p className="text-xs text-[#B9A9BF] mb-3">
+                    총운 점수: <strong className="text-[#FFC24B]">{sample2027.engine.yearScore}점</strong> · 키워드: {sample2027.sections.overview.keywords.join(", ")}
                   </p>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-[#14101A] p-2 rounded">
-                      <span className="text-[#B9AEC4] block">애정</span>
-                      <strong className="text-[#F6F1EA]">{sample2027.engine.domains.love}점</strong>
+                    <div className="bg-[#140B18] p-2 rounded">
+                      <span className="text-[#B9A9BF] block">애정</span>
+                      <strong className="text-[#F6EEF3]">{sample2027.engine.domains.love}점</strong>
                     </div>
-                    <div className="bg-[#14101A] p-2 rounded">
-                      <span className="text-[#B9AEC4] block">재물</span>
-                      <strong className="text-[#F6F1EA]">{sample2027.engine.domains.money}점</strong>
+                    <div className="bg-[#140B18] p-2 rounded">
+                      <span className="text-[#B9A9BF] block">재물</span>
+                      <strong className="text-[#F6EEF3]">{sample2027.engine.domains.money}점</strong>
                     </div>
-                    <div className="bg-[#14101A] p-2 rounded">
-                      <span className="text-[#B9AEC4] block">커리어</span>
-                      <strong className="text-[#F6F1EA]">{sample2027.engine.domains.career}점</strong>
+                    <div className="bg-[#140B18] p-2 rounded">
+                      <span className="text-[#B9A9BF] block">커리어</span>
+                      <strong className="text-[#F6EEF3]">{sample2027.engine.domains.career}점</strong>
                     </div>
                   </div>
                 </div>
@@ -212,14 +213,14 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
 
               {isNaming && (
                 <div>
-                  <p className="text-[#F6F1EA] font-serif-kr font-bold text-base mb-2">
+                  <p className="text-[#F6EEF3] font-serif-kr font-bold text-base mb-2">
                     추천 후보 1: {sampleNaming.engine.names[0]?.hangul} ({sampleNaming.engine.names[0]?.hanja.join("")})
                   </p>
-                  <p className="text-xs text-[#B9AEC4] leading-relaxed mb-2">
+                  <p className="text-xs text-[#B9A9BF] leading-relaxed mb-2">
                     수리점수 {sampleNaming.engine.names[0]?.score}점
                     {sampleElementWords && ` · 글자의 기운: ${sampleElementWords}`}
                   </p>
-                  <p className="text-xs text-[#D9B26A] italic">
+                  <p className="text-xs text-[#FFC24B] italic">
                     &quot;{sampleNaming.sections.names.names[0]?.oneLine}&quot;
                   </p>
                 </div>
@@ -227,19 +228,19 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
 
               {isDates && (
                 <div>
-                  <p className="text-[#F6F1EA] font-serif-kr font-bold text-base mb-2">
+                  <p className="text-[#F6EEF3] font-serif-kr font-bold text-base mb-2">
                     최고의 길일 1순위: {sampleDates.engine.picks[0]?.date}
                   </p>
-                  <p className="text-xs text-[#B9AEC4] leading-relaxed mb-2">
+                  <p className="text-xs text-[#B9A9BF] leading-relaxed mb-2">
                     길일 등급 {sampleDates.engine.picks[0]?.score}점 · {sampleDates.engine.picks[0]?.title}
                   </p>
-                  <p className="text-xs text-[#D9B26A] italic">
+                  <p className="text-xs text-[#FFC24B] italic">
                     추천 시간대: {sampleDates.engine.picks[0]?.goodHours.join(", ")}
                   </p>
                 </div>
               )}
 
-              <p className="text-center text-xs text-[#B9AEC4]/60 pt-2 border-t border-[#3A2E45]">
+              <p className="text-center text-xs text-[#B9A9BF] pt-2 border-t border-white/[0.08]">
                 ※ 구매 시 실제 본인의 사주 정보에 맞춰 전체 분석 리포트가 완성됩니다.
               </p>
             </div>
@@ -247,19 +248,18 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
         </section>
 
         {/* 4. Comparison Table */}
-        <section className="py-10 border-b border-[#3A2E45]/80">
-          <h2 className="font-serif-kr text-xl font-bold text-[#F6F1EA] mb-6 text-center">
+        <section className="py-10 border-b border-white/[0.08]">
+          <h2 className="font-serif-kr text-xl font-bold text-[#F6EEF3] mb-6 text-center">
             일반 리포트 vs 콩닥 프리미엄 비교
           </h2>
 
-          <div className="rounded-xl overflow-hidden border border-[#3A2E45] text-xs sm:text-sm">
-            <div className="grid grid-cols-3 bg-[#1E1726] p-3 font-semibold text-[#B9AEC4] text-center border-b border-[#3A2E45]">
+          <div className="rounded-xl overflow-hidden border border-white/[0.08] text-xs sm:text-sm">
+            <div className="grid grid-cols-3 bg-[#22142A] p-3 font-semibold text-[#B9A9BF] text-center border-b border-white/[0.08]">
               <span>구분</span>
               <span>표준 리포트</span>
-              <span className="text-[#D9B26A]">프리미엄</span>
+              <span className="text-[#FFC24B]">프리미엄</span>
             </div>
-            <div className="divide-y divide-[#3A2E45]/60 bg-[#14101A]/60">
-              {/* 모든 칸은 실제 상품 구성과 일치해야 한다(분량 숫자·모델명 표기 금지) */}
+            <div className="divide-y divide-white/[0.08] bg-[#140B18]/60">
               {[
                 {
                   label: "풀이 범위",
@@ -275,9 +275,9 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
                 { label: "소장", standard: "-", premium: "PDF로 저장" },
               ].map((row) => (
                 <div key={row.label} className="grid grid-cols-3 p-3 items-center text-center gap-1">
-                  <span className="font-medium text-[#B9AEC4]">{row.label}</span>
-                  <span className="text-[#B9AEC4]">{row.standard}</span>
-                  <span className="text-[#F3E3BF] font-semibold">{row.premium}</span>
+                  <span className="font-medium text-[#B9A9BF]">{row.label}</span>
+                  <span className="text-[#B9A9BF]">{row.standard}</span>
+                  <span className="text-[#FFC24B] font-semibold">{row.premium}</span>
                 </div>
               ))}
             </div>
@@ -285,38 +285,38 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
         </section>
 
         {/* 5. FAQ */}
-        <section className="py-10 border-b border-[#3A2E45]/80">
-          <h2 className="font-serif-kr text-xl font-bold text-[#F6F1EA] mb-6 text-center">
+        <section className="py-10 border-b border-white/[0.08]">
+          <h2 className="font-serif-kr text-xl font-bold text-[#F6EEF3] mb-6 text-center">
             자주 묻는 질문
           </h2>
 
           <div className="space-y-4 text-xs sm:text-sm">
-            <div className="p-4 rounded-xl bg-[#1E1726]/60 border border-[#3A2E45]">
-              <h3 className="font-semibold text-[#F3E3BF] mb-1 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#D9B26A]" />
+            <div className="p-4 rounded-xl bg-[#22142A] border border-white/[0.08]">
+              <h3 className="font-semibold text-[#FFC24B] mb-1 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#FFC24B]" />
                 구매 후 언제까지 다시 볼 수 있나요?
               </h3>
-              <p className="text-[#B9AEC4] leading-relaxed">
+              <p className="text-[#B9A9BF] leading-relaxed">
                 프리미엄 리포트는 결제 완료일로부터 <strong>1년간</strong> 언제든지 &apos;내 보관함&apos;에서 다시 열람하실 수 있습니다.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#1E1726]/60 border border-[#3A2E45]">
-              <h3 className="font-semibold text-[#F3E3BF] mb-1 flex items-center gap-2">
-                <Printer className="w-4 h-4 text-[#D9B26A]" />
+            <div className="p-4 rounded-xl bg-[#22142A] border border-white/[0.08]">
+              <h3 className="font-semibold text-[#FFC24B] mb-1 flex items-center gap-2">
+                <Printer className="w-4 h-4 text-[#FFC24B]" />
                 PDF 저장이나 인쇄가 가능한가요?
               </h3>
-              <p className="text-[#B9AEC4] leading-relaxed">
+              <p className="text-[#B9A9BF] leading-relaxed">
                 네, 리포트 상단의 &apos;PDF로 저장&apos; 버튼을 누르시면 전용 고해상도 인쇄 레이아웃으로 소장용 PDF 파일을 내려받으실 수 있습니다.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-[#1E1726]/60 border border-[#3A2E45]">
-              <h3 className="font-semibold text-[#F3E3BF] mb-1 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#D9B26A]" />
+            <div className="p-4 rounded-xl bg-[#22142A] border border-white/[0.08]">
+              <h3 className="font-semibold text-[#FFC24B] mb-1 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#FFC24B]" />
                 환불 및 청약철회가 가능한가요?
               </h3>
-              <p className="text-[#B9AEC4] leading-relaxed">
+              <p className="text-[#B9A9BF] leading-relaxed">
                 디지털 콘텐츠의 특성상 리포트 생성이 시작된 이후에는 단순 변심으로 인한 환불이 불가합니다. 단, 시스템 장애로 생성이 불가능한 경우 100% 환불해 드립니다.
               </p>
             </div>
@@ -325,16 +325,16 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
 
         {/* 6. Pricing & Fixed Bottom CTA */}
         <section className="py-10 text-center">
-          <p className="text-xs text-[#B9AEC4] mb-2 uppercase tracking-widest font-semibold">
+          <p className="text-xs text-[#B9A9BF] mb-2 uppercase tracking-widest font-semibold">
             단건 서비스 이용권
           </p>
           {listPrice(product) && (
-            <p className="mb-1.5 flex items-center justify-center gap-2 text-sm text-[#B9AEC4]">
+            <p className="mb-1.5 flex items-center justify-center gap-2 text-sm text-[#B9A9BF]">
               <span className="line-through">{formatWon(listPrice(product)!)}</span>
-              <span className="rounded-md bg-[#F3E3BF]/15 px-2 py-0.5 text-xs font-bold text-[#F3E3BF]">{discountBadge(product)}</span>
+              <span className="rounded-md bg-[#FFC24B]/15 px-2 py-0.5 text-xs font-bold text-[#FFC24B]">{discountBadge(product)}</span>
             </p>
           )}
-          <div className="text-3xl sm:text-4xl font-bold font-serif-kr text-[#F3E3BF] mb-6">
+          <div className="text-3xl sm:text-4xl font-bold font-serif-kr text-[#FFC24B] mb-6">
             {priceLabel(product)}
           </div>
           <ProductCtaLink
@@ -344,7 +344,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
             target={product.target}
             isFree={false}
             location="bottom_cta"
-            className="inline-flex items-center justify-center w-full max-w-sm py-4 rounded-2xl text-base font-bold text-[#14101A] bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] hover:opacity-95 shadow-xl transition-all active:scale-95"
+            className="inline-flex items-center justify-center w-full max-w-sm py-4 rounded-2xl text-base font-bold text-[#140B18] bg-[#FFC24B] hover:opacity-95 shadow-xl transition-all active:scale-95"
           >
             프리미엄 리포트 신청하기
           </ProductCtaLink>
@@ -352,9 +352,9 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
       </div>
 
       {/* Floating Bottom Bar on Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#14101A]/95 backdrop-blur-md border-t border-[#3A2E45] z-40 sm:hidden flex items-center justify-between">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] z-40 sm:hidden flex items-center justify-between pb-safe-bar">
         <div>
-          <span className="text-xs text-[#B9AEC4] block">
+          <span className="text-xs text-[#B9A9BF] block">
             {listPrice(product) ? (
               <>
                 <span className="line-through">{formatWon(listPrice(product)!)}</span> · {discountBadge(product)}
@@ -363,7 +363,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
               "이용료"
             )}
           </span>
-          <span className="font-serif-kr text-lg font-bold text-[#F3E3BF]">
+          <span className="font-serif-kr text-lg font-bold text-[#FFC24B]">
             {priceLabel(product)}
           </span>
         </div>
@@ -374,7 +374,7 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
           target={product.target}
           isFree={false}
           location="mobile_sticky"
-          className="px-6 py-2.5 rounded-xl text-sm font-bold text-[#14101A] bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] shadow-lg active:scale-95 transition-transform"
+          className="px-6 py-2.5 rounded-xl text-sm font-bold text-[#140B18] bg-[#FFC24B] shadow-lg active:scale-95 transition-transform"
         >
           신청하기
         </ProductCtaLink>

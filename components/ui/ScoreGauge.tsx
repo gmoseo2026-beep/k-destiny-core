@@ -3,11 +3,10 @@ import React from 'react';
 export interface ScoreGaugeProps {
   score: number;
   label?: string;
-  color?: string; // e.g. '#E0245A'
+  color?: string;
 }
 
-export function ScoreGauge({ score, label, color = '#E0245A' }: ScoreGaugeProps) {
-  // Simple SVG semi-circle gauge
+export function ScoreGauge({ score, label, color = '#FF5C77' }: ScoreGaugeProps) {
   const radius = 40;
   const circumference = radius * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
@@ -20,7 +19,7 @@ export function ScoreGauge({ score, label, color = '#E0245A' }: ScoreGaugeProps)
           <path
             d="M 10 50 A 40 40 0 0 1 90 50"
             fill="none"
-            stroke="#f3f4f6"
+            stroke="rgba(255,255,255,0.12)"
             strokeWidth="10"
             strokeLinecap="round"
           />
@@ -37,10 +36,10 @@ export function ScoreGauge({ score, label, color = '#E0245A' }: ScoreGaugeProps)
           />
         </svg>
         <div className="absolute bottom-0 left-0 right-0 text-center flex flex-col items-center">
-          <span className="text-xl font-bold" style={{ color }}>{score}</span>
+          <span className="text-xl font-extrabold" style={{ color }}>{score}</span>
         </div>
       </div>
-      {label && <span className="mt-1 text-sm font-semibold text-gray-600">{label}</span>}
+      {label && <span className="mt-1 text-xs font-semibold text-[#B9A9BF]">{label}</span>}
     </div>
   );
 }

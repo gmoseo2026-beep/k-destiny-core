@@ -1,35 +1,26 @@
 import { Metadata } from "next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import HomeHeroCompact from "@/components/home/HomeHeroCompact";
+import { Link } from "@/i18n/routing";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
 import HomeExplore from "@/components/home/HomeExplore";
-import HomeStickyCta from "@/components/home/HomeStickyCta";
-import DashboardView from "@/components/DashboardView";
 import TrustBanner from "@/components/home/TrustBanner";
-import HomeSearch from "@/components/home/HomeSearch";
-import PremiumBanner from "@/components/home/PremiumBanner";
-import HomeRankingView from "@/components/home/HomeRankingView";
-import MoreContentCards from "@/components/home/MoreContentCards";
-import VisitorSection from "@/components/home/VisitorSection";
-import SeasonPromoBanner, { type SeasonPromoItem } from "@/components/home/SeasonPromoBanner";
-import { isOnSeasonPromo, seasonPromoDaysLeft } from "@/lib/catalog";
-import BrandStory from "@/components/home/BrandStory";
-import SetRow from "@/components/home/SetRow";
+import ProductReviewsSection from "@/components/product/ProductReviewsSection";
+import WelcomeLoginSheet from "@/components/WelcomeLoginSheet";
 import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { fetchHomeRanking } from "@/lib/home/ranking";
-import { fetchVisitorCount } from "@/lib/home/visitors";
 import { prisma } from "@/lib/prisma";
-import { buildExploreTabs } from "@/lib/home/explore";
 import { swrCached } from "@/lib/swrCache";
 import { canonicalUrlFor } from "@/lib/seo";
+import { countAvailableCouponsForUser, getRecentPublicReviews } from "@/lib/reviews";
+import type { CatalogItem } from "@/lib/catalog";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "콩닥 — 그 사람 속마음까지 보는 사주 궁합",
-  description: "그 사람은 지금 나를 어떻게 생각할까? 생년월일만 넣으면 30초 — 궁합, 속마음, 둘만의 속궁합까지 무료로 먼저 봐요.",
-  // 레이아웃은 canonical 을 물려주지 않는다(lib/seo.ts buildPageMetadata 주석) → 홈은 여기서 선언한다
+  description:
+    "그 사람은 지금 나를 어떻게 생각할까? 생년월일만 넣으면 30초 — 궁합, 속마음, 둘만의 속궁합까지 무료로 먼저 봐요.",
   alternates: { canonical: canonicalUrlFor("") },
 };
 
@@ -43,56 +34,64 @@ export default async function Home({ params }: PageProps) {
 
   const effectiveCatalog = await getEffectiveCatalog();
   const visibleProducts = effectiveCatalog.filter((p) => !p.isHidden);
-  const products = visibleProducts.filter((p) => p.tier !== "premium");
-  const premiumProducts = visibleProducts.filter((p) => p.tier === "premium");
-  const explore = buildExploreTabs(visibleProducts);
-  const exploreTotal = visibleProducts.filter((p) => p.type !== "SET").length;
-  const isMember = Boolean(session?.user?.id);
+  const userId = session?.user?.id ?? "";
+  const isMember = Boolean(userId);
+  const memberName = session?.user?.name?.trim() || "회원";
 
-  // 순위 및 방문자 통계 (안전하게 fallback 포함). 읽어 둔 값을 바로 쓰고 1분마다 뒤에서 새로 읽는다 — 홈이 먼 DB를 기다리지 않게.
-  const [ranking, visitorData] = await Promise.all([
+  const [ranking, recentReviews, couponCount] = await Promise.all([
     swrCached("home:ranking", 60_000, () => fetchHomeRanking(prisma, visibleProducts)),
-    swrCached("home:visitors", 60_000, () => fetchVisitorCount(prisma)),
+    swrCached("home:reviews", 60_000, () => getRecentPublicReviews(6)),
+    isMember ? countAvailableCouponsForUser(userId) : Promise.resolve(0),
   ]);
 
-  // 연말 특가(12/31까지): 공개 중인 대상 상품만. 기간이 끝나면 목록이 비어 영역이 사라진다.
-  const PROMO_LINES: Record<string, string> = {
-    annual_2026: "남은 올해, 무엇을 정리하고 무엇을 붙잡을지",
-    premium_2027_daeun: "10년 흐름 속 2027년의 자리와 12개월 달력",
-  };
-  const promoItems: SeasonPromoItem[] = visibleProducts
-    .filter((p) => isOnSeasonPromo(p.id) && PROMO_LINES[p.id])
-    .map((p) => ({
-      product: { id: p.id, name: p.name, icon3d: p.icon3d, price: p.price, originalPrice: p.originalPrice },
-      line: PROMO_LINES[p.id],
-    }));
-  const promoDaysLeft = seasonPromoDaysLeft();
+  const catalogById: Record<string, CatalogItem> = Object.fromEntries(
+    visibleProducts.map((p) => [p.id, p]),
+  );
 
   return (
-    <div className={`w-full min-h-screen bg-cream text-ink overflow-x-hidden ${isMember ? "pb-24 sm:pb-12" : "pb-28"}`}>
-      {/* 첫 화면: 무엇이 있는지(탭·추천·격자·프리미엄)를 먼저 보여 준다 */}
+    <div className="w-full min-h-screen bg-[#140B18] text-[#F6EEF3] overflow-x-hidden pb-28 sm:pb-12">
+      {/* 비로그인 첫 방문 환영 시트 (24시간 안 보기 지원) */}
+      <WelcomeLoginSheet isMember={isMember} />
+
+      {/* 로그인 회원 전용 상단 1줄 요약 바 (홈 화면 자체는 비회원과 100% 동일) */}
       {isMember ? (
-        <DashboardView effectiveProducts={visibleProducts} />
+        <div className="mx-auto w-full max-w-[480px] px-4 pt-2">
+          <Link
+            href="/me"
+            className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-[#22142A] px-4 py-2.5 text-xs font-bold text-[#F6EEF3] transition-colors hover:border-white/20"
+          >
+            <span className="truncate">
+              <strong className="font-extrabold text-[#FFC24B]">{memberName}</strong>님 · 쿠폰{" "}
+              <strong className="font-extrabold text-[#FFC24B]">{couponCount}장</strong>
+            </span>
+            <span className="shrink-0 text-[#FF5C77] font-extrabold">
+              이어보기 →
+            </span>
+          </Link>
+        </div>
       ) : (
-        <>
-          <HomeHeroCompact total={exploreTotal} visitorCount={visitorData.count} locale={locale} />
-          {/* 비회원이 이 기기에서 결제한 리포트 — 다시 찾아 들어오는 길(없으면 아무것도 안 보인다) */}
-          <div className="mx-auto w-full max-w-md px-4 empty:hidden">
-            <OwnedReportNotice locale={locale} source="home" className="mt-3" />
-          </div>
-        </>
+        <div className="mx-auto w-full max-w-[480px] px-4 empty:hidden">
+          <OwnedReportNotice locale={locale} source="home" className="mt-2" />
+        </div>
       )}
-      <SeasonPromoBanner locale={locale} items={promoItems} daysLeft={promoDaysLeft} total={exploreTotal} />
-      <HomeExplore locale={locale} tabs={explore.tabs} picks={explore.picks} />
-      <SetRow locale={locale} products={products} />
-      <PremiumBanner locale={locale} premiumProducts={premiumProducts} />
-      <HomeRankingView locale={locale} ranking={ranking} />
-      <TrustBanner />
-      <HomeSearch locale={locale} products={products} />
-      <MoreContentCards locale={locale} products={products} />
-      <VisitorSection count={visitorData.count} startedAt={visitorData.startedAt} />
-      <BrandStory />
-      {!isMember && <HomeStickyCta locale={locale} />}
+
+      {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + 인기 TOP 5 + 2열 포스터 격자 */}
+      <HomeExplore
+        locale={locale}
+        products={visibleProducts}
+        ranking={ranking}
+      />
+
+      {/* 영역 4: 실제 구매자 후기 (0개면 자동 숨김, 후기 아래에 해당 상품 목록 행 카드) */}
+      <ProductReviewsSection
+        reviews={recentReviews}
+        variant="home"
+        catalogById={catalogById}
+      />
+
+      <div className="mt-8">
+        <TrustBanner />
+      </div>
     </div>
   );
 }

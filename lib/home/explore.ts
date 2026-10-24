@@ -47,3 +47,41 @@ export function buildExploreTabs(visible: CatalogItem[]): { tabs: ExploreTab[]; 
   });
   return { tabs: tabs.filter((t) => t.items.length > 0), picks: pick(PICK_IDS, byId) };
 }
+
+export type HomeCategoryChipId =
+  | "all"
+  | "love"
+  | "compat"
+  | "reunion"
+  | "annual"
+  | "wealth";
+
+export const HOME_CATEGORY_CHIPS: ReadonlyArray<{
+  id: HomeCategoryChipId;
+  label: string;
+}> = [
+  { id: "all", label: "전체" },
+  { id: "love", label: "연애·속마음" },
+  { id: "compat", label: "궁합" },
+  { id: "reunion", label: "재회·이별" },
+  { id: "annual", label: "신년·운세" },
+  { id: "wealth", label: "재물·직업" },
+];
+
+const CATEGORY_PRODUCT_IDS: Record<Exclude<HomeCategoryChipId, "all">, ReadonlySet<string>> = {
+  love: new Set(["love_single", "inner_mind", "charm", "secret_love", "set_love"]),
+  compat: new Set(["compat_basic", "marriage", "conflict", "set_this_person", "set_sure", "premium_date_pick"]),
+  reunion: new Set(["reunion", "cheating", "set_reunion"]),
+  annual: new Set(["annual_2027", "annual_2026", "spicy_annual", "free_personality", "health", "premium_2027_daeun", "premium_naming", "set_2027", "set_me"]),
+  wealth: new Set(["wealth", "career", "set_career"]),
+};
+
+export function filterProductsByCategory(
+  products: CatalogItem[],
+  chipId: HomeCategoryChipId,
+): CatalogItem[] {
+  const visible = products.filter((p) => !p.isHidden);
+  if (chipId === "all") return visible;
+  const idSet = CATEGORY_PRODUCT_IDS[chipId];
+  return visible.filter((p) => idSet.has(p.id));
+}

@@ -13,6 +13,7 @@ import GuestKeepBanner from "@/components/GuestKeepBanner";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
   getProduct,
+  getProductCover,
   priceLabel,
   listPrice,
   formatWon,
@@ -473,7 +474,7 @@ export default function AnnualFortuneClient({
 
   if (error && !data) {
     return (
-      <div className="w-full max-w-md md:max-w-2xl bg-white p-7 rounded-3xl shadow-sm border border-red-200 text-center">
+      <div className="w-full max-w-md md:max-w-2xl bg-[#22142A] p-7 rounded-3xl border border-[#FF5C77]/35 text-center">
         <p className="text-red-500 font-bold mb-4">{error}</p>
         <button
           onClick={() => {
@@ -499,11 +500,11 @@ export default function AnnualFortuneClient({
         <div className="flex flex-col items-center text-center mb-5">
           <div className="w-[72px] h-[72px] mb-3 relative flex items-center justify-center">
             <Image
-              src={annualProduct?.icon3d || "/icons3d/calendar.webp"}
+              src={getProductCover(annualProduct || `annual_${year}`)}
               alt={annualProduct?.name || `${year} 신년 총운`}
               width={72}
               height={72}
-              className="object-contain"
+              className="object-cover rounded-xl"
             />
           </div>
           <Tag category="fortune" className="mb-2">
@@ -523,7 +524,7 @@ export default function AnnualFortuneClient({
         </div>
 
         {paidNotice === "paid" && (
-          <div className="mb-4 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left">
+          <div className="mb-4 w-full rounded-2xl border border-emerald-400/25 bg-[#22142A] p-4 text-left">
             <p className="text-sm font-extrabold text-emerald-800">결제가 확인됐어요</p>
             <p className="mt-1 text-xs leading-relaxed text-emerald-900/80">
               생년월일을 한 번만 입력하면 {year} 총운 전체가 바로 열려요. 다시 결제하지 않아요.
@@ -804,7 +805,7 @@ export default function AnnualFortuneClient({
           <button
             type="button"
             onClick={() => handleOpenCheckout("SINGLE")}
-            className="w-full bg-white hover:bg-surface-soft border border-line rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
+            className="w-full bg-[#22142A] hover:bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-9 h-9 rounded-xl bg-coral-soft flex items-center justify-center text-coral-deep shrink-0">
@@ -928,7 +929,7 @@ export default function AnnualFortuneClient({
                     return (
                       <>
                         {lead && (
-                          <div className="rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                          <div className="rounded-2xl border border-[#FF5C77]/30 bg-[#140B18] px-3.5 py-2.5 shadow-2xs">
                             <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
                               한 줄 결론
                             </span>
@@ -937,7 +938,7 @@ export default function AnnualFortuneClient({
                             </p>
                           </div>
                         )}
-                        <p className="text-xs sm:text-sm text-ink leading-relaxed whitespace-pre-line">
+                        <p className="text-[17px] text-[#F6EEF3] leading-[1.75] whitespace-pre-line">
                           {rest}
                         </p>
                       </>
@@ -970,14 +971,14 @@ export default function AnnualFortuneClient({
         {isLocked && (
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="bg-white p-3.5 rounded-2xl border border-line flex items-center justify-between shadow-2xs">
+              <div className="bg-[#22142A] p-3.5 rounded-2xl border border-white/[0.08] flex items-center justify-between shadow-2xs">
                 <span className="text-xs font-bold text-text-2">올해 가장 빛나는 달</span>
                 <span className="text-xs font-black text-coral bg-surface-soft border border-line px-2.5 py-1 rounded-xl flex items-center gap-1">
                   <span>{data.teasers?.bestMonth || "올해 가장 빛나는 달은 ●월"}</span>
                   <Lock className="w-3 h-3 text-coral" />
                 </span>
               </div>
-              <div className="bg-white p-3.5 rounded-2xl border border-line flex items-center justify-between shadow-2xs">
+              <div className="bg-[#22142A] p-3.5 rounded-2xl border border-white/[0.08] flex items-center justify-between shadow-2xs">
                 <span className="text-xs font-bold text-text-2">조심하면 좋은 달</span>
                 <span className="text-xs font-black text-[#6A2C70] bg-surface-soft border border-line px-2.5 py-1 rounded-xl flex items-center gap-1">
                   <span>{data.teasers?.cautionMonth || "딱 한 달, 감정·선택 조심"}</span>
@@ -1024,15 +1025,15 @@ export default function AnnualFortuneClient({
 
         {!isLocked && data.luckyPoints ? (
           <div className="grid grid-cols-3 gap-2.5">
-            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+            <div className="bg-[#22142A] p-4 rounded-2xl border border-white/[0.08] text-center shadow-xs">
               <span className="text-[11px] font-bold text-text-3 block mb-1">행운의 컬러</span>
               <span className="text-xs sm:text-sm font-black text-[#6A2C70]">{data.luckyPoints.color}</span>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+            <div className="bg-[#22142A] p-4 rounded-2xl border border-white/[0.08] text-center shadow-xs">
               <span className="text-[11px] font-bold text-text-3 block mb-1">행운의 아이템</span>
               <span className="text-xs sm:text-sm font-black text-coral">{data.luckyPoints.item}</span>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-line text-center shadow-xs">
+            <div className="bg-[#22142A] p-4 rounded-2xl border border-white/[0.08] text-center shadow-xs">
               <span className="text-[11px] font-bold text-text-3 block mb-1">가장 좋은 달</span>
               <span className="text-xs sm:text-sm font-black text-[#FFC24B]">{data.luckyPoints.month}월</span>
             </div>
@@ -1151,7 +1152,7 @@ export default function AnnualFortuneClient({
 
       {/* 2-A. Sticky Bottom CTA (미결제 시 뷰포트 하단 고정) */}
       {isLocked && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#FFD9E0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] py-3 px-4">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] shadow-[0_-8px_24px_rgba(0,0,0,0.45)] py-3 px-4">
           <div className="max-w-md md:max-w-2xl mx-auto flex items-center justify-between gap-3">
             <div className="flex flex-col text-left">
               <span className="text-[10px] sm:text-xs font-bold text-caption flex items-center gap-1">

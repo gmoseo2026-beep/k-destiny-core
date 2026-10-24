@@ -158,7 +158,7 @@ export default function ReportViewClient({
   if (errorCode || !reportData) {
     return (
       <Card className="w-full max-w-md mx-auto p-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-rose-50 text-coral flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-full bg-[#FF5C77]/15 text-[#FF5C77] flex items-center justify-center mx-auto mb-4">
           {errorCode === 402 ? <Lock className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
         </div>
         <h2 className="text-xl font-bold text-ink mb-2">
@@ -182,7 +182,7 @@ export default function ReportViewClient({
           </Button>
           <Link
             href={`/${locale}`}
-            className="w-full py-3 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-[#F2ECEB] transition-all text-center text-sm border border-line active:scale-[0.96]"
+            className="w-full py-3 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-white/[0.06] transition-all text-center text-sm border border-line active:scale-[0.96]"
           >
             홈으로 이동
           </Link>
@@ -286,7 +286,7 @@ export default function ReportViewClient({
         </Button>
         <Link
           href={`/${locale}`}
-          className="w-full py-3.5 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-[#F2ECEB] transition-all text-center text-sm flex items-center justify-center gap-2 border border-line active:scale-[0.96]"
+          className="w-full py-3.5 bg-surface-soft text-plum-deep font-bold rounded-2xl hover:bg-white/[0.06] transition-all text-center text-sm flex items-center justify-center gap-2 border border-line active:scale-[0.96]"
         >
           <Home className="w-4 h-4" />
           <span>다른 운세·궁합 보러가기</span>

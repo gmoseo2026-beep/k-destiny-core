@@ -58,10 +58,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: `우리의 케미 키워드: ${keywordText} | 사주로 보는 우리 사이`,
     robots: { index: false, follow: true },
     alternates: {
-      // canonical 은 유입 파라미터(?ref=)를 제외한 정규 URL 이어야 한다.
-      // 공유 링크의 ref 는 클라이언트에서 그대로 유지되므로 K 추적에는 영향이 없다.
-      // 로케일과 무관하게 ko 로 통합한다 — 같은 결과 페이지가 공유 경로에 따라
-      // /en/compat/... 처럼 갈라지면 하나의 결과가 여러 URL 로 쪼개진다.
       canonical: canonicalUrlFor(`/compat/${compat.shareToken}`),
     },
     openGraph: {
@@ -144,12 +140,12 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
   const visibleIds = (await getEffectiveCatalog()).filter((p) => isViewableFor(p, preview)).map((p) => p.id);
 
   return (
-    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] px-4 py-8 flex flex-col items-center">
       {/* 상단 내비게이션(Navbar)에 로고가 있으므로 여기서는 '새로 하기'만 둔다 */}
       <header className="w-full max-w-md flex items-center justify-end mb-2">
         <Link
           href={ref ? `/${locale}/compat/new?ref=${encodeURIComponent(ref)}` : `/${locale}/compat/new`}
-          className="text-xs font-bold text-coral bg-white px-3 py-1.5 rounded-full border border-[#FFD9E0] shadow-sm hover:bg-cream active:scale-95 transition-all"
+          className="text-xs font-bold text-[#FF8AA1] bg-[#22142A] px-3 py-1.5 rounded-full border border-white/[0.08] hover:bg-white/[0.06] active:scale-95 transition-all"
         >
           새로 하기
         </Link>

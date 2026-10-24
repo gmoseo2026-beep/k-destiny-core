@@ -3,9 +3,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, User, Share2, Check, ArrowRight, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, User, Share2, Check, Lock, Sparkles } from "lucide-react";
 import type { CatalogItem, ProductCategory } from "@/lib/catalog";
-import { priceLabel, formatWon, separatePrice, setsContaining, listPrice, discountBadge } from "@/lib/catalog";
+import {
+  formatWon,
+  separatePrice,
+  setsContaining,
+  listPrice,
+  discountBadge,
+  getProductCover,
+  getSetCoverStack,
+} from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
 import { trackEvent } from "@/lib/gtag";
@@ -21,15 +29,7 @@ import { loadLastCouple, loadLastPerson, type LastCouple, type LastPerson } from
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag, type TagCategory } from "@/components/ui/Tag";
-
-const CATEGORY_GRADIENTS: Record<ProductCategory, string> = {
-  "cat-fortune": "from-[#9B7BF7] to-[#5B34D6]",
-  "cat-compat": "from-[#FF8FA8] to-[#E0245A]",
-  "cat-wealth": "from-[#F7C85A] to-[#C98A0B]",
-  "cat-reunion": "from-[#FF9A8B] to-[#C9362F]",
-  "cat-career": "from-[#7FA9FF] to-[#2A5FD0]",
-  "cat-premium": "from-[#5B3354] to-[#2A1526]",
-};
+import { ListRowCard } from "@/components/cards/KongdakCards";
 
 const CATEGORY_NAMES: Record<ProductCategory, string> = {
   "cat-fortune": "운세",
@@ -45,9 +45,7 @@ interface StandardProductDetailProps {
   locale: string;
   preview?: boolean;
   allProducts: CatalogItem[];
-  /** 섹션 제목·소개(서버가 sectionOutlineFor 로 만들어 넘긴다. 프롬프트 원문은 넘기지 않는다) */
   sections?: SectionOutline[];
-  /** 가상 인물로 실제 생성한 결과 예시 조각(서버 페이지가 1개만 읽어 조각으로 넘긴다) */
   samplePreview?: StandardSamplePreview | null;
   reviews?: PublicReviewItem[];
 }
@@ -79,13 +77,11 @@ export function StandardProductDetail({
     });
   }, []);
 
-  const gradientClass =
-    CATEGORY_GRADIENTS[product.category] || "from-[#FF8FA8] to-[#E0245A]";
   const categoryName = CATEGORY_NAMES[product.category] || "운세";
-
   const isAnnual = product.id === "annual_2026" || product.id === "annual_2027";
+  const coverSrc = getProductCover(product);
+  const setStack = product.type === "SET" ? getSetCoverStack(product) : [];
 
-  // Next path for form input
   const nextPath =
     product.id === "annual_2026"
       ? `/${locale}/fortune/annual?year=2026`
@@ -95,7 +91,6 @@ export function StandardProductDetail({
       ? `/${locale}/compat/new?productId=${product.id}`
       : `/${locale}/fortune/new?productId=${product.id}`;
 
-  // 같은 탭(sessionStorage)에 방금 입력한 정보가 있으면 마운트 후 바로 보기 경로를 계산한다(총운 제외).
   const savedInfo = (() => {
     if (isAnnual) return null;
     if (product.target === "couple" && lastCouple) {
@@ -122,29 +117,27 @@ export function StandardProductDetail({
     return null;
   })();
 
-  // Related products (same target, visible, excluding self, limit 3)
   const relatedProducts = allProducts
     .filter(
       (p) =>
         !p.isHidden &&
         p.target === product.target &&
         p.id !== product.id &&
-        p.tier !== "premium"
+        p.tier !== "premium",
     )
     .slice(0, 3);
 
-  // 이 상품이 든 세트(공개 중인 것만 — allProducts 는 서버가 공개 판정한 목록)
   const containingSets =
-    product.type !== "SET" && !product.isFree ? setsContaining(product.id, allProducts.map((p) => p.id)) : [];
+    product.type !== "SET" && !product.isFree
+      ? setsContaining(product.id, allProducts.map((p) => p.id))
+      : [];
 
-  // Set items if SET
   const setProducts = product.items
     ? product.items
         .map((itemId) => allProducts.find((p) => p.id === itemId))
         .filter((p): p is CatalogItem => !!p)
     : [];
 
-  // Content points
   interface FeaturePoint {
     title: string;
     desc: string;
@@ -205,15 +198,15 @@ export function StandardProductDetail({
   };
 
   return (
-    <div className="min-h-screen bg-background text-ink pb-32">
+    <div className="min-h-screen bg-[#140B18] text-[#F6EEF3] pb-32">
       <ProductViewTracker productId={product.id} tier={product.tier} />
 
       {/* 1. Header (Sticky) */}
-      <header className="fixed top-0 left-0 right-0 h-14 bg-white/90 backdrop-blur-md border-b border-line z-50 flex items-center justify-between px-4 max-w-[480px] mx-auto">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#140B18]/90 backdrop-blur-md border-b border-white/[0.08] z-50 flex items-center justify-between px-4 max-w-[480px] mx-auto">
         <Link
           prefetch
           href={`/${locale}`}
-          className="p-2 -ml-2 text-ink hover:text-coral transition-colors"
+          className="p-2 -ml-2 text-[#F6EEF3] hover:text-[#FF5C77] transition-colors"
           aria-label="뒤로가기"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -221,7 +214,7 @@ export function StandardProductDetail({
         <Link
           prefetch
           href={`/${locale}`}
-          className="flex items-center gap-1.5 font-bold text-base text-ink"
+          className="flex items-center gap-1.5 font-bold text-base text-[#F6EEF3]"
         >
           <Image
             src="/mascot/transparent/couple_red_thread.webp"
@@ -234,79 +227,80 @@ export function StandardProductDetail({
         </Link>
         <Link
           href={`/${locale}/me`}
-          className="p-2 -mr-2 text-ink hover:text-coral transition-colors"
+          className="p-2 -mr-2 text-[#F6EEF3] hover:text-[#FF5C77] transition-colors"
           aria-label="마이페이지"
         >
           <User className="w-5 h-5" />
         </Link>
       </header>
 
-      {/* Main Container constrained to max-w-[480px] */}
+      {/* Main Container */}
       <div className="w-full max-w-[480px] mx-auto">
-        {/* Hidden preview banner if applicable */}
         {product.isHidden && preview && (
-          <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-800 text-xs font-semibold py-2 px-4 text-center">
+          <div className="w-full bg-[#FFC24B]/15 border-b border-[#FFC24B]/30 text-[#FFC24B] text-xs font-semibold py-2 px-4 text-center">
             🔒 미리보기 — 미공개 상품
           </div>
         )}
 
-        {/* 2. Banner 270px */}
-        <section
-          className={`relative w-full min-h-[270px] py-6 bg-gradient-to-b ${gradientClass} flex flex-col items-center justify-center text-center overflow-hidden px-4`}
-        >
-          {/* Heart SVG Pattern (14% Opacity) */}
-          <svg
-            className="absolute inset-0 w-full h-full pointer-events-none select-none opacity-14"
-            aria-hidden="true"
-          >
-            <defs>
-              <pattern
-                id="banner-heart-pattern"
-                x="0"
-                y="0"
-                width="36"
-                height="36"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M18 29s-9-6-12.5-11.5C2 12 3.5 6.5 9 6.5c3.2 0 6.5 2.8 9 5 2.5-2.2 5.8-5 9-5 5.5 0 7 5.5 3.5 11C27 23 18 29 18 29z"
-                  fill="white"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#banner-heart-pattern)" />
-          </svg>
+        {/* 2. 상단 3:4 표지 포스터 (3D 이모지 제거, 홈과 동일한 표지 포스터) */}
+        <section className="px-4 pt-3">
+          <div className="relative mx-auto aspect-[3/4] w-full max-w-[380px] overflow-hidden rounded-3xl border border-white/[0.08] bg-[#22142A] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+            {product.type === "SET" && setStack.length >= 2 ? (
+              <div className="absolute inset-0 bg-gradient-to-b from-[#2B1738] via-[#22142A] to-[#140B18]">
+                <div className="relative mx-auto mt-8 h-[56%] w-[78%]">
+                  {setStack.slice(0, 3).map((src, idx) => {
+                    const transforms = [
+                      "-rotate-6 -translate-x-5 translate-y-2 scale-90 opacity-75",
+                      "rotate-6 translate-x-5 translate-y-2 scale-90 opacity-85",
+                      "rotate-0 translate-y-0 scale-100 z-10",
+                    ];
+                    return (
+                      <div
+                        key={`${product.id}-hero-${idx}`}
+                        className={`absolute inset-0 mx-auto aspect-[3/4] h-full overflow-hidden rounded-2xl border border-white/20 shadow-xl ${transforms[idx] ?? ""}`}
+                      >
+                        <Image src={src} alt={product.name} fill sizes="240px" className="object-cover" priority={idx === 2} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <Image
+                src={coverSrc}
+                alt={product.name}
+                fill
+                sizes="(max-width: 480px) 92vw, 380px"
+                priority
+                className="object-cover"
+              />
+            )}
 
-          {/* 3D Icon 190px */}
-          <div className="relative w-[120px] h-[120px] sm:w-[170px] sm:h-[170px] mb-1 z-10 transition-transform duration-300 hover:scale-105">
-            <Image
-              src={product.icon3d}
-              alt=""
-              width={190}
-              height={190}
-              priority
-              className="object-contain w-full h-full drop-shadow-[0_12px_24px_rgba(0,0,0,0.18)]"
-            />
+            <div
+              className="absolute inset-0 flex flex-col justify-end p-5 text-left"
+              style={{
+                background:
+                  "linear-gradient(180deg, transparent 38%, rgba(20,11,24,0.86) 72%, #140B18 100%)",
+              }}
+            >
+              <span className="w-fit rounded-full border border-white/20 bg-white/10 px-3 py-0.5 text-xs font-bold text-[#F6EEF3] backdrop-blur-sm">
+                {product.name}
+              </span>
+              <h1 className="mt-2 text-[22px] sm:text-[25px] font-extrabold text-[#F6EEF3] leading-snug tracking-tight break-keep">
+                {product.hook || product.name}
+              </h1>
+            </div>
           </div>
-
-          {/* 상품 이름 대신 질문을 크게(2026-10-03): 분류명은 답이 궁금하지 않다 */}
-          <span className="relative z-10 mb-2 rounded-full bg-white/20 px-3 py-1 text-xs font-bold text-white">
-            {product.name}
-          </span>
-          <h1 className="relative z-10 max-w-[22ch] text-[24px] sm:text-[30px] font-black text-white leading-snug tracking-tight drop-shadow-sm break-keep">
-            {product.hook || product.name}
-          </h1>
         </section>
 
         {/* 3. Product Info */}
-        <section className="px-4 pt-6 pb-4">
+        <section className="px-4 pt-5 pb-4">
           <OwnedReportNotice locale={locale} catalogId={product.id} source="product" className="mb-4" />
-          {/* Tags */}
           <div className="flex items-center gap-2 mb-2.5 flex-wrap">
             <Tag
               category={
                 (["fortune", "compat", "wealth", "reunion", "career"].includes(
-                  product.category.replace("cat-", "")
+                  product.category.replace("cat-", ""),
                 )
                   ? (product.category.replace("cat-", "") as TagCategory)
                   : "default")
@@ -314,50 +308,41 @@ export function StandardProductDetail({
             >
               {categoryName}
             </Tag>
-            {product.isPopular && (
-              <Badge variant="popular">
-                인기
-              </Badge>
-            )}
-            {product.isNew && (
-              <Badge variant="new">
-                NEW
-              </Badge>
-            )}
+            {product.isPopular && <Badge variant="popular">인기</Badge>}
+            {product.isNew && <Badge variant="new">NEW</Badge>}
           </div>
 
-          {/* Title + Subtitle */}
-          <h2 className="text-xl sm:text-2xl font-black text-ink tracking-tight mb-2">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F6EEF3] tracking-tight mb-2">
             {product.name}
             {(product.subtitle || product.hook) && (
-              <span className="font-semibold text-text-2 text-base sm:text-lg block mt-1">
+              <span className="font-semibold text-[#B9A9BF] text-sm sm:text-base block mt-1">
                 {product.subtitle || product.hook}
               </span>
             )}
           </h2>
 
-          {/* Description */}
-          <p className="text-xs sm:text-sm text-caption leading-relaxed mb-4">
+          <p className="text-xs sm:text-sm text-[#B9A9BF] leading-relaxed mb-4">
             {product.description || product.hook}
           </p>
 
-          {/* Price & Share Button (No Wish Button, No Strikethrough) */}
-          <div className="flex items-center justify-between pt-3 pb-2 border-t border-line">
+          <div className="flex items-center justify-between pt-3 pb-2 border-t border-white/[0.08]">
             <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="text-2xl font-black text-ink">
+              <span className="text-2xl font-black text-[#FFC24B]">
                 {product.isFree ? "무료" : formatWon(product.price)}
               </span>
-              {/* 오픈 기념가: 실제로 받던 정가만 취소선으로 보여 준다(가짜 정가 금지) */}
               {listPrice(product) && (
                 <>
-                  <span className="text-sm font-bold text-text-3 line-through">{formatWon(listPrice(product)!)}</span>
-                  <span className="bg-coral-soft text-coral-deep text-xs font-extrabold px-2.5 py-1 rounded-md">{discountBadge(product)}</span>
+                  <span className="text-sm font-bold text-[#B9A9BF] line-through">
+                    {formatWon(listPrice(product)!)}
+                  </span>
+                  <span className="bg-[#FFC24B]/15 text-[#FFC24B] text-xs font-extrabold px-2.5 py-1 rounded-md">
+                    {discountBadge(product)}
+                  </span>
                 </>
               )}
-              {/* 세트: 실제 단건 가격 합계와 비교. 따로 사는 게 더 싸면 보여 주지 않는다 */}
               {product.type === "SET" && separatePrice(product) > product.price && (
-                <span className="text-xs font-bold text-caption">
-                  따로 사면 {formatWon(separatePrice(product))}
+                <span className="text-xs font-bold text-[#B9A9BF]">
+                  따로 사면 <span className="line-through">{formatWon(separatePrice(product))}</span>
                 </span>
               )}
             </div>
@@ -365,22 +350,22 @@ export function StandardProductDetail({
             <button
               type="button"
               onClick={handleShare}
-              className="p-2.5 rounded-full bg-surface-soft hover:bg-[#F2ECEB] text-text-2 border border-line transition-all active:scale-[0.96] shadow-2xs"
+              className="p-2.5 rounded-full bg-[#22142A] hover:border-white/20 text-[#F6EEF3] border border-white/[0.08] transition-all active:scale-[0.96]"
               aria-label="공유하기"
             >
-              <Share2 className="w-4 h-4 text-coral" />
+              <Share2 className="w-4 h-4 text-[#FF5C77]" />
             </button>
           </div>
 
           {toast && (
-            <div className="mt-2 text-xs font-bold text-coral text-center animate-in fade-in duration-200">
+            <div className="mt-2 text-xs font-bold text-[#FF5C77] text-center animate-in fade-in duration-200">
               {toast}
             </div>
           )}
 
           {savedInfo && (
-            <div className="mt-4 rounded-2xl border border-coral/30 bg-coral-soft p-3.5">
-              <p className="mb-2 text-xs font-bold text-coral-deep">
+            <div className="mt-4 rounded-2xl border border-[#FF5C77]/35 bg-[#22142A] p-3.5">
+              <p className="mb-2 text-xs font-bold text-[#F6EEF3]">
                 {savedInfo.hint}
               </p>
               <ProductCtaLink
@@ -403,7 +388,7 @@ export function StandardProductDetail({
                 target={product.target}
                 isFree={Boolean(product.isFree)}
                 location="hero"
-                className="mt-2 block text-center text-xs font-bold text-text-2 underline underline-offset-4 hover:text-coral transition-colors"
+                className="mt-2 block text-center text-xs font-bold text-[#B9A9BF] underline underline-offset-4 hover:text-[#FF5C77] transition-colors"
               >
                 다른 생년월일로 새로 입력하기
               </ProductCtaLink>
@@ -425,36 +410,15 @@ export function StandardProductDetail({
         )}
 
         {/* 4. What's in this report / 세트 구성 */}
-        <section className="px-4 py-6 border-t border-line">
-          <h3 className="text-base sm:text-lg font-extrabold text-ink mb-4 tracking-tight">
+        <section className="px-4 py-6 border-t border-white/[0.08]">
+          <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] mb-4 tracking-tight">
             {product.type === "SET" ? "세트 구성 안내" : "이런 내용을 확인할 수 있어요"}
           </h3>
 
           {product.type === "SET" && setProducts.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {setProducts.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-surface-soft border border-line"
-                >
-                  <div className="w-12 h-12 relative shrink-0">
-                    <Image
-                      src={item.icon3d}
-                      alt=""
-                      width={48}
-                      height={48}
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs sm:text-sm font-bold text-ink truncate">
-                      {item.name}
-                    </h4>
-                    <p className="text-[11px] text-text-2 truncate mt-0.5">
-                      {item.hook || item.description}
-                    </p>
-                  </div>
-                </div>
+                <ListRowCard key={item.id} product={item} listName="set_detail_items" />
               ))}
             </div>
           ) : featurePoints.length > 0 ? (
@@ -462,22 +426,16 @@ export function StandardProductDetail({
               {featurePoints.map((pt, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-2xl bg-surface-soft border border-line flex items-start gap-3"
+                  className="p-4 rounded-2xl bg-[#22142A] border border-white/[0.08] flex items-start gap-3"
                 >
-                  <div className="w-8 h-8 relative shrink-0 mt-0.5">
-                    <Image
-                      src={product.icon3d}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="object-contain"
-                    />
-                  </div>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#FF5C77]/15 text-xs font-extrabold text-[#FF5C77]">
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-ink">
+                    <h4 className="text-xs sm:text-sm font-bold text-[#F6EEF3]">
                       {pt.title}
                     </h4>
-                    <p className="text-xs text-text-2 mt-1 leading-relaxed">
+                    <p className="text-xs text-[#B9A9BF] mt-1 leading-relaxed">
                       {pt.desc}
                     </p>
                   </div>
@@ -485,85 +443,81 @@ export function StandardProductDetail({
               ))}
             </div>
           ) : (
-            <div className="p-4 rounded-2xl bg-surface-soft border border-line text-xs text-caption">
+            <div className="p-4 rounded-2xl bg-[#22142A] border border-white/[0.08] text-xs text-[#B9A9BF]">
               타고난 기운과 사주 원국을 바탕으로 정밀한 4대 분석 결과를 제공합니다.
             </div>
           )}
         </section>
 
-        {/* 4-1. Sample Preview (결과 예시 — 가상 인물로 실제 생성한 리포트 일부) */}
+        {/* 4-1. Sample Preview */}
         {samplePreview && (
-          <section ref={sampleSectionRef} className="px-4 py-6 border-t border-line">
+          <section ref={sampleSectionRef} className="px-4 py-6 border-t border-white/[0.08]">
             <div className="flex items-center justify-between gap-2 mb-3.5 flex-wrap">
-              <h3 className="text-base sm:text-lg font-extrabold text-ink tracking-tight">
+              <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
                 결과 예시
               </h3>
-              <span className="rounded-full bg-surface-soft border border-line px-2.5 py-1 text-[11px] font-bold text-text-2">
+              <span className="rounded-full bg-[#22142A] border border-white/[0.08] px-2.5 py-1 text-[11px] font-bold text-[#B9A9BF]">
                 {samplePreview.targetLabel}
               </span>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-line bg-white p-5 shadow-2xs">
-              {/* 배경 워터마크 (장식) */}
+            <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#22142A] p-5">
               <div
                 aria-hidden="true"
-                className="pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-[0.045] -rotate-12"
+                className="pointer-events-none select-none absolute inset-0 flex items-center justify-center opacity-[0.04] -rotate-12"
               >
-                <span className="text-7xl font-black tracking-widest text-ink">
+                <span className="text-7xl font-black tracking-widest text-white">
                   예시
                 </span>
               </div>
 
               <div className="relative z-10 flex flex-col gap-4">
-                {/* 점수 + Headline + Summary */}
-                <div className="flex flex-col items-center text-center border-b border-line pb-4">
+                <div className="flex flex-col items-center text-center border-b border-white/[0.08] pb-4">
                   <div className="scale-90 origin-bottom">
-                    <ScoreGauge score={samplePreview.score} color="#E0245A" />
+                    <ScoreGauge score={samplePreview.score} color="#FF5C77" />
                   </div>
-                  <p className="mt-2 text-base sm:text-lg font-black text-ink leading-snug tracking-tight">
+                  <p className="mt-2 text-base sm:text-lg font-black text-[#F6EEF3] leading-snug tracking-tight">
                     &ldquo;{samplePreview.headline}&rdquo;
                   </p>
-                  <p className="mt-1.5 text-xs sm:text-sm text-text-2 leading-relaxed">
+                  <p className="mt-1.5 text-xs sm:text-sm text-[#B9A9BF] leading-relaxed">
                     {samplePreview.summary}
                   </p>
                 </div>
 
-                {/* 첫 섹션 앞부분 + 끝 흐림 표현 */}
-                <div className="rounded-2xl bg-surface-soft/70 border border-line p-4">
+                <div className="rounded-2xl bg-[#140B18]/80 border border-white/[0.08] p-4">
                   <div className="flex items-center gap-1.5 mb-2">
-                    <Sparkles className="w-4 h-4 text-coral shrink-0" />
-                    <h4 className="text-xs sm:text-sm font-extrabold text-ink">
+                    <Sparkles className="w-4 h-4 text-[#FF5C77] shrink-0" />
+                    <h4 className="text-xs sm:text-sm font-extrabold text-[#F6EEF3]">
                       {samplePreview.firstSection.title}
                     </h4>
                   </div>
-                  <p className="text-xs sm:text-sm text-ink leading-relaxed whitespace-pre-line">
+                  <p className="text-xs sm:text-sm text-[#F6EEF3] leading-relaxed whitespace-pre-line">
                     {samplePreview.firstSection.bodyExcerpt}
                   </p>
                   <div className="relative mt-1">
-                    <p aria-hidden="true" className="select-none text-xs sm:text-sm leading-relaxed text-ink blur-[5px]">
+                    <p aria-hidden="true" className="select-none text-xs sm:text-sm leading-relaxed text-[#F6EEF3] blur-[5px]">
                       {getTeaserBlurCopy(product.id)}
                     </p>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface-soft/70 to-surface-soft" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#140B18]/70 to-[#140B18]" />
                   </div>
                 </div>
 
-                {/* 나머지 섹션: 제목 + 첫 문장 한 줄씩 + 자물쇠 아이콘 (정적, 버튼 아님) */}
                 {samplePreview.lockedSections.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {samplePreview.lockedSections.map((sec, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface-soft px-3.5 py-3 text-left"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.08] bg-[#140B18]/70 px-3.5 py-3 text-left"
                       >
                         <div className="min-w-0 flex-1">
-                          <span className="block text-xs font-bold text-ink truncate">
+                          <span className="block text-xs font-bold text-[#F6EEF3] truncate">
                             {sec.title}
                           </span>
-                          <p className="mt-0.5 text-[11px] text-text-2 truncate">
+                          <p className="mt-0.5 text-[11px] text-[#B9A9BF] truncate">
                             {sec.firstSentence}
                           </p>
                         </div>
-                        <Lock className="w-4 h-4 text-coral shrink-0" aria-hidden="true" />
+                        <Lock className="w-4 h-4 text-[#FF5C77] shrink-0" aria-hidden="true" />
                       </div>
                     ))}
                   </div>
@@ -571,29 +525,29 @@ export function StandardProductDetail({
               </div>
             </div>
 
-            <p className="mt-2.5 text-center text-xs font-medium text-caption">
+            <p className="mt-2.5 text-center text-xs font-medium text-[#B9A9BF]">
               내 생년월일로 보면 점수와 내용이 달라져요
             </p>
           </section>
         )}
 
-        {/* 5. Recommended For (이런 분께 추천해요) */}
+        {/* 5. 실제 구매자 후기 + 이런 분께 추천해요 */}
         <ProductReviewsSection reviews={reviews} variant="detail" />
         {product.recommendFor && product.recommendFor.length > 0 && (
-          <section className="px-4 py-6 border-t border-line">
-            <h3 className="text-base sm:text-lg font-extrabold text-ink mb-3.5 tracking-tight">
+          <section className="px-4 py-6 border-t border-white/[0.08]">
+            <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] mb-3.5 tracking-tight">
               이런 분께 추천해요
             </h3>
             <div className="space-y-2.5">
               {product.recommendFor.map((line, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-line/80 shadow-2xs"
+                  className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-[#22142A] border border-white/[0.08]"
                 >
-                  <div className="w-5 h-5 rounded-full bg-coral-soft flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3.5 h-3.5 text-coral stroke-[2.5]" />
+                  <div className="w-5 h-5 rounded-full bg-[#FF5C77]/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3.5 h-3.5 text-[#FF5C77] stroke-[2.5]" />
                   </div>
-                  <span className="text-xs sm:text-sm text-text-2 leading-relaxed font-medium">
+                  <span className="text-xs sm:text-sm text-[#F6EEF3] leading-relaxed font-medium">
                     {line}
                   </span>
                 </div>
@@ -602,9 +556,9 @@ export function StandardProductDetail({
           </section>
         )}
 
-        {/* 6. Dugeuni's Promise (두근이의 약속 - plum-deep) */}
-        <section className="px-4 py-6 border-t border-line">
-          <div className="bg-plum-deep text-white rounded-3xl p-5 sm:p-6 border border-[#4E2A45] shadow-lg">
+        {/* 6. 두근이의 세 가지 약속 */}
+        <section className="px-4 py-6 border-t border-white/[0.08]">
+          <div className="bg-[#22142A] text-[#F6EEF3] rounded-3xl p-5 sm:p-6 border border-white/[0.08]">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 relative shrink-0">
                 <Image
@@ -616,80 +570,43 @@ export function StandardProductDetail({
                 />
               </div>
               <div>
-                <h3 className="text-sm sm:text-base font-extrabold text-gold-soft tracking-tight">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#FFC24B] tracking-tight">
                   두근이의 세 가지 약속
                 </h3>
-                <p className="text-[11px] text-white/70">
+                <p className="text-[11px] text-[#B9A9BF]">
                   신뢰할 수 있는 콩닥의 정직한 원칙
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2.5 text-xs text-white/90">
+            <div className="space-y-2.5 text-xs text-[#F6EEF3]/90">
               <div className="flex items-start gap-2">
-                <span className="text-gold-soft font-bold">1.</span>
+                <span className="text-[#FFC24B] font-bold">1.</span>
                 <span>같은 생년월일이면 언제 봐도 같은 점수</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-gold-soft font-bold">2.</span>
+                <span className="text-[#FFC24B] font-bold">2.</span>
                 <span>비회원이 입력한 생년월일·시간은 원문으로 저장하지 않아요</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-gold-soft font-bold">3.</span>
+                <span className="text-[#FFC24B] font-bold">3.</span>
                 <span>
-                  결제 후 <strong className="text-gold-soft">{product.accessDays}일</strong> 동안 언제든 내 보관함에서 다시 열람
+                  결제 후 <strong className="text-[#FFC24B]">{product.accessDays}일</strong> 동안 언제든 내 보관함에서 다시 열람
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 7. Together with (함께 봐요) */}
+        {/* 7. 함께 보면 좋은 콘텐츠 */}
         {relatedProducts.length > 0 && (
-          <section className="px-4 py-6 border-t border-line">
-            <h3 className="text-base sm:text-lg font-extrabold text-ink mb-3.5 tracking-tight">
+          <section className="px-4 py-6 border-t border-white/[0.08]">
+            <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] mb-3.5 tracking-tight">
               함께 보면 좋은 콘텐츠
             </h3>
             <div className="space-y-2.5">
               {relatedProducts.map((rel) => (
-                <Link
-                  prefetch
-                  key={rel.id}
-                  href={`/${locale}/products/${rel.id}`}
-                  onClick={() =>
-                    trackEvent("related_product_click", {
-                      fromProductId: product.id,
-                      toProductId: rel.id,
-                    })
-                  }
-                  className="group flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-surface-soft border border-line transition-all active:scale-[0.97]"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 relative shrink-0">
-                      <Image
-                        src={rel.icon3d}
-                        alt=""
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-bold text-ink group-hover:text-coral transition-colors truncate">
-                        {rel.name}
-                      </h4>
-                      <p className="text-[11px] text-caption truncate mt-0.5">
-                        {rel.hook || rel.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-xs font-bold text-ink">
-                      {priceLabel(rel)}
-                    </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:text-coral group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </Link>
+                <ListRowCard key={rel.id} product={rel} listName="related_products" />
               ))}
             </div>
           </section>
@@ -697,7 +614,7 @@ export function StandardProductDetail({
       </div>
 
       {/* 8. Fixed Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-white/95 backdrop-blur-md border-t border-line z-40 max-w-[480px] mx-auto shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] z-40 max-w-[480px] mx-auto shadow-lg pb-safe-bar">
         {savedInfo && (
           <ProductCtaLink
             href={savedInfo.href}
@@ -727,17 +644,14 @@ export function StandardProductDetail({
           }
           className={
             savedInfo
-              ? "block w-full text-center text-xs font-bold text-text-2 underline underline-offset-4 py-1 hover:text-coral transition-colors"
+              ? "block w-full text-center text-xs font-bold text-[#B9A9BF] underline underline-offset-4 py-1 hover:text-[#FF5C77] transition-colors"
               : "block w-full"
           }
         >
           {savedInfo ? (
             "다른 생년월일로 새로 입력하기"
           ) : (
-            <Button
-              size="lg"
-              fullWidth
-            >
+            <Button size="lg" fullWidth>
               {product.isFree
                 ? "무료로 보기"
                 : product.target === "couple" && product.id !== "compat_basic"
@@ -747,7 +661,7 @@ export function StandardProductDetail({
           )}
         </Link>
         {!product.isFree && (
-          <p className="text-[11px] text-caption text-center mt-1.5 font-medium">
+          <p className="text-[11px] text-[#B9A9BF] text-center mt-1.5 font-medium">
             점수와 미리보기는 무료 · 전체 리포트는 결제 후 바로 열람
           </p>
         )}

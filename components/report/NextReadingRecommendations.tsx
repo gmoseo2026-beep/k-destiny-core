@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { ArrowRight, Gift } from "lucide-react";
-import { type CatalogItem, formatWon, getProduct, priceLabel, separatePrice } from "@/lib/catalog";
+import { type CatalogItem, formatWon, getProduct, getProductCover, priceLabel, separatePrice } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { forgetUnlockToken, recallUnlockToken } from "@/lib/payments/client";
 import { type DeviceOrder, forgetDeviceOrder, listDeviceOrders } from "@/lib/payments/deviceOrders";
@@ -50,7 +50,6 @@ export default function NextReadingRecommendations({
 
     (async () => {
       try {
-        // 1) 이 기기에 저장된 주문 토큰 + 정통 궁합 unlock 토큰을 서버(/api/payments/owned)로 검증
         const deviceOrders = listDeviceOrders();
         const unlockOrderId = recallUnlockToken(compatId);
         const candidates: DeviceOrder[] = [...deviceOrders];
@@ -82,7 +81,6 @@ export default function NextReadingRecommendations({
           }
         }
 
-        // 2) 로그인한 계정이면 /api/reports/mine 에서 같은 compatId 주문/리포트를 추가 수집
         let mineRows: MineOrderSummary[] = [];
         if (sessionStatus === "authenticated") {
           const mineRes = await fetch("/api/reports/mine", { cache: "no-store" });
@@ -107,7 +105,6 @@ export default function NextReadingRecommendations({
           }),
         });
       } catch {
-        // 확인에 실패하면 가진 상품이 잠깐이라도 노출되지 않도록 권유를 그리지 않는다 (P-007 §2-4)
         if (!alive) return;
         setResolved({ key: checkKey, ok: false, ownedCatalogIds: [] });
       }
@@ -151,13 +148,13 @@ export default function NextReadingRecommendations({
     <section
       ref={containerRef}
       aria-label={isFreePreview ? "이 두 사람으로 더 보기" : "같은 두 사람으로 이어서 보기"}
-      className="w-full rounded-2xl border border-[#FFD9E0] bg-[#FFF8FA] p-4 text-left shadow-xs"
+      className="w-full rounded-2xl border border-white/[0.08] bg-[#22142A] p-4 text-left"
     >
       <div className="mb-3">
-        <h3 className="text-sm font-black text-ink">
+        <h3 className="text-sm font-black text-[#F6EEF3]">
           {isFreePreview ? "이 두 사람으로 더 보기" : "같은 두 사람으로 이어서 보기"}
         </h3>
-        <p className="text-[11px] font-medium text-text-2 mt-0.5">
+        <p className="text-[11px] font-medium text-[#B9A9BF] mt-0.5">
           {isFreePreview
             ? "다시 입력 없이 · 무료 미리보기"
             : "생년월일을 다시 넣지 않고 바로 미리보기로 이어져요"}
@@ -179,19 +176,19 @@ export default function NextReadingRecommendations({
                   source_screen: sourceScreen,
                 })
               }
-              className="group w-full flex items-center justify-between gap-2.5 p-3 rounded-xl bg-white hover:bg-cream/60 border border-line transition-all duration-150 active:scale-[0.98]"
+              className="group w-full flex items-center justify-between gap-2.5 p-3 rounded-xl bg-[#140B18] hover:bg-white/[0.04] border border-white/[0.08] transition-all duration-150 active:scale-[0.98]"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 relative shrink-0 rounded-xl bg-coral-soft flex items-center justify-center">
-                  <Image src={item.icon3d} alt="" width={32} height={32} className="object-contain" />
+                <div className="relative h-[56px] w-[42px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#22142A]">
+                  <Image src={getProductCover(item)} alt="" fill sizes="42px" className="object-cover" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-extrabold text-ink truncate">{item.name}</h4>
+                  <h4 className="text-xs sm:text-sm font-extrabold text-[#F6EEF3] truncate">{item.name}</h4>
                   <p
                     className={
                       isFreePreview
-                        ? "text-[11px] font-medium text-text-2 line-clamp-2 leading-snug mt-0.5"
-                        : "text-[11px] font-medium text-text-2 truncate mt-0.5"
+                        ? "text-[11px] font-medium text-[#B9A9BF] line-clamp-2 leading-snug mt-0.5"
+                        : "text-[11px] font-medium text-[#B9A9BF] truncate mt-0.5"
                     }
                   >
                     {item.hook}
@@ -200,11 +197,11 @@ export default function NextReadingRecommendations({
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-1">
                 {isFreePreview ? (
-                  <span className="text-xs font-black text-coral whitespace-nowrap">무료 미리보기 →</span>
+                  <span className="text-xs font-black text-[#FF5C77] whitespace-nowrap">무료 미리보기 →</span>
                 ) : (
                   <>
-                    <span className="text-xs font-black text-coral whitespace-nowrap">{priceLabel(item)}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-caption group-hover:translate-x-0.5 transition-transform" />
+                    <span className="text-xs font-black text-[#FF5C77] whitespace-nowrap">{priceLabel(item)}</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-[#B9A9BF] group-hover:translate-x-0.5 transition-transform" />
                   </>
                 )}
               </div>
@@ -214,7 +211,7 @@ export default function NextReadingRecommendations({
       )}
 
       {setItem && (
-        <div className={singles.length > 0 ? "mt-2.5 pt-2.5 border-t border-[#FFE4EA]" : ""}>
+        <div className={singles.length > 0 ? "mt-2.5 pt-2.5 border-t border-white/[0.08]" : ""}>
           <Link
             href={nextReadingHref(setItem.id, compatId, locale)}
             onClick={() =>
@@ -226,28 +223,28 @@ export default function NextReadingRecommendations({
                 source_screen: sourceScreen,
               })
             }
-            className="group w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-white hover:bg-cream/60 border border-line transition-all duration-150 active:scale-[0.98]"
+            className="group w-full flex items-center justify-between gap-2 p-3 rounded-xl bg-[#140B18] hover:bg-white/[0.04] border border-white/[0.08] transition-all duration-150 active:scale-[0.98]"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 relative shrink-0 rounded-xl bg-coral-soft flex items-center justify-center">
-                <Image src={setItem.icon3d} alt="" width={32} height={32} className="object-contain" />
+              <div className="relative h-[56px] w-[42px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-[#22142A]">
+                <Image src={getProductCover(setItem)} alt="" fill sizes="42px" className="object-cover" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1">
-                  <Gift className="w-3 h-3 text-coral shrink-0" />
-                  <span className="text-[10px] font-extrabold text-coral-deep bg-coral-soft px-1.5 py-0.5 rounded">
+                  <Gift className="w-3 h-3 text-[#FF5C77] shrink-0" />
+                  <span className="text-[10px] font-extrabold text-[#FF8AA1] bg-[#FF5C77]/15 px-1.5 py-0.5 rounded">
                     세트 · 리포트 {setConstituents.length}개
                   </span>
                 </div>
-                <h4 className="text-xs sm:text-sm font-extrabold text-ink truncate mt-0.5">{setItem.name}</h4>
-                <p className="text-[11px] text-caption truncate">
+                <h4 className="text-xs sm:text-sm font-extrabold text-[#F6EEF3] truncate mt-0.5">{setItem.name}</h4>
+                <p className="text-[11px] text-[#B9A9BF] truncate">
                   {setConstituents.map((p) => p.gridLabel || p.name).join(" · ")}
                 </p>
               </div>
             </div>
             <div className="flex flex-col items-end shrink-0 ml-1">
-              <span className="text-xs font-black text-coral whitespace-nowrap">{formatWon(setItem.price)}</span>
-              <span className="text-[10px] text-caption whitespace-nowrap">
+              <span className="text-xs font-black text-[#FF5C77] whitespace-nowrap">{formatWon(setItem.price)}</span>
+              <span className="text-[10px] text-[#8E7D96] whitespace-nowrap">
                 따로 사면 {formatWon(separatePrice(setItem))}
               </span>
             </div>

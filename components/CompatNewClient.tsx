@@ -10,7 +10,7 @@ import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
-import { getProduct, priceLabel, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
+import { getProduct, getProductCover, priceLabel, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { revealUnlockPanel, trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
@@ -801,9 +801,11 @@ export default function CompatNewClient({
   if (continuing) {
     return (
       <div className="w-full max-w-md mx-auto flex flex-col items-center gap-3 py-16 text-center">
-        <Image src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"} alt="" width={72} height={72} className="object-contain animate-pulse" />
-        <p className="text-sm font-bold text-ink">지난 궁합으로 {product?.name} 미리보기를 만들고 있어요</p>
-        <p className="text-xs text-caption">두 사람 정보를 다시 넣지 않아도 돼요</p>
+        <div className="relative h-[96px] w-[72px] overflow-hidden rounded-xl border border-white/10 bg-[#22142A] animate-pulse">
+          <Image src={getProductCover(product || "compat_basic")} alt="" fill sizes="72px" className="object-cover" />
+        </div>
+        <p className="text-sm font-bold text-[#F6EEF3]">지난 궁합으로 {product?.name} 미리보기를 만들고 있어요</p>
+        <p className="text-xs text-[#B9A9BF]">두 사람 정보를 다시 넣지 않아도 돼요</p>
       </div>
     );
   }
@@ -918,19 +920,19 @@ export default function CompatNewClient({
         </div>
       )}
 
-      {/* 3D Product Icon 72px & Title */}
+      {/* 3:4 Product Cover & Title */}
       <div className="flex flex-col items-center justify-center -mb-1">
-        <div className="w-[64px] h-[64px] relative mb-1.5">
+        <div className="relative mb-2 h-[104px] w-[78px] overflow-hidden rounded-2xl border border-white/10 bg-[#22142A] shadow-md">
           <Image
-            src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"}
+            src={getProductCover(product || "compat_basic")}
             alt=""
-            width={64}
-            height={64}
+            fill
+            sizes="78px"
             priority
-            className="object-contain drop-shadow-sm"
+            className="object-cover"
           />
         </div>
-        <h2 className="text-sm font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
+        <h2 className="text-sm font-extrabold text-[#F6EEF3]">{product?.name || "정통 궁합"}</h2>
       </div>
 
       {/* 방금 본 두 사람으로 입력 없이 이 상품 미리보기 */}
@@ -1036,7 +1038,7 @@ export default function CompatNewClient({
               value={nameA}
               onChange={(e) => setNameA(e.target.value)}
               placeholder="예: 김콩닥"
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
             />
           </div>
 
@@ -1049,7 +1051,7 @@ export default function CompatNewClient({
                 <select
                   value={yearA}
                   onChange={(e) => setYearA(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">년도</option>
                   {years.map((y) => (
@@ -1061,7 +1063,7 @@ export default function CompatNewClient({
                 <select
                   value={monthA}
                   onChange={(e) => setMonthA(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">월</option>
                   {months.map((m) => (
@@ -1073,7 +1075,7 @@ export default function CompatNewClient({
                 <select
                   value={dayA}
                   onChange={(e) => setDayA(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">일</option>
                   {Array.from(
@@ -1098,7 +1100,7 @@ export default function CompatNewClient({
                 <select
                   value={genderA}
                   onChange={(e) => setGenderA(e.target.value as "F" | "M")}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="F">여성</option>
                   <option value="M">남성</option>
@@ -1110,7 +1112,7 @@ export default function CompatNewClient({
                   <select
                     value={ampmA}
                     onChange={(e) => setAmpmA(e.target.value)}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -1120,7 +1122,7 @@ export default function CompatNewClient({
                     value={hourA}
                     onChange={(e) => setHourA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
                     {hours.map((h) => (
                       <option key={h} value={h}>
@@ -1132,7 +1134,7 @@ export default function CompatNewClient({
                     value={minA}
                     onChange={(e) => setMinA(e.target.value)}
                     disabled={!ampmA}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
                     {minutes.map((m) => (
                       <option key={m} value={m}>
@@ -1170,7 +1172,7 @@ export default function CompatNewClient({
                       className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border active:scale-[0.96] ${
                         relation === item.key
                           ? "bg-coral text-white border-coral shadow-2xs"
-                          : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
+                          : "bg-surface-soft text-ink border-line hover:bg-white/[0.06]"
                       }`}
                     >
                       <span>{item.icon}</span>
@@ -1236,7 +1238,7 @@ export default function CompatNewClient({
               value={nameB}
               onChange={(e) => setNameB(e.target.value)}
               placeholder="예: 이설렘"
-              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+              className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
             />
           </div>
 
@@ -1249,7 +1251,7 @@ export default function CompatNewClient({
                 <select
                   value={yearB}
                   onChange={(e) => setYearB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">년도</option>
                   {years.map((y) => (
@@ -1261,7 +1263,7 @@ export default function CompatNewClient({
                 <select
                   value={monthB}
                   onChange={(e) => setMonthB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">월</option>
                   {months.map((m) => (
@@ -1273,7 +1275,7 @@ export default function CompatNewClient({
                 <select
                   value={dayB}
                   onChange={(e) => setDayB(e.target.value)}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="">일</option>
                   {Array.from(
@@ -1298,7 +1300,7 @@ export default function CompatNewClient({
                 <select
                   value={genderB}
                   onChange={(e) => setGenderB(e.target.value as "M" | "F")}
-                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                 >
                   <option value="M">남성</option>
                   <option value="F">여성</option>
@@ -1310,7 +1312,7 @@ export default function CompatNewClient({
                   <select
                     value={ampmB}
                     onChange={(e) => setAmpmB(e.target.value)}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] focus-visible:ring-2 ring-coral"
                   >
                     <option value="">모름</option>
                     <option value="AM">오전</option>
@@ -1320,7 +1322,7 @@ export default function CompatNewClient({
                     value={hourB}
                     onChange={(e) => setHourB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
                     {hours.map((h) => (
                       <option key={h} value={h}>
@@ -1332,7 +1334,7 @@ export default function CompatNewClient({
                     value={minB}
                     onChange={(e) => setMinB(e.target.value)}
                     disabled={!ampmB}
-                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                    className="w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] focus:outline-none focus:border-coral bg-[#140B18] [color-scheme:dark] disabled:opacity-50 focus-visible:ring-2 ring-coral"
                   >
                     {minutes.map((m) => (
                       <option key={m} value={m}>
@@ -1395,7 +1397,7 @@ export default function CompatNewClient({
                 className={`py-4 px-2 rounded-2xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 border active:scale-[0.96] ${
                   relation === item.key
                     ? "bg-coral text-white border-coral shadow-xs"
-                    : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
+                    : "bg-surface-soft text-ink border-line hover:bg-white/[0.06]"
                 }`}
               >
                 <span className="text-xl">{item.icon}</span>
@@ -1453,7 +1455,7 @@ export default function CompatNewClient({
                   className={`w-full rounded-2xl border p-3.5 text-left transition-all flex items-center justify-between gap-3 active:scale-[0.98] ${
                     isSelected
                       ? "border-coral bg-coral-soft shadow-2xs"
-                      : "border-line bg-surface-soft hover:bg-[#F2ECEB]"
+                      : "border-line bg-surface-soft hover:bg-white/[0.06]"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -1467,7 +1469,7 @@ export default function CompatNewClient({
                   </div>
                   <span
                     className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
-                      isSelected ? "border-coral bg-coral text-white" : "border-caption bg-white"
+                      isSelected ? "border-coral bg-coral text-white" : "border-white/25 bg-[#140B18]"
                     }`}
                   >
                     {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}

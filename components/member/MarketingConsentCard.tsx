@@ -72,14 +72,14 @@ export default function MarketingConsentCard({ className = "" }: { className?: s
   };
 
   return (
-    <section className={`w-full rounded-2xl border border-line bg-white p-4 shadow-xs ${className}`} aria-label="혜택·새 소식 받기">
+    <section className={`w-full rounded-2xl border border-white/[0.08] bg-[#22142A] p-4 ${className}`} aria-label="혜택·새 소식 받기">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-coral-soft text-coral">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FF5C77]/15 text-[#FF5C77]">
           <Gift className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1 text-left">
-          <h2 className="text-sm font-extrabold text-ink">혜택·새 소식, 받아 보실래요? (선택)</h2>
-          <p className="mt-0.5 text-xs leading-relaxed text-text-2">
+          <h2 className="text-sm font-extrabold text-[#F6EEF3]">혜택·새 소식, 받아 보실래요? (선택)</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#B9A9BF]">
             할인·이벤트·새 리포트 소식을 가끔 이메일로 보내드려요. 보관함에서 언제든 끌 수 있어요.
           </p>
         </div>
@@ -94,17 +94,17 @@ export default function MarketingConsentCard({ className = "" }: { className?: s
           onChange={(e) => setEmail(e.target.value)}
           placeholder="소식 받을 이메일"
           aria-label="소식 받을 이메일"
-          className="mt-3 w-full rounded-2xl border border-line bg-surface-soft px-4 py-3 text-sm text-ink placeholder:text-text-3 focus:border-coral focus:outline-none"
+          className="mt-3 w-full rounded-2xl border border-white/[0.12] bg-[#140B18] px-4 py-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:border-[#FF5C77] focus:outline-none"
         />
       )}
-      {error && <p className="mt-2 text-left text-xs font-bold text-coral-deep">{error}</p>}
+      {error && <p className="mt-2 text-left text-xs font-bold text-[#FF8AA1]">{error}</p>}
 
       <div className="mt-3 flex gap-2">
         <button
           type="button"
           onClick={() => answer(true)}
           disabled={saving}
-          className="flex-1 rounded-2xl bg-coral py-3 text-sm font-bold text-white transition-all active:scale-[0.96] disabled:opacity-60"
+          className="flex-1 rounded-2xl bg-[#FF5C77] py-3 text-sm font-bold text-white transition-all active:scale-[0.96] disabled:opacity-60"
         >
           받을게요
         </button>
@@ -112,7 +112,7 @@ export default function MarketingConsentCard({ className = "" }: { className?: s
           type="button"
           onClick={() => answer(false)}
           disabled={saving}
-          className="rounded-2xl border border-line bg-white px-5 py-3 text-sm font-bold text-text-2 transition-all active:scale-[0.96] disabled:opacity-60"
+          className="rounded-2xl border border-white/[0.08] bg-[#140B18] px-5 py-3 text-sm font-bold text-[#B9A9BF] transition-all active:scale-[0.96] disabled:opacity-60"
         >
           괜찮아요
         </button>

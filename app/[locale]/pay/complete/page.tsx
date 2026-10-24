@@ -312,7 +312,7 @@ function PayCompleteContent() {
       : `/${locale}/me`;
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#140B18] text-[#F6EEF3] flex items-center justify-center px-4 py-12 pb-28">
       <Card className="max-w-md w-full p-8 text-center flex flex-col items-center">
         <div className="mb-6">
           <KongdakMascot
@@ -388,7 +388,7 @@ function PayCompleteContent() {
                   value={emailValue}
                   onChange={(e) => setEmailValue(e.target.value)}
                   placeholder="kongdak@example.com"
-                  className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-text-3 focus:outline-none focus:ring-2 focus:ring-coral/40"
+                  className="min-w-0 flex-1 rounded-xl border border-white/[0.12] bg-[#140B18] px-3 py-2 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] focus:outline-none focus:ring-2 focus:ring-coral/40"
                 />
                 <Button type="submit" variant="secondary" size="sm" disabled={emailState === "saving" || !emailValue.trim()}>
                   저장
@@ -486,7 +486,7 @@ function PayCompleteContent() {
                         // 복사가 막힌 앱이면 위 메뉴 안내만으로 진행한다
                       }
                     }}
-                    className="mt-3 w-full bg-white border border-coral/40 text-coral-deep py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.96]"
+                    className="mt-3 w-full bg-[#140B18] border border-[#FF5C77]/40 text-[#FF8AA1] py-3 rounded-2xl font-bold text-sm transition-all active:scale-[0.96]"
                   >
                     {retryCopied ? "복사했어요" : "링크 복사하기"}
                   </button>
@@ -533,7 +533,7 @@ function PayCompleteContent() {
 
 export default function PayCompletePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8 text-plum">로딩 중...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#140B18] flex items-center justify-center p-8 text-[#F6EEF3]">로딩 중...</div>}>
       <PayCompleteContent />
     </Suspense>
   );

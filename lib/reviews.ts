@@ -302,3 +302,100 @@ export async function getPublicReviewsForCatalog(
     return [];
   }
 }
+
+/**
+ * 홈 피드에 보여 줄 최근 공개 후기(displayOk=true) 목록 조회.
+ * 후기가 0개면 빈 배열([])을 반환해 영역 자체를 숨긴다.
+ */
+export async function getRecentPublicReviews(limit: number = 6): Promise<PublicReviewItem[]> {
+  try {
+    const rows = await prisma.review.findMany({
+      where: { displayOk: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    if (rows.length === 0) return [];
+
+    const orderIds = [...new Set(rows.map((r) => r.orderId))];
+    const orders = await prisma.order.findMany({
+      where: { id: { in: orderIds } },
+      select: { id: true, orderId: true, userId: true, compatId: true },
+    });
+    const orderMap = new Map(orders.map((o) => [o.id, o]));
+    const compatIds = [...new Set(orders.map((o) => o.compatId).filter((v): v is string => Boolean(v)))];
+    const userIds = [...new Set(orders.map((o) => o.userId).filter((v): v is string => Boolean(v)))];
+
+    const [compats, profiles] = await Promise.all([
+      compatIds.length > 0
+        ? prisma.compatibility.findMany({
+            where: { id: { in: compatIds } },
+            select: { id: true, personA: true },
+          })
+        : Promise.resolve([]),
+      userIds.length > 0
+        ? prisma.userSajuProfile.findMany({
+            where: { userId: { in: userIds } },
+            select: { userId: true, birthYear: true, fourPillars: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const compatMap = new Map(compats.map((c) => [c.id, c]));
+    const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+    const paidOrdersForUsers =
+      userIds.length > 0
+        ? await prisma.order.findMany({
+            where: { userId: { in: userIds }, status: "PAID" },
+            select: { userId: true },
+          })
+        : [];
+    const userPaidCount = new Map<string, number>();
+    for (const o of paidOrdersForUsers) {
+      if (o.userId) userPaidCount.set(o.userId, (userPaidCount.get(o.userId) ?? 0) + 1);
+    }
+
+    return rows.map((r) => {
+      const ord = orderMap.get(r.orderId);
+      const compat = ord?.compatId ? compatMap.get(ord.compatId) : undefined;
+      const profile = ord?.userId ? profileMap.get(ord.userId) : undefined;
+      const personA = (compat?.personA ?? null) as { fourPillars?: { year?: string } } | null;
+      const profilePillars = (profile?.fourPillars ?? null) as { year?: string } | null;
+      const yearPillar = personA?.fourPillars?.year || profilePillars?.year || null;
+      const birthYear = profile?.birthYear || null;
+      const zodiac = deriveZodiacBadge({ yearPillar, birthYear });
+      const purchaseCount =
+        ord?.userId && userPaidCount.has(ord.userId)
+          ? Math.max(1, userPaidCount.get(ord.userId)!)
+          : 1;
+      return {
+        id: r.id,
+        catalogId: r.catalogId,
+        rating: r.rating,
+        text: r.text,
+        zodiacEmoji: zodiac.emoji,
+        zodiacLabel: zodiac.label,
+        purchaseCount,
+        createdAt: r.createdAt.toISOString(),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** 로그인 회원의 미사용 유효 쿠폰 장수 조회 (홈 상단 1줄 요약용) */
+export async function countAvailableCouponsForUser(userId: string): Promise<number> {
+  if (!userId) return 0;
+  try {
+    const keys = buildCandidateOwnerKeys({ userId });
+    return await prisma.coupon.count({
+      where: {
+        ownerKey: { in: keys },
+        usedOrderId: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  } catch {
+    return 0;
+  }
+}

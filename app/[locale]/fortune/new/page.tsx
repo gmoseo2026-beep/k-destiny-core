@@ -22,7 +22,7 @@ export async function generateMetadata({
   searchParams: Promise<{ productId?: string }>;
 }): Promise<Metadata> {
   await params;
-  const canonical = canonicalUrlFor('/fortune/new');
+  const canonical = canonicalUrlFor("/fortune/new");
   // ?productId= 로 공유된 링크는 그 상품의 질문 카드를 보여 준다(입력 화면이 곧 상품 랜딩이다)
   const { productId } = await searchParams;
   const shared = productId ? getProduct(productId) : undefined;
@@ -62,7 +62,7 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
   let profile = null;
   if (session?.user?.id) {
     profile = await prisma.userSajuProfile.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
     });
   }
 
@@ -72,9 +72,9 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
     .map((p) => p.id);
 
   return (
-    <main className="min-h-screen bg-white text-ink px-4 py-8 flex flex-col items-center">
+    <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] px-4 py-8 flex flex-col items-center">
       {product?.isHidden && preview && (
-        <div className="w-full max-w-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
+        <div className="w-full max-w-md bg-[#FFC24B]/15 border border-[#FFC24B]/30 text-[#FFC24B] text-xs font-semibold py-2 px-3 rounded-xl mb-4 text-center">
           🔒 미리보기 — 미공개 상품
         </div>
       )}
@@ -82,10 +82,10 @@ export default async function FortuneNewPage({ params, searchParams }: PageProps
       {/* Hero Title — 저장된 사주로 바로 미리보기(auto=1)일 땐 입력 안내가 결과 위에 남지 않게 숨긴다 */}
       {!(auto === "1" && profile) && (
         <div className="w-full max-w-md text-center mb-6">
-          <h1 className="text-2xl font-black text-ink tracking-tight">
+          <h1 className="text-2xl font-black text-[#F6EEF3] tracking-tight">
             내 사주 정보 입력
           </h1>
-          <p className="text-xs font-semibold text-caption mt-1.5">
+          <p className="text-xs font-semibold text-[#B9A9BF] mt-1.5">
             가장 정확한 사주 풀이를 위해 생년월일을 입력해주세요 ✨
           </p>
         </div>

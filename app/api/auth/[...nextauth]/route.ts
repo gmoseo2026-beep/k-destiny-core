@@ -9,6 +9,7 @@ import type { JWT } from 'next-auth/jwt';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { checkAuthRateLimit } from '@/lib/rateLimiter';
+import { issueWelcomeCouponIfEnabled } from '@/lib/welcome';
 
 const normalizeEmail = (value?: string | null) => value?.trim().toLowerCase() ?? null;
 
@@ -44,8 +45,15 @@ const baseAdapter = PrismaAdapter(prisma);
 
 const normalizedAdapter: Adapter = {
   ...baseAdapter,
-  createUser: (data: Omit<AdapterUser, 'id'>) =>
-    baseAdapter.createUser!({ ...data, email: normalizeEmail(data.email) as string }),
+  createUser: async (data: Omit<AdapterUser, 'id'>) => {
+    const created = await baseAdapter.createUser!({ ...data, email: normalizeEmail(data.email) as string });
+    try {
+      await issueWelcomeCouponIfEnabled(prisma, created.id);
+    } catch {
+      // 쿠폰 발급 실패가 가입/로그인 자체를 막지 않도록 한다
+    }
+    return created;
+  },
   getUserByEmail: async (email) => {
     const lowered = normalizeEmail(email);
     const byLower = lowered ? await baseAdapter.getUserByEmail!(lowered) : null;
