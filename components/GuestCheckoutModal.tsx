@@ -12,6 +12,12 @@ import {
   recallPayReturn,
   type PendingPayment,
 } from "@/lib/payments/client";
+import {
+  recallDeviceCoupon,
+  collectDeviceOrderTokens,
+  type PublicReviewItem,
+} from "@/lib/couponsClient";
+import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 
 interface GuestCheckoutModalProps {
   isOpen: boolean;
@@ -104,8 +110,62 @@ export default function GuestCheckoutModal({
 
   const modalOpen = isOpen || resumeForceOpen;
 
-  const shownPrice = priceLabel;
-  const pid = productId || orderName || "unknown";
+  // [P-016-4 §3·§4] 결제 창 쿠폰 자동 적용 안내 및 실제 구매자 후기(0개면 숨김)
+  const [activeCoupon, setActiveCoupon] = useState<{ code: string; amount: number } | null>(null);
+  const [checkoutReviews, setCheckoutReviews] = useState<PublicReviewItem[]>([]);
+
+  const selectedOption = options.find((o) => o.id === selectedId);
+  const baseNumericPrice =
+    selectedOption?.price ??
+    (Number(priceLabel.replace(/[^0-9]/g, "")) || 0);
+  const discountedNumericPrice =
+    activeCoupon && baseNumericPrice > 0
+      ? Math.max(100, baseNumericPrice - activeCoupon.amount)
+      : baseNumericPrice;
+  const shownPrice =
+    activeCoupon && baseNumericPrice > 0
+      ? `${discountedNumericPrice.toLocaleString("ko-KR")}원`
+      : priceLabel;
+  const pid = selectedId || productId || options[0]?.id || orderName || "unknown";
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    let alive = true;
+    const saved = recallDeviceCoupon();
+    const guestOrderTokens = collectDeviceOrderTokens();
+    fetch("/api/coupons/available", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(saved ? { couponCode: saved.code } : {}),
+        ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { coupon?: { code: string; amount: number } | null } | null) => {
+        if (!alive) return;
+        const cpn = d?.coupon ?? null;
+        setActiveCoupon(cpn);
+        if (cpn) {
+          trackEvent("coupon_auto_applied", { productId: pid, amount: cpn.amount });
+        }
+      })
+      .catch(() => {});
+
+    const targetCatalogId = selectedId || productId || options[0]?.id || "";
+    if (targetCatalogId) {
+      fetch(`/api/reviews?catalogId=${encodeURIComponent(targetCatalogId)}`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { reviews?: PublicReviewItem[] } | null) => {
+          if (!alive) return;
+          setCheckoutReviews(Array.isArray(d?.reviews) ? d.reviews : []);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      alive = false;
+    };
+  }, [modalOpen, selectedId, productId, options, pid]);
 
   useEffect(() => {
     if (modalOpen) {
@@ -542,8 +602,28 @@ export default function GuestCheckoutModal({
             <span className="text-xs font-bold text-ink block">{orderName}</span>
             <span className="text-[11px] text-text-3">결제 후 즉시 열람 · 한 번 결제로 끝</span>
           </div>
-          <span className="text-base font-black text-coral">{shownPrice}</span>
+          <div className="text-right">
+            {activeCoupon && baseNumericPrice > 0 && (
+              <span className="block text-[11px] text-text-3 line-through">{priceLabel}</span>
+            )}
+            <span className="text-base font-black text-coral">{shownPrice}</span>
+          </div>
         </div>
+
+        {/* [P-016-4 §3] 후기 작성 보상 1,000원 쿠폰 자동 적용 안내 (최종 금액은 서버가 계산·검증) */}
+        {activeCoupon && (
+          <div className="mb-3.5 flex items-center justify-between gap-2 rounded-2xl border border-coral/35 bg-coral-soft/70 px-3.5 py-2.5 text-left">
+            <span className="text-xs font-extrabold text-coral-deep">
+              🎁 후기 작성 쿠폰 자동 적용
+            </span>
+            <span className="text-xs font-black text-coral">
+              -{activeCoupon.amount.toLocaleString("ko-KR")}원 할인
+            </span>
+          </div>
+        )}
+
+        {/* [P-016-4 §4] 실제 열람 구매자 후기 (0개면 자동 숨김) */}
+        <ProductReviewsSection reviews={checkoutReviews} variant="checkout" />
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
           {/* PC 결제만: 이니시스 PC 결제창의 필수값 */}

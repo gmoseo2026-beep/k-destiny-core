@@ -471,3 +471,31 @@ model CompatInvite {
   @@index([expiresAt])
 }
 
+// 23. [콩닥 P-016-4] 실제 열람 구매자 후기 (주문당 1개)
+model Review {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  catalogId String
+  rating    Int
+  text      String   @db.Text
+  displayOk Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([catalogId, displayOk, createdAt])
+}
+
+// 24. [콩닥 P-016-4] 후기 작성 보상 1,000원 쿠폰 (주문당 1장, 30일 유효)
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  amount      Int      @default(1000)
+  ownerKey    String
+  usedOrderId String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([ownerKey])
+  @@index([usedOrderId])
+
+}
+

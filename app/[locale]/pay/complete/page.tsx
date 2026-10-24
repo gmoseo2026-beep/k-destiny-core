@@ -13,6 +13,7 @@ import {
   clearPendingPayment,
 } from "@/lib/payments/client";
 import { rememberOptIn } from "@/lib/marketingConsent";
+import { clearDeviceCoupon } from "@/lib/couponsClient";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { isInAppBrowser, isIOS, getInAppProvider, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
@@ -119,6 +120,7 @@ function PayCompleteContent() {
           }
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
+          clearDeviceCoupon();
 
           // 같은 결제를 다시 열었으면(서버가 오래된 주문이라 하거나 이 기기에서 이미 보냈으면) 매출 신호를 또 보내지 않는다
           const sentKey = "kd_purchase_sent";

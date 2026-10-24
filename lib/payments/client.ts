@@ -2,6 +2,7 @@ import * as PortOne from "@portone/browser-sdk/v2";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { clientEnvLabel } from "@/lib/inAppBrowser";
+import { recallDeviceCoupon, collectDeviceOrderTokens, clearDeviceCoupon } from "@/lib/couponsClient";
 
 export interface BuyerInfo {
   fullName: string;
@@ -126,7 +127,9 @@ export function forgetOrderToken(catalogId: string, compatId?: string | null): v
 }
 
 export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult> {
-  // 1) 서버가 주문 생성 (금액은 서버에서 결정)
+  // 1) 서버가 주문 생성 (금액 및 쿠폰 할인은 서버에서 검증·결정)
+  const savedCoupon = recallDeviceCoupon();
+  const guestOrderTokens = collectDeviceOrderTokens();
   const orderRes = await fetch("/api/payments/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -135,6 +138,8 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       compatId: opts.compatId,
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
+      ...(savedCoupon ? { couponCode: savedCoupon.code } : {}),
+      ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
       env: clientEnvLabel(),
       payMethod: opts.buyer.payMethod ?? "CARD",
     }),
@@ -359,6 +364,7 @@ export async function verifyAndCompletePayment(
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
       clearPendingPayment();
+      clearDeviceCoupon();
       rememberOrderToken(catalogId, orderId, compatId);
       trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.

@@ -8,6 +8,7 @@ import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { canPreview } from "@/lib/preview";
 import { campaignFromCookieHeader } from "@/lib/campaignLinks";
+import { calculateDiscountedAmount, findUsableCoupon } from "@/lib/reviews";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 회원·비회원 같은 가격(회원 첫 결제 할인은 2026-10-15 폐지)
-      const amount = catalogItem.price;
+      const baseAmount = catalogItem.price;
       const sessionUserId = session?.user?.id ?? null;
 
       const { productType, productKey } = toStorageKey(catalogItem.id);
@@ -87,6 +88,39 @@ export async function POST(req: NextRequest) {
       const orderCompatId = requiresCompatId ? compatId : null;
 
       const orderId = `kd_ord_${uuidv4().replace(/-/g, "")}`;
+
+      // [P-016-4 §3] 쿠폰 금액 계산·검증은 서버에서만 수행 (클라 금액 신뢰 금지).
+      // 유효한 미사용 쿠폰이 있으면 서버가 차감한 금액을 Order.amount 로 저장하고 PortOne 결제창도 같은 금액을 쓴다.
+      const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim() : null;
+      const guestOrderTokens = Array.isArray(body.guestOrderTokens)
+        ? body.guestOrderTokens.filter((t: unknown): t is string => typeof t === "string" && t.length > 0).slice(0, 20)
+        : [];
+      const usableCoupon = await findUsableCoupon({
+        couponCode,
+        userId: sessionUserId,
+        guestOrderTokens,
+      });
+
+      let amount = baseAmount;
+      let appliedCouponCode: string | null = null;
+      let discountAmount = 0;
+
+      if (usableCoupon) {
+        const couponRepo = (prisma as unknown as { coupon?: typeof prisma.coupon }).coupon;
+        const claimed = couponRepo?.updateMany
+          ? await couponRepo.updateMany({
+              where: { id: usableCoupon.id, usedOrderId: usableCoupon.usedOrderId },
+              data: { usedOrderId: orderId },
+            })
+          : { count: 0 }; // 쿠폰 테이블을 못 쓰면 할인하지 않는다(선점 없이 깎아 주지 않음)
+        if (claimed.count === 1) {
+          const calc = calculateDiscountedAmount(baseAmount, usableCoupon.amount);
+          amount = calc.amount;
+          discountAmount = calc.discount;
+          appliedCouponCode = usableCoupon.code;
+        }
+      }
+
       const order = await prisma.order.create({
         data: {
           orderId,
@@ -106,7 +140,13 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json(
-        { orderId: order.orderId, amount: order.amount, type: order.type, orderName: catalogItem.name },
+        {
+          orderId: order.orderId,
+          amount: order.amount,
+          type: order.type,
+          orderName: catalogItem.name,
+          ...(appliedCouponCode ? { couponCode: appliedCouponCode, discountAmount } : {}),
+        },
         { status: 200 }
       );
     }

@@ -8,6 +8,7 @@ const db = vi.hoisted(() => ({
   unlock: { findFirst: vi.fn(), create: vi.fn() },
   user: { findUnique: vi.fn() },
   compatibility: { findUnique: vi.fn() },
+  coupon: { findUnique: vi.fn(), findFirst: vi.fn(), updateMany: vi.fn() },
   productVisibility: { findMany: vi.fn(async () => [] as Array<{ catalogId: string; visible: boolean }>) },
   $transaction: vi.fn(),
 }));
@@ -25,6 +26,7 @@ import { CATALOG, type CatalogItem } from "@/lib/catalog";
 import { invalidateVisibilityCache } from "@/lib/catalogVisibility";
 import { toStorageKey } from "@/lib/productIdentity";
 import { orderGrants } from "@/lib/entitlementRules";
+import { hashGuestOrderToken } from "@/lib/reviews";
 
 const post = (url: string, body: unknown) =>
   new Request(`http://localhost${url}`, {
@@ -44,6 +46,9 @@ beforeEach(() => {
   session.current = null;
   db.productVisibility.findMany.mockResolvedValue(CATALOG.map((c) => ({ catalogId: c.id, visible: true })));
   db.compatibility.findUnique.mockResolvedValue({ id: "compat_1" });
+  db.coupon.findUnique.mockResolvedValue(null);
+  db.coupon.findFirst.mockResolvedValue(null);
+  db.coupon.updateMany.mockResolvedValue({ count: 1 });
   db.order.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...data, id: "db_" + String(data.orderId) }));
   db.$transaction.mockImplementation(async (fn: (tx: typeof db) => unknown) => fn(db));
 });
@@ -156,5 +161,143 @@ describe("출시 결제 매트릭스 — 결제 검증 → 권한 → 열람", (
     const res = await COMPLETE(post("/api/payments/complete", { paymentId: "kd_ord_w" }));
     expect(res.status).toBe(403);
     expect(pg.getPayment).not.toHaveBeenCalled();
+  });
+});
+
+describe("출시 결제 매트릭스 — 1,000원 후기 쿠폰 서버 계산 및 PortOne 검증", () => {
+  const futureDate = new Date(Date.now() + 7 * 86400000);
+  const pastDate = new Date(Date.now() - 86400000);
+
+  it("회원 유효 쿠폰(1,000원) 자동 적용: 서버 계산 금액 = catalog.price - 1000 = PortOne 결제 금액", async () => {
+    const p = SELLABLE[0];
+    const compatId = p.target === "couple" ? "compat_1" : undefined;
+    session.current = { user: { id: "user_1", email: "member@example.com" } };
+    db.coupon.findFirst.mockResolvedValue({
+      id: "cp_1",
+      code: "KD1000-MEM1",
+      amount: 1000,
+      ownerKey: "user_1",
+      usedOrderId: null,
+      expiresAt: futureDate,
+    });
+
+    const orderRes = await ORDER(post("/api/payments/order", { productId: p.id, compatId }));
+    expect(orderRes.status).toBe(200);
+    const orderBody = await orderRes.json();
+    expect(orderBody.amount).toBe(p.price - 1000);
+    expect(orderBody.discountAmount).toBe(1000);
+    expect(orderBody.couponCode).toBe("KD1000-MEM1");
+
+    const createdOrder = db.order.create.mock.calls.at(-1)![0].data;
+    expect(createdOrder.amount).toBe(p.price - 1000);
+    expect(db.coupon.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "cp_1", usedOrderId: null },
+        data: { usedOrderId: orderBody.orderId },
+      }),
+    );
+
+    // PortOne 결제 금액이 서버 계산 금액(p.price - 1000)과 일치할 때만 COMPLETE 통과
+    const { productType, productKey } = toStorageKey(p.id);
+    db.order.findUnique.mockResolvedValue({
+      id: "db_cp",
+      orderId: orderBody.orderId,
+      status: "PENDING",
+      type: "SINGLE",
+      amount: p.price - 1000,
+      productType,
+      productKey,
+      compatId: compatId ?? null,
+      userId: "user_1",
+      email: "member@example.com",
+      claimToken: null,
+      tossPaymentKey: null,
+    });
+    db.order.updateMany.mockResolvedValue({ count: 1 });
+    db.unlock.findFirst.mockResolvedValue(null);
+    pg.getPayment.mockResolvedValue({ status: "PAID", amount: { total: p.price - 1000 }, id: "pg_cp_tx" });
+
+    const completeRes = await COMPLETE(post("/api/payments/complete", { paymentId: orderBody.orderId }));
+    expect(completeRes.status).toBe(200);
+  });
+
+  it("비회원 유효 쿠폰(주문 토큰 해시 일치) 적용 시 1,000원 차감, 타인 쿠폰 코드 도용 시 할인 미적용", async () => {
+    const p = SELLABLE.find((item) => !item.requiresLogin)!;
+    const compatId = p.target === "couple" ? "compat_1" : undefined;
+    const guestPrevOrderToken = "kd_ord_guest_prev_123";
+    const guestOwnerKey = hashGuestOrderToken(guestPrevOrderToken);
+
+    db.coupon.findUnique.mockResolvedValue({
+      id: "cp_guest",
+      code: "KD1000-GUEST1",
+      amount: 1000,
+      ownerKey: guestOwnerKey,
+      usedOrderId: null,
+      expiresAt: futureDate,
+    });
+
+    // 1) 본인 기기 주문 토큰 제시 → 1,000원 할인 적용
+    const okRes = await ORDER(
+      post("/api/payments/order", {
+        productId: p.id,
+        compatId,
+        couponCode: "KD1000-GUEST1",
+        guestOrderTokens: [guestPrevOrderToken],
+      }),
+    );
+    expect(okRes.status).toBe(200);
+    const okBody = await okRes.json();
+    expect(okBody.amount).toBe(p.price - 1000);
+    expect(okBody.discountAmount).toBe(1000);
+
+    // 2) 주문 토큰 없이 쿠폰 코드만 보낸 경우 → 소유자 검증 실패로 정가 결제
+    const stolenRes = await ORDER(
+      post("/api/payments/order", {
+        productId: p.id,
+        compatId,
+        couponCode: "KD1000-GUEST1",
+        guestOrderTokens: ["kd_ord_wrong_token"],
+      }),
+    );
+    expect(stolenRes.status).toBe(200);
+    const stolenBody = await stolenRes.json();
+    expect(stolenBody.amount).toBe(p.price);
+    expect(stolenBody.discountAmount).toBeUndefined();
+    expect(stolenBody.couponCode).toBeUndefined();
+  });
+
+  it("만료되었거나 이미 PAID 주문에 사용된 쿠폰은 할인되지 않고 정가로 주문된다", async () => {
+    const p = SELLABLE.find((item) => !item.requiresLogin)!;
+    const compatId = p.target === "couple" ? "compat_1" : undefined;
+    session.current = { user: { id: "user_1", email: "member@example.com" } };
+
+    // 만료된 쿠폰
+    db.coupon.findUnique.mockResolvedValueOnce({
+      id: "cp_exp",
+      code: "KD1000-EXP",
+      amount: 1000,
+      ownerKey: "user_1",
+      usedOrderId: null,
+      expiresAt: pastDate,
+    });
+    const expRes = await ORDER(post("/api/payments/order", { productId: p.id, compatId, couponCode: "KD1000-EXP" }));
+    const expBody = await expRes.json();
+    expect(expBody.amount).toBe(p.price);
+    expect(expBody.discountAmount).toBeUndefined();
+
+    // 이미 PAID 된 주문에 묶인 쿠폰
+    db.coupon.findUnique.mockResolvedValueOnce({
+      id: "cp_used",
+      code: "KD1000-USED",
+      amount: 1000,
+      ownerKey: "user_1",
+      usedOrderId: "kd_ord_already_paid",
+      expiresAt: futureDate,
+    });
+    db.order.findUnique.mockResolvedValueOnce({ status: "PAID" });
+    const usedRes = await ORDER(post("/api/payments/order", { productId: p.id, compatId, couponCode: "KD1000-USED" }));
+    const usedBody = await usedRes.json();
+    expect(usedBody.amount).toBe(p.price);
+    expect(usedBody.discountAmount).toBeUndefined();
   });
 });

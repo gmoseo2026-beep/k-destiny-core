@@ -12,6 +12,8 @@ import { trackEvent } from "@/lib/gtag";
 import { useSeenOnce } from "@/lib/useSeenOnce";
 import type { SectionOutline } from "@/lib/prompts/sectionOutline";
 import type { StandardSamplePreview } from "@/lib/reports/standardSamplePreview";
+import type { PublicReviewItem } from "@/lib/couponsClient";
+import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 import { getTeaserBlurCopy } from "@/lib/teaserBlurCopy";
 import { ScoreGauge } from "@/components/ui/ScoreGauge";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
@@ -47,6 +49,7 @@ interface StandardProductDetailProps {
   sections?: SectionOutline[];
   /** 가상 인물로 실제 생성한 결과 예시 조각(서버 페이지가 1개만 읽어 조각으로 넘긴다) */
   samplePreview?: StandardSamplePreview | null;
+  reviews?: PublicReviewItem[];
 }
 
 export function StandardProductDetail({
@@ -56,6 +59,7 @@ export function StandardProductDetail({
   allProducts,
   sections,
   samplePreview,
+  reviews = [],
 }: StandardProductDetailProps) {
   const [toast, setToast] = useState<string | null>(null);
   const [lastCouple, setLastCouple] = useState<LastCouple | null>(null);
@@ -574,6 +578,7 @@ export function StandardProductDetail({
         )}
 
         {/* 5. Recommended For (이런 분께 추천해요) */}
+        <ProductReviewsSection reviews={reviews} variant="detail" />
         {product.recommendFor && product.recommendFor.length > 0 && (
           <section className="px-4 py-6 border-t border-line">
             <h3 className="text-base sm:text-lg font-extrabold text-ink mb-3.5 tracking-tight">

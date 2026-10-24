@@ -10,6 +10,7 @@ import { canonicalUrlFor, productSearchMeta, productShareMeta } from "@/lib/seo"
 import { ProductJsonLd } from "@/components/seo/SeoBlocks";
 import { sectionOutlineFor } from "@/lib/prompts/sectionOutline";
 import { loadStandardSamplePreview } from "@/lib/reports/standardSamplePreview";
+import { getPublicReviewsForCatalog } from "@/lib/reviews";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -55,6 +56,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const effectiveCatalog = await getEffectiveCatalog();
   const allProducts = effectiveCatalog.filter((p) => !p.isHidden);
   const samplePreview = loadStandardSamplePreview(product.id);
+  const reviews = await getPublicReviewsForCatalog(product.id, 6);
 
   return (
     <>
@@ -66,6 +68,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         allProducts={allProducts}
         sections={sectionOutlineFor(product.promptKey)}
         samplePreview={samplePreview}
+        reviews={reviews}
       />
     </>
   );

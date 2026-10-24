@@ -1,3 +1,82 @@
+# REVIEW_HANDOFF — P-016-4 (후기 + 1,000원 다음 구매 쿠폰 + N번째 구매 배지)
+
+> **작성 일시**: 2026-10-24
+> **범위**: `docs/uiux/decisions/P-016.md` §P-016-4 (후기 + 다음 구매 쿠폰 + N번째 구매 배지)
+> **검증 상태**: `tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors (1 warning은 P-016-1 `checkPending` 내 기존 `window.location.href`) · `vitest` 71파일 535개 통과(1 skip) · `npm run build` exit 0
+
+## 0. 운영 DB 반영용 SQL (Claude 선행 적용용 — `prisma db push` / `migrate` 미실행)
+
+```sql
+CREATE TABLE IF NOT EXISTS "Review" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "catalogId" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "text" TEXT NOT NULL,
+    "displayOk" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Review_orderId_key" ON "Review"("orderId");
+CREATE INDEX IF NOT EXISTS "Review_catalogId_displayOk_createdAt_idx" ON "Review"("catalogId", "displayOk", "createdAt" DESC);
+
+CREATE TABLE IF NOT EXISTS "Coupon" (
+    "id" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "amount" INTEGER NOT NULL DEFAULT 1000,
+    "ownerKey" TEXT NOT NULL,
+    "usedOrderId" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Coupon_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Coupon_code_key" ON "Coupon"("code");
+CREATE INDEX IF NOT EXISTS "Coupon_ownerKey_expiresAt_idx" ON "Coupon"("ownerKey", "expiresAt");
+CREATE INDEX IF NOT EXISTS "Coupon_usedOrderId_idx" ON "Coupon"("usedOrderId");
+```
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `prisma/schema.prisma` | `Review` (`orderId @unique`, `catalogId`, `rating`, `text`, `displayOk`, `createdAt`) 및 `Coupon` (`code @unique`, `amount` 기본 1000, `ownerKey`, `usedOrderId`, `expiresAt`, `createdAt`) additive 모델 추가 (`prisma generate`만 실행, DB 미반영) |
+| `lib/couponsClient.ts` (신규) | 클라이언트 안전 헬퍼(서버 전용 모듈 미참조): `rememberDeviceCoupon`, `recallDeviceCoupon`(만료 검사), `clearDeviceCoupon`, `collectDeviceOrderTokens`(`kongdak_order_*` / `kongdak_unlock_*` / `kd_last_order_*` 및 쿠폰 `ownerToken` 수집) |
+| `lib/reviews.ts` (신규) | 서버 전용 후기·쿠폰 도메인 로직: `hashGuestOrderToken`(SHA-256), `couponOwnerKeyForOrder`(회원 `userId` 또는 비회원 주문 토큰 SHA-256 해시), `validateReviewInput`(별점 1~5 정수, 2~200자), `deriveZodiacBadge`(`lib/seo/zodiac.ts` 재사용), `calculateDiscountedAmount`(`basePrice - 1000`), `findUsableCoupon`, `getPublicReviewsForCatalog`(실제 누적 `PAID` 주문 수로 `"N번째 구매"` 계산) |
+| `app/api/reviews/route.ts` (신규) | `GET`: 리포트별 후기 작성 가능 여부(`firstViewedAt != null && !existing`) 및 상품별 `displayOk: true` 후기 목록 반환. `POST`: `report.kind === "FULL"`, `report.firstViewedAt != null`, `order.status === "PAID"`, `orderGrants` 통과, `Review.orderId` 미존재 검증 후 단일 트랜잭션으로 `Review` 1건 + 1,000원 `Coupon`(30일 유효) 1장 발급 |
+| `app/api/coupons/available/route.ts` (신규) | 결제 모달 오픈 시 회원 세션 또는 기기 주문 토큰으로 사용 가능한 미사용·미만료 1,000원 쿠폰 조회 |
+| `app/api/payments/order/route.ts` | **[P-016-4 §3]** 서버에서만 쿠폰 유효성·소유권(`ownerKey`) 검증 후 `Order.amount = catalogItem.price - 1000`으로 저장하고 `Coupon.usedOrderId = orderId`로 선점. 응답의 `amount`(= PortOne 결제 요청 금액)도 서버 계산 금액과 일치 |
+| `lib/payments/client.ts` | `/api/payments/order` 호출 시 기기에 저장된 `couponCode`와 `guestOrderTokens`를 함께 전달하고, 서버가 반환한 `orderData.amount`로 PortOne 결제창 호출 |
+| `app/[locale]/pay/complete/page.tsx` | 결제 완료 확정 시 `clearDeviceCoupon()` 호출 |
+| `components/report/ReviewCouponCard.tsx` (신규) | 열람 완료된 유료 리포트(`mode="full"`) 하단에 별점(1~5) + 한 줄 후기(200자 이내) 작성 카드 노출 및 제출 즉시 1,000원 쿠폰 발급·기기 저장 (`review_submit`, `coupon_issued` 이벤트) |
+| `components/report/ReportViewClient.tsx` | 유료 전체 리포트(`initial.mode === "full"`) 하단에 `ReviewCouponCard` 연결 |
+| `components/product/ProductReviewsSection.tsx` (신규) | `displayOk: true` 후기 목록 렌더링(별점 · 띠 이모지 · `"N번째 구매"` 배지). **후기가 0개면 `null`을 반환해 영역 자체를 숨김**(가짜 후기·가짜 숫자 일절 없음) |
+| `app/[locale]/products/[id]/page.tsx` & `components/product/StandardProductDetail.tsx` | 상품 상세 페이지 서버에서 `getPublicReviewsForCatalog(id, 6)`를 조회해 `ProductReviewsSection`에 전달 |
+| `components/GuestCheckoutModal.tsx` | 결제 모달 오픈 시 `/api/coupons/available`로 사용 가능한 1,000원 쿠폰 자동 조회·적용(`"보유 쿠폰 -1,000원 자동 적용"`, 최종 결제 금액 표시, `coupon_redeemed` 이벤트) + 모달 내 실제 구매자 후기(`ProductReviewsSection compact`) 표시. P-016-1에서 Claude가 추가한 `checkPending` 결제 완료 확인 로직은 그대로 보존 |
+| `tests/routes/launchPaymentMatrix.test.ts` | 회원·비회원 1,000원 쿠폰 자동 적용 시 서버 계산 금액(`p.price - 1000`) = `Order.amount` = PortOne 검증 금액 일치 테스트, 타인 쿠폰 코드 도용 방어 테스트, 만료·사용 완료(`PAID`) 쿠폰 미적용 테스트 추가 |
+| `tests/reviewsAndCoupons.test.ts` (신규) | 후기 입력 검증, 띠 배지 추출, 할인 금액 계산, 미열람 리포트(`firstViewedAt === null`) 403 차단, 열람 리포트 후기 1개+쿠폰 1장 발급 및 중복 작성 409 차단, `"N번째 구매"` 실제 누적 결제 수 계산 및 0개 시 빈 배열 반환 테스트 |
+
+## 2. 결정론 로직 요약
+- 사주·궁합 엔진(`lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`) 및 `lib/compatPercentile.ts` 수정 없음.
+- 쿠폰 할인 금액(`calculateDiscountedAmount`)은 서버에서 `catalogItem.price - 1000`으로 결정론 계산.
+- 후기 작성자의 띠 배지(`deriveZodiacBadge`)는 주문에 연결된 사주 연주(`yearPillar`) 또는 출생연도(`birthYear`)에서 `lib/seo/zodiac.ts`로 계산.
+- `"N번째 구매"` 배지(`purchaseCount`)는 동일 구매자(`userId` 또는 `compatId`)의 실제 `status: "PAID"` 주문 건수를 집계.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- **클라이언트 금액 불신**: 클라이언트는 `couponCode`와 본인 증명용 `guestOrderTokens`만 보내고, 실제 할인 여부와 결제 금액(`Order.amount`)은 오직 서버(`app/api/payments/order/route.ts`)에서만 계산하며 `/api/payments/complete`가 PortOne 실결제 금액과 `Order.amount`를 대조.
+- **비회원 쿠폰 소유권 보호**: 비회원 쿠폰의 `ownerKey`는 원문 주문번호가 아닌 SHA-256 해시(`hashGuestOrderToken`)로 저장되며, 쿠폰 코드만 추측해서는 다른 기기에서 사용할 수 없음(`candidateKeys.includes(found.ownerKey)` 필수).
+- **결제 중단 시 쿠폰 증발 방지**: 쿠폰이 걸린 `PENDING` 주문이 결제 완료(`PAID`)되지 않고 중단된 경우, 같은 사용자가 재결제를 시도하면 `findUsableCoupon`이 이전 주문의 상태(`status !== "PAID"`)를 확인해 쿠폰을 새 주문에 다시 바인딩할 수 있도록 처리.
+- **PII 비노출**: 공개 후기 API(`GET /api/reviews`)는 작성자 이름·이메일·생년월일 원문을 일절 반환하지 않으며, 오직 별점·후기 본문·띠 이모지·누적 구매 횟수만 반환.
+- 추가된 GA4 이벤트: `review_submit`, `coupon_issued`, `coupon_redeemed`. (`compat_created` · `teaser_created` 시점 불변)
+
+## 4. 스스로 의심 지점
+- 비회원 구매자가 기기 브라우저 데이터를 완전히 삭제(`localStorage` 초기화)하면 주문 토큰(`kongdak_order_*` / `kongdak_coupon_v1`)이 사라져 비회원 쿠폰 소유권 증명이 불가능해집니다(회원 로그인 구매자는 DB `userId` 기준이라 기기 변경·캐시 삭제와 무관하게 자동 적용됨).
+
+---
+
 # REVIEW_HANDOFF — P-016-1 (결제 중단 복귀 안내) & P-016-3 (결제 후 이어보기 + 소식 받기 동의)
 
 > **작성 일시**: 2026-10-24

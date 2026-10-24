@@ -5,6 +5,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
+import ReviewCouponCard from "@/components/report/ReviewCouponCard";
 import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
@@ -68,6 +69,7 @@ export default function ReportViewClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [reachedLastSection, setReachedLastSection] = useState(false);
+  const [matchedOrderToken, setMatchedOrderToken] = useState<string | null>(null);
 
   const fetchReportRef = useRef<() => Promise<void>>(async () => {});
 
@@ -96,6 +98,7 @@ export default function ReportViewClient({
         if (res.status === 200) {
           const json: ReportResponse = await res.json();
           setReportData(json);
+          setMatchedOrderToken(token);
           setLoading(false);
           const p = getProduct(json.catalogId);
           trackEvent("report_generated", {
@@ -264,6 +267,11 @@ export default function ReportViewClient({
       )}
 
       {/* Action Buttons */}
+      <ReviewCouponCard
+        reportId={reportData.reportId}
+        catalogId={reportData.catalogId}
+        orderToken={matchedOrderToken}
+      />
       <div className="flex flex-col gap-2.5 mt-2">
         <GuestKeepBanner locale={locale} source="report" hideCopy className="mb-1" />
         <Button
