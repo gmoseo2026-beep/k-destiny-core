@@ -84,5 +84,9 @@ export default async function PartnerReportPage({
     notFound();
   }
 
-  return <PartnerReportClient data={viewData} />;
+  return (
+    <div className="kd-light min-h-screen">
+      <PartnerReportClient data={viewData} />
+    </div>
+  );
 }

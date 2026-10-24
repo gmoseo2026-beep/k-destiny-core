@@ -90,7 +90,7 @@ export default function MobileBottomTabBar() {
         footerVisible ? "translate-y-24 opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <div className="pointer-events-auto mx-auto grid max-w-[440px] grid-cols-5 gap-1 rounded-full bg-[#180E20]/60 backdrop-blur-xl border border-white/20 px-2 py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.22)]">
+      <div className="pointer-events-auto mx-auto grid max-w-[440px] grid-cols-5 gap-1 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.13),rgba(255,255,255,0.04))] backdrop-blur-[10px] backdrop-saturate-150 border border-white/20 px-2 py-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.30),inset_0_1px_0_rgba(255,255,255,0.28)]">
         {DOCK_TABS.map((item) => {
           const Icon = item.icon;
           const isActive = item.id === activeId;

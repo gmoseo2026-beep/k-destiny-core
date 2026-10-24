@@ -307,3 +307,28 @@ button:active, [role="button"]:active {
     display: none;
   }
 }
+
+
+/* 관리자·제휴사 성과 화면은 예전 밝은 디자인 그대로 쓴다(2026-10-24). P-017 이 :root 색 토큰을 어둡게 바꿔
+   흰 카드 위 글자가 거의 안 보이던 문제 — 이 클래스 안에서는 밝은 토큰으로 되돌린다. */
+.kd-light {
+  --background: #FFFFFF;
+  --background-alt: #FAFAFA;
+  --foreground: #1A1A1A;
+  --ink: #1A1A1A;
+  --text-2: #4A4550;
+  --caption: #6B6470;
+  --line: #EDE8E6;
+  --surface: #F4F1EF;
+  --surface-soft: #FAF7F6;
+  --coral: #E0245A;
+  --coral-soft: #FFE8EE;
+  --coral-deep: #B01D48;
+  --plum-deep: #3A1F33;
+  --cream: #FFF6F1;
+  --hero-from: #FFE3EA;
+  --hero-to: #FFC7D4;
+  background: #FFF6F1;
+  color: #1A1A1A;
+  color-scheme: light;
+}
