@@ -114,6 +114,14 @@ export async function POST(req: NextRequest) {
             })
           : { count: 0 }; // 쿠폰 테이블을 못 쓰면 할인하지 않는다(선점 없이 깎아 주지 않음)
         if (claimed.count === 1) {
+          // 결제를 끝내지 않은 이전 주문에서 쿠폰을 옮겨 온 경우: 이전 주문은 정가로 되돌린다.
+          // 이전 결제창에서 할인 금액으로 결제하면 금액 불일치로 완료(/complete·웹훅)가 거절돼, 쿠폰 1장이 두 번 쓰이지 않는다.
+          if (usableCoupon.usedOrderId && usableCoupon.usedOrderId !== orderId) {
+            await prisma.order.updateMany({
+              where: { orderId: usableCoupon.usedOrderId, status: { not: "PAID" } },
+              data: { amount: { increment: calculateDiscountedAmount(Number.MAX_SAFE_INTEGER, usableCoupon.amount).discount } },
+            });
+          }
           const calc = calculateDiscountedAmount(baseAmount, usableCoupon.amount);
           amount = calc.amount;
           discountAmount = calc.discount;
