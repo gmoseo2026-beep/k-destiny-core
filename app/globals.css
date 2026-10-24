@@ -335,23 +335,23 @@ button:active, [role="button"]:active {
 
 /* P-017 후속(2026-10-24): 아직 흰 카드·진한 글자로 남아 있던 화면(약관·개인정보·이용 안내·가격·띠 궁합·주간 운세·로딩·로그인 창 등)을
    한 번에 나이트 톤으로 맞춘다. 관리자·제휴 화면(.kd-light)은 제외. 흰색을 꼭 유지해야 하는 요소는 .kd-keep-white 를 붙인다. */
-.bg-white:not(.kd-light *):not(.kd-keep-white),
-.bg-cream:not(.kd-light *),
-.bg-\[\#FFF6F1\]:not(.kd-light *),
-.bg-\[\#FFF0F3\]:not(.kd-light *),
-.bg-\[\#FFF1F4\]:not(.kd-light *),
-.bg-\[\#FFE3EA\]:not(.kd-light *),
-.bg-\[\#FAF7F2\]:not(.kd-light *),
-.bg-\[\#FFFBF7\]:not(.kd-light *),
-.bg-gray-50:not(.kd-light *),
-.bg-gray-100:not(.kd-light *) {
+.bg-white:not(.kd-light, .kd-light *):not(.kd-keep-white),
+.bg-cream:not(.kd-light, .kd-light *),
+.bg-\[\#FFF6F1\]:not(.kd-light, .kd-light *),
+.bg-\[\#FFF0F3\]:not(.kd-light, .kd-light *),
+.bg-\[\#FFF1F4\]:not(.kd-light, .kd-light *),
+.bg-\[\#FFE3EA\]:not(.kd-light, .kd-light *),
+.bg-\[\#FAF7F2\]:not(.kd-light, .kd-light *),
+.bg-\[\#FFFBF7\]:not(.kd-light, .kd-light *),
+.bg-gray-50:not(.kd-light, .kd-light *),
+.bg-gray-100:not(.kd-light, .kd-light *) {
   background-color: #22142A;
 }
-.bg-white\/95:not(.kd-light *), .bg-white\/90:not(.kd-light *), .bg-white\/80:not(.kd-light *) { background-color: rgba(34, 20, 42, 0.92); }
-.bg-white\/70:not(.kd-light *), .bg-white\/60:not(.kd-light *), .bg-white\/50:not(.kd-light *) { background-color: rgba(34, 20, 42, 0.7); }
-.border-white:not(.kd-light *) { border-color: rgba(255, 255, 255, 0.12); }
-.text-plum:not(.kd-light *), .text-\[\#6A2C70\]:not(.kd-light *), .text-plum-deep:not(.kd-light *) { color: #E7C6EE; }
-.text-black:not(.kd-light *), .text-gray-900:not(.kd-light *), .text-gray-800:not(.kd-light *), .text-gray-700:not(.kd-light *),
-.text-\[\#2B2430\]:not(.kd-light *), .text-\[\#1A1A1A\]:not(.kd-light *), .text-slate-800:not(.kd-light *), .text-slate-700:not(.kd-light *) { color: #F6EEF3; }
-.text-gray-600:not(.kd-light *), .text-gray-500:not(.kd-light *), .text-gray-400:not(.kd-light *), .text-slate-600:not(.kd-light *), .text-slate-500:not(.kd-light *) { color: #B9A9BF; }
-.border-gray-100:not(.kd-light *), .border-gray-200:not(.kd-light *), .border-\[\#2B2430\]\/10:not(.kd-light *) { border-color: rgba(255, 255, 255, 0.1); }
+.bg-white\/95:not(.kd-light, .kd-light *), .bg-white\/90:not(.kd-light, .kd-light *), .bg-white\/80:not(.kd-light, .kd-light *) { background-color: rgba(34, 20, 42, 0.92); }
+.bg-white\/70:not(.kd-light, .kd-light *), .bg-white\/60:not(.kd-light, .kd-light *), .bg-white\/50:not(.kd-light, .kd-light *) { background-color: rgba(34, 20, 42, 0.7); }
+.border-white:not(.kd-light, .kd-light *) { border-color: rgba(255, 255, 255, 0.12); }
+.text-plum:not(.kd-light, .kd-light *), .text-\[\#6A2C70\]:not(.kd-light, .kd-light *), .text-plum-deep:not(.kd-light, .kd-light *) { color: #E7C6EE; }
+.text-black:not(.kd-light, .kd-light *), .text-gray-900:not(.kd-light, .kd-light *), .text-gray-800:not(.kd-light, .kd-light *), .text-gray-700:not(.kd-light, .kd-light *),
+.text-\[\#2B2430\]:not(.kd-light, .kd-light *), .text-\[\#1A1A1A\]:not(.kd-light, .kd-light *), .text-slate-800:not(.kd-light, .kd-light *), .text-slate-700:not(.kd-light, .kd-light *) { color: #F6EEF3; }
+.text-gray-600:not(.kd-light, .kd-light *), .text-gray-500:not(.kd-light, .kd-light *), .text-gray-400:not(.kd-light, .kd-light *), .text-slate-600:not(.kd-light, .kd-light *), .text-slate-500:not(.kd-light, .kd-light *) { color: #B9A9BF; }
+.border-gray-100:not(.kd-light, .kd-light *), .border-gray-200:not(.kd-light, .kd-light *), .border-\[\#2B2430\]\/10:not(.kd-light, .kd-light *) { border-color: rgba(255, 255, 255, 0.1); }

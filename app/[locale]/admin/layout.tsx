@@ -25,7 +25,7 @@ export default async function AdminLayout({
 
   return (
     <div className="kd-light min-h-screen bg-[#FFF6F1] text-ink">
-      <nav className="border-b border-[#2B2430]/10 bg-[#FFF6F1]/80 backdrop-blur-xl sticky top-0 z-50">
+      <nav className="border-b border-[#2B2430]/10 bg-[#FFF6F1] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-xl font-serif font-bold text-ink tracking-wide">콩닥</span>
