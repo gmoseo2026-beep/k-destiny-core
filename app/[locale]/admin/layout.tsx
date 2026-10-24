@@ -35,22 +35,22 @@ export default async function AdminLayout({
           </div>
           <Link
             href="/admin/campaigns"
-            className="ml-auto mr-2 px-4 py-2 rounded-xl bg-white border border-[#2B2430]/10 text-ink text-sm font-semibold hover:border-coral/30 hover:text-coral active:scale-95 transition-all shadow-sm"
+            className="ml-auto mr-1.5 sm:mr-2 px-2.5 sm:px-4 py-2 whitespace-nowrap rounded-xl text-xs sm:text-sm bg-white border border-[#2B2430]/10 text-ink font-semibold hover:border-coral/30 hover:text-coral active:scale-95 transition-all shadow-sm"
           >
-            광고·배너 유입
+            유입
           </Link>
           <Link
             href="/admin/audience"
-            className="mr-2 px-4 py-2 rounded-xl bg-white border border-[#2B2430]/10 text-ink text-sm font-semibold hover:border-coral/30 hover:text-coral active:scale-95 transition-all shadow-sm"
+            className="mr-1.5 sm:mr-2 px-2.5 sm:px-4 py-2 whitespace-nowrap rounded-xl text-xs sm:text-sm bg-white border border-[#2B2430]/10 text-ink font-semibold hover:border-coral/30 hover:text-coral active:scale-95 transition-all shadow-sm"
           >
-            회원·설치
+            회원
           </Link>
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#2B2430]/10 text-ink text-sm font-semibold hover:bg-coral/[0.03] hover:border-coral/30 active:scale-95 transition-all shadow-sm group"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 whitespace-nowrap rounded-xl text-xs sm:text-sm bg-white border border-[#2B2430]/10 text-ink font-semibold hover:bg-coral/[0.03] hover:border-coral/30 active:scale-95 transition-all shadow-sm group"
           >
             <LogOut className="w-4 h-4 text-ink/60 group-hover:text-coral" />
-            <span className="group-hover:text-coral transition-colors">관리자 나가기</span>
+            <span className="group-hover:text-coral transition-colors">나가기</span>
           </Link>
         </div>
       </nav>
