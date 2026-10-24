@@ -1,3 +1,39 @@
+# REVIEW_HANDOFF — P-016-5 (홈·리포트 디자인 개편)
+
+> **작성 일시**: 2026-10-24
+> **범위**: `docs/uiux/decisions/P-016.md` §P-016-5 (홈 상단 포스터 슬라이드 4장 · `HomeExplore` 2칸 포스터 카드 + 대표 카드 플럼 그라데이션 · 모바일 하단 떠 있는 탭바 · 리포트 섹션 첫 줄 "한 줄 결론" 말풍선 + 기존 점수 게이지)
+> **검증 상태**: `tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors · `vitest` 72파일 539개 통과(1 skip) · `npm run build` exit 0
+> **DB 변경 (SQL)**: 없음
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `components/home/HomeHeroCompact.tsx` | **[P-016-5 §1·§3]** 딥 플럼(`#3A1B40 → #6A2C70`) 그라데이션 + 골드(`#FFC24B`) 포인트 히어로로 개편. 커플 전용처럼 보이지 않도록 상단 카피를 `"솔로 연애 · 재회 · 속마음 · 2027 신년운"` / `"지금 내 마음, 어떤 답이 가장 궁금한가요?"`로 바꾸고, `public/covers/cover_{love_single,reunion,inner_mind,2027}.webp` 세로 3:4 포스터 슬라이드 4장 + 상황별 질문 문구(`"올해 안에 나도 연애할 수 있을까?"`, `"헤어진 그 사람, 다시 닿을 수 있을까?"` 등) + 상황 칩·인디케이터 추가 (이미지 로드 실패 시 3D 아이콘 폴백). 기존 `home_hero_cta_click` 이벤트 유지 |
+| `components/home/HomeExplore.tsx` | **[P-016-5 §2·§3]** ① 대표 추천 카드(`picks`) 및 프리미엄 스트립에 딥 플럼(`#3A1B40 → #6A2C70`) 그라데이션 + 골드 포인트 적용 ② 기존 4칸 작은 격자(`grid-cols-4`)를 **2칸 포스터 카드(`grid-cols-2`)**로 변경하여 상단 표지(`PRODUCT_COVER_MAP` 매핑 `.webp` 또는 3D 아이콘 임시 표지) + 제목 + `hook` 2줄 + `"무료 미리보기"` 노출. 기존 `home_card_click` · `home_tab_click` 이벤트 유지 |
+| `app/[locale]/page.tsx` & `components/Navbar.tsx` | **[P-016-5 §3]** 홈 배경을 따뜻한 크림(`bg-cream`, `#FFF6F1`)으로 유지하고 `overflow-x-hidden`으로 390px 폭 가로 스크롤 방지. 홈 상단 `Navbar` 배경도 크림(`#FFF6F1`)으로 통일 |
+| `components/MobileBottomTabBar.tsx` (신규) & `app/[locale]/layout.tsx` & `components/home/HomeStickyCta.tsx` | **[P-016-5 §4]** 모바일 전용(`sm:hidden`) 하단 떠 있는 탭바(`홈` / `궁합` / `내 운세` / `보관함`) 추가(`mobile_tab_click` 이벤트). 기존 하단 고정 버튼이 있는 경로(`/products/*`, `/compat/*`, `/fortune/new`, `/fortune/annual`, `/premium/*`, `/pay/*`, `/checkout/*`)에서는 자동 비노출(`shouldShowMobileTabBar`)하고, 홈에서는 `HomeStickyCta`를 `hidden sm:block`으로 두어 모바일에서 버튼이 절대 겹치지 않도록 처리 |
+| `lib/reportSectionLead.ts` (신규) | **[P-016-5 §5]** 리포트 섹션 본문에서 첫 문장(`"한 줄 결론"` 말풍선용)과 나머지 본문을 분리하는 순수 함수 `splitLeadSentence` 및 기존 점수(0~100)를 게이지 바 너비(%)로 변환하는 `clampGaugePercent` 구현 |
+| `components/report/StandardReportView.tsx` | **[P-016-5 §5]** 전체(`full`) 및 미리보기(`teaser`) 각 섹션 상단에 첫 줄 `"한 줄 결론"` 말풍선 노출 + 상단 기존 `score`에 가로 게이지 바 추가 (새 점수 생성 없음) |
+| `app/[locale]/fortune/annual/AnnualFortuneClient.tsx` | **[P-016-5 §5]** 신년 총운 5대 영역(`data.sections`)의 각 섹션에 **이미 존재하는 `sec.score`** 가로 게이지 바 및 첫 줄 `"한 줄 결론"` 말풍선 추가 (새 점수 생성 없음) |
+| `components/CompatResultClient.tsx` | **[P-016-5 §5]** 심층 궁합(`deepReport`)의 `coreDynamic` · `actionableAdvice` 섹션 첫 줄에 `"한 줄 결론"` 말풍선 추가 (기존 5축 게이지 그대로 유지) |
+| `tests/p016Design.test.ts` (신규) | 포스터 슬라이드 4장 `.webp` 파일 존재 및 문구 검증, `shouldShowMobileTabBar` 경로별 노출/숨김 검증, `splitLeadSentence` · `clampGaugePercent` 단위 테스트 4건 |
+
+## 2. 결정론 로직 요약
+- 사주·궁합 엔진(`lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`) 및 `lib/compatPercentile.ts` 수정 없음.
+- 리포트 섹션의 `"한 줄 결론"` 추출(`splitLeadSentence`)은 기존 AI 본문의 첫 문장만 분리하며, 본문이 단문 1문장일 때는 중복 표시를 피하기 위해 `lead = null`을 반환함.
+- 게이지는 이미 존재하는 점수(`StandardReportView`의 `score`, `AnnualFortuneClient`의 `sec.score`, `CompatResultClient`의 `publicBreakdown`/`breakdown`)만 시각화하며 새로운 점수를 일절 생성하지 않음.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- 결제·가격·주문·쿠폰 로직 변경 없음.
+- 기존 `home_hero_cta_click`, `home_card_click`, `home_tab_click`, `compat_created`, `teaser_created` 이벤트 발사 시점 및 파라미터 유지.
+- 추가된 GA4 이벤트: `home_hero_slide_tab`, `mobile_tab_click`.
+
+## 4. 스스로 의심 지점
+- `MobileBottomTabBar`는 기존 하단 고정 CTA 바가 있는 상세/결과/입력 페이지(`/products/*`, `/compat/*`, `/fortune/new`, `/fortune/annual`)에서는 숨겨지고, 홈(`/`), 보관함(`/me`, `/dashboard`), 리포트 열람(`/report/*`), 띠 궁합(`/zodiac`) 등에서 노출됩니다.
+
+---
+
 # REVIEW_HANDOFF — P-016-4 (후기 + 1,000원 다음 구매 쿠폰 + N번째 구매 배지)
 
 > **작성 일시**: 2026-10-24

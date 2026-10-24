@@ -30,6 +30,7 @@ import { routing } from "@/i18n/routing";
 import "../globals.css";
 import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
+import MobileBottomTabBar from "../../components/MobileBottomTabBar";
 import CacheBuster from "../../components/CacheBuster";
 import Providers from "../../components/Providers";
 import MaintenanceOverlay from "../../components/MaintenanceOverlay";
@@ -203,6 +204,7 @@ export default async function RootLayout({
             <main className="flex-grow pt-14">
               {children}
             </main>
+            <MobileBottomTabBar />
             <Footer />
           </Providers>
         </NextIntlClientProvider>

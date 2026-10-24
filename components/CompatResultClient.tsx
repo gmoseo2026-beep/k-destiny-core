@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight, MessageCircleQuestion } from "lucide-react";
 import { parseCompatFreeText, cutCompatFreeEnding } from "@/lib/compatFreeText";
 import { formatCompatTopPercentBadge } from "@/lib/compatPercentile";
+import { splitLeadSentence } from "@/lib/reportSectionLead";
 import { nextReadingHref } from "@/lib/recommendations/nextReadings";
 import { useSeenOnce } from "@/lib/useSeenOnce";
 import { Card } from "@/components/ui/Card";
@@ -991,7 +992,24 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           
           <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-plum">
             <h3 className="text-lg font-black text-plum mb-3">우리 관계의 핵심 에너지</h3>
-            <p className="text-sm text-ink leading-relaxed font-medium">{deepReport.coreDynamic}</p>
+            {(() => {
+              const { lead, rest } = splitLeadSentence(deepReport.coreDynamic);
+              return (
+                <>
+                  {lead && (
+                    <div className="mb-3 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                      <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
+                        한 줄 결론
+                      </span>
+                      <p className="text-[13px] sm:text-sm font-extrabold text-ink leading-snug break-keep">
+                        {lead}
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-ink leading-relaxed font-medium">{rest}</p>
+                </>
+              );
+            })()}
           </div>
 
           <div className="flex flex-col md:flex-row gap-4">
@@ -1025,7 +1043,24 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
           <div className="w-full bg-white rounded-2xl p-6 shadow-md border-t-4 border-gold">
             <h3 className="text-base font-black text-ink mb-3">연애 조언 & 애정운</h3>
-            <p className="text-sm text-ink leading-relaxed font-medium mb-4">{deepReport.actionableAdvice}</p>
+            {(() => {
+              const { lead, rest } = splitLeadSentence(deepReport.actionableAdvice);
+              return (
+                <>
+                  {lead && (
+                    <div className="mb-3 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                      <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
+                        한 줄 결론
+                      </span>
+                      <p className="text-[13px] sm:text-sm font-extrabold text-ink leading-snug break-keep">
+                        {lead}
+                      </p>
+                    </div>
+                  )}
+                  <p className="text-sm text-ink leading-relaxed font-medium mb-4">{rest}</p>
+                </>
+              );
+            })()}
             <div className="bg-cream p-4 rounded-xl text-sm text-plum font-bold">
               이번 달 애정운: {deepReport.monthlyFortune}
             </div>

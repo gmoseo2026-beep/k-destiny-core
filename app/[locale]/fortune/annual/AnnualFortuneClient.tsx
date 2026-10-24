@@ -10,6 +10,7 @@ import { grantingCatalogIds } from "@/lib/productIdentity";
 import { loadLastPerson } from "@/lib/reportHandoff";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
+import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
   getProduct,
   priceLabel,
@@ -915,9 +916,34 @@ export default function AnnualFortuneClient({
                       <span className="text-sm font-black text-coral">{sec.score}점</span>
                     </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-ink leading-relaxed">
-                    {sec.text}
-                  </p>
+                  <div className="flex flex-col gap-2.5">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-soft border border-line/60">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] transition-all duration-700"
+                      style={{ width: `${clampGaugePercent(sec.score)}%` }}
+                    />
+                  </div>
+                  {(() => {
+                    const { lead, rest } = splitLeadSentence(sec.text);
+                    return (
+                      <>
+                        {lead && (
+                          <div className="rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                            <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
+                              한 줄 결론
+                            </span>
+                            <p className="text-[13px] sm:text-sm font-extrabold text-ink leading-snug break-keep">
+                              {lead}
+                            </p>
+                          </div>
+                        )}
+                        <p className="text-xs sm:text-sm text-ink leading-relaxed whitespace-pre-line">
+                          {rest}
+                        </p>
+                      </>
+                    );
+                  })()}
+                  </div>
                 </Card>
               );
             })}

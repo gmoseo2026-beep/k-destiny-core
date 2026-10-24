@@ -56,8 +56,8 @@ export default function Navbar({ visibleProducts = [] }: NavbarProps) {
         className={`fixed top-0 left-0 right-0 z-40 transition-colors duration-200 ${
           isHome
             ? isScrolled
-              ? "bg-[#FFE3EA]/95 shadow-xs backdrop-blur-md border-b border-line/60"
-              : "bg-[#FFE3EA]"
+              ? "bg-[#FFF6F1]/95 shadow-xs backdrop-blur-md border-b border-line/60"
+              : "bg-[#FFF6F1] border-b border-line/40"
             : isScrolled
             ? "bg-white/95 shadow-xs backdrop-blur-md border-b border-line/60"
             : "bg-white border-b border-line/40"

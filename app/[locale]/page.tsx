@@ -69,7 +69,7 @@ export default async function Home({ params }: PageProps) {
   const promoDaysLeft = seasonPromoDaysLeft();
 
   return (
-    <div className={`w-full min-h-screen bg-background text-ink ${isMember ? "pb-12" : "pb-28"}`}>
+    <div className={`w-full min-h-screen bg-cream text-ink overflow-x-hidden ${isMember ? "pb-24 sm:pb-12" : "pb-28"}`}>
       {/* 첫 화면: 무엇이 있는지(탭·추천·격자·프리미엄)를 먼저 보여 준다 */}
       {isMember ? (
         <DashboardView effectiveProducts={visibleProducts} />

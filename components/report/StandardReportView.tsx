@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import type { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { getTeaserBlurCopy } from "@/lib/teaserBlurCopy";
+import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import { useSeenOnce } from "@/lib/useSeenOnce";
 import { Lock, Sparkles, CheckCircle2, XCircle, Heart, MessageCircleQuestion } from "lucide-react";
 
@@ -50,6 +51,14 @@ export default function StandardReportView({
         {/* Score & Headline Card */}
         <Card className="text-center flex flex-col items-center">
           <ScoreGauge score={score} label="종합 흐름 점수" color="#E0245A" />
+          <div className="mt-2.5 w-full max-w-[220px]">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-soft border border-line/60">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] transition-all duration-700"
+                style={{ width: `${clampGaugePercent(score)}%` }}
+              />
+            </div>
+          </div>
           <h2 className="text-xl font-black text-ink mt-4 mb-2 tracking-tight">
             &ldquo;{data.headline}&rdquo;
           </h2>
@@ -60,18 +69,31 @@ export default function StandardReportView({
 
         {/* 4 Full Sections */}
         <div className="flex flex-col gap-4">
-          {data.sections.map((section, idx) => (
-            <div key={section.key || idx} ref={idx === data.sections.length - 1 ? lastSectionRef : undefined}>
-              <ReportSection
-                title={section.title}
-                icon={<Sparkles className="w-5 h-5 text-coral" />}
-              >
-                <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
-                  {section.body}
-                </div>
-              </ReportSection>
-            </div>
-          ))}
+          {data.sections.map((section, idx) => {
+            const { lead, rest } = splitLeadSentence(section.body);
+            return (
+              <div key={section.key || idx} ref={idx === data.sections.length - 1 ? lastSectionRef : undefined}>
+                <ReportSection
+                  title={section.title}
+                  icon={<Sparkles className="w-5 h-5 text-coral" />}
+                >
+                  {lead && (
+                    <div className="mb-3.5 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                      <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
+                        한 줄 결론
+                      </span>
+                      <p className="text-[13px] sm:text-sm font-extrabold text-ink leading-snug break-keep">
+                        {lead}
+                      </p>
+                    </div>
+                  )}
+                  <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
+                    {rest}
+                  </div>
+                </ReportSection>
+              </div>
+            );
+          })}
         </div>
 
         {/* Advice (Do & Don't) */}
@@ -140,6 +162,14 @@ export default function StandardReportView({
       {/* Score & Headline Card */}
       <Card className="text-center flex flex-col items-center">
         <ScoreGauge score={score} label="종합 흐름 점수" color="#E0245A" />
+        <div className="mt-2.5 w-full max-w-[220px]">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-soft border border-line/60">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-[#FF8AA1] via-coral to-[#6A2C70] transition-all duration-700"
+              style={{ width: `${clampGaugePercent(score)}%` }}
+            />
+          </div>
+        </div>
         <h2 className="text-xl font-black text-ink mt-4 mb-2 tracking-tight">
           &ldquo;{teaser.headline}&rdquo;
         </h2>
@@ -149,41 +179,54 @@ export default function StandardReportView({
       </Card>
 
       {/* Free Section 1 */}
-      {teaser.freeSection && (
-        <ReportSection
-          title={teaser.freeSection.title}
-          icon={<Sparkles className="w-5 h-5 text-coral" />}
-        >
-          <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
-            {teaser.freeSection.body}
-          </div>
-          {/* 뒷부분은 서버가 잘라서 보내지 않는다 → 실제 글 대신 흐린 자리 표시만 그린다 */}
-          {teaser.freeSection.clipped && (
-            <div className="relative mt-1">
-              <p aria-hidden className="select-none text-sm leading-relaxed text-ink blur-[5px]">
-                {getTeaserBlurCopy(catalogId)}
-              </p>
-              <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-b from-white/10 via-white/70 to-white pb-1">
-                {onLockedClick ? (
-                  <button
-                    type="button"
-                    onClick={onLockedClick}
-                    className="flex items-center gap-1.5 rounded-full border border-coral/40 bg-white px-4 py-2 text-xs font-extrabold text-coral-deep shadow-sm transition-all active:scale-[0.97]"
-                  >
-                    <Lock className="h-3.5 w-3.5" />
-                    이어서 읽기
-                  </button>
-                ) : (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-caption">
-                    <Lock className="h-3.5 w-3.5" />
-                    이어지는 내용은 전체 리포트에서
-                  </span>
-                )}
+      {teaser.freeSection && (() => {
+        const { lead, rest } = splitLeadSentence(teaser.freeSection.body);
+        return (
+          <ReportSection
+            title={teaser.freeSection.title}
+            icon={<Sparkles className="w-5 h-5 text-coral" />}
+          >
+            {lead && (
+              <div className="mb-3.5 rounded-2xl border border-[#FFD9E0] bg-[#FFF6F1] px-3.5 py-2.5 shadow-2xs">
+                <span className="inline-block rounded-full bg-coral/15 px-2 py-0.5 text-[10px] font-extrabold text-coral-deep mb-1">
+                  한 줄 결론
+                </span>
+                <p className="text-[13px] sm:text-sm font-extrabold text-ink leading-snug break-keep">
+                  {lead}
+                </p>
               </div>
+            )}
+            <div className="text-sm text-ink leading-relaxed whitespace-pre-line">
+              {rest}
             </div>
-          )}
-        </ReportSection>
-      )}
+            {/* 뒷부분은 서버가 잘라서 보내지 않는다 → 실제 글 대신 흐린 자리 표시만 그린다 */}
+            {teaser.freeSection.clipped && (
+              <div className="relative mt-1">
+                <p aria-hidden className="select-none text-sm leading-relaxed text-ink blur-[5px]">
+                  {getTeaserBlurCopy(catalogId)}
+                </p>
+                <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-b from-white/10 via-white/70 to-white pb-1">
+                  {onLockedClick ? (
+                    <button
+                      type="button"
+                      onClick={onLockedClick}
+                      className="flex items-center gap-1.5 rounded-full border border-coral/40 bg-white px-4 py-2 text-xs font-extrabold text-coral-deep shadow-sm transition-all active:scale-[0.97]"
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      이어서 읽기
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-caption">
+                      <Lock className="h-3.5 w-3.5" />
+                      이어지는 내용은 전체 리포트에서
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </ReportSection>
+        );
+      })()}
 
       {/* 답을 숨긴 질문 — 무료는 질문까지, 답은 전체 리포트(2026-10-03) */}
       {teaser.unsaid && (
