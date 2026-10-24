@@ -1,4 +1,5 @@
 import type { StandardTeaser } from "@/lib/reports/standard";
+import { maskKeyWordForPreview } from "@/lib/teaserBlurCopy";
 
 /** AI 원본에서 티저 허용 필드만 복사한다. 유료 키는 존재 자체가 불가능하다. */
 export function pickTeaser(raw: unknown): StandardTeaser | null {
@@ -41,8 +42,16 @@ export function clipHalf(body: string): { text: string; clipped: boolean } {
   return { text: text.trimEnd(), clipped: true };
 }
 
-/** 화면으로 내보낼 미리보기: 무료 본문을 절반으로 자르고 잘렸다는 표시를 붙인다. 저장본은 그대로 둔다. */
+/**
+ * 화면으로 내보낼 미리보기: 무료 본문을 절반으로 자르고 잘렸다는 표시를 붙인다.
+ * 또한 잠긴 섹션 hooks 문장에서 핵심 단어를 서버에서 `●●●`로 가려 내보낸다(저장본은 그대로 둔다).
+ */
 export function clipTeaserForView(t: StandardTeaser): StandardTeaser {
   const { text, clipped } = clipHalf(t.freeSection.body);
-  return { ...t, freeSection: { ...t.freeSection, body: text, clipped } };
+  const maskedHooks = t.hooks.map((h) => (h.length >= 10 ? maskKeyWordForPreview(h, 90) : h));
+  return {
+    ...t,
+    freeSection: { ...t.freeSection, body: text, clipped },
+    hooks: maskedHooks,
+  };
 }

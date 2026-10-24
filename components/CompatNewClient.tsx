@@ -20,13 +20,17 @@ import type { SectionOutlineMap } from "@/lib/prompts/sectionOutline";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Link2 } from "lucide-react";
+import { Link2, Lock, ArrowLeft, ArrowRight } from "lucide-react";
 import {
   loadSentInvites,
   saveSentInvite,
   removeSentInvite,
   relationLabel,
 } from "@/lib/compatInviteClient";
+import {
+  COMPAT_CURIOSITY_OPTIONS,
+  type CompatCuriosityKey,
+} from "@/lib/compatCuriosity";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 
@@ -75,6 +79,15 @@ function getReadyKakaoForInvite() {
     return null;
   }
 }
+
+type InputStep = 1 | 2 | 3 | 4;
+
+const STEP_META: ReadonlyArray<{ step: InputStep; shortLabel: string; question: string }> = [
+  { step: 1, shortLabel: "1. 나", question: "먼저 내 생년월일을 알려주세요" },
+  { step: 2, shortLabel: "2. 상대", question: "함께 볼 그 사람의 생년월일은?" },
+  { step: 3, shortLabel: "3. 관계", question: "두 사람은 지금 어떤 사이인가요?" },
+  { step: 4, shortLabel: "4. 궁금한 점", question: "지금 제일 궁금한 것은 무엇인가요?" },
+];
 
 export default function CompatNewClient({
   locale,
@@ -139,6 +152,9 @@ export default function CompatNewClient({
   const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
 
   const [relation, setRelation] = useState<"love" | "crush" | "friend">("love");
+  // [P-016-2 §6] 대화형 입력 단계(1: 나 -> 2: 상대 -> 3: 관계 -> 4: 지금 제일 궁금한 것)
+  const [step, setStep] = useState<InputStep>(1);
+  const [curiosity, setCuriosity] = useState<CompatCuriosityKey>("mind");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -367,6 +383,7 @@ export default function CompatNewClient({
     setErrorMsg(null);
     if (!yearA || !monthA || !dayA) {
       setErrorMsg("내 생년월일을 입력해주세요.");
+      setStep(1);
       return;
     }
 
@@ -504,6 +521,34 @@ export default function CompatNewClient({
     }
   };
 
+  const handleNextFromStep1 = () => {
+    setErrorMsg(null);
+    if (!yearA || !monthA || !dayA) {
+      setErrorMsg("내 생년월일을 입력해주세요.");
+      return;
+    }
+    trackEvent("compat_step_next", { step: 1 });
+    setStep(2);
+  };
+
+  const handleNextFromStep2 = () => {
+    setErrorMsg(null);
+    if (!yearB || !monthB || !dayB) {
+      setErrorMsg("상대방의 생년월일을 입력해주세요.");
+      return;
+    }
+    trackEvent("compat_step_next", { step: 2 });
+    setStep(3);
+  };
+
+  const handleNextFromStep3 = (chosenRelation?: "love" | "crush" | "friend") => {
+    setErrorMsg(null);
+    const nextRel = chosenRelation ?? relation;
+    if (chosenRelation) setRelation(chosenRelation);
+    trackEvent("compat_step_next", { step: 3, relation: nextRel });
+    setStep(4);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteMode && !isSpecialCouple) {
@@ -514,10 +559,19 @@ export default function CompatNewClient({
 
     if (!yearA || !monthA || !dayA) {
       setErrorMsg("내 생년월일을 입력해주세요.");
+      setStep(1);
       return;
     }
     if (!yearB || !monthB || !dayB) {
       setErrorMsg("상대방의 생년월일을 입력해주세요.");
+      setStep(2);
+      return;
+    }
+
+    if (step < 4) {
+      if (step === 1) handleNextFromStep1();
+      else if (step === 2) handleNextFromStep2();
+      else if (step === 3) handleNextFromStep3();
       return;
     }
 
@@ -572,6 +626,13 @@ export default function CompatNewClient({
         throw new Error(json.error || "궁합 계산 중 오류가 발생했습니다.");
       }
 
+      // [P-016-2 §6] 선택된 궁금증은 AI 문장 말투에만 반영하도록 sessionStorage 에 저장 (점수 영향 없음)
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.setItem(`kd_compat_curiosity_${json.shareToken}`, curiosity);
+        } catch {}
+      }
+
       // 다음 상품에서 다시 입력하지 않도록 이 탭에만 기억해 둔다(서버 저장 없음)
       saveLastCouple({
         compatId: json.id,
@@ -582,7 +643,7 @@ export default function CompatNewClient({
       // 개인 운세에서도 내 정보를 이어 쓴다
       saveLastPerson({ name: payload.personA.name, dob: dobA, time: finalTimeA, gender: genderA });
 
-      // GA4 측정 이벤트 발사
+      // GA4 측정 이벤트 발사 (기존과 동일한 시점 유지 — 틱톡 광고 학습 신호 보호)
       trackEvent("compat_created", {
         relation,
         has_ref: Boolean(refToken),
@@ -812,8 +873,10 @@ export default function CompatNewClient({
     );
   }
 
+  const currentStepMeta = STEP_META.find((m) => m.step === step) ?? STEP_META[0];
+
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md md:max-w-3xl flex flex-col gap-6 pb-12 mx-auto">
+    <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-5 pb-12 mx-auto">
       {/* Hero Title (미리보기·한도 화면에서는 위쪽 조기 반환으로 숨겨진다) */}
       <div className="w-full max-w-md mx-auto text-center">
         <h1 className="text-2xl font-black text-ink tracking-tight break-keep">
@@ -856,25 +919,19 @@ export default function CompatNewClient({
       )}
 
       {/* 3D Product Icon 72px & Title */}
-      <div className="flex flex-col items-center justify-center -mb-2">
-        <div className="w-[72px] h-[72px] relative mb-2">
+      <div className="flex flex-col items-center justify-center -mb-1">
+        <div className="w-[64px] h-[64px] relative mb-1.5">
           <Image
             src={product?.icon3d || "/mascot/transparent/couple_red_thread.webp"}
             alt=""
-            width={72}
-            height={72}
+            width={64}
+            height={64}
             priority
             className="object-contain drop-shadow-sm"
           />
         </div>
-        <h2 className="text-base font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
+        <h2 className="text-sm font-extrabold text-ink">{product?.name || "정통 궁합"}</h2>
       </div>
-
-      {errorMsg && (
-        <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
-          {errorMsg}
-        </div>
-      )}
 
       {/* 방금 본 두 사람으로 입력 없이 이 상품 미리보기 */}
       {lastCouple && isSpecialCouple && product && (
@@ -899,45 +956,77 @@ export default function CompatNewClient({
         </div>
       )}
 
-      {/* Relation Type Selector */}
-      <Card className="p-4">
-        <label className="block text-xs font-bold text-caption mb-2">우리의 관계</label>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { key: "love", label: "연인 · 커플", icon: "❤️" },
-            { key: "crush", label: "썸 · 호감", icon: "💌" },
-            { key: "friend", label: "친구 · 지인", icon: "✨" },
-          ].map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setRelation(item.key as "love" | "crush" | "friend")}
-              className={`py-2.5 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border active:scale-[0.96] ${
-                relation === item.key
-                  ? "bg-coral text-white border-coral shadow-2xs"
-                  : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
-              }`}
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
+      {/* [P-016-2 §6] 대화형 단계 표시 바 (초대장 모드가 아닐 때 노출) */}
+      {!inviteMode && (
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
+            {STEP_META.map((item) => {
+              const isCurrent = step === item.step;
+              const isDone = step > item.step;
+              return (
+                <button
+                  key={item.step}
+                  type="button"
+                  onClick={() => {
+                    if (item.step < step) {
+                      setErrorMsg(null);
+                      setStep(item.step);
+                    }
+                  }}
+                  disabled={item.step > step}
+                  className={`rounded-xl py-2 px-1 text-[11px] font-extrabold transition-all ${
+                    isCurrent
+                      ? "bg-coral text-white shadow-2xs"
+                      : isDone
+                      ? "bg-coral-soft text-coral-deep hover:bg-coral-soft/80"
+                      : "bg-surface-soft text-caption"
+                  }`}
+                >
+                  {item.shortLabel}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-center text-sm font-black text-ink">
+            {currentStepMeta.question}
+          </p>
         </div>
-      </Card>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-        {/* Person A (Me) */}
-        <Card className="p-5 flex flex-col gap-3.5 h-full">
+      {errorMsg && (
+        <div className="bg-coral-soft border border-coral text-coral-deep p-3.5 rounded-xl text-sm font-semibold text-center">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* STEP 1: 내 정보 (또는 반쪽 초대장 모드) */}
+      {(step === 1 || inviteMode) && (
+        <Card className="p-5 flex flex-col gap-3.5">
           <div className="flex items-center justify-between border-b border-line pb-2">
             <div className="flex items-center gap-2">
               <span className="text-base">👤</span>
               <h3 className="font-bold text-sm text-ink">내 정보</h3>
             </div>
-            {initialProfile && (
+            {initialProfile ? (
               <span className="text-[10px] bg-coral-soft text-coral-deep px-2 py-0.5 rounded-full font-bold">
                 저장된 프로필 불러옴
               </span>
-            )}
+            ) : !isSpecialCouple ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !inviteMode;
+                  setInviteMode(next);
+                  setErrorMsg(null);
+                  if (next) {
+                    trackEvent("compat_invite_entry_click", { source: "compat_new" });
+                  }
+                }}
+                className="text-[11px] font-bold text-coral hover:text-coral-deep bg-coral-soft px-2.5 py-1 rounded-full transition-colors shrink-0"
+              >
+                {inviteMode ? "직접 입력으로 돌아가기" : "생일을 모르나요? 반쪽 초대장"}
+              </button>
+            ) : null}
           </div>
 
           <div>
@@ -997,6 +1086,10 @@ export default function CompatNewClient({
                   ))}
                 </select>
               </div>
+              <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-caption">
+                <Lock className="h-3 w-3 text-coral shrink-0" />
+                <span>생일은 암호화돼 저장돼요</span>
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -1051,10 +1144,71 @@ export default function CompatNewClient({
               </div>
             </div>
           </div>
-        </Card>
 
-        {/* Person B (Partner) */}
-        <Card className="p-5 flex flex-col gap-3.5 h-full">
+          {inviteMode && !isSpecialCouple ? (
+            <div className="mt-2 flex flex-col gap-3">
+              <div className="rounded-2xl bg-surface-soft border border-coral/25 p-3.5 text-left">
+                <p className="text-xs font-extrabold text-ink">
+                  💌 상대방의 생년월일을 몰라도 괜찮아요
+                </p>
+                <p className="text-[11px] font-medium text-text-2 mt-1 leading-relaxed">
+                  내 정보만 입력하고 반쪽 초대장 링크를 보내면, 상대방이 직접 생년월일을 채워 우리 두 사람의 궁합 점수를 바로 열 수 있어요.
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-caption mb-1.5">우리의 관계</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: "love", label: "연인 · 커플", icon: "❤️" },
+                    { key: "crush", label: "썸 · 호감", icon: "💌" },
+                    { key: "friend", label: "친구 · 지인", icon: "✨" },
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setRelation(item.key as "love" | "crush" | "friend")}
+                      className={`py-2 px-2 rounded-xl text-xs font-bold transition-all flex flex-col items-center gap-1 border active:scale-[0.96] ${
+                        relation === item.key
+                          ? "bg-coral text-white border-coral shadow-2xs"
+                          : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
+                      }`}
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Button type="submit" size="lg" fullWidth isLoading={isLoading}>
+                반쪽 초대장 링크 만들기 (무료) 💌
+              </Button>
+              <button
+                type="button"
+                onClick={() => setInviteMode(false)}
+                className="text-xs font-bold text-text-2 hover:text-coral underline underline-offset-4 transition-colors py-1"
+              >
+                기다리지 않고 내가 아는 생년월일로 바로 볼래요 →
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 flex flex-col gap-2">
+              <Button
+                type="button"
+                size="lg"
+                fullWidth
+                onClick={handleNextFromStep1}
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                다음: 상대방 정보 입력
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* STEP 2: 상대방 정보 */}
+      {!inviteMode && step === 2 && (
+        <Card className="p-5 flex flex-col gap-3.5">
           <div className="flex items-center justify-between gap-2 border-b border-line pb-2">
             <div className="flex items-center gap-2">
               <span className="text-base">💖</span>
@@ -1064,175 +1218,292 @@ export default function CompatNewClient({
               <button
                 type="button"
                 onClick={() => {
-                  const next = !inviteMode;
-                  setInviteMode(next);
+                  setInviteMode(true);
                   setErrorMsg(null);
-                  if (next) {
-                    trackEvent("compat_invite_entry_click", { source: "compat_new" });
-                  }
+                  trackEvent("compat_invite_entry_click", { source: "compat_new" });
                 }}
                 className="text-[11px] font-bold text-coral hover:text-coral-deep bg-coral-soft px-2.5 py-1 rounded-full transition-colors shrink-0"
               >
-                {inviteMode ? "직접 입력으로 돌아가기" : "생일을 모르나요? 반쪽 초대장 보내기"}
+                생일을 모르나요? 반쪽 초대장 보내기
               </button>
             )}
           </div>
 
-          {inviteMode && !isSpecialCouple ? (
-            <div className="flex-1 rounded-2xl bg-surface-soft border border-coral/25 p-4 flex flex-col justify-center gap-2 text-left">
-              <p className="text-sm font-extrabold text-ink">
-                💌 상대방의 생년월일을 몰라도 괜찮아요
-              </p>
-              <p className="text-xs font-medium text-text-2 leading-relaxed">
-                내 정보만 입력하고 반쪽 초대장 링크를 보내면, 상대방이 직접 생년월일을 채워 우리 두 사람의 궁합 점수를 바로 열 수 있어요.
-              </p>
-              <p className="text-[11px] font-semibold text-coral-deep">
-                내 생년월일과 태어난 시간 원문은 상대방에게 보이지 않아요.
+          <div>
+            <label className="block text-xs font-semibold text-text-2 mb-1">상대방 이름 또는 애칭 (선택)</label>
+            <input
+              type="text"
+              value={nameB}
+              onChange={(e) => setNameB(e.target.value)}
+              placeholder="예: 이설렘"
+              className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+            />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-text-2 mb-1">
+                생년월일 <span className="text-coral">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  value={yearB}
+                  onChange={(e) => setYearB(e.target.value)}
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                >
+                  <option value="">년도</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}년
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={monthB}
+                  onChange={(e) => setMonthB(e.target.value)}
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                >
+                  <option value="">월</option>
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}월
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={dayB}
+                  onChange={(e) => setDayB(e.target.value)}
+                  className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                >
+                  <option value="">일</option>
+                  {Array.from(
+                    { length: getDaysInMonth(yearB, monthB) },
+                    (_, i) => i + 1
+                  ).map((d) => (
+                    <option key={d} value={d}>
+                      {d}일
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-caption">
+                <Lock className="h-3 w-3 text-coral shrink-0" />
+                <span>생일은 암호화돼 저장돼요</span>
               </p>
             </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-xs font-semibold text-text-2 mb-1">상대방 이름 또는 애칭 (선택)</label>
-                <input
-                  type="text"
-                  value={nameB}
-                  onChange={(e) => setNameB(e.target.value)}
-                  placeholder="예: 이설렘"
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
+                <select
+                  value={genderB}
+                  onChange={(e) => setGenderB(e.target.value as "M" | "F")}
                   className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                />
+                >
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
               </div>
-
-              <div className="flex flex-col gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-text-2 mb-1">
-                    생년월일 <span className="text-coral">*</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <select
-                      value={yearB}
-                      onChange={(e) => setYearB(e.target.value)}
-                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                    >
-                      <option value="">년도</option>
-                      {years.map((y) => (
-                        <option key={y} value={y}>
-                          {y}년
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={monthB}
-                      onChange={(e) => setMonthB(e.target.value)}
-                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                    >
-                      <option value="">월</option>
-                      {months.map((m) => (
-                        <option key={m} value={m}>
-                          {m}월
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={dayB}
-                      onChange={(e) => setDayB(e.target.value)}
-                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                    >
-                      <option value="">일</option>
-                      {Array.from(
-                        { length: getDaysInMonth(yearB, monthB) },
-                        (_, i) => i + 1
-                      ).map((d) => (
-                        <option key={d} value={d}>
-                          {d}일
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <select
+                    value={ampmB}
+                    onChange={(e) => setAmpmB(e.target.value)}
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
+                  >
+                    <option value="">모름</option>
+                    <option value="AM">오전</option>
+                    <option value="PM">오후</option>
+                  </select>
+                  <select
+                    value={hourB}
+                    onChange={(e) => setHourB(e.target.value)}
+                    disabled={!ampmB}
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                  >
+                    {hours.map((h) => (
+                      <option key={h} value={h}>
+                        {h}시
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={minB}
+                    onChange={(e) => setMinB(e.target.value)}
+                    disabled={!ampmB}
+                    className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
+                  >
+                    {minutes.map((m) => (
+                      <option key={m} value={m}>
+                        {m}분
+                      </option>
+                    ))}
+                  </select>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="sm:col-span-1">
-                    <label className="block text-xs font-semibold text-text-2 mb-1">성별</label>
-                    <select
-                      value={genderB}
-                      onChange={(e) => setGenderB(e.target.value as "M" | "F")}
-                      className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                    >
-                      <option value="M">남성</option>
-                      <option value="F">여성</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-3">
-                    <label className="block text-xs font-semibold text-text-2 mb-1">태어난 시간 (선택)</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <select
-                        value={ampmB}
-                        onChange={(e) => setAmpmB(e.target.value)}
-                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
-                      >
-                        <option value="">모름</option>
-                        <option value="AM">오전</option>
-                        <option value="PM">오후</option>
-                      </select>
-                      <select
-                        value={hourB}
-                        onChange={(e) => setHourB(e.target.value)}
-                        disabled={!ampmB}
-                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
-                      >
-                        {hours.map((h) => (
-                          <option key={h} value={h}>
-                            {h}시
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={minB}
-                        onChange={(e) => setMinB(e.target.value)}
-                        disabled={!ampmB}
-                        className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white disabled:opacity-50 focus-visible:ring-2 ring-coral"
-                      >
-                        {minutes.map((m) => (
-                          <option key={m} value={m}>
-                            {m}분
-                          </option>
-                        ))}
-                      </select>
+          <div className="mt-2 flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                setErrorMsg(null);
+                setStep(1);
+              }}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+              className="shrink-0"
+            >
+              이전
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              fullWidth
+              onClick={handleNextFromStep2}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              다음: 우리의 관계
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* STEP 3: 우리의 관계 (3가지 유지) */}
+      {!inviteMode && step === 3 && (
+        <Card className="p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <span className="text-sm font-bold text-ink">우리의 관계</span>
+            <span className="text-[11px] font-semibold text-caption">
+              {nameA.trim() || "나"} · {nameB.trim() || "상대방"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2.5">
+            {[
+              { key: "love", label: "연인 · 커플", icon: "❤️" },
+              { key: "crush", label: "썸 · 호감", icon: "💌" },
+              { key: "friend", label: "친구 · 지인", icon: "✨" },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => handleNextFromStep3(item.key as "love" | "crush" | "friend")}
+                className={`py-4 px-2 rounded-2xl text-xs font-bold transition-all flex flex-col items-center gap-1.5 border active:scale-[0.96] ${
+                  relation === item.key
+                    ? "bg-coral text-white border-coral shadow-xs"
+                    : "bg-surface-soft text-ink border-line hover:bg-[#F2ECEB]"
+                }`}
+              >
+                <span className="text-xl">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                setErrorMsg(null);
+                setStep(2);
+              }}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+              className="shrink-0"
+            >
+              이전
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              fullWidth
+              onClick={() => handleNextFromStep3()}
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              다음: 지금 제일 궁금한 것
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* STEP 4: 지금 제일 궁금한 것 (1개 선택 — AI 문장 말투에만 반영) */}
+      {!inviteMode && step === 4 && (
+        <Card className="p-5 flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <span className="text-sm font-bold text-ink">지금 제일 궁금한 것</span>
+            <span className="text-[11px] font-semibold text-caption">1개 선택</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5">
+            {COMPAT_CURIOSITY_OPTIONS.map((opt) => {
+              const isSelected = curiosity === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => {
+                    setCuriosity(opt.key);
+                    trackEvent("compat_curiosity_select", { curiosity: opt.key });
+                  }}
+                  className={`w-full rounded-2xl border p-3.5 text-left transition-all flex items-center justify-between gap-3 active:scale-[0.98] ${
+                    isSelected
+                      ? "border-coral bg-coral-soft shadow-2xs"
+                      : "border-line bg-surface-soft hover:bg-[#F2ECEB]"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xl shrink-0">{opt.emoji}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-extrabold text-ink">{opt.label}</span>
+                      <span className="text-[11px] font-medium text-text-2 truncate">
+                        {opt.subLabel}
+                      </span>
                     </div>
                   </div>
-                </div>
-              </div>
-            </>
-          )}
+                  <span
+                    className={`h-4 w-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      isSelected ? "border-coral bg-coral text-white" : "border-caption bg-white"
+                    }`}
+                  >
+                    {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              onClick={() => {
+                setErrorMsg(null);
+                setStep(3);
+              }}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+              className="shrink-0"
+            >
+              이전
+            </Button>
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              isLoading={isLoading}
+            >
+              {isSpecialCouple && product
+                ? `${product.name} 무료 미리보기 ✨`
+                : "우리 궁합 점수 확인하기 (무료) ✨"}
+            </Button>
+          </div>
         </Card>
-      </div>
-
-      {/* Submit Button */}
-      <div className="flex flex-col gap-2 items-center">
-        <Button
-          type="submit"
-          size="lg"
-          fullWidth
-          isLoading={isLoading}
-        >
-          {inviteMode && !isSpecialCouple
-            ? "반쪽 초대장 링크 만들기 (무료) 💌"
-            : isSpecialCouple && product
-            ? `${product.name} 무료 미리보기 ✨`
-            : "우리 궁합 점수 확인하기 (무료) ✨"}
-        </Button>
-
-        {inviteMode && !isSpecialCouple && (
-          <button
-            type="button"
-            onClick={() => setInviteMode(false)}
-            className="text-xs font-bold text-text-2 hover:text-coral underline underline-offset-4 transition-colors py-1.5"
-          >
-            기다리지 않고 내가 아는 생년월일로 바로 볼래요 →
-          </button>
-        )}
-      </div>
+      )}
     </form>
   );
 }

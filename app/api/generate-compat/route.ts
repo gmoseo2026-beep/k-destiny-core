@@ -8,6 +8,7 @@ import {
   buildCompatPrompt,
   validateCompatOutputLanguage,
 } from "@/lib/destinyGen";
+import { appendCuriosityToneGuide } from "@/lib/compatCuriosity";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 import prisma from "@/lib/prisma";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   const tStart = Date.now();
   try {
     const body = await req.json();
-    const { compatId, shareToken, isPremium = false } = body;
+    const { compatId, shareToken, isPremium = false, curiosity } = body;
 
     if (!compatId && !shareToken) {
       return NextResponse.json({ error: "Missing compatId or shareToken" }, { status: 400 });
@@ -73,7 +74,9 @@ export async function POST(req: NextRequest) {
         ? recordLocale
         : undefined;
     const effectiveLocale = targetLang ?? "ko";
-    const toneGuide = LOCALE_CONFIG[effectiveLocale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
+    const baseToneGuide = LOCALE_CONFIG[effectiveLocale]?.toneGuide || LOCALE_CONFIG["ko"].toneGuide;
+    const toneGuide =
+      effectiveLocale === "ko" ? appendCuriosityToneGuide(baseToneGuide, curiosity) : baseToneGuide;
 
     // Type casting JSON back to objects
     type CompatPerson = { name?: string; gender: string; dayMaster: string; elementsScore: Record<string, number> };

@@ -10,7 +10,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Lock, Compass, AlertTriangle, Lightbulb, Heart, Link2, Sparkles, ArrowRight, MessageCircleQuestion } from "lucide-react";
-import { parseCompatFreeText } from "@/lib/compatFreeText";
+import { parseCompatFreeText, cutCompatFreeEnding } from "@/lib/compatFreeText";
+import { formatCompatTopPercentBadge } from "@/lib/compatPercentile";
+import { nextReadingHref } from "@/lib/recommendations/nextReadings";
 import { useSeenOnce } from "@/lib/useSeenOnce";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -109,6 +111,32 @@ interface CompatResultClientProps {
   visibleIds?: string[];
 }
 
+const LOCKED_SCORE_CARDS: ReadonlyArray<{
+  key: string;
+  label: string;
+  subLabel: string;
+  productId: string;
+}> = [
+  {
+    key: "inner_mind",
+    label: "속마음",
+    subLabel: "말 못 한 본심",
+    productId: "inner_mind",
+  },
+  {
+    key: "secret_love",
+    label: "표현 방식",
+    subLabel: "애정과 끌림 온도",
+    productId: "secret_love",
+  },
+  {
+    key: "conflict",
+    label: "다툼 회복",
+    subLabel: "화해 타이밍",
+    productId: "conflict",
+  },
+];
+
 export default function CompatResultClient({ initialData, locale, refToken, isPremium, visibleIds }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
@@ -152,6 +180,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const callA = !data.personA.name || data.personA.name === "나" ? "당신" : `${data.personA.name} 님`;
   const callB = !data.personB.name || data.personB.name === "상대방" ? "그 사람" : `${data.personB.name} 님`;
   const isLocked = !isPremium && !unlockToken && !deepReport;
+
+  // [P-016-2 §5] 눌러서 공개: 미결제 무료 결과에서는 한 번 눌러야 점수가 올라가는 연출을 시작한다.
+  // compat_created 이벤트는 CompatNewClient 에서 결과 생성 시점에 이미 발사되므로 공개 클릭과 무관하다.
+  const [scoreRevealed, setScoreRevealed] = useState<boolean>(Boolean(isPremium));
+
+  // [P-016-2 §4] 정직한 위치 표시: 상위 30% 이내(score >= 90)일 때만 "상위 N% 궁합" 배지 반환
+  const topPercentBadge = formatCompatTopPercentBadge(data.score);
+
   // view_paywall = 잠긴 심층 궁합 안내가 실제로 화면에 보인 순간
   const paywallRef = React.useRef<HTMLDivElement>(null);
   useSeenOnce(paywallRef, () => trackEvent("view_paywall", { productId: "compat_basic", source: "compat_result" }), isLocked);
@@ -195,6 +231,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [isScoreComplete, setIsScoreComplete] = useState(false);
 
   useEffect(() => {
+    if (!scoreRevealed && isLocked) return;
+
     let startTimestamp: number | null = null;
     let animationFrameId: number;
     const duration = 800; // 0.8s
@@ -221,7 +259,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
 
     animationFrameId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [data.score]);
+  }, [data.score, scoreRevealed, isLocked]);
+
+  const handleRevealScore = () => {
+    if (scoreRevealed) return;
+    trackEvent("score_reveal_click", { compatId: data.id, score: data.score });
+    setScoreRevealed(true);
+  };
 
   // 1. 유입 및 paywall 노출 GA4 이벤트 발사 + 주소창 ref 자동 동기화
   useEffect(() => {
@@ -320,6 +364,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
       // isGenerating 은 !initialData.summaryKo 로 이미 true 로 초기화되어 있으므로
       // 여기서 다시 setState 하지 않는다(연쇄 렌더 방지).
       let isMounted = true;
+      let storedCuriosity: string | null = null;
+      if (typeof window !== "undefined") {
+        try {
+          storedCuriosity = window.sessionStorage.getItem(`kd_compat_curiosity_${initialData.shareToken}`);
+        } catch {}
+      }
+
       fetch("/api/generate-compat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -327,6 +378,7 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           shareToken: initialData.shareToken,
           locale,
           isPremium: false,
+          curiosity: storedCuriosity || undefined,
         }),
       })
         .then((res) => {
@@ -497,6 +549,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     }
   };
 
+  const isScoreShown = scoreRevealed || !isLocked;
+
   return (
     <div className="w-full max-w-md md:max-w-2xl mx-auto flex flex-col items-center pb-32 sm:pb-36">
       {/* Toast Notification */}
@@ -567,38 +621,71 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           </div>
         </div>
 
-        {/* Big Score with Reaction Mascot */}
-        <div className="flex items-center justify-center gap-3 my-2">
-          <KongdakMascot size={64} score={data.score} animate="heartbeat" />
-          <div className="flex items-baseline gap-1">
-            <span
-              className={`text-6xl sm:text-7xl font-black tracking-tight drop-shadow-md transition-transform duration-150 ${
-                isScoreComplete ? "animate-score-pop" : "scale-[0.98]"
-              }`}
+        {/* [P-016-2 §5] 눌러서 공개 vs 점수 카운트업 */}
+        {!isScoreShown ? (
+          <div className="my-3 flex flex-col items-center">
+            <button
+              type="button"
+              onClick={handleRevealScore}
+              className="group inline-flex flex-col items-center gap-2 rounded-2xl border border-white/35 bg-white/20 backdrop-blur-md px-6 py-4 text-white shadow-md transition-all hover:bg-white/25 active:scale-[0.96]"
             >
-              {displayScore}
-            </span>
-            <span className="text-2xl sm:text-3xl font-bold text-gold">점</span>
+              <div className="flex items-center gap-2">
+                <KongdakMascot size={48} expression="couple" animate="heartbeat" />
+                <span className="text-base sm:text-lg font-black tracking-tight text-white drop-shadow-xs">
+                  분석 끝! 눌러서 확인하기 💘
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-gold">
+                터치 한 번으로 우리 궁합 점수 열기
+              </span>
+            </button>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Big Score with Reaction Mascot */}
+            <div className="flex items-center justify-center gap-3 my-2">
+              <KongdakMascot size={64} score={data.score} animate="heartbeat" />
+              <div className="flex items-baseline gap-1">
+                <span
+                  className={`text-6xl sm:text-7xl font-black tracking-tight drop-shadow-md transition-transform duration-150 ${
+                    isScoreComplete ? "animate-score-pop" : "scale-[0.98]"
+                  }`}
+                >
+                  {displayScore}
+                </span>
+                <span className="text-2xl sm:text-3xl font-bold text-gold">점</span>
+              </div>
+            </div>
 
-        {/* High Score (>=90) Celebratory Reaction (1-time) */}
-        {data.score >= 90 && isScoreComplete && (
-          <div className="flex items-center justify-center gap-1 text-xs font-bold text-gold animate-pulse my-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>최고의 찰떡 인연 발견!</span>
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
+            {/* [P-016-2 §4] 정직한 위치 표시: 상위 30% 이내(>=90)일 때만 "상위 N% 궁합" 배지 노출 */}
+            {topPercentBadge && (
+              <div className="my-1.5 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1 rounded-full bg-gold/95 px-3.5 py-1 text-xs font-black text-ink shadow-xs">
+                  <Sparkles className="h-3.5 w-3.5 text-plum" />
+                  <span>{topPercentBadge}</span>
+                </span>
+              </div>
+            )}
+
+            {/* High Score (>=90) Celebratory Reaction (1-time) */}
+            {data.score >= 90 && isScoreComplete && (
+              <div className="flex items-center justify-center gap-1 text-xs font-bold text-gold animate-pulse my-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>최고의 찰떡 인연 발견!</span>
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+            )}
+
+            {/* Score Reaction Mood Badge */}
+            <div className="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-cream px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-white/20 my-2 shadow-sm">
+              {data.score >= 90 && "심쿵주의! 천생연분 궁합"}
+              {data.score >= 80 && data.score < 90 && "불꽃 케미! 찰떡호흡 궁합"}
+              {data.score >= 70 && data.score < 80 && "두근두근! 설레는 꿀케미"}
+              {data.score >= 60 && data.score < 70 && "오글오글! 매력적인 밀당 케미"}
+              {data.score < 60 && "반전매력! 서로 맞춰가는 노력형 케미"}
+            </div>
+          </>
         )}
-
-        {/* Score Reaction Mood Badge */}
-        <div className="inline-flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-cream px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-white/20 my-2 shadow-sm">
-          {data.score >= 90 && "심쿵주의! 천생연분 궁합"}
-          {data.score >= 80 && data.score < 90 && "불꽃 케미! 찰떡호흡 궁합"}
-          {data.score >= 70 && data.score < 80 && "두근두근! 설레는 꿀케미"}
-          {data.score >= 60 && data.score < 70 && "오글오글! 매력적인 밀당 케미"}
-          {data.score < 60 && "반전매력! 서로 맞춰가는 노력형 케미"}
-        </div>
 
         {/* Keywords 3 Chips */}
         <div className="flex flex-wrap justify-center gap-2 mt-4">
@@ -612,6 +699,45 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           ))}
         </div>
       </div>
+
+      {/* [P-016-2 §1] 잠긴 점수 칸 3개: 속마음 ??? · 표현 방식 ??? · 다툼 회복 ??? */}
+      {isLocked && (
+        <Card className="w-full mt-4 p-4">
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="text-sm font-black text-ink">
+              속마음 ??? · 표현 방식 ??? · 다툼 회복 ???
+            </h3>
+            <span className="text-[11px] font-bold text-coral">눌러서 미리보기</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {LOCKED_SCORE_CARDS.map((card) => (
+              <Link
+                key={card.key}
+                href={nextReadingHref(card.productId, data.id, locale, "free_result")}
+                onClick={() =>
+                  trackEvent("locked_card_click", {
+                    compatId: data.id,
+                    productId: card.productId,
+                    item: card.key,
+                  })
+                }
+                className="group flex flex-col items-center justify-between rounded-2xl border border-[#FFD9E0] bg-[#FFF8FA] p-3 text-center transition-all hover:border-coral hover:bg-coral-soft/60 active:scale-[0.96]"
+              >
+                <span className="text-xs font-extrabold text-ink group-hover:text-coral-deep">
+                  {card.label}
+                </span>
+                <span className="my-1.5 inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-sm font-black text-coral shadow-2xs border border-[#FFE4EA]">
+                  <Lock className="h-3 w-3 shrink-0" />
+                  <span>???</span>
+                </span>
+                <span className="text-[10px] font-semibold text-text-3 leading-tight">
+                  {card.subLabel}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* 5-Axis Compatibility Gauge Card (공개 3축 + 잠금 2축, 유료 시 5축 전체) */}
       {(() => {
@@ -752,12 +878,36 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           <>
             <p className="mb-3 text-xs font-bold text-text-3">{callA}과 {callB}, 이런 장면 있죠?</p>
             <ul className="flex flex-col gap-2.5">
-              {freeView.scenes.map((line, i) => (
-                <li key={i} className="rounded-2xl bg-surface-soft px-4 py-3 text-sm font-medium leading-relaxed text-ink">
-                  {line}
-                </li>
-              ))}
+              {freeView.scenes.map((line, i) => {
+                const isLastScene = i === freeView.scenes.length - 1;
+                const displayLine = isLocked && isLastScene ? cutCompatFreeEnding(line, callB) : line;
+                return (
+                  <li key={i} className="rounded-2xl bg-surface-soft px-4 py-3 text-sm font-medium leading-relaxed text-ink">
+                    {displayLine}
+                  </li>
+                );
+              })}
             </ul>
+            {isLocked && (
+              <div className="mt-3">
+                <Link
+                  href={nextReadingHref("inner_mind", data.id, locale, "free_result")}
+                  onClick={() =>
+                    trackEvent("locked_card_click", {
+                      compatId: data.id,
+                      productId: "inner_mind",
+                      item: "cut_sentence_preview",
+                    })
+                  }
+                  className="flex w-full items-center justify-between rounded-xl border border-[#FFD9E0] bg-[#FFF8FA] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
+                >
+                  <span>이어지는 {callB}의 속마음 미리보기</span>
+                  <span className="inline-flex items-center gap-1 text-coral">
+                    무료 미리보기 <ArrowRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </div>
+            )}
             {freeView.unsaid && (
               <div className="mt-4 rounded-2xl border border-coral/30 bg-coral-soft p-4 text-left">
                 <span className="mb-1.5 flex items-center gap-1.5 text-xs font-extrabold text-coral-deep">
@@ -780,7 +930,31 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           </>
         ) : (
           <div className="text-sm text-ink leading-relaxed space-y-3 whitespace-pre-line font-medium">
-            {freeView?.kind === "legacy" ? freeView.text : ""}
+            <p>
+              {freeView?.kind === "legacy"
+                ? isLocked
+                  ? cutCompatFreeEnding(freeView.text, callB)
+                  : freeView.text
+                : ""}
+            </p>
+            {isLocked && freeView?.kind === "legacy" && (
+              <Link
+                href={nextReadingHref("inner_mind", data.id, locale, "free_result")}
+                onClick={() =>
+                  trackEvent("locked_card_click", {
+                    compatId: data.id,
+                    productId: "inner_mind",
+                    item: "cut_sentence_preview",
+                  })
+                }
+                className="mt-3 flex w-full items-center justify-between rounded-xl border border-[#FFD9E0] bg-[#FFF8FA] px-4 py-2.5 text-xs font-extrabold text-coral-deep transition-all hover:bg-coral-soft/60 active:scale-[0.96]"
+              >
+                <span>이어지는 {callB}의 속마음 미리보기</span>
+                <span className="inline-flex items-center gap-1 text-coral">
+                  무료 미리보기 <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            )}
           </div>
         )}
       </Card>

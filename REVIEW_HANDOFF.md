@@ -1,3 +1,39 @@
+# REVIEW_HANDOFF — P-016-2 (무료 결과 + 대화형 입력 + 홈 세로 3:4 표지 4종)
+
+> **작성 일시**: 2026-10-24
+> **범위**: `docs/uiux/decisions/P-016.md` §P-016-2 (무료 궁합 결과 5개 항목 + 대화형 입력 4단계) 및 §P-016-5 선행 표지 4장(`public/covers/`)
+> **검증 상태**: `tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors · `vitest` 69파일 521개 통과(1 skip) · `npm run build` exit 0
+> **DB 변경 (SQL)**: 없음 (P-016-2는 스키마 변경 없음)
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `lib/compatPercentile.ts` (신규) | 점수 분포(전체 1,177쌍, 중앙값 86, 상위 30%=90, 상위 25%=91, 상위 10%=94) 기준 결정론 함수 `getCompatTopPercent` · `formatCompatTopPercentBadge` 구현. **상위 30% 이내(`score >= 90`)일 때만** `"상위 N% 궁합"` 반환 |
+| `lib/compatCuriosity.ts` (신규) | 대화형 입력 4단계 `"지금 제일 궁금한 것"` 4개 선택지(`그 사람 마음` / `다시 만날 수 있을지` / `오래 갈지` / `다툼 이유`) 및 AI 말투 힌트 결합 함수 `appendCuriosityToneGuide` |
+| `lib/compatFreeText.ts` | 무료 요약 마지막 문장을 중간에서 끊고 `"…그런데 그 사람은…"`으로 이어지게 자르는 `cutCompatFreeEnding` 추가 (기존 `parseCompatFreeText` 동작 불변) |
+| `lib/teaserBlurCopy.ts` | 잠긴 영역 핵심 단어 서버/공통 마스킹 함수 `maskKeyWordForPreview`(`●●●`) 및 상품별 잠긴 문장 2줄 `getTeaserMaskedLines` 추가 |
+| `lib/reports/teaser.ts` | `clipTeaserForView`에서 잠긴 섹션 `hooks`의 핵심 단어를 서버에서 `●●●`로 가려 클라이언트로 전달(원문 단어 브라우저 미전송) |
+| `lib/reports/standardSamplePreview.ts` | `loadStandardSamplePreview`에서 잠긴 섹션 첫 문장의 핵심 단어를 서버에서 `●●●`로 마스킹한 뒤 전달 |
+| `components/report/TeaserUnlockPanel.tsx` | 잠긴 부분 핵심 단어를 `●●●`로 가린 문장 2줄 노출 |
+| `components/CompatResultClient.tsx` | ① `"속마음 ??? · 표현 방식 ??? · 다툼 회복 ???"` 잠긴 점수 칸 3개 카드(`nextReadingHref` 연결 + `locked_card_click` 이벤트) ② 무료 요약 마지막 문장 끊기(`cutCompatFreeEnding`) + 바로 아래 미리보기 버튼 ③ 상위 30% 이내일 때만 `"상위 N% 궁합"` 배지 표시 ④ 점수 공개 전 `"분석 끝! 눌러서 확인하기"`(콩이·닥이 하트) 클릭 시 카운트업 연출 + `score_reveal_click` 이벤트 |
+| `components/CompatNewClient.tsx` | 한 화면에 질문 하나씩(`1. 나` → `2. 상대` → `3. 관계` → `4. 지금 제일 궁금한 것` 1개 선택) 대화형 4단계 입력 + 생일 칸 아래 `"생일은 암호화돼 저장돼요"` 문구 + 단계별 GA4 이벤트(`compat_step_next`, `compat_curiosity_select`). `compat_created` · `teaser_created` 발사 시점은 기존과 100% 동일하게 유지 |
+| `app/api/generate-compat/route.ts` | 한국어 무료 궁합 AI 해석 생성 시 선택된 `curiosity`를 `appendCuriosityToneGuide`로 말투 가이드에만 반영(결정론 점수·키워드 무영향, `buildCompatPrompt` 시그니처·원문 불변) |
+| `tests/compatPercentile.test.ts` (신규) | `getCompatTopPercent` · `formatCompatTopPercentBadge`(동일 입력=동일 출력, 경계값 89 vs 90, 중앙값 86 미노출, 91=25%, 94=10%, 단조성), `cutCompatFreeEnding`, `maskKeyWordForPreview`, `appendCuriosityToneGuide` 단위 테스트 13건 |
+| `public/covers/cover_love_single.{png,webp}` 외 3종 (신규) | P-016-5 홈 포스터 슬라이드용 세로 3:4 표지 4장(`cover_love_single`, `cover_reunion`, `cover_inner_mind`, `cover_2027`) 생성 및 `.png`·`.webp` 저장 |
+
+## 2. 결정론 로직 요약
+- `lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts` 수정 없음.
+- `lib/compatPercentile.ts`: 오직 `score` 숫자 하나만으로 상위 퍼센트를 계산하는 순수 결정론 함수. `score < 90`(상위 30% 밖)이면 `null`을 반환해 화면에 표시하지 않음.
+- 대화형 입력 4단계의 `"지금 제일 궁금한 것"` 선택값은 `sessionStorage`를 통해 `/api/generate-compat`의 `toneGuide` 문장 톤에만 반영되며, `/api/compat`의 점수·키워드 계산에는 일절 관여하지 않음.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- 잠긴 영역의 핵심 단어 마스킹(`●●●`)은 서버(`loadStandardSamplePreview`, `clipTeaserForView`)에서 수행된 후 클라이언트로 전달되어 브라우저 네트워크 응답에 원문 단어가 노출되지 않음.
+- `compat_created` 및 `teaser_created` 이벤트는 기존과 동일하게 `/api/compat` 및 `/api/reports/generate` 응답 직후에 발사됨(`score_reveal_click` 클릭 여부와 무관).
+- 추가된 GA4 이벤트: `locked_card_click`, `score_reveal_click`, `compat_step_next`, `compat_curiosity_select`.
+
+---
+
 # REVIEW_HANDOFF — 결제 전환 개편 0단계(누수 막기) + 1단계(무료=질문, 유료=답)
 
 > **작성 일시**: 2026-10-03

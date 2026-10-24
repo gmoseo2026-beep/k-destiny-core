@@ -60,3 +60,29 @@ export function parseCompatFreeText(raw: string | null | undefined): CompatFreeV
   const head = (clashAt >= 0 ? text.slice(0, clashAt) : text).trim();
   return head ? { kind: "legacy", text: head } : null;
 }
+
+/**
+ * 무료 요약의 마지막 문장을 답 직전에서 끊어 "그런데 그 사람은…" 형태로 이어지게 만든다 (P-016-2 §2).
+ */
+export function cutCompatFreeEnding(rawSentence: string | null | undefined, callB = "그 사람"): string {
+  const clean = (rawSentence ?? "").trim().replace(/[.!?…]+$/, "");
+  const partnerLabel = callB.trim() || "그 사람";
+  if (!clean) {
+    return `그런데 ${partnerLabel}은 마음속으로…`;
+  }
+
+  // 쉼표나 연결 어미(', ', '할 때마다 ', '하지만 ', '는데 ')가 있으면 앞절만 남기고 "그런데 {상대}은…"으로 끊는다
+  const splitMarks = [", ", "는데 ", "지만 ", "할 때마다 ", "할 때 "];
+  for (const mark of splitMarks) {
+    const idx = clean.indexOf(mark);
+    if (idx >= 8 && idx < clean.length - 4) {
+      const prefix = clean.slice(0, idx + mark.trimEnd().length).replace(/,+$/, "");
+      return `${prefix}, 그런데 ${partnerLabel}은…`;
+    }
+  }
+
+  const half = Math.max(10, Math.min(28, Math.floor(clean.length * 0.55)));
+  const spaceIdx = clean.indexOf(" ", half);
+  const cutAt = spaceIdx > 0 ? spaceIdx : half;
+  return `${clean.slice(0, cutAt).trimEnd()}… 그런데 ${partnerLabel}은…`;
+}

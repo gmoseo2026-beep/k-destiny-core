@@ -5,6 +5,7 @@ import { Lock, ArrowRight, Check } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
 import { useSeenOnce } from "@/lib/useSeenOnce";
 import { priceLabel, listPrice, formatWon, discountBadge, type CatalogItem } from "@/lib/catalog";
+import { getTeaserMaskedLines } from "@/lib/teaserBlurCopy";
 
 /**
  * 맛보기(티저) 화면의 결제 안내 — 본문 아래 안내 카드 + 화면 하단 고정 바.
@@ -64,6 +65,7 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
   const price = priceLabel(product);
   const lockedCount = lockedTitles.length;
   const strike = listPrice(product);
+  const maskedLines = getTeaserMaskedLines(product.id);
 
   // 하단 고정 바는 안내 카드에 닿기 전까지만 보인다(카드와 버튼 중복·하단 고지 가림 방지)
   const cardRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,19 @@ export default function TeaserUnlockPanel({ product, lockedTitles, onUnlock }: T
         <h3 className="mt-1 text-lg font-black leading-snug text-ink">
           {lockedCount > 0 ? `남은 ${lockedCount}개 이야기가 준비돼 있어요` : "전체 리포트가 준비돼 있어요"}
         </h3>
+
+        {/* P-016-2 §3: 핵심 단어를 ●●●로 가린 문장 2줄 (원문 단어는 브라우저로 내려보내지 않음) */}
+        <div className="mt-3 rounded-2xl border border-coral/25 bg-coral-soft/60 p-3.5 space-y-2">
+          <p className="text-[11px] font-extrabold text-coral-deep flex items-center gap-1">
+            <Lock className="h-3 w-3 shrink-0" />
+            잠긴 파트 핵심 문장 미리보기
+          </p>
+          {maskedLines.map((line, idx) => (
+            <p key={idx} className="text-xs sm:text-sm font-bold leading-snug text-ink">
+              &ldquo;{line}&rdquo;
+            </p>
+          ))}
+        </div>
 
         {lockedCount > 0 && (
           <ul className="mt-3 flex flex-col gap-1.5">

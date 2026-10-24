@@ -1,6 +1,9 @@
 import fs from "fs";
 import path from "path";
 import type { StandardReport } from "@/lib/reports/standard";
+import { maskKeyWordForPreview } from "@/lib/teaserBlurCopy";
+
+export { maskKeyWordForPreview };
 
 export interface StandardSamplePreview {
   targetLabel: string;
@@ -101,7 +104,7 @@ export function extractFirstSentence(body: string, maxChars = 60): string {
 
 /**
  * 서버 페이지 전용: 해당 상품(12종 유료 단품)의 샘플 JSON 1개만 읽어 화면에 필요한 조각만 돌려준다.
- * 제외 대상(무료·정통궁합·총운·세트·프리미엄)이거나 파일이 없으면 null을 돌려준다.
+ * 잠긴 섹션의 첫 문장은 핵심 단어를 서버에서 `●●●`로 가린 뒤 전달하여 원문 단어가 브라우저로 나가지 않게 한다.
  */
 export function loadStandardSamplePreview(
   catalogId: string,
@@ -138,7 +141,7 @@ export function loadStandardSamplePreview(
       },
       lockedSections: restSecs.map((sec) => ({
         title: sec.title,
-        firstSentence: extractFirstSentence(sec.body, 60),
+        firstSentence: maskKeyWordForPreview(extractFirstSentence(sec.body, 58), 60),
       })),
     };
   } catch {
