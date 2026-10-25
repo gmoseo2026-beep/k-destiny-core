@@ -69,7 +69,7 @@ export const HOME_CATEGORY_CHIPS: ReadonlyArray<{
 ];
 
 const CATEGORY_PRODUCT_IDS: Record<Exclude<HomeCategoryChipId, "all">, ReadonlySet<string>> = {
-  love: new Set(["love_single", "inner_mind", "charm", "secret_love", "set_love"]),
+  love: new Set(["love_single", "inner_mind", "charm", "secret_love", "set_heart", "set_love"]),
   compat: new Set(["compat_basic", "marriage", "conflict", "set_this_person", "set_sure", "premium_date_pick"]),
   reunion: new Set(["reunion", "cheating", "set_reunion"]),
   annual: new Set(["annual_2027", "annual_2026", "spicy_annual", "free_personality", "health", "premium_2027_daeun", "premium_naming", "set_2027", "set_me"]),

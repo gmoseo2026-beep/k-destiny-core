@@ -1,5 +1,6 @@
 import * as PortOne from "@portone/browser-sdk/v2";
 import { getProduct } from "@/lib/catalog";
+import { grantingCatalogIds } from "@/lib/productIdentity";
 import { trackEvent } from "@/lib/gtag";
 import { clientEnvLabel } from "@/lib/inAppBrowser";
 import { recallDeviceCoupon, collectDeviceOrderTokens, clearDeviceCoupon } from "@/lib/couponsClient";
@@ -126,7 +127,95 @@ export function forgetOrderToken(catalogId: string, compatId?: string | null): v
   notifyUnlockTokenChanged();
 }
 
+/**
+ * 같은 결제를 두 번 받지 않기(2026-10-25).
+ * 10-24 틱톡 앱 안 손님이 같은 두 사람의 속마음을 20:11·20:24 두 번 결제하고 20:36 에 세 번째 결제창을 열었다.
+ * 결제는 됐는데 결제 완료 화면으로 돌아오지 못해(앱 안 브라우저) 열람 증명이 이 기기에 남지 않았고, 화면엔 다시 "결제" 버튼이 보였다.
+ * 그래서 결제창을 열 때마다 주문번호를 이 기기(localStorage, 24시간)에 적어 두고, 다음 결제 전에
+ * 같은 두 사람·같은 리포트로 열었던 주문이 실제로 결제됐는지 서버에 먼저 묻는다. 결제됐으면 새 주문 없이 그 리포트를 연다.
+ * 주문번호는 이 기기가 직접 만든 것만 쓰므로(게스트 열람 증명과 같은 수준) 다른 사람의 결제를 열 수 없다.
+ */
+const PAY_ATTEMPTS_KEY = "kongdak_pay_attempts";
+const PAY_ATTEMPTS_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface PayAttempt {
+  orderId: string;
+  productId: string;
+  compatId: string | null;
+  at: number;
+}
+
+function readPayAttempts(now: number = Date.now()): PayAttempt[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PAY_ATTEMPTS_KEY) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (a): a is PayAttempt =>
+        !!a && typeof a.orderId === "string" && typeof a.productId === "string" &&
+        typeof a.at === "number" && now - a.at < PAY_ATTEMPTS_TTL_MS
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writePayAttempts(list: PayAttempt[]): void {
+  try {
+    window.localStorage.setItem(PAY_ATTEMPTS_KEY, JSON.stringify(list.slice(-10)));
+  } catch {}
+}
+
+function recordPayAttempt(a: Omit<PayAttempt, "at">): void {
+  if (typeof window === "undefined") return;
+  writePayAttempts([...readPayAttempts(), { ...a, at: Date.now() }]);
+}
+
+function forgetPayAttempt(orderId: string): void {
+  if (typeof window === "undefined") return;
+  writePayAttempts(readPayAttempts().filter((a) => a.orderId !== orderId));
+}
+
+/** 같은 두 사람·같은 리포트(또는 그 리포트가 든 세트)로 이 기기가 열었던 결제 중 실제로 끝난 게 있으면 그 결과 */
+async function recoverPaidAttempt(productId: string, compatId: string | null): Promise<PayResult | null> {
+  // 한 사람 상품(신년운 등)은 compatId 가 없어 "누구 것인지" 구분이 안 된다 — 친구 것을 또 사는 경우를 막지 않도록 두 사람 상품만 본다
+  if (!compatId) return null;
+  const granting = new Set(grantingCatalogIds(productId));
+  const candidates = readPayAttempts()
+    .filter((a) => granting.has(a.productId) && (a.compatId ?? null) === compatId)
+    .slice(-3)
+    .reverse();
+  for (const a of candidates) {
+    try {
+      const r = await fetch("/api/payments/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentId: a.orderId }),
+      });
+      if (!r.ok) continue; // 402(결제 안 됨)·403 등은 넘어간다
+      const result = await r.json().catch(() => null);
+      const catalogId = result?.catalogId || a.productId;
+      const orderId = result?.orderId || a.orderId;
+      const amount = typeof result?.amount === "number" ? result.amount : 0;
+      forgetPayAttempt(a.orderId);
+      clearPendingPayment();
+      rememberOrderToken(catalogId, orderId, result?.compatId ?? compatId);
+      trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
+      trackEvent("payment_already_paid", { productId, app: clientEnvLabel() });
+      alert("이미 결제가 끝난 리포트예요. 다시 결제하지 않고 바로 열어 드릴게요.");
+      return { ok: true, orderId, catalogId, compatId: result?.compatId ?? compatId, amount };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult> {
+  // 0) 이 기기에서 같은 리포트를 이미 결제했는데 완료 화면으로 못 돌아온 경우 → 새로 결제받지 않고 연다
+  const recovered = await recoverPaidAttempt(opts.productId, opts.compatId ?? null);
+  if (recovered) return recovered;
+
   // 1) 서버가 주문 생성 (금액 및 쿠폰 할인은 서버에서 검증·결정)
   const savedCoupon = recallDeviceCoupon();
   const guestOrderTokens = collectDeviceOrderTokens();
@@ -177,6 +266,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
   rememberPayReturn(opts);
   rememberPendingPayment({ orderId: order.orderId, productId: opts.productId, at: Date.now() });
+  recordPayAttempt({ orderId: order.orderId, productId: opts.productId, compatId: opts.compatId ?? null });
 
   // orderName은 서버 응답의 orderName을 쓴다
   const orderName = order.orderName || "콩닥 사주 리포트";

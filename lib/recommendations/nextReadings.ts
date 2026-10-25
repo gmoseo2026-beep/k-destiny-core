@@ -12,7 +12,8 @@ interface NextReadingRow {
  */
 export const NEXT_READING_TABLE: Readonly<Record<string, NextReadingRow>> = {
   compat_basic: { singles: ["inner_mind", "secret_love"], set: "set_this_person" },
-  inner_mind: { singles: ["compat_basic", "secret_love"], set: "set_this_person" },
+  // 속마음 다음 구매는 속궁합이 가장 많다(10-25, 14일간 2개째 구매 7쌍 중 4쌍) → 속궁합을 먼저
+  inner_mind: { singles: ["secret_love", "compat_basic"], set: "set_this_person" },
   secret_love: { singles: ["inner_mind", "compat_basic"], set: "set_this_person" },
   reunion: { singles: ["inner_mind", "conflict"], set: "set_reunion" },
   conflict: { singles: ["inner_mind", "reunion"], set: "set_reunion" },

@@ -646,6 +646,34 @@ export const CATALOG: CatalogItem[] = [
     ],
     featuredOrder: 19
   },
+  // 속마음·속궁합 세트(2026-10-25 사장님 결정): 두 번째 구매의 대부분이 "속마음 → 속궁합"이었다(14일간 35쌍 중 7쌍이 2개째, 그중 4쌍이 속궁합).
+  // 2종 세트 가격 규칙(7,900원, 따로 사면 9,800원)을 따른다. 결제 창에서 단품 4,900 / 이 세트 7,900 / 확신 패키지 19,900 사다리로 보인다(checkoutOptionsFor).
+  {
+    id: "set_heart",
+    type: "SET",
+    name: "속마음·속궁합 세트",
+    description: "그 사람 속마음 + 은밀한 속궁합",
+    category: "cat-compat",
+    target: "couple",
+    price: 7900,
+    originalPrice: 7900,
+    icon: "Heart",
+    promptKey: "SET",
+    items: ["inner_mind", "secret_love"],
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
+    icon3d: "/icons3d/inner_mind.webp",
+    gridLabel: "속마음·속궁합 세트",
+    hook: "그 사람의 진짜 마음과, 둘만 있을 때의 끌림까지 한 번에",
+    subtitle: "마음도, 둘만의 케미도 함께 확인해 보세요",
+    recommendFor: [
+      "그 사람의 속마음과 둘 사이 끌림을 함께 알고 싶은 분",
+      "속마음을 본 뒤 속궁합도 궁금해질 것 같은 분",
+      "따로 사는 것보다 1,900원 아끼고 싶은 분"
+    ],
+    featuredOrder: 18
+  },
   {
     id: "set_reunion",
     type: "SET",
@@ -947,7 +975,11 @@ export function checkoutOptionsFor(
   visibleIds: readonly string[]
 ): { id: string; name: string; price: number; desc?: string; separate?: number }[] {
   if (!base || base.type === "SET" || base.isFree) return [];
-  const sets = setsContaining(base.id, visibleIds).slice(0, 2);
+  // 가장 많이 아끼는 세트 + 가장 싼 세트(10-25): 속마음이면 4,900 / 7,900 / 19,900 처럼 값이 고르게 올라가는 사다리가 된다.
+  // 아끼는 금액 순으로 둘만 고르면 속마음은 12,900·19,900 이 나와 첫 단계가 너무 높았다.
+  const all = setsContaining(base.id, visibleIds);
+  const cheapest = [...all].sort((a, b) => a.price - b.price)[0];
+  const sets = all.length <= 2 ? all : [all[0], ...(cheapest && cheapest.id !== all[0].id ? [cheapest] : [all[1]])];
   if (sets.length === 0) return [];
   return [
     { id: base.id, name: base.name, price: base.price, desc: "이 리포트만" },
