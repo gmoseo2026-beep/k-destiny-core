@@ -175,31 +175,34 @@ export function PosterCard({
       </div>
 
       {/* 아래쪽 별도 어두운 칸 (#22142A, 고정 높이로 2칸 격자 높이 통일) */}
-      <div className="flex h-[84px] flex-col justify-between bg-[#22142A] p-3">
+      {/* 설명은 질문형 후킹이라 1줄이면 뜻이 잘려서 2줄까지 보여 준다(10-25 사장님 폰 캡처) */}
+      <div className="flex h-[108px] flex-col justify-between bg-[#22142A] p-3">
         <div>
           <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug tracking-tight text-[#F6EEF3]">
             {product.gridLabel || product.name}
           </h3>
-          <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-[#B9A9BF]">
+          <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-[#B9A9BF]">
             {product.hook || product.description}
           </p>
         </div>
+        {/* 할인 중이면 상세·순위 목록과 같게 할인율 + 원래 가격 취소선 + 지금 가격 */}
         <div className="flex items-baseline justify-end gap-1.5">
           {product.isFree ? (
-            <span className="text-[11px] font-semibold text-[#B9A9BF]">무료</span>
-          ) : onPromo ? (
+            <span className="text-[12px] font-bold text-[#B9A9BF]">무료</span>
+          ) : strike ? (
             <>
-              {strike && (
-                <span className="text-[11px] text-[#B9A9BF]/75 line-through">
-                  {formatWon(strike)}
-                </span>
-              )}
-              <span className="text-[11px] font-bold text-[#FFC24B]">
+              <span className="text-[12px] font-extrabold text-[#FF5C77]">
+                {Math.round((1 - product.price / strike) * 100)}%
+              </span>
+              <span className="text-[11px] text-[#B9A9BF]/75 line-through">
+                {formatWon(strike)}
+              </span>
+              <span className={`text-[13px] font-extrabold ${onPromo ? "text-[#FFC24B]" : "text-[#F6EEF3]"}`}>
                 {priceLabel(product)}
               </span>
             </>
           ) : (
-            <span className="text-[11px] font-medium text-[#B9A9BF]">
+            <span className="text-[13px] font-extrabold text-[#F6EEF3]">
               {priceLabel(product)}
             </span>
           )}

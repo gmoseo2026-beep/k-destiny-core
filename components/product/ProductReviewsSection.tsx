@@ -6,6 +6,20 @@ import type { PublicReviewItem } from "@/lib/couponsClient";
 import { getProduct, type CatalogItem } from "@/lib/catalog";
 import { ListRowCard } from "@/components/cards/KongdakCards";
 
+/** 후기 기능을 연 날(2026-10-25). 홈 후기 제목 아래 안내에 쓴다. */
+const REVIEWS_SINCE_LABEL = "2026년 10월 25일";
+
+/** 후기 작성일을 한국 시간 "10월 25일"로 */
+function reviewDateLabel(iso: string): string {
+  const d = new Date(new Date(iso).getTime() + 9 * 3_600_000);
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`;
+}
+
+/** "1번째 구매"는 어색해서 첫 구매로 */
+function purchaseBadge(count: number): string {
+  return count <= 1 ? "첫 구매" : `${count}번째 구매`;
+}
+
 interface ProductReviewsSectionProps {
   reviews?: PublicReviewItem[];
   variant?: "detail" | "checkout" | "home";
@@ -39,7 +53,7 @@ export default function ProductReviewsSection({
                   <span className="text-xs" aria-hidden="true">{r.zodiacEmoji}</span>
                   <span className="text-[11px] font-bold text-[#F6EEF3] truncate">{r.zodiacLabel}</span>
                   <span className="rounded-full bg-[#FF5C77]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#FF5C77] shrink-0">
-                    {r.purchaseCount}번째 구매
+                    {purchaseBadge(r.purchaseCount)}
                   </span>
                 </div>
                 <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#FFC24B] shrink-0">
@@ -63,13 +77,19 @@ export default function ProductReviewsSection({
           : "px-4 py-6 border-t border-white/[0.08]"
       }
     >
-      <div className="flex items-center justify-between mb-3.5">
-        <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
-          💬 실제 구매자 후기
-        </h3>
-        <span className="text-xs font-bold text-[#FF5C77]">
-          리포트 열람 인증
-        </span>
+      <div className="mb-3.5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
+            💬 실제 구매자 후기
+          </h3>
+          <span className="text-xs font-bold text-[#FF5C77]">
+            리포트 열람 인증
+          </span>
+        </div>
+        {/* 후기 수가 적은 이유를 먼저 알려 준다 — 후기 기능은 10-25에 열었다(첫 후기 10-25 20:42) */}
+        <p className="mt-1 text-[11px] leading-snug text-[#B9A9BF]">
+          {REVIEWS_SINCE_LABEL}부터 모으기 시작했어요 · 리포트를 연 구매자만 쓸 수 있어요
+        </p>
       </div>
       <div className="space-y-3">
         {reviews.map((r) => {
@@ -86,7 +106,7 @@ export default function ProductReviewsSection({
                     <span className="text-sm" aria-hidden="true">{r.zodiacEmoji}</span>
                     <span className="text-xs font-bold text-[#F6EEF3]">{r.zodiacLabel}</span>
                     <span className="rounded-full bg-[#FF5C77]/15 px-2 py-0.5 text-[10px] font-extrabold text-[#FF5C77]">
-                      {r.purchaseCount}번째 구매
+                      {purchaseBadge(r.purchaseCount)}
                     </span>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0" aria-label={`별점 ${r.rating}점`}>
@@ -102,6 +122,9 @@ export default function ProductReviewsSection({
                 </div>
                 <p className="text-xs sm:text-sm text-[#F6EEF3]/90 leading-relaxed whitespace-pre-line">
                   {r.text}
+                </p>
+                <p className="mt-1.5 text-[11px] text-[#B9A9BF]/80">
+                  {reviewDateLabel(r.createdAt)} 작성
                 </p>
               </div>
 
