@@ -67,8 +67,11 @@ function CoverImageWithFallback({
 }
 
 /**
- * 카드 1 — 포스터 카드 (3:4)
- * 표지 이미지 + 하단 그라디언트(linear-gradient(180deg, transparent 40%, #140B18 100%)) + 제목 + 한 줄 후킹 + "무료 미리보기"
+ * 카드 1 — 포스터 카드 (위쪽 4:5 사진 + 아래쪽 #22142A 고정 높이 글 칸)
+ * - 사진 위 어두운 그라데이션 덮개 제거(사진이 가려지지 않게), 사진 위에는 배지만 표시
+ * - 특가 중인 프리미엄 상품도 '프리미엄' 배지를 함께 표시
+ * - 아래 칸: 제목 1줄(15px 굵게) + 설명 1줄(line-clamp-1, 12px) + 오른쪽 아래 가격 작게(11px, #B9A9BF)
+ *   (특가 상품은 취소선 원가 + 금색 특가가, 무료 상품은 "무료")
  */
 export function PosterCard({
   product,
@@ -82,6 +85,7 @@ export function PosterCard({
   const href = resolveProductHref(product);
   const coverSrc = getProductCover(product);
   const onPromo = isOnSeasonPromo(product.id);
+  const strike = listPrice(product);
   const isSet = product.type === "SET";
   const stackCovers = isSet ? getSetCoverStack(product) : [];
 
@@ -99,99 +103,106 @@ export function PosterCard({
     <Link
       href={href}
       onClick={handleClick}
-      className="group relative flex aspect-[3/4] w-full flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] bg-[#22142A] p-3.5 text-left shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition-transform duration-150 active:scale-[0.98]"
+      className="group flex w-full flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#22142A] text-left shadow-[0_10px_28px_rgba(0,0,0,0.35)] transition-transform duration-150 active:scale-[0.98]"
     >
-      {/* 배경 표지 (세트일 때는 2~3장 겹침 연출, 단품은 전체 3:4 표지) */}
-      {isSet && stackCovers.length >= 2 ? (
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2B1738] via-[#22142A] to-[#140B18]">
-          <div className="relative mx-auto mt-4 h-[56%] w-[82%]">
-            {stackCovers.slice(0, 3).map((src, idx) => {
-              const transforms = [
-                "-rotate-6 -translate-x-4 translate-y-2 scale-90 opacity-75",
-                "rotate-6 translate-x-4 translate-y-2 scale-90 opacity-85",
-                "rotate-0 translate-y-0 scale-100 z-10",
-              ];
-              return (
-                <div
-                  key={`${product.id}-stack-${idx}`}
-                  className={`absolute inset-0 mx-auto aspect-[3/4] h-full overflow-hidden rounded-xl border border-white/20 shadow-lg transition-transform duration-300 ${transforms[idx] ?? ""}`}
-                >
-                  <CoverImageWithFallback
-                    src={src}
-                    alt={product.name}
-                    label={product.gridLabel || product.name}
-                    sizes="160px"
-                  />
-                </div>
-              );
-            })}
+      {/* 위쪽 4:5 표지 사진 영역 (그라데이션 덮개 없음, 위에는 배지만) */}
+      <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden bg-[#140B18]">
+        {isSet && stackCovers.length >= 2 ? (
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2B1738] via-[#22142A] to-[#140B18]">
+            <div className="relative mx-auto mt-5 h-[72%] w-[82%]">
+              {stackCovers.slice(0, 3).map((src, idx) => {
+                const transforms = [
+                  "-rotate-6 -translate-x-4 translate-y-2 scale-90 opacity-75",
+                  "rotate-6 translate-x-4 translate-y-2 scale-90 opacity-85",
+                  "rotate-0 translate-y-0 scale-100 z-10",
+                ];
+                return (
+                  <div
+                    key={`${product.id}-stack-${idx}`}
+                    className={`absolute inset-0 mx-auto aspect-[3/4] h-full overflow-hidden rounded-xl border border-white/20 shadow-lg transition-transform duration-300 ${transforms[idx] ?? ""}`}
+                  >
+                    <CoverImageWithFallback
+                      src={src}
+                      alt={product.name}
+                      label={product.gridLabel || product.name}
+                      sizes="160px"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ) : (
-        <CoverImageWithFallback
-          src={coverSrc}
-          alt={product.name}
-          label={product.gridLabel || product.name}
-          sizes="(max-width: 640px) 46vw, 220px"
-          priority={priority}
-        />
-      )}
-
-      {/* 포스터 하단 그라디언트 오버레이 */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(20,11,24,0.12) 0%, rgba(20,11,24,0.08) 38%, rgba(20,11,24,0.88) 72%, #140B18 100%)",
-        }}
-      />
-
-      {/* 상단 배지 줄 */}
-      <div className="relative z-10 flex items-center justify-between gap-1.5">
-        <div className="flex flex-wrap items-center gap-1">
-          {product.isFree && (
-            <span className="rounded-full bg-[#FF5C77] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
-              무료
-            </span>
-          )}
-          {onPromo && (
-            <span className="rounded-full bg-[#FFC24B] px-2 py-0.5 text-[10px] font-extrabold text-[#140B18] shadow-sm">
-              {SEASON_PROMO_LABEL} · {SEASON_PROMO_UNTIL}
-            </span>
-          )}
-          {!onPromo && product.tier === "premium" && (
-            <span className="rounded-full border border-[#FFC24B]/50 bg-[#140B18]/80 px-2 py-0.5 text-[10px] font-bold text-[#FFC24B] backdrop-blur-sm">
-              프리미엄
-            </span>
-          )}
-          {isSet && (
-            <span className="rounded-full border border-[#FFC24B]/40 bg-[#140B18]/80 px-2 py-0.5 text-[10px] font-bold text-[#FFC24B] backdrop-blur-sm">
-              세트 할인
-            </span>
-          )}
-        </div>
-        {product.id === "secret_love" && (
-          <span className="rounded-full bg-[#FF5C77] px-1.5 py-0.5 text-[10px] font-extrabold text-white">
-            19
-          </span>
+        ) : (
+          <CoverImageWithFallback
+            src={coverSrc}
+            alt={product.name}
+            label={product.gridLabel || product.name}
+            sizes="(max-width: 640px) 46vw, 220px"
+            priority={priority}
+          />
         )}
+
+        {/* 상단 배지 줄 (특가 중인 프리미엄 상품도 프리미엄 배지 함께 표시) */}
+        <div className="relative z-10 flex items-start justify-between gap-1.5 p-2.5">
+          <div className="flex flex-wrap items-center gap-1">
+            {product.isFree && (
+              <span className="rounded-full bg-[#FF5C77] px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm">
+                무료
+              </span>
+            )}
+            {product.tier === "premium" && (
+              <span className="rounded-full border border-[#FFC24B]/50 bg-[#140B18]/80 px-2 py-0.5 text-[10px] font-bold text-[#FFC24B] backdrop-blur-sm">
+                프리미엄
+              </span>
+            )}
+            {onPromo && (
+              <span className="rounded-full bg-[#FFC24B] px-2 py-0.5 text-[10px] font-extrabold text-[#140B18] shadow-sm">
+                {SEASON_PROMO_LABEL} · {SEASON_PROMO_UNTIL}
+              </span>
+            )}
+            {isSet && (
+              <span className="rounded-full border border-[#FFC24B]/40 bg-[#140B18]/80 px-2 py-0.5 text-[10px] font-bold text-[#FFC24B] backdrop-blur-sm">
+                세트 할인
+              </span>
+            )}
+          </div>
+          {product.id === "secret_love" && (
+            <span className="rounded-full bg-[#FF5C77] px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+              19
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* 하단 1/3 텍스트 영역 */}
-      <div className="relative z-10 mt-auto pt-6">
-        <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug tracking-tight text-[#F6EEF3] drop-shadow-sm">
-          {product.gridLabel || product.name}
-        </h3>
-        <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[#B9A9BF]">
-          {product.hook || product.description}
-        </p>
-        <div className="mt-2.5 flex items-center justify-between border-t border-white/[0.08] pt-2">
-          <span className="text-[11px] font-bold text-[#FF5C77]">
-            {product.isFree ? "지금 바로 무료" : "무료 미리보기"}
-          </span>
-          <span className="text-[11px] font-bold text-[#FFC24B]">
-            {priceLabel(product)}
-          </span>
+      {/* 아래쪽 별도 어두운 칸 (#22142A, 고정 높이로 2칸 격자 높이 통일) */}
+      <div className="flex h-[84px] flex-col justify-between bg-[#22142A] p-3">
+        <div>
+          <h3 className="line-clamp-1 text-[15px] font-extrabold leading-snug tracking-tight text-[#F6EEF3]">
+            {product.gridLabel || product.name}
+          </h3>
+          <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-[#B9A9BF]">
+            {product.hook || product.description}
+          </p>
+        </div>
+        <div className="flex items-baseline justify-end gap-1.5">
+          {product.isFree ? (
+            <span className="text-[11px] font-semibold text-[#B9A9BF]">무료</span>
+          ) : onPromo ? (
+            <>
+              {strike && (
+                <span className="text-[11px] text-[#B9A9BF]/75 line-through">
+                  {formatWon(strike)}
+                </span>
+              )}
+              <span className="text-[11px] font-bold text-[#FFC24B]">
+                {priceLabel(product)}
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] font-medium text-[#B9A9BF]">
+              {priceLabel(product)}
+            </span>
+          )}
         </div>
       </div>
     </Link>

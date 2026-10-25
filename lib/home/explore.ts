@@ -76,12 +76,62 @@ const CATEGORY_PRODUCT_IDS: Record<Exclude<HomeCategoryChipId, "all">, ReadonlyS
   wealth: new Set(["wealth", "career", "set_career"]),
 };
 
+/**
+ * [P-018 §4] 홈·전체 목록 단품·프리미엄 진열 순서
+ * featuredOrder 값은 추천·보관함·순위 대체 목록이 함께 쓰므로 바꾸지 않고,
+ * 홈 및 전체 목록 격자 정렬은 이 상수를 기준으로 한다.
+ */
+export const HOME_GRID_ORDER: readonly string[] = [
+  "annual_2027",
+  "premium_2027_daeun",
+  "inner_mind",
+  "compat_basic",
+  "secret_love",
+  "reunion",
+  "love_single",
+  "cheating",
+  "conflict",
+  "marriage",
+  "charm",
+  "wealth",
+  "career",
+  "health",
+  "spicy_annual",
+  "premium_naming",
+  "premium_date_pick",
+  "annual_2026",
+  "free_personality",
+] as const;
+
+const HOME_GRID_ORDER_INDEX = new Map<string, number>(
+  HOME_GRID_ORDER.map((id, idx) => [id, idx]),
+);
+
+/**
+ * HOME_GRID_ORDER 상대 순서로 정렬한다.
+ * 목록에 없는 상품(세트·신규 상품 등)은 뒤에 featuredOrder 순으로 배치한다.
+ */
+export function sortByHomeGridOrder(products: readonly CatalogItem[]): CatalogItem[] {
+  return [...products].sort((a, b) => {
+    const idxA = HOME_GRID_ORDER_INDEX.get(a.id);
+    const idxB = HOME_GRID_ORDER_INDEX.get(b.id);
+    if (idxA !== undefined && idxB !== undefined) {
+      return idxA - idxB;
+    }
+    if (idxA !== undefined) return -1;
+    if (idxB !== undefined) return 1;
+    return (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99);
+  });
+}
+
 export function filterProductsByCategory(
   products: CatalogItem[],
   chipId: HomeCategoryChipId,
 ): CatalogItem[] {
   const visible = products.filter((p) => !p.isHidden);
-  if (chipId === "all") return visible;
-  const idSet = CATEGORY_PRODUCT_IDS[chipId];
-  return visible.filter((p) => idSet.has(p.id));
+  const filtered =
+    chipId === "all"
+      ? visible
+      : visible.filter((p) => CATEGORY_PRODUCT_IDS[chipId].has(p.id));
+  return sortByHomeGridOrder(filtered);
 }

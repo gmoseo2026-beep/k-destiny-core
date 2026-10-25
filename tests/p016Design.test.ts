@@ -6,19 +6,23 @@ vi.mock("@/i18n/routing", () => ({
   Link: () => null,
   usePathname: () => "/",
 }));
-import { HERO_POSTER_SLIDES } from "@/components/home/HomeHeroCompact";
+import {
+  HERO_POSTER_SLIDES,
+  getHeroPosterSlides,
+  getHeroSlideMeta,
+} from "@/components/home/HomeHeroCompact";
 import { PRODUCT_COVER_MAP } from "@/components/home/HomeExplore";
 import { shouldShowMobileTabBar, activeMobileTabForPath } from "@/components/MobileBottomTabBar";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 
-describe("P-016-5 홈·리포트 디자인 단위 테스트", () => {
+describe("P-016-5 · P-018 홈·리포트 디자인 단위 테스트", () => {
   it("홈 상단 포스터 슬라이드 4장이 지정된 .webp 표지 파일과 상황별 문구를 가진다", () => {
     expect(HERO_POSTER_SLIDES).toHaveLength(4);
     expect(HERO_POSTER_SLIDES.map((s) => s.id)).toEqual([
-      "love_single",
-      "reunion",
       "inner_mind",
       "annual_2027",
+      "premium_2027_daeun",
+      "compat_basic",
     ]);
 
     for (const slide of HERO_POSTER_SLIDES) {
@@ -30,11 +34,46 @@ describe("P-016-5 홈·리포트 디자인 단위 테스트", () => {
     }
 
     expect(PRODUCT_COVER_MAP).toEqual({
-      love_single: "/covers/cover_love_single.webp",
-      reunion: "/covers/cover_reunion.webp",
       inner_mind: "/covers/cover_inner_mind.webp",
       annual_2027: "/covers/cover_2027.webp",
+      premium_2027_daeun: "/covers/cover_premium_2027_daeun.webp",
+      compat_basic: "/covers/cover_compat_basic.webp",
     });
+  });
+
+  it("2026-12-01 00:00 KST 경계에서 홈 상단 슬라이드 첫 장이 속마음(①)에서 2027 신년운(②)으로 자동 전환된다", () => {
+    const beforeDec = Date.parse("2026-11-30T23:59:59+09:00");
+    const atDec = Date.parse("2026-12-01T00:00:00+09:00");
+
+    expect(getHeroPosterSlides(beforeDec).map((s) => s.id)).toEqual([
+      "inner_mind",
+      "annual_2027",
+      "premium_2027_daeun",
+      "compat_basic",
+    ]);
+    expect(getHeroPosterSlides(atDec).map((s) => s.id)).toEqual([
+      "annual_2027",
+      "inner_mind",
+      "premium_2027_daeun",
+      "compat_basic",
+    ]);
+  });
+
+  it("대운 슬라이드는 특가 기간 중 배지 2개(프리미엄 + 연말 특가)와 취소선 19,900원 → 9,900원을 표시하고, 2027-01-01 이후 취소선이 사라진다", () => {
+    const duringPromo = Date.parse("2026-10-25T12:00:00+09:00");
+    const afterPromo = Date.parse("2027-01-01T00:00:00+09:00");
+
+    const metaDuring = getHeroSlideMeta("premium_2027_daeun", duringPromo);
+    expect(metaDuring.isPremium).toBe(true);
+    expect(metaDuring.promoBadge).toBe("연말 특가 · 12/31까지");
+    expect(metaDuring.strikePriceText).toBe("19,900원");
+    expect(metaDuring.priceText).toBe("9,900원");
+
+    const metaAfter = getHeroSlideMeta("premium_2027_daeun", afterPromo);
+    expect(metaAfter.isPremium).toBe(true);
+    expect(metaAfter.promoBadge).toBeNull();
+    expect(metaAfter.strikePriceText).toBeNull();
+    expect(metaAfter.priceText).toBe("19,900원");
   });
 
   it("모바일 하단 떠 있는 탭바는 기존 하단 고정 버튼이 있는 경로에서 자동으로 숨겨진다", () => {

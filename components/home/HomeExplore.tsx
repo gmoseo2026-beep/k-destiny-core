@@ -6,6 +6,7 @@ import {
   HOME_CATEGORY_CHIPS,
   type HomeCategoryChipId,
   filterProductsByCategory,
+  sortByHomeGridOrder,
   type ExploreTab,
 } from "@/lib/home/explore";
 import type { HomeRankingResult } from "@/lib/home/ranking";
@@ -16,10 +17,10 @@ import { trackEvent } from "@/lib/gtag";
 
 /** 하위 호환 테스트용 표지 맵 유지 */
 export const PRODUCT_COVER_MAP: Record<string, string> = {
-  love_single: "/covers/cover_love_single.webp",
-  reunion: "/covers/cover_reunion.webp",
   inner_mind: "/covers/cover_inner_mind.webp",
   annual_2027: "/covers/cover_2027.webp",
+  premium_2027_daeun: "/covers/cover_premium_2027_daeun.webp",
+  compat_basic: "/covers/cover_compat_basic.webp",
 };
 
 interface HomeExploreProps {
@@ -56,10 +57,7 @@ export default function HomeExplore({
   );
 
   const singleAndPremium = useMemo(
-    () =>
-      filtered
-        .filter((p) => p.type !== "SET")
-        .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99)),
+    () => sortByHomeGridOrder(filtered.filter((p) => p.type !== "SET")),
     [filtered],
   );
 
@@ -123,19 +121,24 @@ export default function HomeExplore({
         className="w-full max-w-[480px] mx-auto px-4 mt-8 scroll-mt-16"
         aria-label="사주 풀이 포스터 목록"
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between gap-2 mb-3">
           <h2 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
             ✨ {HOME_CATEGORY_CHIPS.find((c) => c.id === selectedChip)?.label ?? "전체"} 운세·궁합
           </h2>
-          {selectedChip !== "all" && (
-            <button
-              type="button"
-              onClick={() => setSelectedChip("all")}
-              className="text-xs font-bold text-[#FF5C77]"
-            >
-              전체 보기
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-[#B9A9BF]">
+              모든 풀이 무료 미리보기
+            </span>
+            {selectedChip !== "all" && (
+              <button
+                type="button"
+                onClick={() => setSelectedChip("all")}
+                className="text-xs font-bold text-[#FF5C77]"
+              >
+                전체 보기
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

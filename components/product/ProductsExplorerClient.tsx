@@ -7,6 +7,7 @@ import {
   HOME_CATEGORY_CHIPS,
   type HomeCategoryChipId,
   filterProductsByCategory,
+  sortByHomeGridOrder,
 } from "@/lib/home/explore";
 import { PosterCard, SetStackCard } from "@/components/cards/KongdakCards";
 import { trackEvent } from "@/lib/gtag";
@@ -33,10 +34,7 @@ export default function ProductsExplorerClient({
   }, [products, selectedChip, query]);
 
   const singleAndPremium = useMemo(
-    () =>
-      filtered
-        .filter((p) => p.type !== "SET")
-        .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99)),
+    () => sortByHomeGridOrder(filtered.filter((p) => p.type !== "SET")),
     [filtered],
   );
 

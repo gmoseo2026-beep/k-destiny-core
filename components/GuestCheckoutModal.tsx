@@ -42,12 +42,15 @@ interface GuestCheckoutModalProps {
 }
 
 // 이니시스 상점에 켜져 있는 간편결제(사장님 확인 2026-10-03). 수단을 바꾸면 여기도 고친다.
-const PAY_METHODS = [
+export const PAY_METHODS = [
   { label: "카카오페이", className: "bg-[#FEE500] text-[#191919]" },
   { label: "네이버페이", className: "bg-[#03C75A] text-white" },
   { label: "삼성페이", className: "bg-[#1428A0] text-white" },
   { label: "신용·체크카드", className: "bg-surface-soft text-text-2 border border-line" },
 ] as const;
+
+// 10-25 0/4 성공, 원인 확인 전까지 네이버페이 바로가기 버튼 비노출 (일반 결제창 안에서는 네이버페이 선택 가능)
+export const SHOW_NAVERPAY_SHORTCUT = false;
 
 /**
  * 결제 직전 확인 창.
@@ -433,7 +436,7 @@ export default function GuestCheckoutModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    const payMethod = isMobile ? methodRef.current : undefined;
+    const payMethod = methodRef.current;
     methodRef.current = undefined;
 
     const trimmedName = fullName.trim();
@@ -688,74 +691,60 @@ export default function GuestCheckoutModal({
             </p>
           )}
 
-          {isMobile ? (
-            <>
-              {/* 카카오페이 바로가기: 이니시스 결제창을 건너뛴다 */}
-              <button
-                type="submit"
-                onClick={() => {
-                  methodRef.current = "KAKAOPAY";
-                }}
-                disabled={isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] px-6 py-4 text-base font-extrabold text-[#191919] shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
-              >
-                <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current" aria-hidden>
-                  <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
-                </svg>
-                {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
-              </button>
+          {/* 사용 가능한 결제 수단 안내 배지 (네이버페이 포함 유지) */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
+            {PAY_METHODS.map((m) => (
+              <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
+                {m.label}
+              </span>
+            ))}
+          </div>
 
-              {/* 네이버페이 바로가기(2026-10-24): 네이버 앱 손님이 많아 카카오페이처럼 결제창을 건너뛴다 */}
-              <button
-                type="submit"
-                onClick={() => {
-                  methodRef.current = "NAVERPAY";
-                }}
-                disabled={isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#03C75A] px-6 py-4 text-base font-extrabold text-white shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-white text-[12px] font-black leading-none text-[#03C75A]" aria-hidden>
-                  N
-                </span>
-                {isLoading ? "결제창 연결 중..." : `네이버페이로 ${shownPrice} 결제`}
-              </button>
+          {/* 1순위: 카카오페이 바로가기 (PC·모바일 모두 가장 크고 맨 위, 노란색) */}
+          <button
+            type="submit"
+            onClick={() => {
+              methodRef.current = "KAKAOPAY";
+            }}
+            disabled={isLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] px-6 py-4 text-base font-extrabold text-[#191919] shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+          >
+            <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current" aria-hidden>
+              <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
+            </svg>
+            {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
+          </button>
 
-              <Button
-                type="submit"
-                variant="secondary"
-                size="lg"
-                fullWidth
-                disabled={isLoading}
-                onClick={() => {
-                  methodRef.current = undefined;
-                }}
-              >
-                카드·삼성페이로 결제
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* 간편결제는 이니시스 결제창 안에서 고른다. 결제창을 열기 전에는 손님이 알 수 없어 여기서 미리 알린다. */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
-                {PAY_METHODS.map((m) => (
-                  <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
-                    {m.label}
-                  </span>
-                ))}
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                disabled={isLoading}
-                isLoading={isLoading}
-              >
-                {isLoading ? "결제창 연결 중..." : `${shownPrice} 결제하기`}
-              </Button>
-            </>
+          {/* 네이버페이 바로가기: 10-25 0/4 성공, 원인 확인 전까지 SHOW_NAVERPAY_SHORTCUT = false 로 숨김 */}
+          {SHOW_NAVERPAY_SHORTCUT && (
+            <button
+              type="submit"
+              onClick={() => {
+                methodRef.current = "NAVERPAY";
+              }}
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#03C75A] px-6 py-4 text-base font-extrabold text-white shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-white text-[12px] font-black leading-none text-[#03C75A]" aria-hidden>
+                N
+              </span>
+              {isLoading ? "결제창 연결 중..." : `네이버페이로 ${shownPrice} 결제`}
+            </button>
           )}
+
+          {/* 2순위: 작은 보조 버튼 — 일반 결제창(카드·네이버페이·삼성페이) */}
+          <Button
+            type="submit"
+            variant="secondary"
+            size="md"
+            fullWidth
+            disabled={isLoading}
+            onClick={() => {
+              methodRef.current = undefined;
+            }}
+          >
+            카드·네이버페이·삼성페이로 결제
+          </Button>
 
           {/* 청약철회 제한 고지 — 체크박스 대신 버튼 바로 아래 고지(결제를 진행하면 동의, 약관 제9조) */}
           <p className="text-[11px] leading-relaxed text-text-3 text-center">

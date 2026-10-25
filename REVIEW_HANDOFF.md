@@ -1,3 +1,36 @@
+# REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
+
+> **작성 일시**: 2026-10-25
+> **범위**: `docs/uiux/decisions/P-018.md` §1~§5 (홈 큰 카드 PC 좌우 화살표·점 인디케이터 → 홈 큰 카드 4장 구성 및 2026-12-01 KST 자동 전환 + 대운 배지 2개·특가가 → 포스터 카드 4:5 사진 위·글 아래 분리 → `HOME_GRID_ORDER` 홈·전체 목록 진열 순서 → 결제 창 네이버페이 바로가기 숨김 및 카카오페이 최상단 배치)
+> **검증 상태**: `npx tsc --noEmit` 0 errors · 변경 파일 `eslint` 0 errors · `npm test` 74파일 551개 통과(1 skip) · `npm run build` exit 0
+> **DB 변경 (SQL)**: 없음
+
+## 1. 변경 파일과 이유
+
+| 파일 | 이유 |
+|---|---|
+| `components/home/HomeHeroCompact.tsx` | **[P-018 §1·§2]** ① 마우스 화면(`[@media(hover:hover)_and_(pointer:fine)]`) 전용 좌우 40px 원형 `‹` `›` 버튼(`aria-label="이전 카드"` / `"다음 카드"`, 첫/마지막 장 흐리게+비활성) 및 모바일·PC 공통 하단 점 4개(현재 코랄 길쭉, 나머지 흰색 30%) 추가, `home_hero_nav { via: "arrow" \| "dot", to }` 이벤트 발사 ② 슬라이드 4장을 **① 속마음(`inner_mind`) ② 2027 신년운(`annual_2027`) ③ 2027 대운(`premium_2027_daeun`) ④ 정통 궁합(`compat_basic`)**으로 교체(솔로·재회 제거) ③ `getHeroPosterSlides(now)`로 `2026-12-01 00:00 KST`부터 ②가 첫 장(②①③④)으로 자동 전환 ④ 대운 카드에 금색 배지 2개(`프리미엄` + `연말 특가 · 12/31까지`) 및 `product.originalPrice`/`product.price`(`seasonPriceAt`) 기반 `19,900원` 취소선 + `9,900원` 표시(특가 종료 시 취소선·특가 배지 자동 소멸) |
+| `components/cards/KongdakCards.tsx` | **[P-018 §3]** `PosterCard`를 위쪽 **4:5(`aspect-[4/5]`) 표지 영역**(어두운 그라데이션 덮개 제거, 사진 위엔 배지만 표시) + 아래쪽 **별도 어두운 칸(`#22142A`, 고정 높이 `h-[84px]`)** 구조로 변경. 아래 칸에 제목 1줄(15px 굵게) + 설명 1줄(`line-clamp-1`, 12px) + 우하단 가격(11px `#B9A9BF`, 무료는 `"무료"`, 특가는 취소선 원가 + 금색 `#FFC24B` 특가가) 배치. 카드 안 `"무료 미리보기"` / `"지금 바로 무료"` 문구 제거. 특가 중인 프리미엄 상품도 `프리미엄` 배지를 함께 표시하도록 수정 (`SetStackCard`는 그대로 유지) |
+| `lib/home/explore.ts` | **[P-018 §4]** `featuredOrder` 값은 건드리지 않고, 새 상수 `HOME_GRID_ORDER` (첫 2개 `annual_2027`, `premium_2027_daeun` → 연애/궁합 → 재물/직업/건강/매운맛/프리미엄 → `annual_2026` → 마지막 `free_personality`) 및 `sortByHomeGridOrder` 추가. `"전체"` 칩과 각 카테고리 칩 모두 `HOME_GRID_ORDER` 상대 순서 유지(목록에 없는 상품은 뒤에 `featuredOrder` 순) |
+| `components/home/HomeExplore.tsx` & `components/product/ProductsExplorerClient.tsx` | **[P-018 §2·§3·§4]** `PRODUCT_COVER_MAP`을 새 히어로 4장 구성으로 갱신하고, 홈 목록 제목 줄 오른쪽에 작은 글씨 `"모든 풀이 무료 미리보기"` 1회 표시, 단품·프리미엄 목록 정렬에 `sortByHomeGridOrder` 적용(세트 목록 순서와 `"지금 많이 보는 사주 TOP 5"` 실제 집계는 그대로 유지) |
+| `components/GuestCheckoutModal.tsx` | **[P-018 §5]** `export const SHOW_NAVERPAY_SHORTCUT = false; // 10-25 0/4 성공, 원인 확인 전까지`로 네이버페이 바로가기 버튼을 숨기고(코드는 유지, 상단 `PAY_METHODS` 배지 줄의 네이버페이 표시는 유지), PC·모바일 모두 **카카오페이 바로가기 버튼(가장 크고 맨 위, 노란색 `#FEE500`)** → 그 아래 작은 보조 버튼 **"카드·네이버페이·삼성페이로 결제"** 순서로 통일 |
+| `tests/p016Design.test.ts` & `tests/p018HomeAndPay.test.ts` (신규) | **[P-018 검증]** 히어로 4장 구성, `2026-11-30 23:59` / `2026-12-01 00:00 KST` 경계 자동 전환, 대운 카드 배지 2개 및 `2027-01-01` 특가 종료 시 취소선 소멸, `HOME_GRID_ORDER` 정렬(첫 2개 = 2027 두 개, 마지막 = `free_personality`, `featuredOrder` 불변), `SHOW_NAVERPAY_SHORTCUT === false` 단위 테스트 추가 |
+
+## 2. 결정론 로직 요약
+- 사주·궁합 엔진(`lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts`), `featuredOrder` 값, 가격·결제 금액 계산 로직(`app/api/payments/order/route.ts`, `SEASON_PROMO_*`) 수정 없음.
+- `getHeroPosterSlides(now)`는 `HERO_2027_FIRST_FROM` (`Date.parse("2026-12-01T00:00:00+09:00")`) 경계 시각만 비교해 슬라이드 배열 순서를 결정론적으로 반환함.
+- `getHeroSlideMeta(productId, now)`는 카탈로그의 `price` / `originalPrice` (`seasonPriceAt`)와 `isOnSeasonPromo`만 읽어 배지와 취소선 여부를 결정론적으로 반환함.
+
+## 3. 보안 · PII · 결제 · 이벤트 변경점
+- 서버(`app/api/payments/order/route.ts`)의 `NAVERPAY` 허용 및 결제 금액 계산 로직 변경 없음.
+- 기존 `home_hero_cta_click`, `select_item`, `checkout_open`, `checkout_submit`, `compat_created`, `teaser_created` 이벤트 유지.
+- 신규 GA4 이벤트: `home_hero_nav { via: "arrow" | "dot", to }`.
+
+## 4. 스스로 의심 지점
+- PC 화면에서 `[카카오페이로 결제]` 바로가기 버튼을 눌렀을 때도 이니시스 PC 필수값(이름·휴대폰·이메일) 검증을 거친 뒤 `payMethod: "KAKAOPAY"`로 제출되도록 `handleSubmit`의 `const payMethod = methodRef.current;`를 연결했습니다.
+
+---
+
 # REVIEW_HANDOFF — P-017 ("콩닥 나이트" 전체 디자인 통일 — 로그인 전·후 전체)
 
 > **작성 일시**: 2026-10-24
