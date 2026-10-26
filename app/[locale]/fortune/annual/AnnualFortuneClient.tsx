@@ -756,7 +756,7 @@ export default function AnnualFortuneClient({
   return (
     <div className="w-full max-w-md md:max-w-2xl flex flex-col gap-6 pb-32 sm:pb-36 pt-2">
       {/* 1. Header & Free Teaser Card */}
-      <div className="relative bg-gradient-to-br from-[#FF8AA1] via-coral to-[#6A2C70] rounded-3xl p-6 sm:p-8 text-white shadow-[0_8px_24px_rgba(181,71,96,0.15)] overflow-hidden">
+      <div className="relative bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,92,119,0.28),transparent_60%),linear-gradient(180deg,#3A1B40_0%,#22142A_100%)] border border-white/10 rounded-3xl p-6 sm:p-8 text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] overflow-hidden">
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-xs font-bold text-white mb-3 border border-white/25 shadow-xs">
             <span>{year}년 {year === 2027 ? "붉은 양의 해" : "붉은 말의 해"}</span>
