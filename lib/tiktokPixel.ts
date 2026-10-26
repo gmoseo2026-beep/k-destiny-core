@@ -17,7 +17,9 @@ export const TIKTOK_PIXEL_ID = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "DBCV7
 
 export interface TikTokEvent {
   /** 틱톡 표준 이벤트 이름 */
-  name: "ViewContent" | "SubmitForm" | "InitiateCheckout" | "AddPaymentInfo" | "Purchase";
+  name: "ViewContent" | "SubmitForm" | "InitiateCheckout" | "AddPaymentInfo" | "CompletePayment";
+  /** 같은 신호를 다른 이름으로도 한 번 더 보낸다 */
+  alsoAs?: readonly string[];
   params: Record<string, string | number | { content_id: string; content_type: "product" }[]>;
   /** 같은 결제를 두 번 세지 않게 하는 값 */
   eventId?: string;
@@ -34,7 +36,9 @@ const num = (v: unknown): number | undefined => (typeof v === "number" && Number
  *   teaser_created   → SubmitForm         생년월일을 넣고 무료 미리보기를 봄
  *   checkout_open    → InitiateCheckout   결제창을 엶
  *   begin_checkout   → AddPaymentInfo     결제 수단 화면(PG)으로 넘어감
- *   purchase         → Purchase           결제 완료(금액 포함). 틱톡의 예전 이름 CompletePayment 대신 지금 문서의 Purchase(10-22, 광고 관리자 최적화 이벤트 "구매")
+ *   purchase         → CompletePayment    결제 완료(금액 포함) + 같은 값으로 Purchase 도 보낸다.
+ *     10-22 에는 Purchase 만 보냈는데, 10-26 광고 그룹 최적화 이벤트 목록에 "구매 완료"가 없었다(활성: 결제 정보 추가·체크아웃 시작·
+ *     콘텐츠 조회·양식 제출뿐). 광고 최적화가 아는 이름은 CompletePayment("구매 완료")라 그 이름으로 보내고, Purchase 는 함께 둔다.
  */
 export function tiktokEventFor(name: string, params?: Params): TikTokEvent | null {
   const productId = str(params?.productId);
@@ -57,7 +61,7 @@ export function tiktokEventFor(name: string, params?: Params): TikTokEvent | nul
       const eventId = str(params?.transaction_id);
       // 금액이나 영수증 번호가 없는 결제 신호는 보내지 않는다(잘못된 매출이 잡히지 않게)
       if (value === undefined || !eventId) return null;
-      return { name: "Purchase", params: { ...contents, value, currency: "KRW" }, eventId };
+      return { name: "CompletePayment", alsoAs: ["Purchase"], params: { ...contents, value, currency: "KRW" }, eventId };
     }
     default:
       return null;
@@ -94,8 +98,10 @@ export function trackTikTok(name: string, params?: Params): void {
   try {
     const ttq = canSend();
     if (!ttq) return;
-    if (ev.eventId) ttq.track(ev.name, ev.params, { event_id: ev.eventId });
-    else ttq.track(ev.name, ev.params);
+    for (const name of [ev.name, ...(ev.alsoAs ?? [])]) {
+      if (ev.eventId) ttq.track(name, ev.params, { event_id: ev.eventId });
+      else ttq.track(name, ev.params);
+    }
   } catch {
     // 측정이 서비스를 깨면 안 된다
   }
