@@ -71,6 +71,23 @@ describe("제휴 배너 전용 주소", () => {
     expect(m.get("utm_content")).toBe("vb_hook6");
   });
 
+  it("영상 광고 2차(10-26) 5편 × 도입 3종이 틱톡·메타 둘 다 있고, 각 상품 화면으로 간다", () => {
+    const go = (code: string) => {
+      const path = campaignTargetPath(findCampaignLink(code)!, "ko");
+      return { path, q: new URLSearchParams(path.split("?")[1]) };
+    };
+    for (const v of ["bn", "c", "d", "e", "f"]) for (const n of [1, 2, 3]) for (const pre of ["tt", "ig"]) expect(findCampaignLink(`${pre}-${v}${n}`), `${pre}-${v}${n}`).toBeTruthy();
+    expect(go("tt-bn2").q.get("productId")).toBe("inner_mind");
+    expect(go("tt-c1").q.get("productId")).toBe("secret_love");
+    expect(go("tt-d1").path.startsWith("/ko/compat/new?")).toBe(true);
+    expect(go("tt-d1").q.has("productId")).toBe(false);
+    expect(go("ig-e3").path.startsWith("/ko/fortune/annual?")).toBe(true);
+    expect(go("ig-e3").q.get("year")).toBe("2027");
+    expect(go("ig-e3").q.get("utm_source")).toBe("instagram");
+    expect(go("tt-f2").path.startsWith("/ko/products/premium_2027_daeun?")).toBe(true);
+    expect(go("tt-f2").q.get("utm_content")).toBe("vf_hook2");
+  });
+
   it("광고 소재 주소는 상품 입력 화면으로 가고, 광고 클릭 표시만 넘긴다", () => {
     const link = findCampaignLink("ig-b1")!;
     const incoming = new URLSearchParams("fbclid=IwAR0abc_DEF-123&evil=%3Cscript%3E&productId=wealth&utm_source=fake");

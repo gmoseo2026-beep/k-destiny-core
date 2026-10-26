@@ -48,6 +48,27 @@ const CAMPAIGN_IG_VIDEO: Record<string, Omit<CampaignLink, "code" | "partner">> 
   igVideo("a3", "인스타 광고 · A 점수 내기 · 도입3 「궁합 점수 틀린 사람이 오늘 저녁 사기」", "va_hook3"),
 ]);
 
+// 영상 광고 2차 5편. 도착은 그 상품의 입력(또는 상품) 화면 — 홈으로 보내면 입력까지 오는 비율이 반으로 줄었다(10-11).
+const SECOND_VIDEOS: readonly {
+  id: string;
+  name: string;
+  campaign: string;
+  path: string;
+  query?: Record<string, string>;
+  hooks: readonly [string, string, string];
+}[] = [
+  { id: "bn", name: "B 2.0 속마음", campaign: "video_bn_innermind", path: "/compat/new", query: { productId: "inner_mind" },
+    hooks: ["답장은 오는데, 마음은 모르겠을 때", "그 사람, 지금 나를 어떻게 생각할까?", "'괜찮아'가 진짜 괜찮은 건지 모를 때"] },
+  { id: "c", name: "C 속궁합", campaign: "video_c_secretlove", path: "/compat/new", query: { productId: "secret_love" },
+    hooks: ["우리, 둘만 있을 땐 몇 점일까?", "설렘이 오래 가는 커플, 우리도 그럴까?", "둘만 있을 때 우리 케미, 궁금하지 않아?"] },
+  { id: "d", name: "D 정통 궁합", campaign: "video_d_compat", path: "/compat/new",
+    hooks: ["우리 궁합, 상위 몇 %일까?", "생일 두 개면 30초, 우리 궁합 점수", "애인이랑 같이 보면 내기 되는 궁합 점수"] },
+  { id: "e", name: "E 2027 신년운", campaign: "video_e_annual2027", path: "/fortune/annual", query: { year: "2027" },
+    hooks: ["2027년, 나는 뭘 시작하고 뭘 끊어야 할까?", "내년 이맘때 나는 어디쯤 있을까?", "2027년, 남들보다 한 발 먼저 보기"] },
+  { id: "f", name: "F 2027 대운", campaign: "video_f_daeun2027", path: "/products/premium_2027_daeun",
+    hooks: ["앞으로 10년, 2027년은 오르막일까?", "10년 흐름 속에서 내 2027년은 어디쯤?", "2027년 12개월, 달력으로 미리 보기"] },
+];
+
 export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
   {
     code: "cd1",
@@ -113,6 +134,20 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
     query: { productId: "inner_mind" },
     utm: { source: "tiktok", medium: "paid_social", campaign: "video_b_innermind", content: `vb_hook${v.slice(1)}` },
   })),
+  // ── 영상 광고 2차(2026-10-26 사장님 확정, 제작 SNS/광고영상_2026-10/제작가이드_2차.md): 영상 5편 × 도입 3종.
+  // 틱톡(tt-)과 메타(ig-, 인스타·페북 광고)에 같은 영상을 쓴다. bn = 속마음 B 2.0(새 나이트 화면으로 다시 녹화한 판).
+  ...SECOND_VIDEOS.flatMap((v) =>
+    v.hooks.flatMap((hook, i) =>
+      ([["tt", "tiktok", "틱톡"], ["ig", "instagram", "메타"]] as const).map(([pre, source, name]): CampaignLink => ({
+        code: `${pre}-${v.id}${i + 1}`,
+        partner: source,
+        label: `${name} 광고 · ${v.name} · 도입${i + 1} 「${hook}」`,
+        path: v.path,
+        ...(v.query ? { query: v.query } : {}),
+        utm: { source, medium: "paid_social", campaign: v.campaign, content: `v${v.id}_hook${i + 1}` },
+      }))
+    )
+  ),
   // ── 크리에이터 제휴 1차(2026-10-16 제안 메일). 회신 전이라 수익 배분율(rsRate)은 합의 후에 넣는다.
   {
     code: "kd-kimdal",
