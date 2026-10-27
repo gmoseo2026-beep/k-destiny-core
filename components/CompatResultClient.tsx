@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/Badge";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
-import { blockPaymentIfInApp, handoffPaymentToChrome, takePayHandoff } from "@/lib/inAppBrowser";
+import { blockPaymentIfInApp, markPayHandoffUrl, takePayHandoff } from "@/lib/inAppBrowser";
 import {
   requestPortOnePayment,
   recallUnlockToken,
@@ -219,13 +219,8 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   };
   const openCompatCheckout = (id: string, clickEvent: string) => {
     trackEvent(clickEvent, { compatId: data.id, productId: id });
-    // 틱톡 앱(안드로이드)은 크롬으로 넘겨 거기서 결제창을 연다. 넘어가지 않았으면 잠시 뒤 여기서 연다
-    if (handoffPaymentToChrome(id)) {
-      window.setTimeout(() => {
-        if (document.visibilityState === "visible") proceedCompatCheckout(id);
-      }, 1800);
-      return;
-    }
+    // 틱톡 앱(안드로이드): ⋯ → 브라우저에서 열기를 누르면 크롬에서 이 결제창이 바로 다시 열리도록 주소에 실어 둔다
+    markPayHandoffUrl(id);
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => proceedCompatCheckout(id))) return;
     proceedCompatCheckout(id);
   };

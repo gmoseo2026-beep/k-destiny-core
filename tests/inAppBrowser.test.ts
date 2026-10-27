@@ -71,7 +71,7 @@ describe("틱톡 앱 안 브라우저 인식(10-23 실제 UA)", () => {
   });
 });
 
-// 2026-10-27: 틱톡 앱(안드로이드) 결제 크롬 넘기기 — 틱톡이 intent 를 막아 꺼 둠
+// 2026-10-27: 틱톡 앱(안드로이드) → 크롬 결제 이어가기(⋯ → 브라우저에서 열기)
 describe("틱톡 앱 결제 크롬 넘기기", () => {
   const TIKTOK_ANDROID =
     "Mozilla/5.0 (Linux; Android 14; SM-S928N Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36 trill_370504 BytedanceWebview/d8a21c6";
@@ -90,17 +90,43 @@ describe("틱톡 앱 결제 크롬 넘기기", () => {
     return { m, loc, replaced };
   }
 
-  it("틱톡 앱은 크롬 intent 를 막으므로(10-27 실기) 넘기지 않고, 외부 열기도 시도하지 않는다", async () => {
+  it("틱톡 앱은 intent 를 막으므로(10-27 실기) 외부 열기를 시도하지 않는다", async () => {
     const { m, loc } = await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/new?productId=inner_mind");
-    expect(m.handoffPaymentToChrome("inner_mind", { from: "cmabc" })).toBe(false);
     expect(m.openInExternalBrowser()).toBe(false);
     expect(loc.href).toBe("https://kongdak.kr/ko/compat/new?productId=inner_mind");
   });
 
-  it("이미 넘겨받은 화면(ho=1)이나 틱톡이 아니면 넘기지 않는다", async () => {
-    expect((await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/x?ho=1")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
-    expect((await loadAt(CHROME, "https://kongdak.kr/ko/compat/x")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
-    expect((await loadAt(IG_IOS, "https://kongdak.kr/ko/compat/x")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
+  it("틱톡 안드로이드는 결제창을 열 때 주소에 pay·ho·from 을 실어 둔다(이동 없음)", async () => {
+    const { m, loc, replaced } = await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/new?productId=inner_mind");
+    expect(m.isTikTokAndroid()).toBe(true);
+    expect(m.markPayHandoffUrl("inner_mind", { from: "cmabc" })).toBe(true);
+    expect(replaced[0]).toBe("/ko/compat/new?productId=inner_mind&from=cmabc&pay=inner_mind&ho=1");
+    expect(loc.href).toBe("https://kongdak.kr/ko/compat/new?productId=inner_mind");
+  });
+
+  it("광고 유입 쿠키가 있으면 크롬에서도 이어지도록 ksrc 를 함께 싣는다", async () => {
+    vi.resetModules();
+    const replaced: string[] = [];
+    vi.stubGlobal("navigator", { userAgent: TIKTOK_ANDROID });
+    vi.stubGlobal("document", { cookie: "kd_ref=tt-bn2.1761500000" });
+    vi.stubGlobal("window", {
+      location: { href: "https://kongdak.kr/ko/compat/abc" },
+      history: { state: null, replaceState: (_s: unknown, _t: string, url: string) => replaced.push(url) },
+      sessionStorage: { getItem: () => null, setItem: () => {} },
+    });
+    const m = await import("@/lib/inAppBrowser");
+    expect(m.markPayHandoffUrl("compat_basic")).toBe(true);
+    expect(replaced[0]).toContain("pay=compat_basic");
+    expect(replaced[0]).toContain("tt-bn2");
+  });
+
+  it("틱톡 안드로이드가 아니면 주소를 건드리지 않는다", async () => {
+    for (const ua of [CHROME, IG_IOS]) {
+      const { m, replaced } = await loadAt(ua, "https://kongdak.kr/ko/compat/x");
+      expect(m.isTikTokAndroid()).toBe(false);
+      expect(m.markPayHandoffUrl("compat_basic")).toBe(false);
+      expect(replaced).toHaveLength(0);
+    }
   });
 
   it("넘겨받은 크롬은 pay 값을 한 번 꺼내고 주소에서 지운다(ho 는 남김)", async () => {

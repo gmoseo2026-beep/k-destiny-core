@@ -5,7 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, isIOS, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isIOS, isTikTokAndroid, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
 import {
   recallPendingPayment,
   clearPendingPayment,
@@ -93,6 +93,8 @@ export default function GuestCheckoutModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const [inApp] = useState(() => isInAppBrowser());
+  // 틱톡 앱(안드로이드)은 카카오페이 앱 열기를 막는다(10-27 실기) → 결제창 맨 위에 [⋯ → 브라우저에서 열기] 안내
+  const [tiktokGuide] = useState(() => isTikTokAndroid());
   const [showCopy, setShowCopy] = useState(false);
   const [copied, setCopied] = useState(false);
   // KG이니시스는 모바일 결제에서 이름만 필수다(휴대폰·이메일은 PC 결제에서만 필수 — 포트원 V2 문서).
@@ -345,7 +347,7 @@ export default function GuestCheckoutModal({
                 ) : (
                   <div className="rounded-2xl bg-[#140B18] border border-white/[0.08] p-3.5 text-left text-xs text-[#B9A9BF] leading-relaxed">
                     <p>
-                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-[#F6EEF3]">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 {isIOS() ? "사파리" : "크롬"}에 붙여 넣어 주세요.
+                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-[#F6EEF3]">{tiktokGuide ? "브라우저에서 열기" : "외부 브라우저로 열기"}</b>를 누르거나, 아래 링크를 복사해 {isIOS() ? "사파리" : "크롬"}에 붙여 넣어 주세요.
                     </p>
                     <button
                       type="button"
@@ -550,6 +552,15 @@ export default function GuestCheckoutModal({
             <p className="text-xs text-[#B9A9BF]">결제하면 바로 전체가 열려요</p>
           </div>
         </div>
+
+        {tiktokGuide && (
+          <div className="mb-4 rounded-2xl border border-[#FFC24B]/40 bg-[#FFC24B]/10 px-4 py-3 text-xs leading-relaxed">
+            <p className="font-extrabold text-[#FFC24B]">틱톡 안에서는 결제가 멈출 수 있어요</p>
+            <p className="mt-1 text-[#B9A9BF]">
+              오른쪽 위 <b className="text-[#F6EEF3]">⋯</b> → <b className="text-[#F6EEF3]">브라우저에서 열기</b>를 누르면, 보던 화면 그대로 크롬에서 이 결제창이 다시 열려요.
+            </p>
+          </div>
+        )}
 
         {/* 상품 고르기(단품 · 세트 · 확신 패키지) — 고를 것이 2개 이상일 때 */}
         {options.length > 1 && onSelect && (
@@ -762,7 +773,7 @@ export default function GuestCheckoutModal({
           </button>
 
           {/* 인앱 브라우저(인스타·스레드 등): 결제는 바로 진행하되, 카드 앱에서 못 돌아오는 경우를 위한 보조 길 */}
-          {inApp && (
+          {inApp && !tiktokGuide && (
             <div className="text-center text-[11px] text-text-3 leading-relaxed">
               {!showCopy ? (
                 <button type="button" onClick={handleExternal} className="underline underline-offset-2">

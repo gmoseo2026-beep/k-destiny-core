@@ -8,7 +8,7 @@ import { withCompatFromParam } from "@/lib/compatFromUrl";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
-import { blockPaymentIfInApp, handoffPaymentToChrome, takePayHandoff } from "@/lib/inAppBrowser";
+import { blockPaymentIfInApp, markPayHandoffUrl, takePayHandoff } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, getProductCover, priceLabel, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
@@ -182,16 +182,9 @@ export default function CompatNewClient({
   const upsellSets = product && product.type !== "SET" ? setsContaining(product.id, visibleIds ?? []) : [];
 
   const openCheckoutFor = (id: string) => {
-    // 틱톡 앱(안드로이드)은 크롬으로 넘겨 거기서 결제창을 연다. 넘어가지 않았으면(크롬 없음 등) 잠시 뒤 여기서 연다
+    // 틱톡 앱(안드로이드): 결제창 안내대로 ⋯ → 브라우저에서 열기를 누르면 크롬에서 이 결제창이 바로 다시 열리도록 주소에 실어 둔다
     const handoffCompatId = teaserResult?.compatId ?? limitHit?.compatId;
-    if (handoffCompatId && handoffPaymentToChrome(id, { from: handoffCompatId })) {
-      window.setTimeout(() => {
-        if (document.visibilityState !== "visible") return;
-        setCheckoutId(id);
-        setCheckoutModalOpen(true);
-      }, 1800);
-      return;
-    }
+    if (handoffCompatId) markPayHandoffUrl(id, { from: handoffCompatId });
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
     setCheckoutId(id);
     setCheckoutModalOpen(true);

@@ -182,31 +182,38 @@ export function blockPaymentIfInApp(_onNeedChoice?: () => void, _retry?: () => v
 }
 
 /**
- * 틱톡 앱(안드로이드)에서 결제 버튼을 누르면 결제창을 열지 않고 크롬으로 넘겨, 크롬에서 결제창을 바로 다시 연다(2026-10-27).
- *
- * 틱톡 앱 안 결제는 결제창에서 멈추거나(READY) 이니시스가 "비정상적인 접근입니다"로 막는 일이 잦았다
- * (10-23·10-25·10-27, 낮 결제 완료율 21%). 10-01 에는 결제 전 선택 창을 띄웠다가 3명 중 0명이 진행해서,
- * 이번에는 선택 창 없이 한 번에 넘긴다. 크롬이 없거나 넘기기가 무시되면 호출부가 잠시 뒤 이 자리에서 결제창을 연다.
- * 주소에 ho=1 을 남겨, 크롬 대신 다시 앱 안에서 열려도 두 번 넘기지 않는다.
- *
- * @returns true = 크롬으로 넘기기를 시도함(호출부는 잠시 기다렸다가 화면이 그대로면 결제창을 연다)
+ * 틱톡 앱 → 크롬 결제 이어가기(2026-10-27).
+ * 처음엔 결제 버튼에서 크롬 intent 로 바로 넘겼지만, 사장님 실기에서 틱톡이 intent 를 막아 "작업을 완료할 수 없습니다"만 떴다.
+ * 그래서 이동은 손님이 틱톡 ⋯ 메뉴의 [브라우저에서 열기]로 하고(결제창 안내), 우리는 그 주소에 pay·ho 를 실어 둔다.
  */
 export const PAY_HANDOFF_PARAM = "pay";
 const HANDED_OFF_PARAM = "ho";
-// (꺼 둠) 10-27 실기 확인: 틱톡 앱이 크롬 intent 를 막아 "작업을 완료할 수 없습니다"만 뜨고 1.8초 늦게 결제창이 열렸다.
-// 틱톡이 외부 열기를 허용하면 true 로 다시 켠다(openInExternalBrowser 의 tiktok 분기도 함께 풀어야 한다).
-const PAY_HANDOFF_ENABLED = false;
 
-export function handoffPaymentToChrome(productId: string, extra?: Record<string, string>): boolean {
-  if (!PAY_HANDOFF_ENABLED || typeof window === "undefined") return false;
-  if (getInAppProvider() !== "tiktok" || !isAndroid()) return false;
+/** 틱톡 앱(안드로이드) — 앱 밖으로 못 나가고(intent 차단) 카카오페이 앱도 못 여는 곳(10-27 실기) */
+export function isTikTokAndroid(): boolean {
+  return getInAppProvider() === "tiktok" && isAndroid();
+}
+
+/**
+ * 틱톡 앱(안드로이드)에서 결제창을 열 때, 지금 주소에 pay·ho 를 실어 둔다(이동하지 않음).
+ * 손님이 결제창 안내대로 ⋯ → [브라우저에서 열기]를 누르면 틱톡이 이 주소를 크롬으로 열고,
+ * 크롬에서는 takePayHandoff 가 같은 상품의 결제창을 바로 연다(미리보기는 주소의 from 으로 이어진다).
+ * @returns true = 주소에 실었음(틱톡 안드로이드)
+ */
+export function markPayHandoffUrl(productId: string, extra?: Record<string, string>): boolean {
+  if (typeof window === "undefined" || !isTikTokAndroid()) return false;
   const u = new URL(window.location.href);
-  if (u.searchParams.get(HANDED_OFF_PARAM) === "1") return false;
   for (const [k, v] of Object.entries(extra ?? {})) u.searchParams.set(k, v);
   u.searchParams.set(PAY_HANDOFF_PARAM, productId);
   u.searchParams.set(HANDED_OFF_PARAM, "1");
-  trackEvent("inapp_pay_handoff", { provider: "tiktok", productId });
-  return openInExternalBrowser(u.toString());
+  // 크롬에는 쿠키가 없으니 광고 유입 표시(ksrc·ksrct)도 주소에 함께 싣는다
+  const next = new URL(externalBrowserUrl(u.toString()));
+  try {
+    window.history.replaceState(window.history.state, "", next.pathname + next.search + next.hash);
+  } catch {
+    return false;
+  }
+  return true;
 }
 
 /** 넘겨받은 화면: 주소의 pay 값(열 결제창 상품)을 한 번만 꺼내고 주소에서 지운다 */
