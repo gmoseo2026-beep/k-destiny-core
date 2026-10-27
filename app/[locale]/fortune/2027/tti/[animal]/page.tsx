@@ -19,10 +19,6 @@ interface PageProps {
 
 const YEAR = FORTUNE_TARGET_YEAR;
 
-export function generateStaticParams() {
-  return ZODIAC.map((z) => ({ animal: z.slug }));
-}
-
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { animal } = await params;
   const page = animalYearPage(animal);
