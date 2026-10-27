@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next';
 import { canonicalUrlFor } from '@/lib/seo';
 import { isViewableFor } from '@/lib/catalog';
 import { getEffectiveCatalog } from '@/lib/catalogVisibility';
-import { FORTUNE_TARGET_YEAR } from '@/lib/seo/zodiac';
+import { FORTUNE_TARGET_YEAR, ZODIAC } from '@/lib/seo/zodiac';
 import { pairSlugsWithContent, birthYearsWithContent } from '@/lib/seo/data';
 
 /**
@@ -75,6 +75,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: SEO_PAGES_UPDATED,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
+    })),
+    // 띠별 2027년 운세 12개(10-27 추가) — "2027년 말띠 운세" 검색용
+    ...ZODIAC.map((z) => ({
+      url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}/tti/${z.slug}`),
+      lastModified: SEO_PAGES_UPDATED,
+      changeFrequency: 'monthly' as const,
+      priority: 0.65,
     })),
     ...birthYearsWithContent().map((y) => ({
       url: canonicalUrlFor(`/fortune/${FORTUNE_TARGET_YEAR}/${y}`),

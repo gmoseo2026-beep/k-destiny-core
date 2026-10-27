@@ -148,6 +148,20 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
       }))
     )
   ),
+  // ── 리타게팅(2026-10-27): 무료 미리보기를 보고 결제하지 않은 사람에게 다시 보여 주는 광고(메타 맞춤 타겟).
+  // 같은 생년월일이면 같은 결과라, 다시 넣으면 그때 본 미리보기가 그대로 이어진다(입력값은 기기에 남기지 않는다).
+  ...([
+    ["ig-rt1", "instagram", "메타 리타게팅 · 속마음 (미리보기만 본 사람)", "/compat/new", { productId: "inner_mind" }, "retarget_inner", "rt_inner"],
+    ["ig-rt2", "instagram", "메타 리타게팅 · 2027 신년운 (미리보기만 본 사람)", "/fortune/annual", { year: "2027" }, "retarget_2027", "rt_2027"],
+    ["tt-rt1", "tiktok", "틱톡 리타게팅 · 속마음 (미리보기만 본 사람)", "/compat/new", { productId: "inner_mind" }, "retarget_inner", "rt_inner"],
+  ] as const).map(([code, source, label, path, query, campaign, content]): CampaignLink => ({
+    code,
+    partner: source,
+    label,
+    path,
+    query: { ...query },
+    utm: { source, medium: "paid_social", campaign, content },
+  })),
   // ── 크리에이터 제휴 1차(2026-10-16 제안 메일). 회신 전이라 수익 배분율(rsRate)은 합의 후에 넣는다.
   {
     code: "kd-kimdal",

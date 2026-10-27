@@ -55,7 +55,9 @@ export default async function FortuneYearHubPage({ params }: { params: Promise<{
           return (
             <section key={animal.slug} aria-label={`${animal.name}띠 ${YEAR}년 운세`}>
               <h2 className="text-base font-black">
-                <span aria-hidden>{animal.emoji}</span> {animal.name}띠 {YEAR}년 운세
+                <Link href={`/${locale}/fortune/${YEAR}/tti/${animal.slug}`} prefetch={false} className="underline-offset-4 hover:underline">
+                  <span aria-hidden>{animal.emoji}</span> {animal.name}띠 {YEAR}년 운세 →
+                </Link>
               </h2>
               <p className="mb-2 mt-0.5 text-xs text-text-3">{flow}</p>
               <div className="flex flex-wrap gap-2">
