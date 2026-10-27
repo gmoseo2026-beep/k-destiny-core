@@ -67,6 +67,11 @@ const SECOND_VIDEOS: readonly {
     hooks: ["2027년, 나는 뭘 시작하고 뭘 끊어야 할까?", "내년 이맘때 나는 어디쯤 있을까?", "2027년, 남들보다 한 발 먼저 보기"] },
   { id: "f", name: "F 2027 대운", campaign: "video_f_daeun2027", path: "/products/premium_2027_daeun",
     hooks: ["앞으로 10년, 2027년은 오르막일까?", "10년 흐름 속에서 내 2027년은 어디쯤?", "2027년 12개월, 달력으로 미리 보기"] },
+  // 3차(10-27): 스레드 리뉴얼 이미지(커플·사주 인물·2027·결과 화면)로 만든 Veo 영상. 기존 틱톡 광고 그룹에 추가해 B 영상과 비교한다.
+  { id: "pi", name: "사진편 속마음", campaign: "video_pi_innermind", path: "/compat/new", query: { productId: "inner_mind" },
+    hooks: ["연락은 하는데 마음은 모르겠는 그 사람", "그 사람, 지금 나를 어떻게 생각할까?", "생일 두 개면 30초, 그 사람 속마음"] },
+  { id: "py", name: "사진편 2027 신년운", campaign: "video_py_annual2027", path: "/fortune/annual", query: { year: "2027" },
+    hooks: ["2027년, 나에게 오는 흐름", "내년 이맘때 나는 어디쯤 있을까?", "2027년, 먼저 보고 시작하기"] },
 ];
 
 export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
