@@ -556,9 +556,9 @@ export default function GuestCheckoutModal({
 
         {tiktokGuide && (
           <div className="mb-4 rounded-2xl border border-[#FFC24B]/40 bg-[#FFC24B]/10 px-4 py-3 text-xs leading-relaxed">
-            <p className="font-extrabold text-[#FFC24B]">틱톡 안에서는 결제가 멈출 수 있어요</p>
+            <p className="font-extrabold text-[#FFC24B]">틱톡 안에서는 카카오페이가 열리지 않아요</p>
             <p className="mt-1 text-[#B9A9BF]">
-              오른쪽 위 <b className="text-[#F6EEF3]">⋯</b> → <b className="text-[#F6EEF3]">브라우저에서 열기</b>를 누르면, 보던 화면 그대로 크롬에서 이 결제창이 다시 열려요.
+              아래 <b className="text-[#F6EEF3]">네이버페이</b>는 여기서 바로 결제돼요. 카카오페이로 하려면 오른쪽 위 <b className="text-[#F6EEF3]">⋯</b> → <b className="text-[#F6EEF3]">브라우저에서 열기</b>를 누르세요. 보던 화면 그대로 크롬에서 이 결제창이 다시 열려요.
             </p>
           </div>
         )}
@@ -705,27 +705,52 @@ export default function GuestCheckoutModal({
 
           {/* 사용 가능한 결제 수단 안내 배지 (네이버페이 포함 유지) */}
           <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label="사용 가능한 결제 수단">
-            {PAY_METHODS.map((m) => (
+            {PAY_METHODS.filter((m) => !(tiktokGuide && m.label === "카카오페이")).map((m) => (
               <span key={m.label} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${m.className}`}>
                 {m.label}
               </span>
             ))}
           </div>
 
-          {/* 1순위: 카카오페이 바로가기 (PC·모바일 모두 가장 크고 맨 위, 노란색) */}
-          <button
-            type="submit"
-            onClick={() => {
-              methodRef.current = "KAKAOPAY";
-            }}
-            disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] px-6 py-4 text-base font-extrabold text-[#191919] shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
-          >
-            <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current" aria-hidden>
-              <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
-            </svg>
-            {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
-          </button>
+          {/* 앱을 못 여는 틱톡 화면(10-27 실기): 카카오페이 대신 네이버페이(일반 결제창 → 네이버페이 → 아이디 로그인, 사장님 실기 성공)를 1순위로 */}
+          {tiktokGuide && (
+            <div className="flex flex-col gap-1.5">
+              <button
+                type="submit"
+                onClick={() => {
+                  methodRef.current = undefined;
+                  trackEvent("tiktok_npay_click", { productId: pid });
+                }}
+                disabled={isLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#03C75A] px-6 py-4 text-base font-extrabold text-white shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-[5px] bg-white text-[12px] font-black leading-none text-[#03C75A]" aria-hidden>
+                  N
+                </span>
+                {isLoading ? "결제창 연결 중..." : `네이버페이로 ${shownPrice} 결제`}
+              </button>
+              <p className="text-center text-[11px] leading-relaxed text-[#B9A9BF]">
+                결제창에서 <b className="text-[#F6EEF3]">네이버페이</b>를 고르고, 네이버 앱 대신 <b className="text-[#F6EEF3]">아이디로 로그인</b>해 주세요
+              </p>
+            </div>
+          )}
+
+          {/* 1순위: 카카오페이 바로가기 (PC·모바일 모두 가장 크고 맨 위, 노란색) — 앱을 못 여는 틱톡 화면에선 숨김 */}
+          {!tiktokGuide && (
+            <button
+              type="submit"
+              onClick={() => {
+                methodRef.current = "KAKAOPAY";
+              }}
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] px-6 py-4 text-base font-extrabold text-[#191919] shadow-xs transition-all active:scale-[0.96] disabled:opacity-60"
+            >
+              <svg viewBox="0 0 32 32" className="h-5 w-5 fill-current" aria-hidden>
+                <path d="M16 4.64C8.269 4.64 2 9.697 2 15.942c0 4.024 2.502 7.55 6.275 9.624l-1.579 5.86c-.116.425.353.754.73.522l6.815-4.51c.563.078 1.144.12 1.749.12 7.73 0 14-5.057 14-11.302S23.73 4.64 16 4.64z" />
+              </svg>
+              {isLoading ? "결제창 연결 중..." : `카카오페이로 ${shownPrice} 결제`}
+            </button>
+          )}
 
           {/* 네이버페이 바로가기: 10-25 0/4 성공, 원인 확인 전까지 SHOW_NAVERPAY_SHORTCUT = false 로 숨김 */}
           {SHOW_NAVERPAY_SHORTCUT && (
@@ -755,7 +780,7 @@ export default function GuestCheckoutModal({
               methodRef.current = undefined;
             }}
           >
-            카드·네이버페이·삼성페이로 결제
+            {tiktokGuide ? "카드·삼성페이로 결제" : "카드·네이버페이·삼성페이로 결제"}
           </Button>
 
           {/* 청약철회 제한 고지 — 체크박스 대신 버튼 바로 아래 고지(결제를 진행하면 동의, 약관 제9조) */}
