@@ -345,7 +345,7 @@ export default function GuestCheckoutModal({
                 ) : (
                   <div className="rounded-2xl bg-[#140B18] border border-white/[0.08] p-3.5 text-left text-xs text-[#B9A9BF] leading-relaxed">
                     <p>
-                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-[#F6EEF3]">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 사파리에 붙여 넣어 주세요.
+                      오른쪽 위 메뉴(<b>⋯</b>)에서 <b className="text-[#F6EEF3]">외부 브라우저로 열기</b>를 누르거나, 아래 링크를 복사해 {isIOS() ? "사파리" : "크롬"}에 붙여 넣어 주세요.
                     </p>
                     <button
                       type="button"
@@ -770,7 +770,7 @@ export default function GuestCheckoutModal({
                 </button>
               ) : (
                 <div className="rounded-xl bg-surface-soft p-3 text-left text-text-2">
-                  오른쪽 위 메뉴(⋯)에서 <strong className="text-ink">외부 브라우저로 열기</strong>를 누르거나, 링크를 복사해 Safari에 붙여 넣어 주세요.
+                  오른쪽 위 메뉴(⋯)에서 <strong className="text-ink">외부 브라우저로 열기</strong>를 누르거나, 링크를 복사해 {isIOS() ? "Safari" : "크롬"}에 붙여 넣어 주세요.
                   <button
                     type="button"
                     onClick={handleCopy}

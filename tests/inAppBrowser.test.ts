@@ -71,7 +71,7 @@ describe("틱톡 앱 안 브라우저 인식(10-23 실제 UA)", () => {
   });
 });
 
-// 2026-10-27: 틱톡 앱(안드로이드) 결제는 크롬으로 넘겨 거기서 결제창을 다시 연다
+// 2026-10-27: 틱톡 앱(안드로이드) 결제 크롬 넘기기 — 틱톡이 intent 를 막아 꺼 둠
 describe("틱톡 앱 결제 크롬 넘기기", () => {
   const TIKTOK_ANDROID =
     "Mozilla/5.0 (Linux; Android 14; SM-S928N Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36 trill_370504 BytedanceWebview/d8a21c6";
@@ -90,14 +90,11 @@ describe("틱톡 앱 결제 크롬 넘기기", () => {
     return { m, loc, replaced };
   }
 
-  it("틱톡 안드로이드는 크롬 intent 로 넘기고, 주소에 pay·ho·from 을 싣는다", async () => {
+  it("틱톡 앱은 크롬 intent 를 막으므로(10-27 실기) 넘기지 않고, 외부 열기도 시도하지 않는다", async () => {
     const { m, loc } = await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/new?productId=inner_mind");
-    expect(m.handoffPaymentToChrome("inner_mind", { from: "cmabc" })).toBe(true);
-    expect(loc.href.startsWith("intent://kongdak.kr/ko/compat/new?")).toBe(true);
-    expect(loc.href).toContain("package=com.android.chrome");
-    expect(loc.href).toContain("pay=inner_mind");
-    expect(loc.href).toContain("ho=1");
-    expect(loc.href).toContain("from=cmabc");
+    expect(m.handoffPaymentToChrome("inner_mind", { from: "cmabc" })).toBe(false);
+    expect(m.openInExternalBrowser()).toBe(false);
+    expect(loc.href).toBe("https://kongdak.kr/ko/compat/new?productId=inner_mind");
   });
 
   it("이미 넘겨받은 화면(ho=1)이나 틱톡이 아니면 넘기지 않는다", async () => {

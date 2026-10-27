@@ -143,6 +143,9 @@ export function openInExternalBrowser(targetUrl?: string): boolean {
     window.location.href = u.toString();
     return true;
   }
+  // 틱톡 앱은 intent·앱 스킴을 모두 막는다("작업을 완료할 수 없습니다", 2026-10-27 사장님 안드로이드 실기 확인)
+  // → 시도하지 않고 호출부가 ⋯ 메뉴·링크 복사 안내를 띄우게 한다
+  if (provider === 'tiktok') return false;
   // 안드로이드(인스타/스레드/페북 등): intent로 크롬 강제 실행
   if (isAndroid()) {
     const u = new URL(url);
@@ -190,9 +193,12 @@ export function blockPaymentIfInApp(_onNeedChoice?: () => void, _retry?: () => v
  */
 export const PAY_HANDOFF_PARAM = "pay";
 const HANDED_OFF_PARAM = "ho";
+// (꺼 둠) 10-27 실기 확인: 틱톡 앱이 크롬 intent 를 막아 "작업을 완료할 수 없습니다"만 뜨고 1.8초 늦게 결제창이 열렸다.
+// 틱톡이 외부 열기를 허용하면 true 로 다시 켠다(openInExternalBrowser 의 tiktok 분기도 함께 풀어야 한다).
+const PAY_HANDOFF_ENABLED = false;
 
 export function handoffPaymentToChrome(productId: string, extra?: Record<string, string>): boolean {
-  if (typeof window === "undefined") return false;
+  if (!PAY_HANDOFF_ENABLED || typeof window === "undefined") return false;
   if (getInAppProvider() !== "tiktok" || !isAndroid()) return false;
   const u = new URL(window.location.href);
   if (u.searchParams.get(HANDED_OFF_PARAM) === "1") return false;
