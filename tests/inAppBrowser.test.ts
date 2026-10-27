@@ -120,6 +120,15 @@ describe("틱톡 앱 결제 크롬 넘기기", () => {
     expect(replaced[0]).toContain("tt-bn2");
   });
 
+  it("다른 앱을 못 여는 틱톡 브라우저(wv)만 결제 안내 대상이다 — 광고 손님 브라우저(trill_47.x, wv 없음)는 아니다", async () => {
+    expect((await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko")).m.isTikTokBlockedWebview()).toBe(true);
+    const AD = "Mozilla/5.0 (Linux; Android 17; SM-S938N Build/BP2A) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0 Mobile Safari/537.36 trill_47.4.3";
+    const ad = (await loadAt(AD, "https://kongdak.kr/ko")).m;
+    expect(ad.isTikTokAndroid()).toBe(true);
+    expect(ad.isTikTokBlockedWebview()).toBe(false);
+    expect((await loadAt(CHROME, "https://kongdak.kr/ko")).m.isTikTokBlockedWebview()).toBe(false);
+  });
+
   it("틱톡 안드로이드가 아니면 주소를 건드리지 않는다", async () => {
     for (const ua of [CHROME, IG_IOS]) {
       const { m, replaced } = await loadAt(ua, "https://kongdak.kr/ko/compat/x");

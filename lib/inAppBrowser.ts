@@ -189,9 +189,19 @@ export function blockPaymentIfInApp(_onNeedChoice?: () => void, _retry?: () => v
 export const PAY_HANDOFF_PARAM = "pay";
 const HANDED_OFF_PARAM = "ho";
 
-/** 틱톡 앱(안드로이드) — 앱 밖으로 못 나가고(intent 차단) 카카오페이 앱도 못 여는 곳(10-27 실기) */
+/** 틱톡 앱(안드로이드) */
 export function isTikTokAndroid(): boolean {
   return getInAppProvider() === "tiktok" && isAndroid();
+}
+
+/**
+ * 틱톡 앱(안드로이드) 중 다른 앱을 못 여는 브라우저 — UA 에 "; wv)" 가 있는 쪽(메시지 등으로 받은 링크, 10-27 사장님 실기:
+ * 크롬 intent·카카오톡 열기 모두 "작업을 완료할 수 없습니다"). 광고로 들어온 손님의 틱톡 브라우저("trill_47.4.3", wv 없음)는
+ * 10-25 에 카카오페이·카드 앱 결제가 여러 건 끝났으므로 여기에 넣지 않는다.
+ */
+export function isTikTokBlockedWebview(): boolean {
+  if (typeof navigator === "undefined" || !isTikTokAndroid()) return false;
+  return /; wv\)/.test(navigator.userAgent);
 }
 
 /**

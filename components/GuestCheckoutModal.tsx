@@ -5,7 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, isIOS, isTikTokAndroid, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isIOS, isTikTokBlockedWebview, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
 import {
   recallPendingPayment,
   clearPendingPayment,
@@ -93,8 +93,9 @@ export default function GuestCheckoutModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { data: session } = useSession();
   const [inApp] = useState(() => isInAppBrowser());
-  // 틱톡 앱(안드로이드)은 카카오페이 앱 열기를 막는다(10-27 실기) → 결제창 맨 위에 [⋯ → 브라우저에서 열기] 안내
-  const [tiktokGuide] = useState(() => isTikTokAndroid());
+  // 틱톡 앱(안드로이드) 중 카카오페이 앱 열기를 막는 브라우저(10-27 실기) → 결제창 맨 위에 [⋯ → 브라우저에서 열기] 안내.
+  // 광고로 들어온 틱톡 브라우저는 앱 결제가 되므로 안내하지 않는다(겁주지 않기)
+  const [tiktokGuide] = useState(() => isTikTokBlockedWebview());
   const [showCopy, setShowCopy] = useState(false);
   const [copied, setCopied] = useState(false);
   // KG이니시스는 모바일 결제에서 이름만 필수다(휴대폰·이메일은 PC 결제에서만 필수 — 포트원 V2 문서).
