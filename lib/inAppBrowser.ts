@@ -178,6 +178,45 @@ export function blockPaymentIfInApp(_onNeedChoice?: () => void, _retry?: () => v
   return false;
 }
 
+/**
+ * 틱톡 앱(안드로이드)에서 결제 버튼을 누르면 결제창을 열지 않고 크롬으로 넘겨, 크롬에서 결제창을 바로 다시 연다(2026-10-27).
+ *
+ * 틱톡 앱 안 결제는 결제창에서 멈추거나(READY) 이니시스가 "비정상적인 접근입니다"로 막는 일이 잦았다
+ * (10-23·10-25·10-27, 낮 결제 완료율 21%). 10-01 에는 결제 전 선택 창을 띄웠다가 3명 중 0명이 진행해서,
+ * 이번에는 선택 창 없이 한 번에 넘긴다. 크롬이 없거나 넘기기가 무시되면 호출부가 잠시 뒤 이 자리에서 결제창을 연다.
+ * 주소에 ho=1 을 남겨, 크롬 대신 다시 앱 안에서 열려도 두 번 넘기지 않는다.
+ *
+ * @returns true = 크롬으로 넘기기를 시도함(호출부는 잠시 기다렸다가 화면이 그대로면 결제창을 연다)
+ */
+export const PAY_HANDOFF_PARAM = "pay";
+const HANDED_OFF_PARAM = "ho";
+
+export function handoffPaymentToChrome(productId: string, extra?: Record<string, string>): boolean {
+  if (typeof window === "undefined") return false;
+  if (getInAppProvider() !== "tiktok" || !isAndroid()) return false;
+  const u = new URL(window.location.href);
+  if (u.searchParams.get(HANDED_OFF_PARAM) === "1") return false;
+  for (const [k, v] of Object.entries(extra ?? {})) u.searchParams.set(k, v);
+  u.searchParams.set(PAY_HANDOFF_PARAM, productId);
+  u.searchParams.set(HANDED_OFF_PARAM, "1");
+  trackEvent("inapp_pay_handoff", { provider: "tiktok", productId });
+  return openInExternalBrowser(u.toString());
+}
+
+/** 넘겨받은 화면: 주소의 pay 값(열 결제창 상품)을 한 번만 꺼내고 주소에서 지운다 */
+export function takePayHandoff(): string | null {
+  if (typeof window === "undefined") return null;
+  const u = new URL(window.location.href);
+  const id = u.searchParams.get(PAY_HANDOFF_PARAM);
+  if (!id) return null;
+  u.searchParams.delete(PAY_HANDOFF_PARAM);
+  try {
+    window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+  } catch {}
+  trackEvent("inapp_pay_handoff_arrived", { productId: id, inApp: isInAppBrowser() });
+  return id;
+}
+
 /** (동면) 예전 선택 창의 [여기서 바로 결제하기]. 선택 창을 다시 켤 때를 위해 남겨 둔다. */
 export function continueInAppPayment(): void {
   trackEvent("inapp_pay_here", { provider: getInAppProvider() ?? "other", ios: isIOS() });

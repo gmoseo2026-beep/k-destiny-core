@@ -8,7 +8,7 @@ import { withCompatFromParam } from "@/lib/compatFromUrl";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
-import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
+import { blockPaymentIfInApp, handoffPaymentToChrome, takePayHandoff } from "@/lib/inAppBrowser";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, getProductCover, priceLabel, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
@@ -182,10 +182,33 @@ export default function CompatNewClient({
   const upsellSets = product && product.type !== "SET" ? setsContaining(product.id, visibleIds ?? []) : [];
 
   const openCheckoutFor = (id: string) => {
+    // 틱톡 앱(안드로이드)은 크롬으로 넘겨 거기서 결제창을 연다. 넘어가지 않았으면(크롬 없음 등) 잠시 뒤 여기서 연다
+    const handoffCompatId = teaserResult?.compatId ?? limitHit?.compatId;
+    if (handoffCompatId && handoffPaymentToChrome(id, { from: handoffCompatId })) {
+      window.setTimeout(() => {
+        if (document.visibilityState !== "visible") return;
+        setCheckoutId(id);
+        setCheckoutModalOpen(true);
+      }, 1800);
+      return;
+    }
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
     setCheckoutId(id);
     setCheckoutModalOpen(true);
   };
+
+  // 틱톡 앱에서 넘어온 크롬: 미리보기가 다시 뜨면 그때 누른 상품의 결제창을 바로 연다(한 번만)
+  const payHandoffRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (payHandoffRef.current === undefined) payHandoffRef.current = takePayHandoff();
+    const id = payHandoffRef.current;
+    if (!id || !getProduct(id) || !(teaserResult || limitHit)) return;
+    payHandoffRef.current = null;
+    queueMicrotask(() => {
+      setCheckoutId(id);
+      setCheckoutModalOpen(true);
+    });
+  }, [teaserResult, limitHit]);
   const handleOpenCheckout = () => {
     if (product) openCheckoutFor(product.id);
   };

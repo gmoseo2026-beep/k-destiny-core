@@ -70,3 +70,47 @@ describe("틱톡 앱 안 브라우저 인식(10-23 실제 UA)", () => {
     expect(m.clientEnvLabel()).toBe("browser:m");
   });
 });
+
+// 2026-10-27: 틱톡 앱(안드로이드) 결제는 크롬으로 넘겨 거기서 결제창을 다시 연다
+describe("틱톡 앱 결제 크롬 넘기기", () => {
+  const TIKTOK_ANDROID =
+    "Mozilla/5.0 (Linux; Android 14; SM-S928N Build/UP1A; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/129.0 Mobile Safari/537.36 trill_370504 BytedanceWebview/d8a21c6";
+  async function loadAt(ua: string, href: string) {
+    vi.resetModules();
+    const loc = { href };
+    const replaced: string[] = [];
+    vi.stubGlobal("navigator", { userAgent: ua });
+    vi.stubGlobal("document", { cookie: "" });
+    vi.stubGlobal("window", {
+      location: loc,
+      history: { state: null, replaceState: (_s: unknown, _t: string, url: string) => replaced.push(url) },
+      sessionStorage: { getItem: () => null, setItem: () => {} },
+    });
+    const m = await import("@/lib/inAppBrowser");
+    return { m, loc, replaced };
+  }
+
+  it("틱톡 안드로이드는 크롬 intent 로 넘기고, 주소에 pay·ho·from 을 싣는다", async () => {
+    const { m, loc } = await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/new?productId=inner_mind");
+    expect(m.handoffPaymentToChrome("inner_mind", { from: "cmabc" })).toBe(true);
+    expect(loc.href.startsWith("intent://kongdak.kr/ko/compat/new?")).toBe(true);
+    expect(loc.href).toContain("package=com.android.chrome");
+    expect(loc.href).toContain("pay=inner_mind");
+    expect(loc.href).toContain("ho=1");
+    expect(loc.href).toContain("from=cmabc");
+  });
+
+  it("이미 넘겨받은 화면(ho=1)이나 틱톡이 아니면 넘기지 않는다", async () => {
+    expect((await loadAt(TIKTOK_ANDROID, "https://kongdak.kr/ko/compat/x?ho=1")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
+    expect((await loadAt(CHROME, "https://kongdak.kr/ko/compat/x")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
+    expect((await loadAt(IG_IOS, "https://kongdak.kr/ko/compat/x")).m.handoffPaymentToChrome("compat_basic")).toBe(false);
+  });
+
+  it("넘겨받은 크롬은 pay 값을 한 번 꺼내고 주소에서 지운다(ho 는 남김)", async () => {
+    const { m, replaced } = await loadAt(CHROME, "https://kongdak.kr/ko/compat/new?productId=inner_mind&from=cmabc&pay=inner_mind&ho=1");
+    expect(m.takePayHandoff()).toBe("inner_mind");
+    expect(replaced[0]).toBe("/ko/compat/new?productId=inner_mind&from=cmabc&ho=1");
+    const plain = await loadAt(CHROME, "https://kongdak.kr/ko/compat/new?productId=inner_mind");
+    expect(plain.m.takePayHandoff()).toBeNull();
+  });
+});
