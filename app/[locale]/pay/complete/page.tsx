@@ -16,7 +16,7 @@ import { rememberOptIn } from "@/lib/marketingConsent";
 import { clearDeviceCoupon } from "@/lib/couponsClient";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
-import { isInAppBrowser, isIOS, getInAppProvider, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isIOS, getInAppProvider, isTikTokBlockedWebview, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -38,6 +38,13 @@ function PayCompleteContent() {
   // 앱 안 브라우저(틱톡·인스타 등)에서 결제가 실패·취소된 경우: 같은 곳에서 다시 해도 또 막히는 일이 잦아
   // (10-21 인스타 5번, 10-23 틱톡 6번 연속 실패) 크롬·사파리에서 이어서 결제하도록 먼저 안내한다.
   const [inApp] = useState(() => typeof window !== "undefined" && isInAppBrowser());
+  // 틱톡은 크롬 넘기기를 막는다(10-27). 대신 틱톡 안에서도 되는 간편결제로 바로 다시 시도하게 한다(10-28:
+  // 틱톡 안 카드가 "비정상적인 접근"으로 이틀 5번 중 3번 막힘, 카카오페이는 광고 브라우저에서 결제됨).
+  // 앱을 못 여는 틱톡 브라우저(wv)는 카카오페이도 막히므로 네이버페이(아이디 로그인)를 권한다.
+  const [tiktok] = useState<"ad" | "wv" | null>(() => {
+    if (typeof window === "undefined" || getInAppProvider() !== "tiktok") return null;
+    return isTikTokBlockedWebview() ? "wv" : "ad";
+  });
   const [showCopy, setShowCopy] = useState(false);
   const [retryCopied, setRetryCopied] = useState(false);
   // 이메일 없이 결제한 비회원(모바일): 결제가 끝난 뒤에 이메일을 선택으로 받는다
@@ -451,7 +458,31 @@ function PayCompleteContent() {
             </Link>
           )}
 
-          {status === "error" && inApp && (
+          {status === "error" && tiktok && retryHref && (
+            <>
+              <p className="text-xs text-text-2 leading-relaxed -mt-2 mb-1">
+                {tiktok === "wv"
+                  ? "틱톡 안에서는 카드·카카오페이가 막힐 때가 있어요. 네이버페이를 고르고 네이버 아이디로 로그인하면 바로 결제돼요."
+                  : "틱톡 안에서는 카드 결제가 막힐 때가 있어요. 카카오페이는 바로 결제돼요."}
+              </p>
+              <Link
+                href={retryHref}
+                onClick={() => trackEvent("payment_retry_click", { inapp: true, tiktok, suggest: tiktok === "wv" ? "naverpay" : "kakaopay" })}
+                className={
+                  tiktok === "wv"
+                    ? "w-full bg-[#03C75A] text-white py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.96] block text-center"
+                    : "w-full bg-[#FEE500] text-[#191919] py-3.5 rounded-2xl font-extrabold text-sm transition-all active:scale-[0.96] block text-center"
+                }
+              >
+                {tiktok === "wv" ? "네이버페이로 다시 결제하기" : "카카오페이로 다시 결제하기"}
+              </Link>
+              <p className="text-[11px] text-text-3 leading-relaxed">
+                그래도 안 되면 오른쪽 위 <b>⋯</b> → <b>브라우저에서 열기</b>를 눌러 {isIOS() ? "사파리" : "크롬"}에서 이어서 결제해 주세요.
+              </p>
+            </>
+          )}
+
+          {status === "error" && inApp && !(tiktok && retryHref) && (
             <>
               <p className="text-xs text-text-2 leading-relaxed -mt-2 mb-1">
                 앱 안에서는 카드·간편결제 앱으로 넘어가다 결제가 끊기는 경우가 있어요.
@@ -473,7 +504,7 @@ function PayCompleteContent() {
                 <div className="rounded-2xl bg-surface-soft border border-line p-4 text-left text-xs text-text-2 leading-relaxed">
                   <p>
                     화면 오른쪽 위 <b>···</b> 또는 공유 버튼 → <b>브라우저로 열기</b>를 눌러 주세요.
-                    메뉴가 없으면 아래 링크를 복사해 사파리 주소창에 붙여 넣으면 돼요.
+                    메뉴가 없으면 아래 링크를 복사해 {isIOS() ? "사파리" : "크롬"} 주소창에 붙여 넣으면 돼요.
                   </p>
                   <button
                     type="button"

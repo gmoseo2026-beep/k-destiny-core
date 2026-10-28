@@ -5,7 +5,7 @@ import KongdakMascot from "./KongdakMascot";
 import { trackEvent } from "@/lib/gtag";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { isInAppBrowser, isIOS, isTikTokBlockedWebview, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
+import { isInAppBrowser, isIOS, getInAppProvider, isTikTokBlockedWebview, openInExternalBrowser, externalBrowserUrl, clientEnvLabel } from "@/lib/inAppBrowser";
 import {
   recallPendingPayment,
   clearPendingPayment,
@@ -96,6 +96,8 @@ export default function GuestCheckoutModal({
   // 틱톡 앱(안드로이드) 중 카카오페이 앱 열기를 막는 브라우저(10-27 실기) → 결제창 맨 위에 [⋯ → 브라우저에서 열기] 안내.
   // 광고로 들어온 틱톡 브라우저는 앱 결제가 되므로 안내하지 않는다(겁주지 않기)
   const [tiktokGuide] = useState(() => isTikTokBlockedWebview());
+  // 광고로 들어온 틱톡 브라우저: 카카오페이는 되지만 카드(이니시스)는 "비정상적인 접근"으로 자주 막힌다(10-28 이틀 5번 중 3번)
+  const [tiktokAd] = useState(() => getInAppProvider() === "tiktok" && !isTikTokBlockedWebview());
   const [showCopy, setShowCopy] = useState(false);
   const [copied, setCopied] = useState(false);
   // KG이니시스는 모바일 결제에서 이름만 필수다(휴대폰·이메일은 PC 결제에서만 필수 — 포트원 V2 문서).
@@ -767,6 +769,12 @@ export default function GuestCheckoutModal({
               </span>
               {isLoading ? "결제창 연결 중..." : `네이버페이로 ${shownPrice} 결제`}
             </button>
+          )}
+
+          {tiktokAd && (
+            <p className="-mt-1 text-center text-[11px] font-semibold text-text-2">
+              틱톡 안에서는 카드보다 카카오페이가 잘 돼요
+            </p>
           )}
 
           {/* 2순위: 작은 보조 버튼 — 일반 결제창(카드·네이버페이·삼성페이) */}
