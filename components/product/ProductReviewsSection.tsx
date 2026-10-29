@@ -1,16 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Star } from "lucide-react";
 import type { PublicReviewItem } from "@/lib/couponsClient";
 import { getProduct, type CatalogItem } from "@/lib/catalog";
 import { ListRowCard } from "@/components/cards/KongdakCards";
+import { trackEvent } from "@/lib/gtag";
 
 /** 후기 기능을 연 날(2026-10-25). 홈 후기 제목 아래 안내에 쓴다. */
 const REVIEWS_SINCE_LABEL = "2026년 10월 25일";
 
 /** 후기 작성자는 별점과 관계없이 1,000원 쿠폰을 받는다 — 경제적 이해관계 표시(2026-10-29) */
-const REVIEW_INCENTIVE_NOTE = "후기를 쓴 구매자에게는 별점과 관계없이 1,000원 쿠폰을 드려요";
+export const REVIEW_INCENTIVE_NOTE = "후기를 쓴 구매자에게는 별점과 관계없이 1,000원 쿠폰을 드려요";
 
 /** 후기 작성일을 한국 시간 "10월 25일"로 */
 function reviewDateLabel(iso: string): string {
@@ -25,6 +26,8 @@ function purchaseBadge(count: number): string {
 
 interface ProductReviewsSectionProps {
   reviews?: PublicReviewItem[];
+  fallbackReviews?: PublicReviewItem[];
+  productId?: string;
   variant?: "detail" | "checkout" | "home";
   catalogById?: Record<string, CatalogItem>;
 }
@@ -33,41 +36,72 @@ interface ProductReviewsSectionProps {
  * [P-016-4 / P-017] 실제 열람 구매자 후기 노출 (displayOk=true 만).
  * - 별점, 띠 이모지, 같은 사람 실제 누적 구매 수로 "N번째 구매" 배지 표시.
  * - 후기가 0개면 영역 자체를 숨긴다(가짜 후기·숫자 금지).
+ * - variant === "checkout" 에서 해당 상품 후기가 0개일 때 같은 대상(커플/개인)의 실제 최근 후기 최대 2개를 "다른 리포트 구매자 후기"로 보여 준다.
  * - variant === "home" 일 때는 각 후기 아래에 해당 상품의 ListRowCard 를 함께 보여 준다.
  */
 export default function ProductReviewsSection({
   reviews = [],
+  fallbackReviews = [],
+  productId,
   variant = "detail",
   catalogById,
 }: ProductReviewsSectionProps) {
-  if (!reviews || reviews.length === 0) return null;
+  const isCheckoutFallback =
+    variant === "checkout" &&
+    (!reviews || reviews.length === 0) &&
+    Boolean(fallbackReviews && fallbackReviews.length > 0);
+
+  const activeReviews = isCheckoutFallback ? fallbackReviews : reviews;
+  const trackedFallbackKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isCheckoutFallback) return;
+    const key = `${productId ?? ""}:${fallbackReviews.map((r) => r.id).join(",")}`;
+    if (trackedFallbackKeyRef.current === key) return;
+    trackedFallbackKeyRef.current = key;
+    trackEvent("checkout_reviews_fallback_view", {
+      productId: productId ?? "unknown",
+      count: Math.min(2, fallbackReviews.length),
+    });
+  }, [isCheckoutFallback, productId, fallbackReviews]);
+
+  if (!activeReviews || activeReviews.length === 0) return null;
 
   if (variant === "checkout") {
     return (
       <div className="mb-4 rounded-2xl border border-white/[0.08] bg-[#140B18]/80 p-3 text-left">
         <p className="mb-2 text-[11px] font-extrabold text-[#B9A9BF]">
-          실제 구매자 후기 ({reviews.length})
+          {isCheckoutFallback ? "다른 리포트 구매자 후기" : `실제 구매자 후기 (${reviews.length})`}
           <span className="ml-1 font-medium">· {REVIEW_INCENTIVE_NOTE}</span>
         </p>
         <div className="flex flex-col gap-2">
-          {reviews.slice(0, 2).map((r) => (
-            <div key={r.id} className="rounded-xl bg-[#22142A] p-2.5 border border-white/[0.08]">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-xs" aria-hidden="true">{r.zodiacEmoji}</span>
-                  <span className="text-[11px] font-bold text-[#F6EEF3] truncate">{r.zodiacLabel}</span>
-                  <span className="rounded-full bg-[#FF5C77]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#FF5C77] shrink-0">
-                    {purchaseBadge(r.purchaseCount)}
+          {activeReviews.slice(0, 2).map((r) => {
+            const reviewedProductName =
+              (catalogById?.[r.catalogId] ?? getProduct(r.catalogId))?.name ?? null;
+            return (
+              <div key={r.id} className="rounded-xl bg-[#22142A] p-2.5 border border-white/[0.08]">
+                {isCheckoutFallback && reviewedProductName && (
+                  <p className="mb-1 text-[10px] font-bold text-[#FFC24B] truncate">
+                    {reviewedProductName}
+                  </p>
+                )}
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs" aria-hidden="true">{r.zodiacEmoji}</span>
+                    <span className="text-[11px] font-bold text-[#F6EEF3] truncate">{r.zodiacLabel}</span>
+                    <span className="rounded-full bg-[#FF5C77]/15 px-1.5 py-0.5 text-[10px] font-extrabold text-[#FF5C77] shrink-0">
+                      {purchaseBadge(r.purchaseCount)}
+                    </span>
+                  </div>
+                  <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#FFC24B] shrink-0">
+                    <Star className="w-3 h-3 fill-[#FFC24B] text-[#FFC24B]" />
+                    {r.rating}.0
                   </span>
                 </div>
-                <span className="flex items-center gap-0.5 text-[11px] font-bold text-[#FFC24B] shrink-0">
-                  <Star className="w-3 h-3 fill-[#FFC24B] text-[#FFC24B]" />
-                  {r.rating}.0
-                </span>
+                <p className="text-xs text-[#B9A9BF] leading-snug line-clamp-2">{r.text}</p>
               </div>
-              <p className="text-xs text-[#B9A9BF] leading-snug line-clamp-2">{r.text}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

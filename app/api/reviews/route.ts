@@ -8,6 +8,7 @@ import {
   COUPON_TTL_DAYS,
   couponOwnerKeyForOrder,
   generateCouponCode,
+  getFallbackPublicReviewsForTarget,
   getPublicReviewsForCatalog,
   validateReviewInput,
 } from "@/lib/reviews";
@@ -42,7 +43,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (catalogId) {
+      const wantFallback = searchParams.get("fallback") === "1";
       const reviews = await getPublicReviewsForCatalog(catalogId, 6);
+      if (wantFallback) {
+        const fallbackReviews =
+          reviews.length === 0 ? await getFallbackPublicReviewsForTarget(catalogId, 2) : [];
+        return NextResponse.json({ reviews, fallbackReviews }, { headers: NO_STORE });
+      }
       return NextResponse.json({ reviews }, { headers: NO_STORE });
     }
 

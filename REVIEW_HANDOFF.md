@@ -1,5 +1,6 @@
 # REVIEW_HANDOFF — Argon 01 (`argon/01-account-delete`: 셀프 회원 탈퇴)
 # REVIEW_HANDOFF — Argon 02. 신년 시즌 전환 (`argon/02-season-2027`)
+# REVIEW_HANDOFF — Argon 03. 결제창 후기 보강 (`argon/03-checkout-review-fallback`)
 
 > **작성 일시**: 2026-10-29
 > **기반 브랜치**: `origin/main` (`c963b6e`)
@@ -45,6 +46,23 @@
   - `app/[locale]/page.tsx`가 `revalidate = 60` ISR 캐시를 쓰므로 KST 11월 1일 00:00 정각 직후 최대 60초 동안 직전 캐시가 보일 수 있으나, 첫 재검증 요청 이후 즉시 `home:ranking:2027` 키와 새 `now`로 일관되게 전환됩니다.
 - **클로드에게 필요한 것**:
   - **11/1 0시 전 머지·배포 필수** (`argon/02-season-2027`). 법률 문구·환경변수 추가 사항 없음.
+- **바뀐 파일**:
+  - `lib/reviews.ts`: 결제창 대상 상품의 직접 공개 후기가 0개일 때, 같은 `target`(`"couple"`이면 커플 상품만, `"individual"`이면 개인 상품만) 다른 상품의 실제 공개 후기(`displayOk: true`)를 최근순 최대 2개 조회하는 `getFallbackPublicReviewsForTarget` 추가(기존 후기 농축 로직 `enrichPublicReviewRows` 공통화)
+  - `app/api/reviews/route.ts`: `GET /api/reviews?catalogId=…&fallback=1` 요청 시 직접 후기가 0개면 `fallbackReviews`(최대 2개)를 함께 반환하도록 추가(`fallback=1` 미지정 시 기존 `{ reviews }` 응답 그대로 유지)
+  - `components/product/ProductReviewsSection.tsx`: `variant="checkout"`에서 직접 후기가 0개이고 `fallbackReviews`가 있을 때 제목을 `"다른 리포트 구매자 후기"`로 표시하고 각 후기마다 해당 후기의 실제 상품명을 함께 노출, `REVIEW_INCENTIVE_NOTE`(쿠폰 지급 고지) 원문 보존, 노출 시 `checkout_reviews_fallback_view` GA4 이벤트 1회 발사
+  - `components/GuestCheckoutModal.tsx`: 결제창 오픈/옵션 전환 시 `&fallback=1`로 조회해 `fallbackReviews`와 `productId`를 `ProductReviewsSection`에 전달
+  - `tests/reviewsAndCoupons.test.ts`: 커플/개인 `target` 격리 조회(최대 2건) 및 결제창 폴백 마크업(`"다른 리포트 구매자 후기"`, 상품명, `REVIEW_INCENTIVE_NOTE` 보존) 단위 테스트 2건 추가
+- **테스트 결과(통과 수)**:
+  - `npx tsc --noEmit`: 0 errors
+  - `npx eslint <바뀐 파일>`: 0 errors
+  - `npx vitest run`: 77 files passed, 583 tests passed (42 skipped)
+  - `npm run build`: exit 0
+- **직접 화면에서 확인한 것**:
+  - 직접 후기가 있는 상품은 기존 `"실제 구매자 후기 (N) · 후기를 쓴 구매자에게는 별점과 관계없이 1,000원 쿠폰을 드려요"`로 나오고, 직접 후기가 0개인 커플/개인 상품은 `"다른 리포트 구매자 후기 · 후기를 쓴 구매자에게는 별점과 관계없이 1,000원 쿠폰을 드려요"` 아래에 각 후기의 상품명(`그 사람의 속마음`, `재회운` 등)과 함께 최대 2개까지만 렌더링됨을 확인함(같은 대상 후기마저 0개면 영역 숨김 유지).
+- **스스로 의심하는 점**:
+  - 결제창 안에서 사용자가 단품↔세트 라디오 옵션을 바꿀 때도 `targetCatalogId`가 바뀌며 다시 조회하므로, `trackedFallbackKeyRef` 키를 `productId + reviewIds`로 두어 옵션 변경으로 새 폴백이 뜰 때만 중복 없이 이벤트가 발사되도록 처리했습니다.
+- **클로드에게 필요한 것**:
+  - 없음 (기존 공정위 경제적 이해관계 표시 문구 `REVIEW_INCENTIVE_NOTE` 그대로 유지).
 
 ---
 

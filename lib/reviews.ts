@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { getProduct } from "@/lib/catalog";
+import { CATALOG, getProduct } from "@/lib/catalog";
 import { ZODIAC, zodiacOfYear } from "@/lib/seo/zodiac";
 import type { PublicReviewItem } from "@/lib/couponsClient";
 
@@ -182,6 +182,109 @@ export async function findUsableCoupon(opts: {
   }
 }
 
+interface RawReviewRow {
+  id: string;
+  orderId: string;
+  catalogId: string;
+  rating: number;
+  text: string;
+  createdAt: Date;
+}
+
+async function enrichPublicReviewRows(rows: RawReviewRow[]): Promise<PublicReviewItem[]> {
+  if (rows.length === 0) return [];
+
+  const orderIds = [...new Set(rows.map((r) => r.orderId))];
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    select: {
+      id: true,
+      orderId: true,
+      userId: true,
+      email: true,
+      compatId: true,
+    },
+  });
+  const orderMap = new Map(orders.map((o) => [o.id, o]));
+
+  const compatIds = [...new Set(orders.map((o) => o.compatId).filter((v): v is string => Boolean(v)))];
+  const userIds = [...new Set(orders.map((o) => o.userId).filter((v): v is string => Boolean(v)))];
+
+  const [compats, profiles] = await Promise.all([
+    compatIds.length > 0
+      ? prisma.compatibility.findMany({
+          where: { id: { in: compatIds } },
+          select: { id: true, personA: true },
+        })
+      : Promise.resolve([]),
+    userIds.length > 0
+      ? prisma.userSajuProfile.findMany({
+          where: { userId: { in: userIds } },
+          select: { userId: true, birthYear: true, fourPillars: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const compatMap = new Map(compats.map((c) => [c.id, c]));
+  const profileMap = new Map(profiles.map((p) => [p.userId, p]));
+
+  // 같은 사람의 실제 누적 PAID 주문 수 계산
+  const paidOrdersForUsers =
+    userIds.length > 0
+      ? await prisma.order.findMany({
+          where: { userId: { in: userIds }, status: "PAID" },
+          select: { userId: true },
+        })
+      : [];
+  const userPaidCount = new Map<string, number>();
+  for (const o of paidOrdersForUsers) {
+    if (o.userId) userPaidCount.set(o.userId, (userPaidCount.get(o.userId) ?? 0) + 1);
+  }
+
+  const paidOrdersForCompats =
+    compatIds.length > 0
+      ? await prisma.order.findMany({
+          where: { compatId: { in: compatIds }, status: "PAID" },
+          select: { compatId: true },
+        })
+      : [];
+  const compatPaidCount = new Map<string, number>();
+  for (const o of paidOrdersForCompats) {
+    if (o.compatId) compatPaidCount.set(o.compatId, (compatPaidCount.get(o.compatId) ?? 0) + 1);
+  }
+
+  return rows.map((r) => {
+    const ord = orderMap.get(r.orderId);
+    const compat = ord?.compatId ? compatMap.get(ord.compatId) : undefined;
+    const profile = ord?.userId ? profileMap.get(ord.userId) : undefined;
+
+    const personA = (compat?.personA ?? null) as { fourPillars?: { year?: string } } | null;
+    const profilePillars = (profile?.fourPillars ?? null) as { year?: string } | null;
+    const yearPillar = personA?.fourPillars?.year || profilePillars?.year || null;
+    const birthYear = profile?.birthYear || null;
+
+    const zodiac = deriveZodiacBadge({ yearPillar, birthYear });
+
+    let purchaseCount = 1;
+    if (ord?.userId && userPaidCount.has(ord.userId)) {
+      purchaseCount = Math.max(1, userPaidCount.get(ord.userId)!);
+    } else if (ord?.compatId && compatPaidCount.has(ord.compatId)) {
+      purchaseCount = Math.max(1, compatPaidCount.get(ord.compatId)!);
+    }
+
+    return {
+      id: r.id,
+      catalogId: r.catalogId,
+      rating: r.rating,
+      text: r.text,
+      zodiacEmoji: zodiac.emoji,
+      zodiacLabel: zodiac.label,
+      purchaseCount,
+      createdAt: r.createdAt.toISOString(),
+    };
+  });
+}
+
 /**
  * 상품 상세 · 결제 창에 노출할 실제 구매자 후기(displayOk=true) 목록 조회.
  * - 별점, 띠 이모지, 같은 사람의 실제 누적 구매 수("N번째 구매" 배지)를 계산해 반환.
@@ -207,97 +310,45 @@ export async function getPublicReviewsForCatalog(
       take: limit,
     });
 
-    if (rows.length === 0) return [];
+    return await enrichPublicReviewRows(rows);
+  } catch {
+    return [];
+  }
+}
 
-    const orderIds = [...new Set(rows.map((r) => r.orderId))];
-    const orders = await prisma.order.findMany({
-      where: { id: { in: orderIds } },
-      select: {
-        id: true,
-        orderId: true,
-        userId: true,
-        email: true,
-        compatId: true,
+/**
+ * 결제창에서 해당 상품의 직접 후기가 0개일 때,
+ * 같은 대상(target: "couple" | "individual") 다른 상품의 최근 실제 공개 후기를 최대 limit(기본 2)개 조회한다.
+ */
+export async function getFallbackPublicReviewsForTarget(
+  catalogId: string,
+  limit: number = 2,
+): Promise<PublicReviewItem[]> {
+  try {
+    const product = getProduct(catalogId);
+    if (!product) return [];
+
+    const ownIds = new Set(
+      product.type === "SET" && product.items?.length
+        ? [catalogId, ...product.items]
+        : [catalogId],
+    );
+    const sameTargetCatalogIds = CATALOG.filter(
+      (item) => item.target === product.target && !ownIds.has(item.id),
+    ).map((item) => item.id);
+
+    if (sameTargetCatalogIds.length === 0) return [];
+
+    const rows = await prisma.review.findMany({
+      where: {
+        catalogId: { in: sameTargetCatalogIds },
+        displayOk: true,
       },
+      orderBy: { createdAt: "desc" },
+      take: limit,
     });
-    const orderMap = new Map(orders.map((o) => [o.id, o]));
 
-    const compatIds = [...new Set(orders.map((o) => o.compatId).filter((v): v is string => Boolean(v)))];
-    const userIds = [...new Set(orders.map((o) => o.userId).filter((v): v is string => Boolean(v)))];
-
-    const [compats, profiles] = await Promise.all([
-      compatIds.length > 0
-        ? prisma.compatibility.findMany({
-            where: { id: { in: compatIds } },
-            select: { id: true, personA: true },
-          })
-        : Promise.resolve([]),
-      userIds.length > 0
-        ? prisma.userSajuProfile.findMany({
-            where: { userId: { in: userIds } },
-            select: { userId: true, birthYear: true, fourPillars: true },
-          })
-        : Promise.resolve([]),
-    ]);
-
-    const compatMap = new Map(compats.map((c) => [c.id, c]));
-    const profileMap = new Map(profiles.map((p) => [p.userId, p]));
-
-    // 같은 사람의 실제 누적 PAID 주문 수 계산
-    const paidOrdersForUsers =
-      userIds.length > 0
-        ? await prisma.order.findMany({
-            where: { userId: { in: userIds }, status: "PAID" },
-            select: { userId: true },
-          })
-        : [];
-    const userPaidCount = new Map<string, number>();
-    for (const o of paidOrdersForUsers) {
-      if (o.userId) userPaidCount.set(o.userId, (userPaidCount.get(o.userId) ?? 0) + 1);
-    }
-
-    const paidOrdersForCompats =
-      compatIds.length > 0
-        ? await prisma.order.findMany({
-            where: { compatId: { in: compatIds }, status: "PAID" },
-            select: { compatId: true },
-          })
-        : [];
-    const compatPaidCount = new Map<string, number>();
-    for (const o of paidOrdersForCompats) {
-      if (o.compatId) compatPaidCount.set(o.compatId, (compatPaidCount.get(o.compatId) ?? 0) + 1);
-    }
-
-    return rows.map((r) => {
-      const ord = orderMap.get(r.orderId);
-      const compat = ord?.compatId ? compatMap.get(ord.compatId) : undefined;
-      const profile = ord?.userId ? profileMap.get(ord.userId) : undefined;
-
-      const personA = (compat?.personA ?? null) as { fourPillars?: { year?: string } } | null;
-      const profilePillars = (profile?.fourPillars ?? null) as { year?: string } | null;
-      const yearPillar = personA?.fourPillars?.year || profilePillars?.year || null;
-      const birthYear = profile?.birthYear || null;
-
-      const zodiac = deriveZodiacBadge({ yearPillar, birthYear });
-
-      let purchaseCount = 1;
-      if (ord?.userId && userPaidCount.has(ord.userId)) {
-        purchaseCount = Math.max(1, userPaidCount.get(ord.userId)!);
-      } else if (ord?.compatId && compatPaidCount.has(ord.compatId)) {
-        purchaseCount = Math.max(1, compatPaidCount.get(ord.compatId)!);
-      }
-
-      return {
-        id: r.id,
-        catalogId: r.catalogId,
-        rating: r.rating,
-        text: r.text,
-        zodiacEmoji: zodiac.emoji,
-        zodiacLabel: zodiac.label,
-        purchaseCount,
-        createdAt: r.createdAt.toISOString(),
-      };
-    });
+    return await enrichPublicReviewRows(rows);
   } catch {
     return [];
   }
