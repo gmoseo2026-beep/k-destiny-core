@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSessionOrThrow } from "@/lib/adminAuth";
 import prisma from "@/lib/prisma";
-
-function maskEmail(email: string | null): string {
-  if (!email) return "—";
-  const parts = email.split("@");
-  if (parts.length !== 2) return "***";
-  const [user, domain] = parts;
-  const maskedUser = user.length > 2 ? `${user.slice(0, 2)}***` : `${user}***`;
-  return `${maskedUser}@${domain}`;
-}
+import { executeUserDeletion } from "@/lib/accountDeletion";
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,67 +56,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. 전자상거래법 보관 대상(Order) 카운트 파악 (감사로그용)
-    const ordersKept = await prisma.order.count({
-      where: { userId },
-    });
-
-    // 4. 트랜잭션 실행
-    // - Unlock.userId, Compatibility.userId는 관계(FK)가 없으므로 수동 null 처리하여 orphan 방지
-    // - User 삭제 시 UserSajuProfile(PII), Account(소셜), Session, Subscription 등은 Cascade 삭제
-    // - Order는 schema의 onDelete: SetNull에 의해 userId=null로 영구 보존
-    //
-    // [SECURITY / M-11] 감사로그를 같은 트랜잭션 안에서 먼저 쓴다.
-    // 이전에는 logAdminAction 이 트랜잭션 밖에 있었고 내부에서 예외를 삼켰기 때문에,
-    // "영구 삭제는 성공했는데 감사 기록만 사라지는" 조합이 가능했다.
-    // 개인정보 파기 이력은 PIPA 대응상 필수 기록이므로 로그 실패 시 삭제도 롤백되어야 한다.
-    await prisma.$transaction(async (tx) => {
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: admin.id,
-          action: "USER_DELETE",
-          targetType: "USER",
-          targetId: userId,
-          detail: {
-            reason: reason.trim(),
-            emailMasked: maskEmail(targetUser.email),
-            userName: targetUser.name,
-            ordersKept,
-          },
-        },
-      });
-
-      // [SECURITY / M-12] 살아 있는 claim 토큰을 소각한다.
-      //
-      // Order.userId 는 onDelete: SetNull 로 null 이 되는데 claimToken 은 그대로 남아 있었다.
-      // 결과적으로 탈퇴가 "유효 토큰을 가진 미귀속 게스트 주문"을 새로 만들어내 재귀속 표적이 됐다.
-      // Cascade 로 userId 가 null 이 된 뒤에는 where:{userId} 가 매칭되지 않으므로 반드시 delete 앞에서 수행한다.
-      await tx.order.updateMany({
-        where: { userId },
-        data: { claimToken: null, claimTokenExpiresAt: null },
-      });
-
-      // Unlock.email 은 법정 보존 대상이 아니다(거래기록은 Order 가 보존한다) → 함께 파기.
-      await tx.unlock.updateMany({
-        where: { userId },
-        data: { userId: null, email: null },
-      });
-
-      await tx.compatibility.updateMany({
-        where: { userId },
-        data: { userId: null },
-      });
-
-      // [SECURITY / L-3] TelegramAccount.userId 에는 FK 가 없어 Cascade 가 걸리지 않는다.
-      // 그대로 두면 삭제된 userId 를 가리키는 연결 정보가 남는다(파기 누락).
-      await tx.telegramAccount.updateMany({
-        where: { userId },
-        data: { userId: null },
-      });
-
-      await tx.user.delete({
-        where: { id: userId },
-      });
+    // 3. 공용 트랜잭션으로 영구 삭제 및 개인정보 파기 실행 (Order는 onDelete: SetNull로 보존)
+    const { ordersKept } = await executeUserDeletion({
+      targetUserId: userId,
+      actorUserId: admin.id,
+      action: "USER_DELETE",
+      reason,
+      targetEmail: targetUser.email,
+      targetName: targetUser.name,
     });
 
     return NextResponse.json({

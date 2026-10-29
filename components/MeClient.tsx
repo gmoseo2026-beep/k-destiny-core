@@ -4,6 +4,7 @@ import OwnedReportNotice from "@/components/OwnedReportNotice";
 import ResumeCard from "@/components/member/ResumeCard";
 import MarketingConsentToggle from "@/components/member/MarketingConsentToggle";
 import DailyFortuneCard from "@/components/member/DailyFortuneCard";
+import AccountDeleteSection from "@/components/member/AccountDeleteSection";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -481,6 +482,9 @@ export default function MeClient({ locale }: MeClientProps) {
       >
         <span>전체 운세·궁합 둘러보기 ✨</span>
       </Link>
+
+      {/* 회원 셀프 탈퇴 */}
+      <AccountDeleteSection locale={locale} />
     </div>
   );
 }
