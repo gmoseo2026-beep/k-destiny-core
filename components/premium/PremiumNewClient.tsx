@@ -9,7 +9,8 @@ import { ChevronLeft, Sparkles, AlertCircle, Plus, X, Lock } from "lucide-react"
 import type { CatalogItem } from "@/lib/catalog";
 import { priceLabel } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
-import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
+import BirthFields, { BirthValues, parseBirthInput, resolveBirthValuesToSolar } from "@/components/forms/BirthFields";
+import { savePersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
@@ -255,16 +256,27 @@ export function PremiumNewClient({
   const [teaser2027, setTeaser2027] = useState<Daeun2027Teaser | null>(null);
   const [teaserNaming, setTeaserNaming] = useState<NamingTeaser | null>(null);
   const [teaserDates, setTeaserDates] = useState<DateSelectionTeaser | null>(null);
+  const [lunarNotices, setLunarNotices] = useState<string[]>([]);
 
-  // Payload builder
-  const getFormattedPayload = (): unknown | null => {
+  // Payload builder (음력일 때 양력으로 변환하고 없는 윤달·날짜는 에러를 돌려준다)
+  const resolveFormattedPayload = async (): Promise<
+    { ok: true; payload: unknown } | { ok: false; error: string }
+  > => {
     if (is2027) {
-      if (!personValues.year || !personValues.month || !personValues.day) return null;
-      return formatBirthInput(personValues);
+      if (!personValues.year || !personValues.month || !personValues.day) {
+        return { ok: false, error: "필수 항목을 모두 입력해 주세요." };
+      }
+      const res = await resolveBirthValuesToSolar(personValues);
+      if (!res.ok) return res;
+      savePersonLunarNotice(res.notice, product.id);
+      setLunarNotices(res.notice ? [res.notice] : []);
+      return { ok: true, payload: res.formatted };
     }
     if (isNaming) {
-      if (!guardianConsent) return null;
-      if (!surname || !surnameHanja || !namingDobYear || !namingDobMonth || !namingDobDay) return null;
+      if (!guardianConsent) return { ok: false, error: "법정대리인 동의가 필요합니다." };
+      if (!surname || !surnameHanja || !namingDobYear || !namingDobMonth || !namingDobDay) {
+        return { ok: false, error: "필수 항목을 모두 입력해 주세요." };
+      }
       const mStr = namingDobMonth.padStart(2, "0");
       const dStr = namingDobDay.padStart(2, "0");
       const dob = `${namingDobYear}-${mStr}-${dStr}`;
@@ -284,40 +296,70 @@ export function PremiumNewClient({
         : null;
 
       return {
-        surnameHangul: surname.trim(),
-        surnameHanja: surnameHanja.trim(),
-        gender: namingGender,
-        dob,
-        time,
-        dollim,
-        tags: selectedTags,
-        avoidSyllables,
-        guardianConsent: true,
+        ok: true,
+        payload: {
+          surnameHangul: surname.trim(),
+          surnameHanja: surnameHanja.trim(),
+          gender: namingGender,
+          dob,
+          time,
+          dollim,
+          tags: selectedTags,
+          avoidSyllables,
+          guardianConsent: true,
+        },
       };
     }
     if (isDates) {
-      return buildDateSelectionPayload({
+      if (!datePerson1.year || !datePerson1.month || !datePerson1.day) {
+        return { ok: false, error: "필수 항목을 모두 입력해 주세요." };
+      }
+      const res1 = await resolveBirthValuesToSolar(datePerson1);
+      if (!res1.ok) return res1;
+
+      const notices: string[] = [];
+      if (res1.notice) notices.push(res1.notice);
+
+      let solarPerson2 = datePerson2;
+      if (purpose === "WEDDING" || includePerson2) {
+        if (!datePerson2.year || !datePerson2.month || !datePerson2.day) {
+          return { ok: false, error: "필수 항목을 모두 입력해 주세요." };
+        }
+        const res2 = await resolveBirthValuesToSolar(datePerson2);
+        if (!res2.ok) return res2;
+        solarPerson2 = res2.solarValues;
+        if (res2.notice) notices.push(res2.notice);
+      }
+      savePersonLunarNotice(notices[0] ?? null, product.id);
+      setLunarNotices(notices);
+
+      const built = buildDateSelectionPayload({
         purpose,
         start: startDate,
         end: endDate,
-        person1: datePerson1,
-        person2: datePerson2,
+        person1: res1.solarValues,
+        person2: solarPerson2,
         includePerson2,
         weekdays: selectedWeekdays,
         excludeDates,
         today,
       });
+      if (!built) {
+        return { ok: false, error: "기간과 입력 정보를 다시 확인해 주세요." };
+      }
+      return { ok: true, payload: built };
     }
-    return null;
+    return { ok: false, error: "입력 정보를 확인해 주세요." };
   };
 
   const handleComputeTeaser = async () => {
-    const payload = getFormattedPayload();
-    if (!payload) {
-      setTeaserError("필수 항목을 모두 입력해 주세요.");
+    setTeaserError(null);
+    const resolved = await resolveFormattedPayload();
+    if (!resolved.ok) {
+      setTeaserError(resolved.error);
       return;
     }
-    setTeaserError(null);
+    const payload = resolved.payload;
     setIsLoadingTeaser(true);
 
     try {
@@ -364,12 +406,13 @@ export function PremiumNewClient({
 
   const consentMissing = isNaming && !guardianConsent;
 
-  const handleOpenCheckout = () => {
-    if (blockPaymentIfInApp(() => setInAppOpen(true), () => handleOpenCheckout())) return;
+  const handleOpenCheckout = async () => {
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => { void handleOpenCheckout(); })) return;
 
-    const payload = getFormattedPayload();
-    if (!payload) {
-      alert("입력 정보를 완성한 후 다시 시도해 주세요.");
+    const resolved = await resolveFormattedPayload();
+    if (!resolved.ok) {
+      setTeaserError(resolved.error);
+      alert(resolved.error);
       return;
     }
 
@@ -380,7 +423,7 @@ export function PremiumNewClient({
     }
 
     // 비회원도 바로 결제한다(2026-10-03). 열람 증명은 주문번호 토큰, 계정 보관은 결제 완료 화면에서 권한다.
-    savePendingInput(product.id, payload);
+    savePendingInput(product.id, resolved.payload);
     setCheckoutModalOpen(true);
   };
 
@@ -934,6 +977,13 @@ export function PremiumNewClient({
               기운 분석 결과 · 맛보기
             </h3>
           </div>
+          {lunarNotices.length > 0 && (
+            <div className="mb-3 flex flex-col gap-0.5 text-xs text-[#F3E3BF]/85">
+              {lunarNotices.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          )}
 
           {/* 2027 Teaser */}
           {teaser2027 && (
@@ -1048,8 +1098,11 @@ export function PremiumNewClient({
         onSubmit={async (buyer: BuyerInfo) => {
           try {
             setIsProcessingPayment(true);
-            const payload = getFormattedPayload();
-            savePendingInput(product.id, payload);
+            const resolved = await resolveFormattedPayload();
+            if (!resolved.ok) {
+              throw new Error(resolved.error);
+            }
+            savePendingInput(product.id, resolved.payload);
 
             const res = await requestPortOnePayment({
               productId: product.id,

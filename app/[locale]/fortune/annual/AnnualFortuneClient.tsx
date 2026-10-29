@@ -7,8 +7,10 @@ import FortuneLoading from "@/components/FortuneLoading";
 import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo, recallOrderToken } from "@/lib/payments/client";
 import { grantingCatalogIds } from "@/lib/productIdentity";
-import { loadLastPerson } from "@/lib/reportHandoff";
+import { loadLastPerson, saveLastPerson } from "@/lib/reportHandoff";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
+import { CalendarTypeToggle, resolveRawDateToSolar } from "@/components/forms/BirthFields";
+import { savePersonLunarNotice, loadPersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
@@ -188,6 +190,15 @@ export default function AnnualFortuneClient({
   const [ampm, setAmpm] = useState("");
   const [hour, setHour] = useState("1");
   const [min, setMin] = useState("0");
+  const [isLunar, setIsLunar] = useState(false);
+  const [isLeapMonth, setIsLeapMonth] = useState(false);
+  const [lunarNotice, setLunarNotice] = useState<string | null>(null);
+  const [resolvedSolar, setResolvedSolar] = useState<{
+    dob: string;
+    year: string;
+    month: string;
+    day: string;
+  } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   // 결제한 비회원 안내: "paid" = 결제 확인됨(생년월일만 넣으면 전체가 열림), "gone" = 환불·만료된 결제
   const [paidNotice, setPaidNotice] = useState<"paid" | "gone" | null>(null);
@@ -200,7 +211,8 @@ export default function AnnualFortuneClient({
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const getDaysInMonth = (y: string, m: string) => {
+  const getDaysInMonth = (y: string, m: string, lunar = false) => {
+    if (lunar) return 30;
     if (!y || !m) return 31;
     return new Date(parseInt(y), parseInt(m), 0).getDate();
   };
@@ -210,6 +222,10 @@ export default function AnnualFortuneClient({
   // Restore guest input from sessionStorage if available
   useEffect(() => {
     try {
+      const existingNotice = loadPersonLunarNotice(`annual_${year}`);
+      if (existingNotice) {
+        queueMicrotask(() => setLunarNotice(existingNotice));
+      }
       const stored = sessionStorage.getItem("kongdak_guest_fortune_input");
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -233,7 +249,7 @@ export default function AnnualFortuneClient({
     } catch {
       // ignore
     }
-  }, []);
+  }, [year]);
 
   // Autofocus year select on mount for instant interaction
   useEffect(() => {
@@ -260,9 +276,10 @@ export default function AnnualFortuneClient({
       try {
         const guestInput = {
           name,
-          birthYear,
-          birthMonth: month,
-          birthDay: day,
+          birthYear: resolvedSolar?.year || birthYear,
+          birthMonth: resolvedSolar?.month || month,
+          birthDay: resolvedSolar?.day || day,
+          dob: resolvedSolar?.dob || undefined,
           gender,
           ampm,
           hour,
@@ -319,7 +336,7 @@ export default function AnnualFortuneClient({
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   // 결제를 마치고 돌아온 비회원: 이 기기의 결제 증명 + 입력값으로 바로 전체 총운을 연다
   const guestAutoRef = React.useRef(false);
@@ -359,7 +376,7 @@ export default function AnnualFortuneClient({
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   useEffect(() => {
     if (initialHasProfile) {
@@ -392,7 +409,20 @@ export default function AnnualFortuneClient({
     setError(null);
 
     try {
-      const dob = `${birthYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      const resolved = await resolveRawDateToSolar({
+        year: birthYear,
+        month,
+        day,
+        isLunar,
+        isLeapMonth,
+      });
+      if (!resolved.ok) {
+        setFormError(resolved.error);
+        setLoading(false);
+        return;
+      }
+
+      const dob = resolved.solarDob;
       let finalTime: string | null = null;
       if (ampm) {
         let h = parseInt(hour, 10);
@@ -401,13 +431,28 @@ export default function AnnualFortuneClient({
         finalTime = `${h.toString().padStart(2, "0")}:${min.padStart(2, "0")}`;
       }
 
-      // Save input in sessionStorage for convenience
+      setLunarNotice(resolved.notice);
+      setResolvedSolar({
+        dob,
+        year: String(resolved.solarYear),
+        month: String(resolved.solarMonth),
+        day: String(resolved.solarDay),
+      });
+      savePersonLunarNotice(resolved.notice, `annual_${year}`);
+      saveLastPerson({
+        name: name.trim() || "나",
+        dob,
+        time: finalTime,
+        gender,
+      });
+
+      // Save input in sessionStorage for convenience (always converted solar)
       try {
         sessionStorage.setItem("kongdak_guest_fortune_input", JSON.stringify({
           name: name.trim(),
-          birthYear,
-          birthMonth: month,
-          birthDay: day,
+          birthYear: String(resolved.solarYear),
+          birthMonth: String(resolved.solarMonth),
+          birthDay: String(resolved.solarDay),
           gender,
           ampm,
           hour,
@@ -431,9 +476,9 @@ export default function AnnualFortuneClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dob,
-          birthYear: parseInt(birthYear, 10),
-          birthMonth: parseInt(month, 10),
-          birthDay: parseInt(day, 10),
+          birthYear: resolved.solarYear,
+          birthMonth: resolved.solarMonth,
+          birthDay: resolved.solarDay,
           time: finalTime,
           gender,
           name: name.trim() || "나",
@@ -551,9 +596,21 @@ export default function AnnualFortuneClient({
 
             {/* 1. 생년월일 (맨 위 기본 노출) */}
             <div>
-              <label className="block text-xs font-bold text-ink mb-1.5">
-                생년월일 (양력) <span className="text-coral">*</span>
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                <label className="block text-xs font-bold text-ink">
+                  생년월일 <span className="text-coral">*</span>
+                </label>
+                <CalendarTypeToggle
+                  isLunar={isLunar}
+                  isLeapMonth={isLeapMonth}
+                  currentDay={day}
+                  onChange={(patch) => {
+                    setIsLunar(patch.isLunar);
+                    setIsLeapMonth(patch.isLeapMonth);
+                    if (patch.day !== undefined) setDay(patch.day);
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   ref={yearSelectRef}
@@ -586,7 +643,7 @@ export default function AnnualFortuneClient({
                   required
                 >
                   <option value="">일</option>
-                  {Array.from({ length: getDaysInMonth(birthYear, month) }, (_, i) => i + 1).map((d) => (
+                  {Array.from({ length: getDaysInMonth(birthYear, month, isLunar) }, (_, i) => i + 1).map((d) => (
                     <option key={d} value={d}>{d}일</option>
                   ))}
                 </select>
@@ -765,6 +822,11 @@ export default function AnnualFortuneClient({
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
             나의 {year}년 종합 총운
           </h1>
+          {lunarNotice && (
+            <p className="-mt-1 mb-2 text-xs font-semibold text-white/80">
+              {lunarNotice}
+            </p>
+          )}
 
           {/* Big Score Display */}
           <div className="flex items-baseline justify-center gap-1 my-2">

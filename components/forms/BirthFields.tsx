@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { trackEvent } from "@/lib/gtag";
 
 export interface BirthValues {
   name: string;
@@ -11,6 +12,8 @@ export interface BirthValues {
   ampm: string;
   hour: string;
   min: string;
+  isLunar?: boolean;
+  isLeapMonth?: boolean;
 }
 
 interface BirthFieldsProps {
@@ -24,25 +27,41 @@ interface BirthFieldsProps {
 
 const TONE = {
   light: {
-    label: "block text-xs font-semibold text-[#B9A9BF] mb-1",
+    label: "block text-xs font-semibold text-[#B9A9BF]",
     field:
       "w-full border border-white/[0.12] rounded-xl p-3 text-sm text-[#F6EEF3] placeholder:text-[#8E7D96] bg-[#140B18] [color-scheme:dark] focus:outline-none focus:border-[#FF5C77] disabled:opacity-50 focus-visible:ring-2 ring-[#FF5C77]",
     star: "text-[#FF5C77]",
+    pillWrap: "border-white/[0.14] bg-[#140B18]",
+    pillActive: "bg-[#FF5C77] text-white shadow-2xs",
+    pillIdle: "text-[#B9A9BF] hover:text-[#F6EEF3]",
+    leapText: "text-[#F6EEF3]",
+    leapAccent: "accent-[#FF5C77]",
   },
   dark: {
-    label: "block text-xs font-semibold text-[#D8CEE0] mb-1",
+    label: "block text-xs font-semibold text-[#D8CEE0]",
     field:
       "w-full border border-[#4A3D56] rounded-xl p-3 text-sm text-[#F6F1EA] placeholder:text-[#9A8FA6] bg-[#140B18] [color-scheme:dark] focus:outline-none focus:border-[#D9B26A] disabled:opacity-50 focus-visible:ring-2 ring-[#D9B26A]",
     star: "text-[#D9B26A]",
+    pillWrap: "border-[#4A3D56] bg-[#140B18]",
+    pillActive: "bg-[#D9B26A] text-[#140B18] shadow-2xs",
+    pillIdle: "text-[#B9AEC4] hover:text-[#F6F1EA]",
+    leapText: "text-[#F3E3BF]",
+    leapAccent: "accent-[#D9B26A]",
   },
 } as const;
 
-export function getDaysInMonth(y: string, m: string): number {
+export function getDaysInMonth(y: string, m: string, isLunar = false): number {
+  if (isLunar) return 30;
   if (!y || !m) return 31;
   return new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
 }
 
-export function formatBirthInput(v: BirthValues): { name: string; dob: string; time: string | null; gender: "F" | "M" } {
+export function formatBirthInput(v: BirthValues): {
+  name: string;
+  dob: string;
+  time: string | null;
+  gender: "F" | "M";
+} {
   const mStr = v.month.padStart(2, "0");
   const dStr = v.day.padStart(2, "0");
   const dob = `${v.year}-${mStr}-${dStr}`;
@@ -54,6 +73,116 @@ export function formatBirthInput(v: BirthValues): { name: string; dob: string; t
     time = `${String(h).padStart(2, "0")}:${v.min.padStart(2, "0")}`;
   }
   return { name: v.name.trim() || "나", dob, time, gender: v.gender };
+}
+
+export async function resolveRawDateToSolar(args: {
+  year: string | number;
+  month: string | number;
+  day: string | number;
+  isLunar?: boolean;
+  isLeapMonth?: boolean;
+}): Promise<
+  | {
+      ok: true;
+      solarYear: number;
+      solarMonth: number;
+      solarDay: number;
+      solarDob: string;
+      notice: string | null;
+    }
+  | {
+      ok: false;
+      error: string;
+    }
+> {
+  if (!args.isLunar) {
+    const y = Number(args.year);
+    const m = Number(args.month);
+    const d = Number(args.day);
+    if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) {
+      return { ok: false, error: "생년월일을 모두 선택해 주세요." };
+    }
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() + 1 !== m ||
+      dt.getUTCDate() !== d
+    ) {
+      return { ok: false, error: `${y}년 ${m}월에는 ${d}일이 없어요.` };
+    }
+    const solarDob = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    return {
+      ok: true,
+      solarYear: y,
+      solarMonth: m,
+      solarDay: d,
+      solarDob,
+      notice: null,
+    };
+  }
+
+  const { convertLunarToSolar } = await import("@/lib/lunarInput");
+  const conv = convertLunarToSolar({
+    year: args.year,
+    month: args.month,
+    day: args.day,
+    isLunar: true,
+    isLeapMonth: Boolean(args.isLeapMonth),
+  });
+  if (!conv.ok) {
+    return { ok: false, error: conv.error };
+  }
+  return {
+    ok: true,
+    solarYear: conv.solarYear,
+    solarMonth: conv.solarMonth,
+    solarDay: conv.solarDay,
+    solarDob: conv.solarDob,
+    notice: conv.notice,
+  };
+}
+
+export async function resolveBirthValuesToSolar(v: BirthValues): Promise<
+  | {
+      ok: true;
+      formatted: { name: string; dob: string; time: string | null; gender: "F" | "M" };
+      solarValues: BirthValues;
+      solarYear: number;
+      solarMonth: number;
+      solarDay: number;
+      notice: string | null;
+    }
+  | {
+      ok: false;
+      error: string;
+    }
+> {
+  const res = await resolveRawDateToSolar({
+    year: v.year,
+    month: v.month,
+    day: v.day,
+    isLunar: v.isLunar,
+    isLeapMonth: v.isLeapMonth,
+  });
+  if (!res.ok) return res;
+
+  const solarValues: BirthValues = {
+    ...v,
+    year: String(res.solarYear),
+    month: String(res.solarMonth),
+    day: String(res.solarDay),
+    isLunar: false,
+    isLeapMonth: false,
+  };
+  return {
+    ok: true,
+    formatted: formatBirthInput(solarValues),
+    solarValues,
+    solarYear: res.solarYear,
+    solarMonth: res.solarMonth,
+    solarDay: res.solarDay,
+    notice: res.notice,
+  };
 }
 
 export function parseBirthInput(input: {
@@ -96,6 +225,95 @@ export function parseBirthInput(input: {
   };
 }
 
+export interface CalendarTypeToggleProps {
+  isLunar: boolean;
+  isLeapMonth: boolean;
+  disabled?: boolean;
+  tone?: "light" | "dark";
+  currentDay?: string;
+  onChange: (patch: { isLunar: boolean; isLeapMonth: boolean; day?: string }) => void;
+}
+
+export function CalendarTypeToggle({
+  isLunar,
+  isLeapMonth,
+  disabled = false,
+  tone = "light",
+  currentDay,
+  onChange,
+}: CalendarTypeToggleProps) {
+  const t = TONE[tone];
+
+  const handleToggle = (nextLunar: boolean) => {
+    if (disabled || nextLunar === isLunar) return;
+    trackEvent("lunar_toggle", {
+      state: nextLunar ? "on" : "off",
+      value: nextLunar ? "on" : "off",
+    });
+    const nextPatch: { isLunar: boolean; isLeapMonth: boolean; day?: string } = {
+      isLunar: nextLunar,
+      isLeapMonth: false,
+    };
+    if (nextLunar && currentDay === "31") {
+      nextPatch.day = "30";
+    }
+    onChange(nextPatch);
+  };
+
+  return (
+    <div className="inline-flex items-center gap-2 shrink-0">
+      <div
+        role="group"
+        aria-label="양력 또는 음력 선택"
+        className={`inline-flex items-center rounded-full border p-0.5 ${t.pillWrap}`}
+      >
+        <button
+          type="button"
+          disabled={disabled}
+          aria-pressed={!isLunar}
+          onClick={() => handleToggle(false)}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-all active:scale-[0.96] disabled:opacity-50 ${
+            !isLunar ? t.pillActive : t.pillIdle
+          }`}
+        >
+          양력
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          aria-pressed={isLunar}
+          onClick={() => handleToggle(true)}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold transition-all active:scale-[0.96] disabled:opacity-50 ${
+            isLunar ? t.pillActive : t.pillIdle
+          }`}
+        >
+          음력
+        </button>
+      </div>
+
+      {isLunar && (
+        <label
+          className={`inline-flex items-center gap-1 text-[11px] font-bold cursor-pointer select-none ${t.leapText}`}
+        >
+          <input
+            type="checkbox"
+            checked={isLeapMonth}
+            disabled={disabled}
+            onChange={(e) =>
+              onChange({
+                isLunar: true,
+                isLeapMonth: e.target.checked,
+              })
+            }
+            className={`h-3.5 w-3.5 rounded ${t.leapAccent}`}
+          />
+          <span>윤달</span>
+        </label>
+      )}
+    </div>
+  );
+}
+
 export default function BirthFields({
   values,
   onChange,
@@ -109,12 +327,14 @@ export default function BirthFields({
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = ["00", "15", "30", "45"];
+  const isLunar = Boolean(values.isLunar);
+  const isLeapMonth = Boolean(values.isLeapMonth);
 
   return (
     <div className="flex flex-col gap-3.5 w-full">
       {showName && (
         <div>
-          <label className={t.label}>이름 또는 닉네임 (선택)</label>
+          <label className={`${t.label} mb-1`}>이름 또는 닉네임 (선택)</label>
           <input
             type="text"
             value={values.name}
@@ -128,9 +348,19 @@ export default function BirthFields({
 
       <div className="flex flex-col gap-3">
         <div>
-          <label className={t.label}>
-            생년월일 <span className={t.star}>*</span>
-          </label>
+          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+            <label className={t.label}>
+              생년월일 <span className={t.star}>*</span>
+            </label>
+            <CalendarTypeToggle
+              isLunar={isLunar}
+              isLeapMonth={isLeapMonth}
+              disabled={disabled}
+              tone={tone}
+              currentDay={values.day}
+              onChange={(patch) => onChange(patch)}
+            />
+          </div>
           <div className="grid grid-cols-3 gap-2">
             <select
               value={values.year}
@@ -166,7 +396,7 @@ export default function BirthFields({
             >
               <option value="">일</option>
               {Array.from(
-                { length: getDaysInMonth(values.year, values.month) },
+                { length: getDaysInMonth(values.year, values.month, isLunar) },
                 (_, i) => i + 1
               ).map((d) => (
                 <option key={d} value={d}>
@@ -179,7 +409,7 @@ export default function BirthFields({
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="sm:col-span-1">
-            <label className={t.label}>성별</label>
+            <label className={`${t.label} mb-1`}>성별</label>
             <select
               value={values.gender}
               onChange={(e) => onChange({ gender: e.target.value as "F" | "M" })}
@@ -191,7 +421,7 @@ export default function BirthFields({
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label className={t.label}>태어난 시간 (선택)</label>
+            <label className={`${t.label} mb-1`}>태어난 시간 (선택)</label>
             <div className="grid grid-cols-3 gap-2">
               <select
                 value={values.ampm}

@@ -33,6 +33,13 @@ import {
 } from "@/lib/compatCuriosity";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
+import { CalendarTypeToggle, resolveRawDateToSolar } from "@/components/forms/BirthFields";
+import {
+  saveCompatLunarNotices,
+  loadCompatLunarNotices,
+  savePersonLunarNotice,
+  buildCoupleLunarLines,
+} from "@/lib/lunarNoticeStorage";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -131,6 +138,8 @@ export default function CompatNewClient({
   const [ampmA, setAmpmA] = useState(defaultAmpmA);
   const [hourA, setHourA] = useState(defaultHourA);
   const [minA, setMinA] = useState(defaultMinA);
+  const [isLunarA, setIsLunarA] = useState(false);
+  const [isLeapMonthA, setIsLeapMonthA] = useState(false);
 
   const [nameB, setNameB] = useState("");
   const [yearB, setYearB] = useState("");
@@ -140,11 +149,15 @@ export default function CompatNewClient({
   const [ampmB, setAmpmB] = useState("");
   const [hourB, setHourB] = useState("1");
   const [minB, setMinB] = useState("0");
+  const [isLunarB, setIsLunarB] = useState(false);
+  const [isLeapMonthB, setIsLeapMonthB] = useState(false);
+  const [lunarLines, setLunarLines] = useState<string[]>([]);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const getDaysInMonth = (y: string, m: string) => {
+  const getDaysInMonth = (y: string, m: string, isLunar = false) => {
+    if (isLunar) return 30;
     if (!y || !m) return 31;
     return new Date(parseInt(y), parseInt(m), 0).getDate();
   };
@@ -253,6 +266,11 @@ export default function CompatNewClient({
               : "compat_continue",
         });
         setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+        setLunarLines(
+          buildCoupleLunarLines({
+            notices: loadCompatLunarNotices(fromCompatId),
+          }),
+        );
       } catch (err) {
         if (!alive) return;
         setErrorMsg(err instanceof Error ? `${err.message} 두 사람 정보를 입력해 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
@@ -337,6 +355,13 @@ export default function CompatNewClient({
       handledFromRef.current = lastCouple.compatId;
       trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "last_couple" });
       setTeaserResult({ compatId: lastCouple.compatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+      setLunarLines(
+        buildCoupleLunarLines({
+          notices: loadCompatLunarNotices(lastCouple.compatId),
+          nameA: lastCouple.a.name,
+          nameB: lastCouple.b.name,
+        }),
+      );
       syncCompatUrl(lastCouple.compatId);
     } catch (err) {
       setErrorMsg(err instanceof Error ? `${err.message} 아래에 두 사람 정보를 확인하고 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
@@ -405,7 +430,20 @@ export default function CompatNewClient({
 
     setIsLoading(true);
     try {
-      const dobA = `${yearA}-${String(monthA).padStart(2, "0")}-${String(dayA).padStart(2, "0")}`;
+      const resolvedA = await resolveRawDateToSolar({
+        year: yearA,
+        month: monthA,
+        day: dayA,
+        isLunar: isLunarA,
+        isLeapMonth: isLeapMonthA,
+      });
+      if (!resolvedA.ok) {
+        setErrorMsg(resolvedA.error);
+        setStep(1);
+        setIsLoading(false);
+        return;
+      }
+      const dobA = resolvedA.solarDob;
       let finalTimeA: string | null = null;
       if (ampmA) {
         let h = parseInt(hourA, 10);
@@ -441,6 +479,8 @@ export default function CompatNewClient({
         time: finalTimeA,
         gender: genderA,
       });
+      savePersonLunarNotice(resolvedA.notice);
+      saveCompatLunarNotices([json.token], { aNotice: resolvedA.notice });
 
       // [SECURITY] localStorage에는 { token, createdAt }만 저장한다 (이름·생년월일 저장 금지)
       saveSentInvite(json.token);
@@ -537,20 +577,42 @@ export default function CompatNewClient({
     }
   };
 
-  const handleNextFromStep1 = () => {
+  const handleNextFromStep1 = async () => {
     setErrorMsg(null);
     if (!yearA || !monthA || !dayA) {
       setErrorMsg("내 생년월일을 입력해주세요.");
+      return;
+    }
+    const resolvedA = await resolveRawDateToSolar({
+      year: yearA,
+      month: monthA,
+      day: dayA,
+      isLunar: isLunarA,
+      isLeapMonth: isLeapMonthA,
+    });
+    if (!resolvedA.ok) {
+      setErrorMsg(resolvedA.error);
       return;
     }
     trackEvent("compat_step_next", { step: 1 });
     setStep(2);
   };
 
-  const handleNextFromStep2 = () => {
+  const handleNextFromStep2 = async () => {
     setErrorMsg(null);
     if (!yearB || !monthB || !dayB) {
       setErrorMsg("상대방의 생년월일을 입력해주세요.");
+      return;
+    }
+    const resolvedB = await resolveRawDateToSolar({
+      year: yearB,
+      month: monthB,
+      day: dayB,
+      isLunar: isLunarB,
+      isLeapMonth: isLeapMonthB,
+    });
+    if (!resolvedB.ok) {
+      setErrorMsg(resolvedB.error);
       return;
     }
     trackEvent("compat_step_next", { step: 2 });
@@ -585,8 +647,8 @@ export default function CompatNewClient({
     }
 
     if (step < 4) {
-      if (step === 1) handleNextFromStep1();
-      else if (step === 2) handleNextFromStep2();
+      if (step === 1) await handleNextFromStep1();
+      else if (step === 2) await handleNextFromStep2();
       else if (step === 3) handleNextFromStep3();
       return;
     }
@@ -594,8 +656,36 @@ export default function CompatNewClient({
     setIsLoading(true);
 
     try {
-      const dobA = `${yearA}-${String(monthA).padStart(2, '0')}-${String(dayA).padStart(2, '0')}`;
-      const dobB = `${yearB}-${String(monthB).padStart(2, '0')}-${String(dayB).padStart(2, '0')}`;
+      const resolvedA = await resolveRawDateToSolar({
+        year: yearA,
+        month: monthA,
+        day: dayA,
+        isLunar: isLunarA,
+        isLeapMonth: isLeapMonthA,
+      });
+      if (!resolvedA.ok) {
+        setErrorMsg(resolvedA.error);
+        setStep(1);
+        setIsLoading(false);
+        return;
+      }
+
+      const resolvedB = await resolveRawDateToSolar({
+        year: yearB,
+        month: monthB,
+        day: dayB,
+        isLunar: isLunarB,
+        isLeapMonth: isLeapMonthB,
+      });
+      if (!resolvedB.ok) {
+        setErrorMsg(resolvedB.error);
+        setStep(2);
+        setIsLoading(false);
+        return;
+      }
+
+      const dobA = resolvedA.solarDob;
+      const dobB = resolvedB.solarDob;
 
       let finalTimeA = null;
       if (ampmA) {
@@ -658,6 +748,17 @@ export default function CompatNewClient({
       });
       // 개인 운세에서도 내 정보를 이어 쓴다
       saveLastPerson({ name: payload.personA.name, dob: dobA, time: finalTimeA, gender: genderA });
+
+      const notices = { aNotice: resolvedA.notice, bNotice: resolvedB.notice };
+      saveCompatLunarNotices([json.shareToken, json.id], notices);
+      savePersonLunarNotice(resolvedA.notice, product?.id ?? productId ?? null);
+      setLunarLines(
+        buildCoupleLunarLines({
+          notices,
+          nameA: payload.personA.name,
+          nameB: payload.personB.name,
+        }),
+      );
 
       // GA4 측정 이벤트 발사 (기존과 동일한 시점 유지 — 틱톡 광고 학습 신호 보호)
       trackEvent("compat_created", {
@@ -726,6 +827,13 @@ export default function CompatNewClient({
         {teaserResult ? (
           <>
             <h2 className="text-2xl font-bold tracking-tight">{product.name} 미리보기</h2>
+            {lunarLines.length > 0 && (
+              <div className="-mt-3 flex flex-col items-center gap-0.5 text-xs font-medium text-[#B9A9BF]">
+                {lunarLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            )}
             <StandardReportView
               mode="teaser"
               score={teaserResult.score}
@@ -1060,9 +1168,21 @@ export default function CompatNewClient({
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-2 mb-1">
-                생년월일 <span className="text-coral">*</span>
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                <label className="block text-xs font-semibold text-text-2">
+                  생년월일 <span className="text-coral">*</span>
+                </label>
+                <CalendarTypeToggle
+                  isLunar={isLunarA}
+                  isLeapMonth={isLeapMonthA}
+                  currentDay={dayA}
+                  onChange={(patch) => {
+                    setIsLunarA(patch.isLunar);
+                    setIsLeapMonthA(patch.isLeapMonth);
+                    if (patch.day !== undefined) setDayA(patch.day);
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearA}
@@ -1095,7 +1215,7 @@ export default function CompatNewClient({
                 >
                   <option value="">일</option>
                   {Array.from(
-                    { length: getDaysInMonth(String(yearA), String(monthA)) },
+                    { length: getDaysInMonth(String(yearA), String(monthA), isLunarA) },
                     (_, i) => i + 1
                   ).map((d) => (
                     <option key={d} value={d}>
@@ -1260,9 +1380,21 @@ export default function CompatNewClient({
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-2 mb-1">
-                생년월일 <span className="text-coral">*</span>
-              </label>
+              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                <label className="block text-xs font-semibold text-text-2">
+                  생년월일 <span className="text-coral">*</span>
+                </label>
+                <CalendarTypeToggle
+                  isLunar={isLunarB}
+                  isLeapMonth={isLeapMonthB}
+                  currentDay={dayB}
+                  onChange={(patch) => {
+                    setIsLunarB(patch.isLunar);
+                    setIsLeapMonthB(patch.isLeapMonth);
+                    if (patch.day !== undefined) setDayB(patch.day);
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <select
                   value={yearB}
@@ -1295,7 +1427,7 @@ export default function CompatNewClient({
                 >
                   <option value="">일</option>
                   {Array.from(
-                    { length: getDaysInMonth(yearB, monthB) },
+                    { length: getDaysInMonth(yearB, monthB, isLunarB) },
                     (_, i) => i + 1
                   ).map((d) => (
                     <option key={d} value={d}>
