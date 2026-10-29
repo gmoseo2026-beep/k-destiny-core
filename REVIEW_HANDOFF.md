@@ -1,3 +1,32 @@
+# REVIEW_HANDOFF — argon/15-capi (서버에서 구매 신호 보내기 — 메타 CAPI·틱톡 Events API)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `prisma/schema.prisma` & `prisma/sql/argon_15_capi.sql` (신규): `Order.adSignals Json?` 컬럼 additive 추가
+   - `lib/adConversions.ts` (신규): 주문 생성 요청 헤더에서 클라이언트 IP(`cf-connecting-ip` / `x-forwarded-for` 첫 홉 / `x-real-ip`), `user-agent`, `_fbp`·`_fbc`·`_ttp`·`ttclid` 쿠키값만 추출하는 `extractOrderAdSignals`, 화이트리스트 외 모든 필드를 폐기해 이름·전화·이메일(해시 포함)·생년월일·열람 토큰(`orderId`) 전송을 원천 차단하는 `normalizeOrderAdSignals`, 브라우저 픽셀(`lib/metaPixel.ts`, `lib/tiktokPixel.ts`)의 `purchase` `event_id`(`transaction_id = receiptId = Order.id`)와 동일한 `event_id`로 메타 CAPI(`Purchase`, `Authorization: Bearer`) 및 틱톡 Events API v1.3(`CompletePayment`, `Access-Token` 헤더)를 호출하는 `sendServerPurchaseConversions`(`META_CAPI_TOKEN`·`TIKTOK_EVENTS_TOKEN` 미설정 시 조용히 스킵, `AbortController` 3초 타임아웃 + `try/catch` + 토큰 무로그) 구현
+   - `app/api/payments/order/route.ts`: 주문 생성 시 `extractOrderAdSignals(req)` 결과를 `Order.adSignals`에 저장
+   - `lib/payments/grant.ts` (`applyPaidOrder`): 트랜잭션 안에서 `res.count === 1`로 실제 `PAID` 전환이 발생한 유료 주문(`order.amount > 0`, `provider !== "admin_manual"`)일 때 전환 페이로드(`eventId: order.id`, `value: order.amount`, `catalogId`, `adSignals`)를 캡처하고, 트랜잭션 커밋 이후 `void sendServerPurchaseConversions(capiPayload).catch(() => {})`로 비동기 전송(실패·타임아웃 시에도 결제 처리 무중단)
+   - `components/TikTokPixel.tsx`: 광고 랜딩 주소에 `?ttclid=...` 쿼리가 있으면 1차 쿠키 `ttclid`(30일, `SameSite=Lax; Path=/`)에 보조 저장해 이후 `/api/payments/order` 요청의 `Cookie` 헤더로 전달되도록 보강
+   - `tests/capi.test.ts` (신규): 브라우저/서버 `event_id`(`Order.id`) 일치 및 `kd_ord_*` 미노출 검증, 허용 광고 신호 추출 및 이름·전화·이메일(해시 포함)·생년월일 제외 검증, 토큰 미설정 시 무호출 스킵 검증, 토큰 설정 시 메타 `Purchase`·틱톡 `CompletePayment` 헤더 인증·본문(`KRW`, `value`, `catalogId`) 검증, `AbortController` 타임아웃 및 외부 500 오류 시에도 `applyPaidOrder` 정상 성공·중복 호출 미전송 검증 단위 테스트 5종
+2. **테스트 결과(통과 수)**
+   - `npx next typegen` + `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: 78 files passed, 586 tests passed (42 skipped)
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 프로덕션 빌드에서 `/api/payments/order`, `/api/payments/complete`, `/api/webhooks/portone`, `/api/webhooks/toss` 등 결제 전환 경로 전체 정상 컴파일 및 `tests/routes/launchPaymentMatrix.test.ts`·`tests/metaPixel.test.ts`·`tests/tiktokPixel.test.ts`·`tests/capi.test.ts` 통과 확인
+4. **스스로 의심하는 점**
+   - 브라우저 픽셀(`lib/payments/client.ts` → `trackPurchase`)이 `transaction_id`로 `receiptId`(`Order.id`, DB cuid 기본키)를 전달하고 `lib/metaPixel.ts`·`lib/tiktokPixel.ts`가 이를 그대로 `eventId`로 쓰는 규칙을 확인하여, 서버 `applyPaidOrder`에서도 비회원 열람 열쇠인 `order.orderId`(`kd_ord_...`)가 아닌 `order.id`를 `event_id`로 사용해 중복 제거 일치와 열람 열쇠 비노출을 동시에 보장했습니다.
+   - `META_CAPI_TOKEN`과 `TIKTOK_EVENTS_TOKEN`을 쿼리스트링이 아닌 HTTP 요청 헤더(`Authorization: Bearer`, `Access-Token`)로만 전달하고 경고 로그에도 오류 종류(`err.name`)만 남겨 프록시/서버 로그에 토큰이 남지 않도록 처리했습니다.
+5. **클로드에게 필요한 것**
+   - 법률 문구(`messages/ko.json` `Legal.*`): 개인정보처리방침에 광고 성과 측정용 서버 전환 신호(IP, User-Agent, 광고 클릭·픽셀 쿠키 `_fbp`·`_fbc`·`_ttp`·`ttclid`, 결제 금액·상품 ID — 이름·전화·이메일·생년월일 미전송) 안내 반영 필요.
+   - 운영 서버 `.env`에 `META_CAPI_TOKEN`, `TIKTOK_EVENTS_TOKEN` 환경변수 설정 필요(미설정 시 자동 스킵).
+   - 프로덕션 DB 반영 필요(additive SQL): `prisma/sql/argon_15_capi.sql` (`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "adSignals" JSONB;`).
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
