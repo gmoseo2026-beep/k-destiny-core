@@ -6,6 +6,7 @@ import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import ReviewCouponCard from "@/components/report/ReviewCouponCard";
+import ReviewPromptSheet from "@/components/report/ReviewPromptSheet";
 import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
@@ -26,6 +27,7 @@ interface ReportViewClientProps {
 
 interface ReportResponse {
   reportId: string;
+  orderKey?: string | null;
   catalogId: string;
   compatId?: string | null;
   score: number;
@@ -216,6 +218,13 @@ export default function ReportViewClient({
         )}
 
         <div className="max-w-md mx-auto flex flex-col gap-2.5 mt-8 px-4 no-print">
+          <div id="review-section" className="mb-1">
+            <ReviewCouponCard
+              reportId={reportData.reportId}
+              catalogId={reportData.catalogId}
+              orderToken={matchedOrderToken}
+            />
+          </div>
           <GuestKeepBanner locale={locale} source="premium" hideCopy className="mb-1" />
           <button
             type="button"
@@ -233,6 +242,13 @@ export default function ReportViewClient({
             <span>다른 운세·궁합 보러가기</span>
           </Link>
         </div>
+
+        <ReviewPromptSheet
+          reportId={reportData.reportId}
+          orderKey={reportData.orderKey}
+          catalogId={reportData.catalogId}
+          orderToken={matchedOrderToken}
+        />
       </div>
     );
   }
@@ -267,11 +283,13 @@ export default function ReportViewClient({
       )}
 
       {/* Action Buttons */}
-      <ReviewCouponCard
-        reportId={reportData.reportId}
-        catalogId={reportData.catalogId}
-        orderToken={matchedOrderToken}
-      />
+      <div id="review-section">
+        <ReviewCouponCard
+          reportId={reportData.reportId}
+          catalogId={reportData.catalogId}
+          orderToken={matchedOrderToken}
+        />
+      </div>
       <div className="flex flex-col gap-2.5 mt-2">
         <GuestKeepBanner locale={locale} source="report" hideCopy className="mb-1" />
         <Button
@@ -292,6 +310,14 @@ export default function ReportViewClient({
           <span>다른 운세·궁합 보러가기</span>
         </Link>
       </div>
+
+      <ReviewPromptSheet
+        reportId={reportData.reportId}
+        orderKey={reportData.orderKey}
+        catalogId={reportData.catalogId}
+        orderToken={matchedOrderToken}
+        reachedEnd={reachedLastSection}
+      />
     </div>
   );
 }
