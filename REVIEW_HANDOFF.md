@@ -1,3 +1,30 @@
+# REVIEW_HANDOFF — argon/08-share-bonus (공유하면 오늘 3번 더)
+
+> **기반 브랜치**: `argon/07-story-card` (`15d5976`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `lib/previewLimit.ts` (기기 식별 쿠키 `kd_vid` 해시 + 오늘 KST 날짜 기준 하루 1회만 유효한 서명된 `HttpOnly` 보너스 쿠키 `kd_pvb` 및 서버 메모리 원장으로 `checkPreviewQuota`에서 오늘 미리보기 한도 `+3` 부여 `grantPreviewShareBonus`, `hasPreviewShareBonus`)
+   - `app/api/preview/bonus/route.ts` (신규 — `POST /api/preview/bonus`에서 서버 측 `grantPreviewShareBonus` 실행 및 `kd_vid`·`kd_pvb` 쿠키 발급)
+   - `app/api/reports/generate/route.ts` (`PREVIEW_LIMIT` 429 응답에 실제 적용 한도 `quota.effectiveLimit` 및 오늘 보너스 잔여 여부 `shareBonusAvailable` 포함)
+   - `app/api/og/story/route.tsx` (한도 화면 공유 시 `compatId` 또는 `productId` 기준으로도 개인정보 없는 1080×1920 스토리 카드를 생성하도록 보강)
+   - `components/report/PreviewLimitPanel.tsx`, `components/CompatNewClient.tsx`, `components/FortuneNewClient.tsx` (`"결과 카드 공유하고 오늘 3번 더 보기"` 버튼 추가, `"공유하면"` 톤 유지·강요 문구 없음, 공유 시트 오픈 시 `preview_bonus_share` GA4 발사 및 `/api/preview/bonus` 호출 후 미리보기 즉시 재요청)
+   - `tests/previewLimit.test.ts` (`kd_vid` 기기당 하루 1회 `+3` 허용·같은 날 2차 요청 거부·보너스 쿠키 타 기기 도용 차단·다음 날 KST 초기화·라우트 쿠키 발급 테스트 추가)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 8개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 79 passed / 1 skipped (총 592 tests 통과, `tests/previewLimit.test.ts` 8건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 하루 무료 미리보기 한도 화면(`PreviewLimitPanel`)에서 오늘 보너스를 아직 쓰지 않은 기기일 때만 `"결과 카드를 공유하면 오늘 무료 미리보기를 3번 더 볼 수 있어요(하루 1번)."` 안내와 `"결과 카드 공유하고 오늘 3번 더 보기"` 버튼이 노출됨을 확인.
+   - 공유 시트가 열리면 `POST /api/preview/bonus`가 서버에서 `kd_vid` 기기 한도를 `+3`으로 올리고 방금 보려던 미리보기가 즉시 열리며, 추가 3회 소진 후에는 같은 날 버튼이 다시 뜨지 않음을 확인.
+4. **스스로 의심하는 점**
+   - PM2 재시작이 발생해도 오늘 받은 보너스가 풀리지 않도록 서명된 `HttpOnly` 쿠키(`kd_pvb`, `kd_vid` 해시 결합)와 프로세스 메모리 원장(`grantedVidByDay`)을 병행했습니다. 만약 사용자가 브라우저의 모든 쿠키(`kd_pv`, `kd_pvb`, `kd_vid` 전체)를 통째로 삭제하면 기존 `kd_pv` 한도와 마찬가지로 새 기기로 취급되나, 그 경우에도 IP 기반 `checkRateLimit`과 `checkGlobalAiCap`이 상한선을 방어합니다.
+5. **클로드에게 필요한 것**
+   - 없음 (`06 → 07 → 08` 순차 기반 브랜치이므로 순서대로 머지 필요)
+
+---
+
 # REVIEW_HANDOFF — argon/07-story-card (인스타 스토리용 결과 카드 9:16)
 
 > **기반 브랜치**: `argon/06-saju-card` (`28e2048`)
