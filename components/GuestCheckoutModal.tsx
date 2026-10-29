@@ -118,9 +118,10 @@ export default function GuestCheckoutModal({
 
   const modalOpen = isOpen || resumeForceOpen;
 
-  // [P-016-4 §3·§4] 결제 창 쿠폰 자동 적용 안내 및 실제 구매자 후기(0개면 숨김)
+  // [P-016-4 §3·§4] 결제 창 쿠폰 자동 적용 안내 및 실제 구매자 후기(직접 후기 0개면 같은 대상 후기 최대 2개)
   const [activeCoupon, setActiveCoupon] = useState<{ code: string; amount: number } | null>(null);
   const [checkoutReviews, setCheckoutReviews] = useState<PublicReviewItem[]>([]);
+  const [checkoutFallbackReviews, setCheckoutFallbackReviews] = useState<PublicReviewItem[]>([]);
 
   const selectedOption = options.find((o) => o.id === selectedId);
   const baseNumericPrice =
@@ -162,11 +163,12 @@ export default function GuestCheckoutModal({
 
     const targetCatalogId = selectedId || productId || options[0]?.id || "";
     if (targetCatalogId) {
-      fetch(`/api/reviews?catalogId=${encodeURIComponent(targetCatalogId)}`, { cache: "no-store" })
+      fetch(`/api/reviews?catalogId=${encodeURIComponent(targetCatalogId)}&fallback=1`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d: { reviews?: PublicReviewItem[] } | null) => {
+        .then((d: { reviews?: PublicReviewItem[]; fallbackReviews?: PublicReviewItem[] } | null) => {
           if (!alive) return;
           setCheckoutReviews(Array.isArray(d?.reviews) ? d.reviews : []);
+          setCheckoutFallbackReviews(Array.isArray(d?.fallbackReviews) ? d.fallbackReviews : []);
         })
         .catch(() => {});
     }
@@ -639,8 +641,13 @@ export default function GuestCheckoutModal({
           </div>
         )}
 
-        {/* [P-016-4 §4] 실제 열람 구매자 후기 (0개면 자동 숨김) */}
-        <ProductReviewsSection reviews={checkoutReviews} variant="checkout" />
+        {/* [P-016-4 §4 / Argon-03] 실제 열람 구매자 후기 (직접 후기 0개면 같은 대상 다른 리포트 후기 최대 2개) */}
+        <ProductReviewsSection
+          reviews={checkoutReviews}
+          fallbackReviews={checkoutFallbackReviews}
+          productId={selectedId || productId || options[0]?.id || undefined}
+          variant="checkout"
+        />
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
           {/* PC 결제만: 이니시스 PC 결제창의 필수값 */}
