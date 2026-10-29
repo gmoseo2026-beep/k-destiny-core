@@ -116,10 +116,19 @@ export default function TermsPage() {
             </div>
           )}
 
+          {/* 제13조 (쿠폰 및 후기) — 2026-10-29 신설 */}
+          {isKo && (
+            <div className={sectionClass}>
+              <h2 className="font-serif text-xl text-plum mb-4">{t("terms_s13_title")}</h2>
+              <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s13_body")}</p>
+            </div>
+          )}
+
           {/* 부칙 및 문의 */}
           <div className="bg-white border border-ink/8 rounded-2xl p-6 text-center space-y-2 shadow-sm">
             <p className="font-sans text-xs text-gray-500">{t("terms_addendum")}</p>
             {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_2")}</p>}
+            {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_3")}</p>}
             <p className="font-sans text-xs text-gray-500">
               문의: <a href="mailto:help@kongdak.kr" className="text-coral hover:underline">help@kongdak.kr</a>
             </p>

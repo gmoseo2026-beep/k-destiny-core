@@ -9,6 +9,9 @@ import { ListRowCard } from "@/components/cards/KongdakCards";
 /** 후기 기능을 연 날(2026-10-25). 홈 후기 제목 아래 안내에 쓴다. */
 const REVIEWS_SINCE_LABEL = "2026년 10월 25일";
 
+/** 후기 작성자는 별점과 관계없이 1,000원 쿠폰을 받는다 — 경제적 이해관계 표시(2026-10-29) */
+const REVIEW_INCENTIVE_NOTE = "후기를 쓴 구매자에게는 별점과 관계없이 1,000원 쿠폰을 드려요";
+
 /** 후기 작성일을 한국 시간 "10월 25일"로 */
 function reviewDateLabel(iso: string): string {
   const d = new Date(new Date(iso).getTime() + 9 * 3_600_000);
@@ -44,6 +47,7 @@ export default function ProductReviewsSection({
       <div className="mb-4 rounded-2xl border border-white/[0.08] bg-[#140B18]/80 p-3 text-left">
         <p className="mb-2 text-[11px] font-extrabold text-[#B9A9BF]">
           실제 구매자 후기 ({reviews.length})
+          <span className="ml-1 font-medium">· {REVIEW_INCENTIVE_NOTE}</span>
         </p>
         <div className="flex flex-col gap-2">
           {reviews.slice(0, 2).map((r) => (
@@ -90,6 +94,8 @@ export default function ProductReviewsSection({
         <p className="mt-1 text-[11px] leading-snug text-[#B9A9BF]">
           {REVIEWS_SINCE_LABEL}부터 모으기 시작했어요 · 리포트를 연 구매자만 쓸 수 있어요
         </p>
+        {/* 공정위 추천·보증 심사지침: 대가(쿠폰)를 받고 쓴 후기임을 표시 — 약관 제13조 */}
+        <p className="mt-0.5 text-[11px] leading-snug text-[#B9A9BF]">{REVIEW_INCENTIVE_NOTE}</p>
       </div>
       <div className="space-y-3">
         {reviews.map((r) => {

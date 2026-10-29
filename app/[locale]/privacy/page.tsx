@@ -12,13 +12,14 @@ export default function PrivacyPage() {
   // 2026-09-23 개정 항목은 한국어 본문에만 있다(동면 로케일은 기존 문구 유지).
   const isKo = useLocale() === "ko";
 
+  // contact: 각 수탁자의 개인정보 문의 창구(개인정보 보호법 제28조의8 — 이전받는 자의 연락처). 2026-10-29 주소 확인.
   const overseasTransfers = [
-    { trustee: "Supabase, Inc.", task: "데이터베이스 호스팅", country: "미국" },
-    { trustee: "Contabo GmbH", task: "서버 인프라 운영", country: "독일" },
-    { trustee: "Cloudflare, Inc.", task: "CDN · 보안(DDoS/WAF) · 트래픽 처리", country: "미국" },
-    { trustee: "Google LLC (Gemini API)", task: "AI 궁합·운세·작명·택일 리포트 문장 생성", country: "미국" },
-    { trustee: "Google LLC (Google Analytics)", task: "서비스 이용 통계 · 분석", country: "미국" },
-    { trustee: "카카오 · 네이버 · 구글", task: "소셜 로그인 · 회원 식별", country: "국내(카카오·네이버), 미국(구글)" },
+    { trustee: "Supabase, Inc.", task: "데이터베이스 호스팅", country: "미국", contact: "https://supabase.com/privacy" },
+    { trustee: "Contabo GmbH", task: "서버 인프라 운영", country: "프랑스(서버 소재지) · 독일(본사)", contact: "https://contabo.com/en/legal/privacy/" },
+    { trustee: "Cloudflare, Inc.", task: "CDN · 보안(DDoS/WAF) · 트래픽 처리", country: "미국", contact: "https://www.cloudflare.com/privacypolicy/" },
+    { trustee: "Google LLC (Gemini API)", task: "AI 궁합·운세·작명·택일 리포트 문장 생성", country: "미국", contact: "https://policies.google.com/privacy" },
+    { trustee: "Google LLC (Google Analytics)", task: "서비스 이용 통계 · 분석", country: "미국", contact: "https://policies.google.com/privacy" },
+    { trustee: "카카오 · 네이버 · 구글", task: "소셜 로그인 · 회원 식별", country: "국내(카카오·네이버), 미국(구글)", contact: null },
   ];
 
   return (
@@ -85,6 +86,12 @@ export default function PrivacyPage() {
                   <p className="leading-relaxed pl-3">{t("privacy_s1_item6_desc")}</p>
                 </div>
               )}
+              {isKo && (
+                <div>
+                  <p className="font-bold text-ink mb-1">▪ {t("privacy_s1_item7_label")}</p>
+                  <p className="leading-relaxed pl-3">{t("privacy_s1_item7_desc")}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -98,6 +105,7 @@ export default function PrivacyPage() {
               <li>{t("privacy_s2_li4")}</li>
               <li>{t("privacy_s2_li5")}</li>
               {isKo && <li>{t("privacy_s2_li6")}</li>}
+              {isKo && <li>{t("privacy_s2_li7")}</li>}
             </ul>
           </div>
 
@@ -111,6 +119,7 @@ export default function PrivacyPage() {
               <li>{t("privacy_s3_li4")}</li>
               {isKo && <li>{t("privacy_s3_li5")}</li>}
               {isKo && <li>{t("privacy_s3_li6")}</li>}
+              {isKo && <li>{t("privacy_s3_li7")}</li>}
             </ul>
           </div>
 
@@ -133,6 +142,7 @@ export default function PrivacyPage() {
                     <th className="py-3 px-4 font-bold">수탁자</th>
                     <th className="py-3 px-4 font-bold">위탁 업무</th>
                     <th className="py-3 px-4 font-bold">소재 국가</th>
+                    <th className="py-3 px-4 font-bold">개인정보 문의처</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ink/10 text-ink">
@@ -141,6 +151,15 @@ export default function PrivacyPage() {
                       <td className="py-3 px-4 font-medium text-ink">{row.trustee}</td>
                       <td className="py-3 px-4">{row.task}</td>
                       <td className="py-3 px-4 text-gray-500">{row.country}</td>
+                      <td className="py-3 px-4 text-gray-500">
+                        {row.contact ? (
+                          <a href={row.contact} target="_blank" rel="noopener noreferrer" className="text-coral hover:underline">
+                            개인정보처리방침
+                          </a>
+                        ) : (
+                          "각 사 고객센터"
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
