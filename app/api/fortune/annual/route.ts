@@ -32,6 +32,10 @@ import { claimGeneration, completeGeneration, failGeneration } from "@/lib/repor
 import { readEnvelope } from "@/lib/reports/standard";
 import { personSubject } from "@/lib/reports/subjectKey";
 import { clipHalf } from "@/lib/reports/teaser";
+import {
+  buildSajuDisplayFromPillars,
+  type SajuDisplayPerson,
+} from "@/lib/sajuDisplay";
 
 /** 총운 미리보기의 무료 본문도 앞 절반만(2026-10-03 무료=질문, 유료=답). 뒷부분은 응답에서 뺀다. */
 function clipAnnualFree<T extends { text?: string }>(fs: T): T & { clipped?: boolean } {
@@ -343,12 +347,16 @@ export async function POST(req: Request) {
         isGuest: true,
       };
 
+      const guestCard = buildSajuDisplayFromPillars(saju.fourPillars);
+      const guestSajuDisplay: SajuDisplayPerson[] = guestCard ? [{ name, card: guestCard }] : [];
+
       void logGeneration({ catalogId: logCatalog, kind: "TEASER", ok: true, ms: Date.now() - tStart });
       return NextResponse.json({
         success: true,
         data: teaserData,
         locked: true,
         isGuest: true,
+        sajuDisplay: guestSajuDisplay,
       });
     }
 
@@ -549,11 +557,19 @@ export async function POST(req: Request) {
         locked: true,
       };
 
+      const memberCard = buildSajuDisplayFromPillars(
+        userProfile.fourPillars as unknown as FourPillarsObj,
+      );
+      const memberSajuDisplay: SajuDisplayPerson[] = memberCard
+        ? [{ name: userProfile.name || "나", card: memberCard }]
+        : [];
+
       void logGeneration({ catalogId: logCatalog, kind: "TEASER", ok: true, ms: Date.now() - tStart });
       return NextResponse.json({
         success: true,
         data: teaserData,
         locked: true,
+        sajuDisplay: memberSajuDisplay,
       });
     }
 

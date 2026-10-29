@@ -47,7 +47,17 @@ import { generateNamingReport } from "@/lib/premium/generateNaming";
 import { generateDatesReport } from "@/lib/premium/generateDates";
 import surnamesRaw from "@/data/naming/surnames.json";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
-import { checkPreviewQuota, previewLimitFor, MEMBER_PREVIEW_DAILY_LIMIT } from "@/lib/previewLimit";
+import {
+  checkPreviewQuota,
+  previewLimitFor,
+  MEMBER_PREVIEW_DAILY_LIMIT,
+  PREVIEW_SHARE_BONUS,
+} from "@/lib/previewLimit";
+import {
+  buildSajuDisplayForPerson,
+  buildSajuDisplayFromPillars,
+  type SajuDisplayPerson,
+} from "@/lib/sajuDisplay";
 
 const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
   Object.entries(surnamesRaw as Record<string, Array<{ hanja: string }>>).map(([hangul, arr]) => [
@@ -57,8 +67,14 @@ const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
 );
 
 const NO_STORE = { "Cache-Control": "no-store" };
-type Subject = { contextBlock: string; score: number; subjectHash: string };
-type CompatPerson = { name?: string; gender: string; dayMaster: string; elementsScore: Record<string, number> };
+type Subject = { contextBlock: string; score: number; subjectHash: string; sajuDisplay: SajuDisplayPerson[] };
+type CompatPerson = {
+  name?: string;
+  gender: string;
+  dayMaster: string;
+  elementsScore: Record<string, number>;
+  fourPillars?: { year: string; month: string; day: string; time: string | null };
+};
 
 function err(status: number, error: string) {
   return NextResponse.json({ error }, { status, headers: NO_STORE });
@@ -66,6 +82,7 @@ function err(status: number, error: string) {
 
 async function buildPersonSubject(product: CatalogItem, p: PersonInput): Promise<Subject> {
   const saju = calculateFourPillars(p.dob, p.time, p.gender, "Seoul, KR");
+  const card = buildSajuDisplayFromPillars(saju.fourPillars);
   let dictionaryContext = "";
   try {
     const row = await prisma.sajuContentDictionary.findFirst({ where: { signKey: saju.dayMasterSignKey } });
@@ -83,6 +100,7 @@ async function buildPersonSubject(product: CatalogItem, p: PersonInput): Promise
       fourPillars: saju.fourPillars, elementsScore: saju.elementsScore,
     }),
     subjectHash: personSubject(p),
+    sajuDisplay: card ? [{ name: p.name || "나", card }] : [],
   };
 }
 
@@ -91,6 +109,8 @@ async function buildCoupleSubject(product: CatalogItem, compatId: string): Promi
   if (!row) return null;
   const a = row.personA as unknown as CompatPerson;
   const b = row.personB as unknown as CompatPerson;
+  const cardA = buildSajuDisplayFromPillars(a?.fourPillars);
+  const cardB = buildSajuDisplayFromPillars(b?.fourPillars);
   return {
     contextBlock: compatContextBlock({
       personA: a, personB: b, relation: row.relation,
@@ -98,6 +118,10 @@ async function buildCoupleSubject(product: CatalogItem, compatId: string): Promi
     }),
     score: calculateGenericCompatScore({ productKey: product.id, personADayMaster: a.dayMaster, personBDayMaster: b.dayMaster }),
     subjectHash: coupleSubject(compatId),
+    sajuDisplay: [
+      ...(cardA ? [{ name: a?.name || "나", card: cardA }] : []),
+      ...(cardB ? [{ name: b?.name || "상대방", card: cardB }] : []),
+    ],
   };
 }
 
@@ -187,8 +211,10 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildDaeun2027Teaser(p);
+        const personCard = buildSajuDisplayForPerson(p);
+        const sajuDisplay = personCard ? [personCard] : [];
         void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
-        return NextResponse.json({ kind: "TEASER", score: teaser.yearScore, data: teaser }, { headers: NO_STORE });
+        return NextResponse.json({ kind: "TEASER", score: teaser.yearScore, data: teaser, sajuDisplay }, { headers: NO_STORE });
       }
 
       const sh = premium2027Subject(p);
@@ -238,8 +264,15 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildNamingTeaser(namingInput);
+        const childCard = buildSajuDisplayForPerson({
+          name: `${namingInput.surnameHangul}씨 아기`,
+          dob: namingInput.dob,
+          time: namingInput.time,
+          gender: namingInput.gender,
+        });
+        const sajuDisplay = childCard ? [childCard] : [];
         void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
-        return NextResponse.json({ kind: "TEASER", score: 0, data: teaser }, { headers: NO_STORE });
+        return NextResponse.json({ kind: "TEASER", score: 0, data: teaser, sajuDisplay }, { headers: NO_STORE });
       }
 
       const sh = namingSubject(namingInput);
@@ -289,8 +322,16 @@ export async function POST(req: NextRequest) {
 
       if (kind === "TEASER") {
         const teaser = buildDateSelectionTeaser(dateInput);
+        const sajuDisplay = dateInput.people
+          .map((person, idx) =>
+            buildSajuDisplayForPerson({
+              ...person,
+              name: person.name || (idx === 0 ? "대상자 1" : "대상자 2"),
+            }),
+          )
+          .filter((item): item is SajuDisplayPerson => Boolean(item));
         void logGeneration({ catalogId, kind: "TEASER", ok: true, ms: Date.now() - t0 });
-        return NextResponse.json({ kind: "TEASER", score: 0, data: teaser }, { headers: NO_STORE });
+        return NextResponse.json({ kind: "TEASER", score: 0, data: teaser, sajuDisplay }, { headers: NO_STORE });
       }
 
       const sh = datesSubject(dateInput, dateInput.people);
@@ -376,13 +417,16 @@ export async function POST(req: NextRequest) {
     const limit = previewLimitFor(!!sessionUserId);
     const quota = checkPreviewQuota(req, cacheKey, limit);
     if (!quota.allowed) {
+      const memberEffectiveLimit =
+        MEMBER_PREVIEW_DAILY_LIMIT + (quota.shareBonusUsed ? PREVIEW_SHARE_BONUS : 0);
       return NextResponse.json(
         {
-          error: `무료 미리보기는 하루 ${limit}개까지 볼 수 있어요.`,
+          error: `무료 미리보기는 하루 ${quota.effectiveLimit}개까지 볼 수 있어요.`,
           code: "PREVIEW_LIMIT",
-          limit,
+          limit: quota.effectiveLimit,
+          shareBonusAvailable: !quota.shareBonusUsed,
           // 비회원이면 가입으로 더 볼 수 있는 개수(회원 한도 − 지금까지 본 개수). 회원은 0.
-          signupBonus: sessionUserId ? 0 : Math.max(0, MEMBER_PREVIEW_DAILY_LIMIT - quota.used),
+          signupBonus: sessionUserId ? 0 : Math.max(0, memberEffectiveLimit - quota.used),
         },
         { status: 429, headers: NO_STORE },
       );
@@ -416,7 +460,13 @@ export async function POST(req: NextRequest) {
     // 비회원 때 만든 미리보기를 가입 후 다시 본 경우: 주인 없는 미리보기에 회원을 이어 둔다("이어보기" 카드용)
     if (kind === "TEASER" && sessionUserId) linkTeaserToMember(claim.reportId, sessionUserId);
     void logGeneration({ catalogId, kind, ok: true, cached: true });
-    return ok({ kind, reportId: claim.reportId, score: env.score, data: viewData(env.data) });
+    return ok({
+      kind,
+      reportId: claim.reportId,
+      score: env.score,
+      data: viewData(env.data),
+      ...(kind !== "FULL" ? { sajuDisplay: subject.sajuDisplay } : {}),
+    });
   }
   if (claim.state === "BUSY") return ok({ status: "GENERATING", reportId: claim.reportId }, 202);
   if (claim.state === "GAVE_UP") return err(409, "리포트 생성에 반복 실패했어요. 고객센터로 문의해 주세요.");
@@ -461,7 +511,13 @@ export async function POST(req: NextRequest) {
     await completeGeneration(claim.reportId, JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue, model);
     if (kind === "FULL") await markViewed(claim.reportId);
     void logGeneration({ catalogId, kind, ok: true, ms: Date.now() - t0 });
-    return ok({ kind, reportId: claim.reportId, score: subject.score, data: viewData(data) });
+    return ok({
+      kind,
+      reportId: claim.reportId,
+      score: subject.score,
+      data: viewData(data),
+      ...(kind !== "FULL" ? { sajuDisplay: subject.sajuDisplay } : {}),
+    });
   } catch (e) {
     await failGeneration(claim.reportId);
     void logGeneration({ catalogId, kind, ok: false, ms: Date.now() - t0, error: errorCode(e) });

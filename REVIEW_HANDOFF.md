@@ -86,6 +86,60 @@
 - **클로드에게 필요한 것**:
   - 없음 (쿠폰 금액 1,000원 및 기존 후기 보상 고지 문구 변경 없음).
 # REVIEW_HANDOFF — argon/05-lunar-input (음력 생일 입력)
+# REVIEW_HANDOFF — argon/08-share-bonus (공유하면 오늘 3번 더)
+
+> **기반 브랜치**: `argon/07-story-card` (`15d5976`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `lib/previewLimit.ts` (기기 식별 쿠키 `kd_vid` 해시 + 오늘 KST 날짜 기준 하루 1회만 유효한 서명된 `HttpOnly` 보너스 쿠키 `kd_pvb` 및 서버 메모리 원장으로 `checkPreviewQuota`에서 오늘 미리보기 한도 `+3` 부여 `grantPreviewShareBonus`, `hasPreviewShareBonus`)
+   - `app/api/preview/bonus/route.ts` (신규 — `POST /api/preview/bonus`에서 서버 측 `grantPreviewShareBonus` 실행 및 `kd_vid`·`kd_pvb` 쿠키 발급)
+   - `app/api/reports/generate/route.ts` (`PREVIEW_LIMIT` 429 응답에 실제 적용 한도 `quota.effectiveLimit` 및 오늘 보너스 잔여 여부 `shareBonusAvailable` 포함)
+   - `app/api/og/story/route.tsx` (한도 화면 공유 시 `compatId` 또는 `productId` 기준으로도 개인정보 없는 1080×1920 스토리 카드를 생성하도록 보강)
+   - `components/report/PreviewLimitPanel.tsx`, `components/CompatNewClient.tsx`, `components/FortuneNewClient.tsx` (`"결과 카드 공유하고 오늘 3번 더 보기"` 버튼 추가, `"공유하면"` 톤 유지·강요 문구 없음, 공유 시트 오픈 시 `preview_bonus_share` GA4 발사 및 `/api/preview/bonus` 호출 후 미리보기 즉시 재요청)
+   - `tests/previewLimit.test.ts` (`kd_vid` 기기당 하루 1회 `+3` 허용·같은 날 2차 요청 거부·보너스 쿠키 타 기기 도용 차단·다음 날 KST 초기화·라우트 쿠키 발급 테스트 추가)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 8개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 79 passed / 1 skipped (총 592 tests 통과, `tests/previewLimit.test.ts` 8건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 하루 무료 미리보기 한도 화면(`PreviewLimitPanel`)에서 오늘 보너스를 아직 쓰지 않은 기기일 때만 `"결과 카드를 공유하면 오늘 무료 미리보기를 3번 더 볼 수 있어요(하루 1번)."` 안내와 `"결과 카드 공유하고 오늘 3번 더 보기"` 버튼이 노출됨을 확인.
+   - 공유 시트가 열리면 `POST /api/preview/bonus`가 서버에서 `kd_vid` 기기 한도를 `+3`으로 올리고 방금 보려던 미리보기가 즉시 열리며, 추가 3회 소진 후에는 같은 날 버튼이 다시 뜨지 않음을 확인.
+4. **스스로 의심하는 점**
+   - PM2 재시작이 발생해도 오늘 받은 보너스가 풀리지 않도록 서명된 `HttpOnly` 쿠키(`kd_pvb`, `kd_vid` 해시 결합)와 프로세스 메모리 원장(`grantedVidByDay`)을 병행했습니다. 만약 사용자가 브라우저의 모든 쿠키(`kd_pv`, `kd_pvb`, `kd_vid` 전체)를 통째로 삭제하면 기존 `kd_pv` 한도와 마찬가지로 새 기기로 취급되나, 그 경우에도 IP 기반 `checkRateLimit`과 `checkGlobalAiCap`이 상한선을 방어합니다.
+5. **클로드에게 필요한 것**
+   - 없음 (`06 → 07 → 08` 순차 기반 브랜치이므로 순서대로 머지 필요)
+
+---
+
+# REVIEW_HANDOFF — argon/07-story-card (인스타 스토리용 결과 카드 9:16)
+
+> **기반 브랜치**: `argon/06-saju-card` (`28e2048`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `lib/storyCard.ts` (신규 — 애칭 정제 및 한국 실명·생년월일·이메일·한자 자동 마스킹 `sanitizeStoryNickname`, 기본값 `"나 × 그 사람"` 제목 생성, 한 줄 요약 실명/호칭 스크러빙, 무료 성격용 비식별 결정론 키워드·배지 인코딩/디코딩)
+   - `app/api/og/story/route.tsx` (신규 — `1080×1920` 9:16 PNG 동적 생성: 두근이 마스코트 PNG 데이터 URI, 점수, 엔진 키워드 3개, 작업 06의 매력 기운 배지, 한 줄 요약, 하단 워터마크 `kongdak.kr`, 외부 Twemoji CDN 호출 없이 로컬 Pretendard 폰트로만 렌더링)
+   - `components/share/StoryCardSaveButton.tsx` (신규 — `"스토리용 카드 저장"` 버튼: 모바일 `navigator.share({ files })` 지원 시 공유 시트 즉시 호출 + `story_card_share`, 미지원·PC 환경에서는 PNG 다운로드 + `story_card_save`)
+   - `components/CompatResultClient.tsx`, `components/FortuneNewClient.tsx` (무료 궁합 결과 및 무료 성격 결과 `free_personality`에 `"스토리용 카드 저장"` 버튼 연결, 다운로드 파일명에서도 이름 제거)
+   - `tests/storyCard.test.ts` (신규 — 실명·생년월일 마스킹 및 애칭 유지, 한 줄 요약 PII 제거, 닫힌 enum 파라미터 위변조 방어, 실제 1080×1920 PNG 매직 바이트·IHDR 크기 검증 4건)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 6개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 79 passed / 1 skipped (총 590 tests 통과, 신규 `tests/storyCard.test.ts` 4건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 무료 궁합 결과(`/ko/compat/[id]`)와 무료 성격 결과(`/ko/fortune/new?productId=free_personality`)에 `"스토리용 카드 저장"` 버튼이 노출되고, URL·파일명·이미지 어디에도 생년월일과 실명이 포함되지 않음을 확인.
+   - `/api/og/story`가 정확히 `1080×1920` PNG를 생성하며 두근이·점수·엔진 키워드 3개·매력 기운 배지(있을 때만)·한 줄 요약·`kongdak.kr` 워터마크가 포함됨을 확인.
+4. **스스로 의심하는 점**
+   - 입력창 라벨이 `"이름 또는 애칭"`이라 카카오 로그인 사용자의 실명(예: `"김민수"`)이 DB에 저장되어 있을 수 있어, 한국 성씨로 시작하는 2~4자 순한글 이름(일상 애칭 허용 목록 제외)은 `"나 × 그 사람"`으로 자동 마스킹하고 한 줄 요약 본문 안의 실명·`"○○님"` 호칭도 함께 치환했습니다. 혹시 성씨 글자로 시작하는 독특한 2~4자 순한글 별명(예: `"김밥"`)을 쓴 경우에도 안전하게 기본값으로 마스킹됩니다.
+5. **클로드에게 필요한 것**
+   - 없음 (`argon/06-saju-card` 위에 분기한 브랜치이므로 `06` 머지 후 순서대로 머지 필요)
+
+---
+
+# REVIEW_HANDOFF — argon/06-saju-card (사주 여덟 글자 카드 + 매력 기운 배지)
 
 > **기반 브랜치**: `origin/main` (`c963b6e`)
 > **작성 일시**: 2026-10-29
@@ -109,6 +163,22 @@
    - 제출 직전 양력 `YYYY-MM-DD`로 변환해 기존 API 계약과 `lib/saju.ts`를 수정 없이 그대로 재사용하며, 결과 화면 상단에 `"음력 ○월 ○일(양력 ○월 ○일)로 봤어요"` 한 줄이 표시됨을 확인.
 4. **스스로 의심하는 점**
    - 결과 안내 문구(`"음력 ○월 ○일(양력 ○월 ○일)로 봤어요"`)에 생일(월·일)이 들어가므로 공유 링크를 열어 보는 제3자에게 노출되지 않도록 서버 DB·응답·URL에는 일절 저장하지 않고 입력한 본인의 탭(`sessionStorage`)에서만 읽어 표시하도록 설계했습니다. 따라서 다른 브라우저나 새 탭에서 공유 링크로 열었을 때는 해당 문구가 보이지 않는데, 개인정보 보호 원칙(§0.6)에 부합하는 의도된 동작입니다.
+   - `lib/sajuDisplay.ts` (신규 — `lib/saju.ts`의 `calculateFourPillars` 결과만 읽기 전용으로 받아 한자·전문용어 없이 8칸 쉬운 한글 기운 이름·색, 나무·불·흙·쇠·물 개수, 결정론 매력 기운 배지 `도화(사람을 끄는 매력)`·`홍염(한 번 빠지면 깊은 매력)`·`역마(움직임이 많은)` 계산)
+   - `components/saju/SajuEightCharCard.tsx` (신규 — 1인/2인 여덟 글자 8칸 카드·다섯 기운 개수 막대·매력 기운 배지 UI, `saju_card_view` 및 `charm_badge_view` GA4 이벤트 발사, `"use client"` 타입 전용 import 준수)
+   - `app/[locale]/compat/[id]/page.tsx` (서버에서 `compat.personA/personB.fourPillars`를 한글 전용 `sajuPeople`로 변환해 클라이언트에 전달, 원본 `fourPillars`/`birthHash` 미노출)
+   - `app/api/reports/generate/route.ts`, `app/api/fortune/annual/route.ts` (유료 상품 `TEASER` 및 무료 성격 `FREE` 응답에 결정론 `sajuDisplay` 배열 포함)
+   - `components/CompatResultClient.tsx`, `components/CompatNewClient.tsx`, `components/FortuneNewClient.tsx`, `app/[locale]/fortune/annual/AnnualFortuneClient.tsx`, `components/premium/PremiumNewClient.tsx` (무료 궁합 결과·무료 성격 결과·유료 커플/개인/신년/프리미엄 미리보기 맨 위에 `SajuEightCharCard` 배치)
+   - `tests/sajuDisplay.test.ts` (신규 — 결정론 동일 입력=동일 카드, 시간 미상 `"모름"` 2칸+기운 합 6, 한자·전문용어·퍼센트·순위 0건 검증, 배지 없음 케이스 및 도화·홍염·역마 판정 경계값 단위 테스트 5건)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 11개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 78 passed / 1 skipped (총 586 tests 통과, 신규 `tests/sajuDisplay.test.ts` 5건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 무료 궁합 결과(`/ko/compat/[id]`)와 무료 성격 결과, 유료 상품 미리보기(`/ko/compat/new`, `/ko/fortune/new`, `/ko/fortune/annual`, `/ko/premium/*/new`) 맨 위에 한자 없이 연·월·일·시 8칸 쉬운 기운 카드(`큰 나무`, `촛불`, `바다` 등, 시간 미상이면 시주 2칸 `"모름"`)와 나무·불·흙·쇠·물 개수 막대가 렌더링됨을 확인.
+   - 결정론 판정에서 해당하는 기운이 있을 때만 `도화(사람을 끄는 매력)`, `홍염(한 번 빠지면 깊은 매력)`, `역마(움직임이 많은)` 배지가 퍼센트·순위 없이 표시되고 `saju_card_view`와 `charm_badge_view`(배지 이름) 이벤트가 1회 발사됨을 확인.
+4. **스스로 의심하는 점**
+   - 도화·역마는 전통 삼합 기준에서 연지·일지 두 기준을 모두 확인해 알려진 지지(시간 미상일 때는 시지 제외 3지지) 중 해당 글자가 있을 때만 배지를 부여했고, 기준 글자 자체가 자기 자신을 가리키지 않으므로 과도하게 모든 사람에게 배지가 붙지 않음을 테스트로 검증했습니다.
 5. **클로드에게 필요한 것**
    - 없음 (DB 스키마·약관·환경변수 변경 없음)
 

@@ -33,6 +33,9 @@ import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
 import { loadCompatLunarNotices, buildCoupleLunarLines } from "@/lib/lunarNoticeStorage";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
+import StoryCardSaveButton from "@/components/share/StoryCardSaveButton";
 
 interface CompatData {
   id: string;
@@ -42,6 +45,7 @@ interface CompatData {
   keywords: string[];
   summaryKo: string | null;
   publicBreakdown?: CompatPublicBreakdown | null;
+  sajuPeople?: SajuDisplayPerson[];
   personA: { name: string; gender: string };
   personB: { name: string; gender: string };
 }
@@ -501,24 +505,6 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     }
   }, [isPremium, unlockToken, deepReport, isLoadingDeepReport, deepReportError, handleGenerateDeepReport]);
 
-  // 4. 인스타 스토리 카드 다운로드 핸들러
-  const handleDownloadCard = () => {
-    // 카드 '생성'은 공유 실행이 아니므로 K 분모(share_created)에 넣지 않는다(진단용).
-    trackEvent("share_card_created", { shareToken: data.shareToken, format: "story_1080x1350" });
-    const downloadUrl = `/api/og/compat?shareToken=${encodeURIComponent(data.shareToken)}&w=1080&h=1350&download=true`;
-    
-    // 다운로드 트리거
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = `kongdak_${data.personA.name}_${data.personB.name}_${data.score}점.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setCopyToast("인스타 스토리 카드를 다운로드하고 있습니다 📸");
-    setTimeout(() => setCopyToast(null), 3000);
-  };
-
   // 5. 카카오톡 공유 핸들러
   const handleKakaoShare = () => {
     // 공유 이벤트는 SDK 가 실제로 준비된 경우에만 발사한다.
@@ -611,6 +597,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             연동하기
           </Button>
         </Card>
+      )}
+
+      {data.sajuPeople && data.sajuPeople.length > 0 && (
+        <SajuEightCharCard
+          people={data.sajuPeople}
+          source="compat_result"
+          className="mt-4"
+        />
       )}
 
       {/* Main Score Card */}
@@ -1289,16 +1283,16 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
           <span>링크 복사하기</span>
         </Button>
 
-        {/* Download Story Card Button */}
-        <Button
-          onClick={handleDownloadCard}
-          variant="secondary"
-          size="lg"
-          fullWidth
-          leftIcon={<span className="text-base">📸</span>}
-        >
-          <span>인스타 스토리 카드 다운로드 (1080×1350)</span>
-        </Button>
+        {/* Story Card Save / Share Button (9:16 1080x1920) */}
+        <StoryCardSaveButton
+          storyUrl={`/api/og/story?shareToken=${encodeURIComponent(data.shareToken)}`}
+          source="compat_result"
+          fileName={`kongdak_compat_${data.score}pts.png`}
+          onFeedback={(msg) => {
+            setCopyToast(msg);
+            setTimeout(() => setCopyToast(null), 3000);
+          }}
+        />
 
         {/* 반쪽 궁합 초대장 보조 버튼 (P-008 입구 2) */}
         <Link

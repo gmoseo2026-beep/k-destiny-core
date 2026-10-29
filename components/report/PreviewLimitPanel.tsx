@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Lock, Share2, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
 import { formatWon, getProductCover, listPrice, priceLabel, discountBadge, type CatalogItem } from "@/lib/catalog";
 import { trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
@@ -18,13 +18,143 @@ interface PreviewLimitPanelProps {
   signupBonus?: number;
   /** 가입·로그인 주소(끝나면 이 상품 미리보기로 돌아온다) */
   signupHref?: string;
+  /** 오늘 이 기기(kd_vid)에 공유 보너스(+3)가 아직 남아 있는지 */
+  shareBonusAvailable?: boolean;
+  /** 공유할 9:16 결과 카드 주소 (개인정보 미포함) */
+  storyCardUrl?: string;
+  /** 서버가 오늘 한도 +3 을 반영한 직후 미리보기 재요청 콜백 */
+  onShareBonusGranted?: () => void | Promise<void>;
 }
 
-export default function PreviewLimitPanel({ product, sectionTitles, limit, onUnlock, signupBonus = 0, signupHref }: PreviewLimitPanelProps) {
+export default function PreviewLimitPanel({
+  product,
+  sectionTitles,
+  limit,
+  onUnlock,
+  signupBonus = 0,
+  signupHref,
+  shareBonusAvailable = false,
+  storyCardUrl = "/api/og/story",
+  onShareBonusGranted,
+}: PreviewLimitPanelProps) {
   const canSignup = signupBonus > 0 && !!signupHref;
+  const [bonusClaimed, setBonusClaimed] = useState(false);
+  const [isSharingBonus, setIsSharingBonus] = useState(false);
+  const prefetchedFileRef = useRef<File | null>(null);
+
+  const showShareBonus = shareBonusAvailable && !bonusClaimed;
+
   useEffect(() => {
     trackEvent("preview_limit_view", { productId: product.id, signup_offer: canSignup });
   }, [product.id, canSignup]);
+
+  // 모바일 브라우저에서 클릭 즉시 공유 시트를 열 수 있도록 결과 카드 PNG를 미리 준비해 둔다.
+  useEffect(() => {
+    if (!showShareBonus) return;
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch(storyCardUrl);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        if (!alive) return;
+        prefetchedFileRef.current = new File([blob], "kongdak_story_card.png", {
+          type: "image/png",
+        });
+      } catch {
+        // 미리 불러오기에 실패해도 링크 공유 시트로 자연스럽게 이어진다.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [showShareBonus, storyCardUrl]);
+
+  const handleShareForBonus = async () => {
+    if (isSharingBonus || !showShareBonus) return;
+    setIsSharingBonus(true);
+
+    try {
+      const sharePageUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/ko/products/${product.id}`
+          : `https://kongdak.kr/ko/products/${product.id}`;
+
+      let sheetOpened = false;
+
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        const readyFile = prefetchedFileRef.current;
+        let canShareFile = false;
+        if (readyFile && typeof navigator.canShare === "function") {
+          try {
+            canShareFile = navigator.canShare({ files: [readyFile] });
+          } catch {
+            canShareFile = false;
+          }
+        }
+
+        try {
+          if (readyFile && canShareFile) {
+            await navigator.share({
+              files: [readyFile],
+              title: "콩닥 결과 카드",
+            });
+          } else {
+            await navigator.share({
+              title: product.name,
+              text: product.hook,
+              url: sharePageUrl,
+            });
+          }
+          sheetOpened = true;
+        } catch (shareErr) {
+          // 사용자가 열린 공유 시트를 닫은 경우(AbortError)에도 공유 시트는 실제로 열렸다.
+          if (shareErr instanceof Error && shareErr.name === "AbortError") {
+            sheetOpened = true;
+          } else {
+            // 파일 공유가 거절된 인앱 브라우저에서는 URL 공유 시트로 한 번 더 시도한다.
+            try {
+              await navigator.share({
+                title: product.name,
+                text: product.hook,
+                url: sharePageUrl,
+              });
+              sheetOpened = true;
+            } catch (fallbackErr) {
+              if (fallbackErr instanceof Error && fallbackErr.name === "AbortError") {
+                sheetOpened = true;
+              }
+            }
+          }
+        }
+      } else if (typeof document !== "undefined") {
+        // Web Share API가 없는 데스크톱 브라우저에서는 결과 카드 저장으로 공유를 돕는다.
+        const sep = storyCardUrl.includes("?") ? "&" : "?";
+        const link = document.createElement("a");
+        link.href = `${storyCardUrl}${sep}download=true`;
+        link.download = "kongdak_story_card.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        sheetOpened = true;
+      }
+
+      if (!sheetOpened) return;
+
+      trackEvent("preview_bonus_share", { productId: product.id });
+
+      const bonusRes = await fetch("/api/preview/bonus", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      if (bonusRes.ok) {
+        setBonusClaimed(true);
+        await onShareBonusGranted?.();
+      }
+    } finally {
+      setIsSharingBonus(false);
+    }
+  };
 
   const strike = listPrice(product);
   const price = priceLabel(product);
@@ -46,6 +176,23 @@ export default function PreviewLimitPanel({ product, sectionTitles, limit, onUnl
           </>
         )}
       </div>
+
+      {showShareBonus && (
+        <div className="rounded-3xl border border-[#FFC24B]/35 bg-[#22142A] p-5 text-left">
+          <p className="text-xs font-semibold text-[#B9A9BF] leading-relaxed">
+            결과 카드를 공유하면 오늘 무료 미리보기를 3번 더 볼 수 있어요(하루 1번).
+          </p>
+          <button
+            type="button"
+            disabled={isSharingBonus}
+            onClick={handleShareForBonus}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#FFC24B]/50 bg-[#140B18] px-5 py-3.5 text-sm font-extrabold text-[#FFC24B] transition-all hover:bg-white/[0.04] active:scale-[0.96] disabled:opacity-60"
+          >
+            <Share2 className="h-4 w-4 shrink-0" />
+            <span>결과 카드 공유하고 오늘 3번 더 보기</span>
+          </button>
+        </div>
+      )}
 
       {canSignup && signupHref && (
         <div className="rounded-3xl border border-[#FF5C77]/35 bg-[#22142A] p-5 text-left">

@@ -24,6 +24,10 @@ import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
+import StoryCardSaveButton from "@/components/share/StoryCardSaveButton";
+import { buildPersonalityStoryUrl } from "@/lib/storyCard";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -136,10 +140,13 @@ export default function FortuneNewClient({
     annualData?: AnnualTeaserData;
     reportData?: StandardReport | StandardTeaser;
     reportId?: string;
+    sajuDisplay?: SajuDisplayPerson[];
     /** 오늘의 무료 미리보기 한도를 넘김(값 = 하루 한도). 미리보기 대신 결제 안내를 보여 준다 */
     previewLimit?: number;
     /** 비회원이 가입하면 오늘 더 볼 수 있는 미리보기 수 */
     signupBonus?: number;
+    /** 오늘 이 기기(kd_vid)에 공유 보너스(+3)가 남아 있는지 */
+    shareBonusAvailable?: boolean;
   } | null>(null);
 
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -245,6 +252,7 @@ export default function FortuneNewClient({
           isAnnual: true,
           score: json.data?.yearScore || 0,
           annualData: json.data,
+          sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
         });
       } else {
         // Standard report generate route (FREE or TEASER)
@@ -262,7 +270,13 @@ export default function FortuneNewClient({
 
         const json = await res.json();
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-          setResultData({ isAnnual: false, score: 0, previewLimit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+          setResultData({
+            isAnnual: false,
+            score: 0,
+            previewLimit: json.limit ?? 3,
+            signupBonus: json.signupBonus ?? 0,
+            shareBonusAvailable: Boolean(json.shareBonusAvailable),
+          });
           return;
         }
         if (!res.ok) throw new Error(json.error || "결과 생성 중 오류가 발생했습니다.");
@@ -281,6 +295,7 @@ export default function FortuneNewClient({
           score: json.score || 0,
           reportData: json.data,
           reportId: json.reportId,
+          sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
         });
       }
     } catch (err) {
@@ -380,6 +395,12 @@ export default function FortuneNewClient({
             )}
           </div>
         )}
+        {!resultData.previewLimit && resultData.sajuDisplay && resultData.sajuDisplay.length > 0 && (
+          <SajuEightCharCard
+            people={resultData.sajuDisplay}
+            source={product?.isFree ? "free_personality" : "fortune_preview"}
+          />
+        )}
 
         {resultData.previewLimit && product ? (
           <PreviewLimitPanel
@@ -390,6 +411,11 @@ export default function FortuneNewClient({
             signupBonus={session?.user ? 0 : resultData.signupBonus}
             // 가입 후 이 상품으로 돌아와, 방금 넣은 정보로 미리보기를 바로 만든다(auto=1)
             signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/fortune/new?productId=${currentProductId}&auto=1`)}`}
+            shareBonusAvailable={Boolean(resultData.shareBonusAvailable)}
+            storyCardUrl={`/api/og/story?productId=${encodeURIComponent(product.id)}`}
+            onShareBonusGranted={async () => {
+              await handleSubmitRef.current?.({ preventDefault() {} } as React.FormEvent);
+            }}
           />
         ) : resultData.isAnnual && resultData.annualData ? (
           <div className="bg-[#22142A] p-6 rounded-3xl border border-white/[0.08] text-left">
@@ -475,6 +501,17 @@ export default function FortuneNewClient({
             }
           />
         ) : null}
+
+        {product?.isFree && !resultData.previewLimit && resultData.reportId && (
+          <StoryCardSaveButton
+            storyUrl={buildPersonalityStoryUrl(
+              resultData.reportId,
+              resultData.sajuDisplay?.[0]?.card,
+            )}
+            source="free_personality"
+            fileName={`kongdak_personality_${resultData.score}pts.png`}
+          />
+        )}
 
         {/* Free Product Recommendations */}
         {product?.isFree && recommendations.length > 0 && (
