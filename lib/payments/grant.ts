@@ -10,6 +10,21 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
     const order = await tx.order.findUnique({ where: { orderId } });
     if (!order) return { ok: false, reason: "no_order" };
 
+    // [argon/12-set-upgrade] 동시 결제 경합에서도 동일 단품 주문으로부터 이중 업그레이드가 되지 않도록 트랜잭션 내 재확인
+    if (order.upgradeFromOrderId) {
+      const dupUpgrade = await tx.order.findFirst({
+        where: {
+          upgradeFromOrderId: order.upgradeFromOrderId,
+          status: "PAID",
+          NOT: { orderId },
+        },
+        select: { id: true },
+      });
+      if (dupUpgrade) {
+        return { ok: false, reason: "already_upgraded" };
+      }
+    }
+
     // 원자적 status 체크 + 전환 (이미 PAID면 count === 0 → 권한부여 스킵)
     const res = await tx.order.updateMany({
       where: { orderId, status: { not: "PAID" } },

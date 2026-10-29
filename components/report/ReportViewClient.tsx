@@ -6,6 +6,7 @@ import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import ReviewCouponCard from "@/components/report/ReviewCouponCard";
+import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
@@ -265,6 +266,14 @@ export default function ReportViewClient({
           sourceScreen="report_view"
         />
       )}
+
+      <SetUpgradeBanner
+        locale={locale}
+        orderId={matchedOrderToken}
+        catalogId={reportData.catalogId}
+        compatId={reportData.compatId}
+        source="report_bottom"
+      />
 
       {/* Action Buttons */}
       <ReviewCouponCard

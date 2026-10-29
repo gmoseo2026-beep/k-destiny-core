@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
+import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
 import { blockPaymentIfInApp, markPayHandoffUrl, takePayHandoff } from "@/lib/inAppBrowser";
 import {
@@ -1097,6 +1098,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               sourceScreen="compat_unlocked"
             />
           )}
+
+          <SetUpgradeBanner
+            locale={locale}
+            catalogId="compat_basic"
+            compatId={data.id}
+            source="compat_bottom"
+          />
 
           {/* Guest Retention & Account Binding Banner */}
           {!session?.user?.id && (

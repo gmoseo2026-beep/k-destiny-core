@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { payments } from "@/lib/payments";
 import { applyPaidOrder, revokePaidOrder } from "@/lib/payments/grant";
+import { verifyUpgradeSettlement } from "@/lib/payments/setUpgrade";
+
+interface PortOneWebhookEvent {
+  type?: string;
+  data?: {
+    paymentId?: string;
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
     // 서명검증(내부에서 rawBody 사용). 실패 시 throw → 400.
-    const event: any = await payments.verifyWebhook(req);
+    const event = (await payments.verifyWebhook(req)) as PortOneWebhookEvent;
     const type: string = event?.type || "";
     const paymentId: string | undefined = event?.data?.paymentId;
     if (!paymentId) return NextResponse.json({ ok: true }, { status: 200 });
@@ -16,7 +24,43 @@ export async function POST(req: NextRequest) {
 
     if (type.startsWith("Transaction.Paid")) {
       const payment = await payments.getPayment(paymentId);
-      if (payment.status === "PAID" && Number(payment.amount?.total) === order.amount) {
+      const paidTotal = Number(payment.amount?.total);
+      if (payment.status === "PAID" && paidTotal === order.amount) {
+        if (order.upgradeFromOrderId) {
+          const [sourceOrder, existingUpgrade] = await Promise.all([
+            prisma.order.findUnique({ where: { orderId: order.upgradeFromOrderId } }),
+            prisma.order.findFirst({
+              where: {
+                upgradeFromOrderId: order.upgradeFromOrderId,
+                status: "PAID",
+                NOT: { orderId: order.orderId },
+              },
+              select: { id: true },
+            }),
+          ]);
+          const upgCheck = verifyUpgradeSettlement({
+            upgradeOrder: {
+              id: order.id,
+              orderId: order.orderId,
+              amount: order.amount,
+              compatId: order.compatId,
+              productType: order.productType,
+              productKey: order.productKey,
+              createdAt: order.createdAt,
+              upgradeFromOrderId: order.upgradeFromOrderId,
+            },
+            sourceOrder,
+            pgPaidTotal: paidTotal,
+            alreadyUpgradedByAnotherOrder: Boolean(existingUpgrade),
+          });
+          if (!upgCheck.ok) {
+            console.warn("[webhooks/portone] upgrade settlement rejected", {
+              paymentId,
+              reason: upgCheck.reason,
+            });
+            return NextResponse.json({ ok: false, reason: upgCheck.reason }, { status: 400 });
+          }
+        }
         await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
       }
     } else if (
@@ -45,7 +89,7 @@ export async function POST(req: NextRequest) {
       }
     }
     return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("[webhooks/portone]", e);
     return NextResponse.json({ ok: false }, { status: 400 }); // 서명 실패 등
   }

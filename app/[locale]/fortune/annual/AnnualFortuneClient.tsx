@@ -10,6 +10,7 @@ import { grantingCatalogIds } from "@/lib/productIdentity";
 import { loadLastPerson } from "@/lib/reportHandoff";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
+import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
   getProduct,
@@ -319,7 +320,7 @@ export default function AnnualFortuneClient({
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   // 결제를 마치고 돌아온 비회원: 이 기기의 결제 증명 + 입력값으로 바로 전체 총운을 연다
   const guestAutoRef = React.useRef(false);
@@ -359,7 +360,7 @@ export default function AnnualFortuneClient({
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   useEffect(() => {
     if (initialHasProfile) {
@@ -1124,6 +1125,14 @@ export default function AnnualFortuneClient({
       )}
 
       {/* 결제한 총운: 다시 찾아올 길과 계정 저장(비회원 결제는 이 브라우저에만 남는다) */}
+      {!isLocked && (
+        <SetUpgradeBanner
+          locale={locale}
+          catalogId={`annual_${year}`}
+          source="annual_bottom"
+          className="mt-6"
+        />
+      )}
       {!isLocked && <GuestKeepBanner locale={locale} source="annual" className="mt-6" />}
 
       {/* Re-calculate with another birth date — 맛보기에서만(결제한 총운은 한 사람 기준으로 보관된다) */}

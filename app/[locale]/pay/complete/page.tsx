@@ -19,6 +19,7 @@ import { trackEvent } from "@/lib/gtag";
 import { isInAppBrowser, isIOS, getInAppProvider, isTikTokBlockedWebview, openInExternalBrowser, externalBrowserUrl } from "@/lib/inAppBrowser";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 
 function PayCompleteContent() {
   const params = useParams();
@@ -33,6 +34,7 @@ function PayCompleteContent() {
   const [paidCompatId, setPaidCompatId] = useState<string | null>(null);
   const [paidProductType, setPaidProductType] = useState<string | null>(null);
   const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
+  const [paidOrderId, setPaidOrderId] = useState<string | null>(null);
   // 결제 실패·취소 시 돌아갈 화면(결제를 시작한 곳)
   const [retryHref, setRetryHref] = useState<string | null>(null);
   // 앱 안 브라우저(틱톡·인스타 등)에서 결제가 실패·취소된 경우: 같은 곳에서 다시 해도 또 막히는 일이 잦아
@@ -116,6 +118,9 @@ function PayCompleteContent() {
             rememberUnlockToken(result.compatId, result.orderId);
             setPaidCompatId(result.compatId);
           }
+          if (result?.orderId) {
+            setPaidOrderId(result.orderId);
+          }
           if (result?.catalogId) {
             setPaidCatalogId(result.catalogId);
           }
@@ -125,9 +130,12 @@ function PayCompleteContent() {
           if (result?.productType === "ANNUAL") {
             setPaidProductType("ANNUAL");
           }
+          const isUpgrade = Boolean(result?.upgrade);
           setStatus("success");
           setMsg("결제가 정상적으로 완료되었습니다!");
-          clearDeviceCoupon();
+          if (!isUpgrade) {
+            clearDeviceCoupon();
+          }
 
           // 같은 결제를 다시 열었으면(서버가 오래된 주문이라 하거나 이 기기에서 이미 보냈으면) 매출 신호를 또 보내지 않는다
           const sentKey = "kd_purchase_sent";
@@ -145,12 +153,14 @@ function PayCompleteContent() {
               productId: result.catalogId,
               tier: catItem?.tier || "standard",
               amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
+              ...(isUpgrade ? { upgrade: true } : {}),
             });
             // 모바일 결제도 GA4 매출(purchase)에 잡히게 한다
             trackPurchase({
               receiptId: result.receiptId,
               amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
               catalogId: result.catalogId,
+              upgrade: isUpgrade,
             });
           }
         } else {
@@ -338,6 +348,17 @@ function PayCompleteContent() {
         <p className="text-sm text-text-2 leading-relaxed mb-6 whitespace-pre-line">
           {msg}
         </p>
+
+        {status === "success" && paidCatalogId && (
+          <SetUpgradeBanner
+            locale={locale}
+            orderId={paidOrderId}
+            catalogId={paidCatalogId}
+            compatId={paidCompatId}
+            source="pay_complete"
+            className="mb-6"
+          />
+        )}
 
         {status === "success" && !isMember && paidCompatId && (
           <Card variant="soft" className="w-full p-4 text-left mb-6">

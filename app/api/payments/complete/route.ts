@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
 import { payments } from "@/lib/payments";
 import { applyPaidOrder } from "@/lib/payments/grant";
+import { verifyUpgradeSettlement } from "@/lib/payments/setUpgrade";
 import { toCatalogId } from "@/lib/productIdentity";
 
 export async function POST(req: NextRequest) {
@@ -33,11 +34,47 @@ export async function POST(req: NextRequest) {
       if (payment.status !== "PAID") {
         return NextResponse.json({ error: "Payment not completed", status: payment.status }, { status: 402 });
       }
-      if (Number(payment.amount?.total) !== order.amount) {
+      const paidTotal = Number(payment.amount?.total);
+      if (paidTotal !== order.amount) {
         return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
       }
 
-      await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
+      if (order.upgradeFromOrderId) {
+        const [sourceOrder, existingUpgrade] = await Promise.all([
+          prisma.order.findUnique({ where: { orderId: order.upgradeFromOrderId } }),
+          prisma.order.findFirst({
+            where: {
+              upgradeFromOrderId: order.upgradeFromOrderId,
+              status: "PAID",
+              NOT: { orderId: order.orderId },
+            },
+            select: { id: true },
+          }),
+        ]);
+        const upgCheck = verifyUpgradeSettlement({
+          upgradeOrder: {
+            id: order.id,
+            orderId: order.orderId,
+            amount: order.amount,
+            compatId: order.compatId,
+            productType: order.productType,
+            productKey: order.productKey,
+            createdAt: order.createdAt,
+            upgradeFromOrderId: order.upgradeFromOrderId,
+          },
+          sourceOrder,
+          pgPaidTotal: paidTotal,
+          alreadyUpgradedByAnotherOrder: Boolean(existingUpgrade),
+        });
+        if (!upgCheck.ok) {
+          return NextResponse.json({ error: "Upgrade validation failed", code: upgCheck.reason }, { status: 400 });
+        }
+      }
+
+      const applied = await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
+      if (!applied.ok) {
+        return NextResponse.json({ error: "이미 처리할 수 없는 주문입니다." }, { status: 409 });
+      }
     }
 
     // [SECURITY / H-6] claim 토큰은 주문당 정확히 1회만 발급한다.
@@ -91,6 +128,7 @@ export async function POST(req: NextRequest) {
         // 결제 완료 화면을 나중에 다시 연 경우(사파리 탭 복원·뒤로가기 등)에는 매출 신호(GA4·메타·틱톡)를 또 보내지 않게 한다.
         // 결제는 주문을 만든 뒤 몇 분 안에 끝나므로, 주문이 2시간보다 오래됐으면 "다시 연 것"으로 본다(2026-10-24: 다음 날 아침 재방문 3건).
         fresh: !order.createdAt || Date.now() - new Date(order.createdAt).getTime() < 2 * 60 * 60 * 1000,
+        ...(order.upgradeFromOrderId ? { upgrade: true } : {}),
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
