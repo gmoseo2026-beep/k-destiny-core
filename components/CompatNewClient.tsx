@@ -33,6 +33,8 @@ import {
 } from "@/lib/compatCuriosity";
 
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -166,6 +168,7 @@ export default function CompatNewClient({
     score: number;
     data: StandardReport | StandardTeaser;
     reportId?: string;
+    sajuDisplay?: SajuDisplayPerson[];
   } | null>(null);
 
   // 오늘의 무료 미리보기 한도를 넘김 → 미리보기 대신 결제 안내(궁합은 이미 만들어져 있어 바로 결제 가능)
@@ -252,7 +255,13 @@ export default function CompatNewClient({
               ? "free_result"
               : "compat_continue",
         });
-        setTeaserResult({ compatId: fromCompatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+        setTeaserResult({
+          compatId: fromCompatId,
+          score: json.score || 0,
+          data: json.data,
+          reportId: json.reportId,
+          sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
+        });
       } catch (err) {
         if (!alive) return;
         setErrorMsg(err instanceof Error ? `${err.message} 두 사람 정보를 입력해 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
@@ -336,7 +345,13 @@ export default function CompatNewClient({
       if (!res.ok) throw new Error(json.error || "미리보기를 만들지 못했어요.");
       handledFromRef.current = lastCouple.compatId;
       trackEvent("teaser_created", { productId: product.id, tier: product.tier, via: "last_couple" });
-      setTeaserResult({ compatId: lastCouple.compatId, score: json.score || 0, data: json.data, reportId: json.reportId });
+      setTeaserResult({
+        compatId: lastCouple.compatId,
+        score: json.score || 0,
+        data: json.data,
+        reportId: json.reportId,
+        sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
+      });
       syncCompatUrl(lastCouple.compatId);
     } catch (err) {
       setErrorMsg(err instanceof Error ? `${err.message} 아래에 두 사람 정보를 확인하고 다시 시도해 주세요.` : "미리보기를 만들지 못했어요.");
@@ -696,6 +711,7 @@ export default function CompatNewClient({
           score: genJson.score || 0,
           data: genJson.data,
           reportId: genJson.reportId,
+          sajuDisplay: Array.isArray(genJson.sajuDisplay) ? genJson.sajuDisplay : undefined,
         });
         syncCompatUrl(json.id);
         setIsLoading(false);
@@ -726,6 +742,12 @@ export default function CompatNewClient({
         {teaserResult ? (
           <>
             <h2 className="text-2xl font-bold tracking-tight">{product.name} 미리보기</h2>
+            {teaserResult.sajuDisplay && teaserResult.sajuDisplay.length > 0 && (
+              <SajuEightCharCard
+                people={teaserResult.sajuDisplay}
+                source="compat_teaser"
+              />
+            )}
             <StandardReportView
               mode="teaser"
               score={teaserResult.score}

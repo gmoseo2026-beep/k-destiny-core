@@ -23,6 +23,8 @@ import { trackEvent } from "@/lib/gtag";
 import { StandardReport, StandardTeaser } from "@/lib/reports/standard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -128,6 +130,7 @@ export default function FortuneNewClient({
     annualData?: AnnualTeaserData;
     reportData?: StandardReport | StandardTeaser;
     reportId?: string;
+    sajuDisplay?: SajuDisplayPerson[];
     /** 오늘의 무료 미리보기 한도를 넘김(값 = 하루 한도). 미리보기 대신 결제 안내를 보여 준다 */
     previewLimit?: number;
     /** 비회원이 가입하면 오늘 더 볼 수 있는 미리보기 수 */
@@ -224,6 +227,7 @@ export default function FortuneNewClient({
           isAnnual: true,
           score: json.data?.yearScore || 0,
           annualData: json.data,
+          sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
         });
       } else {
         // Standard report generate route (FREE or TEASER)
@@ -256,6 +260,7 @@ export default function FortuneNewClient({
           score: json.score || 0,
           reportData: json.data,
           reportId: json.reportId,
+          sajuDisplay: Array.isArray(json.sajuDisplay) ? json.sajuDisplay : undefined,
         });
       }
     } catch (err) {
@@ -338,6 +343,12 @@ export default function FortuneNewClient({
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
         <OwnedReportNotice locale={locale} catalogId={currentProductId} source="fortune_new" />
         {!resultData.previewLimit && <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>}
+        {!resultData.previewLimit && resultData.sajuDisplay && resultData.sajuDisplay.length > 0 && (
+          <SajuEightCharCard
+            people={resultData.sajuDisplay}
+            source={product?.isFree ? "free_personality" : "fortune_preview"}
+          />
+        )}
 
         {resultData.previewLimit && product ? (
           <PreviewLimitPanel

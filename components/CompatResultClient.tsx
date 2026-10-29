@@ -32,6 +32,8 @@ import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/li
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
 
 interface CompatData {
   id: string;
@@ -41,6 +43,7 @@ interface CompatData {
   keywords: string[];
   summaryKo: string | null;
   publicBreakdown?: CompatPublicBreakdown | null;
+  sajuPeople?: SajuDisplayPerson[];
   personA: { name: string; gender: string };
   personB: { name: string; gender: string };
 }
@@ -597,6 +600,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
             연동하기
           </Button>
         </Card>
+      )}
+
+      {data.sajuPeople && data.sajuPeople.length > 0 && (
+        <SajuEightCharCard
+          people={data.sajuPeople}
+          source="compat_result"
+          className="mt-4"
+        />
       )}
 
       {/* Main Score Card */}

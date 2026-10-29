@@ -11,6 +11,10 @@ import { canPreview } from "@/lib/preview";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
 import { resolveCompatPageEntitlement } from "@/lib/entitlement";
 import { pickPublicBreakdown } from "@/lib/compatGauge";
+import {
+  buildSajuDisplayFromPillars,
+  type SajuDisplayPerson,
+} from "@/lib/sajuDisplay";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -113,8 +117,23 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
 
   const isPremium = await resolveCompatPageEntitlement(session?.user?.id, compat.id);
 
-  const pA = compat.personA as { name?: string; gender?: string } | null;
-  const pB = compat.personB as { name?: string; gender?: string } | null;
+  const pA = compat.personA as {
+    name?: string;
+    gender?: string;
+    fourPillars?: { year: string; month: string; day: string; time: string | null };
+  } | null;
+  const pB = compat.personB as {
+    name?: string;
+    gender?: string;
+    fourPillars?: { year: string; month: string; day: string; time: string | null };
+  } | null;
+
+  const cardA = buildSajuDisplayFromPillars(pA?.fourPillars);
+  const cardB = buildSajuDisplayFromPillars(pB?.fourPillars);
+  const sajuPeople: SajuDisplayPerson[] = [
+    ...(cardA ? [{ name: pA?.name || "나", card: cardA }] : []),
+    ...(cardB ? [{ name: pB?.name || "상대방", card: cardB }] : []),
+  ];
 
   // 프라이버시 보호: 클라이언트에는 표시용 필드만 전달 (세부 지표도 공개 3축만 전달하고 잠긴 2축은 내려보내지 않는다)
   const initialData = {
@@ -125,6 +144,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
     keywords: compat.keywords,
     summaryKo: compat.summaryKo,
     publicBreakdown: pickPublicBreakdown(compat.breakdown),
+    sajuPeople,
     personA: {
       name: pA?.name || "나",
       gender: pA?.gender || "M",

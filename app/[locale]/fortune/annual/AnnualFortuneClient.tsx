@@ -43,6 +43,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { trackEvent } from "@/lib/gtag";
 import { Card } from "@/components/ui/Card";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag } from "@/components/ui/Tag";
@@ -171,6 +173,7 @@ export default function AnnualFortuneClient({
   const { data: session } = useSession();
 
   const [data, setData] = useState<AnnualFortuneData | null>(null);
+  const [sajuDisplay, setSajuDisplay] = useState<SajuDisplayPerson[]>([]);
   const [loading, setLoading] = useState(initialHasProfile);
   const [error, setError] = useState<string | null>(null);
 
@@ -319,7 +322,7 @@ export default function AnnualFortuneClient({
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   // 결제를 마치고 돌아온 비회원: 이 기기의 결제 증명 + 입력값으로 바로 전체 총운을 연다
   const guestAutoRef = React.useRef(false);
@@ -353,13 +356,14 @@ export default function AnnualFortuneClient({
       }
 
       setData(json.data);
+      setSajuDisplay(Array.isArray(json.sajuDisplay) ? json.sajuDisplay : []);
       setShowInputForm(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : `${year} 총운을 불러오는데 실패했습니다.`);
     } finally {
       setLoading(false);
     }
-  }, [locale, year]);
+  }, [locale, year, setShowInputForm]);
 
   useEffect(() => {
     if (initialHasProfile) {
@@ -448,6 +452,7 @@ export default function AnnualFortuneClient({
       }
 
       setData(json.data);
+      setSajuDisplay(Array.isArray(json.sajuDisplay) ? json.sajuDisplay : []);
       setShowInputForm(false);
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : `${year} 총운을 분석하는 중 오류가 발생했습니다.`);
@@ -755,6 +760,9 @@ export default function AnnualFortuneClient({
 
   return (
     <div className="w-full max-w-md md:max-w-2xl flex flex-col gap-6 pb-32 sm:pb-36 pt-2">
+      {isLocked && sajuDisplay.length > 0 && (
+        <SajuEightCharCard people={sajuDisplay} source="annual_preview" />
+      )}
       {/* 1. Header & Free Teaser Card */}
       <div className="relative bg-[radial-gradient(120%_80%_at_50%_0%,rgba(255,92,119,0.28),transparent_60%),linear-gradient(180deg,#3A1B40_0%,#22142A_100%)] border border-white/10 rounded-3xl p-6 sm:p-8 text-white shadow-[0_12px_32px_rgba(0,0,0,0.35)] overflow-hidden">
         <div className="relative z-10 flex flex-col items-center text-center">

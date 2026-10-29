@@ -25,6 +25,8 @@ import {
   buildDateSelectionPayload,
 } from "@/lib/validation/inputs";
 import type { Daeun2027Teaser, NamingTeaser, DateSelectionTeaser } from "@/lib/premium/teasers";
+import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
+import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -255,6 +257,7 @@ export function PremiumNewClient({
   const [teaser2027, setTeaser2027] = useState<Daeun2027Teaser | null>(null);
   const [teaserNaming, setTeaserNaming] = useState<NamingTeaser | null>(null);
   const [teaserDates, setTeaserDates] = useState<DateSelectionTeaser | null>(null);
+  const [teaserSajuDisplay, setTeaserSajuDisplay] = useState<SajuDisplayPerson[]>([]);
 
   // Payload builder
   const getFormattedPayload = (): unknown | null => {
@@ -338,12 +341,13 @@ export function PremiumNewClient({
       }
 
       if (is2027) {
-        setTeaser2027(json.teaser as Daeun2027Teaser);
+        setTeaser2027((json.teaser ?? json.data) as Daeun2027Teaser);
       } else if (isNaming) {
-        setTeaserNaming(json.teaser as NamingTeaser);
+        setTeaserNaming((json.teaser ?? json.data) as NamingTeaser);
       } else if (isDates) {
-        setTeaserDates(json.teaser as DateSelectionTeaser);
+        setTeaserDates((json.teaser ?? json.data) as DateSelectionTeaser);
       }
+      setTeaserSajuDisplay(Array.isArray(json.sajuDisplay) ? json.sajuDisplay : []);
 
       trackEvent("teaser_created", {
         productId: product.id,
@@ -926,8 +930,15 @@ export function PremiumNewClient({
       {/* ───────────────────────────────────────────────────────────── */}
       {/* 5. Teaser Results Box */}
       {/* ───────────────────────────────────────────────────────────── */}
-      {(teaser2027 || teaserNaming || teaserDates) && (
+      {(teaser2027 || teaserNaming || teaserDates || teaserSajuDisplay.length > 0) && (
         <div className="bg-[#1E1726] border border-[#D9B26A]/40 rounded-3xl p-6 shadow-xl mb-6 text-left animate-in fade-in duration-300">
+          {teaserSajuDisplay.length > 0 && (
+            <SajuEightCharCard
+              people={teaserSajuDisplay}
+              source="premium_preview"
+              className="mb-4"
+            />
+          )}
           <div className="flex items-center gap-2 mb-3">
             <span className="w-2 h-2 rounded-full bg-[#D9B26A] animate-ping" />
             <h3 className="text-xs font-bold text-[#F3E3BF] tracking-wider uppercase">
