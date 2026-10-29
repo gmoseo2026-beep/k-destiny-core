@@ -184,6 +184,7 @@
 # REVIEW_HANDOFF — argon/09-invite-push (반쪽 초대장 완성 알림)
 # REVIEW_HANDOFF — argon/10-season-events (연말 시즌 기획전)
 # REVIEW_HANDOFF — argon/12-set-upgrade (차액만 내고 세트로 바꾸기)
+# REVIEW_HANDOFF — argon/13-gift (운세 선물하기)
 
 > **작성 일시**: 2026-10-29
 > **기반 브랜치**: `origin/main`
@@ -244,6 +245,28 @@
    - 비회원이 구매 직후 카카오 로그인으로 세션을 얻은 뒤 아직 `claim-device-orders`가 완료되지 않은 상태에서 업그레이드를 시도할 수 있어, 원본 주문이 비회원(`userId === null`)일 때는 기기가 보유한 `orderTokens`에 해당 `orderId`가 포함되어 있는지 함께 확인하도록 구현했습니다.
 5. **클로드에게 필요한 것**
    - 프로덕션 DB 반영 필요(additive SQL): `prisma/sql/argon_12_set_upgrade.sql` (`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "upgradeFromOrderId" TEXT;` 및 인덱스 생성).
+   - `prisma/schema.prisma` & `prisma/sql/argon_13_gift.sql` (신규): `GiftCode` 테이블(`id`, `code @unique`, `catalogId`, `purchaseOrderId @unique`, `senderNickname`, `recipientNickname`, `message`, `used @default(false)`, `redeemedOrderId`, `redeemedAt`, `expiresAt`, `createdAt`) 및 `Order.giftCode` 관계 additive 추가
+   - `lib/giftCopy.ts` (신규): 클라이언트 안전 선물 문구 포매터(`formatGiftHeadline` — 받침 판별 조사 포함 `"○○님이 2027 신년운세를 선물했어요"`) 및 90일 기한 상수(`GIFT_EXPIRY_DAYS = 90`)
+   - `lib/payments/gift.ts` (신규): 128비트 암호학적 난수 코드 생성(`generateGiftCode`), 선물 입력 검증(`validateGiftCreateInput`), 트랜잭션 + `updateMany({ where: { id, used: false, expiresAt: { gt: now } } })` 원자적 1회 수령 처리(`redeemGiftCode`, 미결제 `402`·상품 불일치 `400`·만료 `410`·중복 사용 및 동시성 경쟁 `409` 거부, 보낸 사람과 완전히 분리된 수령인 전용 `Order(amount: 0, provider: "gift_redeem")` + `Unlock` 생성)
+   - `app/api/payments/order/route.ts`, `lib/payments/grant.ts`, `app/api/payments/complete/route.ts`, `lib/payments/client.ts`, `components/GuestCheckoutModal.tsx`: 선물 주문(`isGift: true`) 정가 결제(쿠폰 차감 비활성화, 커플 상품도 선물 구매 시점에는 `compatId` 불요), 결제 완료(`applyPaidOrder`) 시 보낸 사람 `Unlock` 미발급 및 `expiresAt`을 실제 결제 시각 기준 +90일로 갱신, `gift_purchase` GA 이벤트 발사
+   - `app/api/gift/[code]/route.ts` (신규) & `app/api/gift/[code]/redeem/route.ts` (신규): 선물 코드 상태 조회(`GET`, 보낸 사람 이메일/전화/생년월일 미노출) 및 수령인 직접 입력 기반 1회 수령(`POST`)
+   - `app/[locale]/gift/[code]/page.tsx` (신규), `components/gift/GiftRedeemClient.tsx` (신규), `components/gift/GiftPurchaseButton.tsx` (신규), `components/gift/GiftShareCard.tsx` (신규), `components/premium/PremiumNewClient.tsx`: 선물 수령 페이지(`gift_open`, `gift_redeem`, 개인/커플 생년월일 수령인 직접 입력 및 작명·택일 프리미엄 입력 화면 `ownedOrderToken` 연동), 선물하기 입력 시트(`gift_click`) 및 카카오톡·공유 시트·링크 복사 카드
+   - `components/product/StandardProductDetail.tsx`, `components/premium/PremiumProductDetail.tsx`, `app/[locale]/pay/complete/page.tsx`: 단품·세트·프리미엄 상품 화면 및 결제 완료 화면에 "선물하기" 버튼 배치, 모바일 리다이렉트 선물 결제 완료 시 공유 카드 즉시 노출
+   - `app/[locale]/admin/page.tsx` & `app/[locale]/admin/AdminDashboard.tsx`: 관리자 주문 목록에 선물 주문 상태 배지(`"선물 미사용 — 환불 대상"` / `"선물 사용됨"` / `"선물 수령"`) 표시
+   - `tests/gift.test.ts` (신규): 128비트 코드·조사 문구 검증, 두 번 사용 거부(`409`), 만료 거부(`410`), 다른 상품으로 사용 거부(`400`), 미결제/취소 코드 거부(`402`), 동시성 경쟁(`updateMany count=0` → `409`) 단위 테스트 6종
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: 78 files passed, 587 tests passed (42 skipped)
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 프로덕션 빌드에서 `/[locale]/gift/[code]`, `/api/gift/[code]`, `/api/gift/[code]/redeem`, `/[locale]/products/[id]`, `/[locale]/pay/complete`, `/[locale]/admin` 라우트 정상 생성 및 `tests/clientPromptLeak.test.ts`·`tests/launchPaymentMatrix.test.ts` 통과 확인
+4. **스스로 의심하는 점**
+   - 보낸 사람이 선물 결제 직후 같은 브라우저에서 선물 링크를 열어보더라도 생년월일 정보가 전혀 들어 있지 않고, 받는 사람이 자신의 기기에서 직접 생년월일을 입력해 수령할 때만 수령인 기기(또는 로그인 계정)에 `gift_redeem` 주문 토큰과 `Unlock`이 발급되어 보낸 사람은 받는 사람의 생년월일이나 리포트를 열람할 수 없도록 격리했습니다.
+   - 작명(`child_naming`)·택일(`date_selection`) 프리미엄 상품을 선물받은 경우 수령 직후 `/ko/premium/[id]/new`로 이동하며, 수령으로 발급된 `redeemedOrderId`를 기기 `orderTokens`에 저장하고 `PremiumNewClient`가 `/api/payments/owned`에서 보유 주문 토큰을 자동으로 읽어 추가 결제 없이 바로 리포트를 생성하도록 연결했습니다.
+5. **클로드에게 필요한 것**
+   - 법률 문구(`messages/ko.json` `Legal.*`): 이용약관·개인정보처리방침에 **선물 조항 필요**(운세 선물하기 1회성 코드, 결제일로부터 90일 사용 기한, 미사용 선물 환불 기준 및 수령인 직접 입력 안내).
+   - 프로덕션 DB 반영 필요(additive SQL): `prisma/sql/argon_13_gift.sql` (`GiftCode` 테이블 및 인덱스 생성).
 
 ---
 

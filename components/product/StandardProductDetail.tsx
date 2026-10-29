@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tag, type TagCategory } from "@/components/ui/Tag";
 import { ListRowCard } from "@/components/cards/KongdakCards";
+import GiftPurchaseButton from "@/components/gift/GiftPurchaseButton";
 
 const CATEGORY_NAMES: Record<ProductCategory, string> = {
   "cat-fortune": "운세",
@@ -616,50 +617,70 @@ export function StandardProductDetail({
       {/* 8. Fixed Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-4 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] z-40 max-w-[480px] mx-auto shadow-lg pb-safe-bar">
         {savedInfo && (
-          <ProductCtaLink
-            href={savedInfo.href}
-            productId={product.id}
-            tier={product.tier}
-            target={product.target}
-            isFree={Boolean(product.isFree)}
-            location="saved_info_sticky"
-            className="mb-2 block w-full"
-          >
-            <Button size="lg" fullWidth>
-              {savedInfo.buttonLabel}
-            </Button>
-          </ProductCtaLink>
+          <div className="mb-2 flex items-center gap-2">
+            {!product.isFree && (
+              <GiftPurchaseButton
+                product={product}
+                locale={locale}
+                source="product_detail"
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#FFC24B]/40 bg-[#22142A] hover:bg-[#2B1936] px-3.5 py-3.5 text-xs font-extrabold text-[#FFC24B] transition-all active:scale-[0.96]"
+              />
+            )}
+            <ProductCtaLink
+              href={savedInfo.href}
+              productId={product.id}
+              tier={product.tier}
+              target={product.target}
+              isFree={Boolean(product.isFree)}
+              location="saved_info_sticky"
+              className="block flex-1 min-w-0"
+            >
+              <Button size="lg" fullWidth>
+                {savedInfo.buttonLabel}
+              </Button>
+            </ProductCtaLink>
+          </div>
         )}
-        <Link
-          prefetch
-          href={nextPath}
-          onClick={() =>
-            trackEvent("product_cta_click", {
-              productId: product.id,
-              tier: product.tier,
-              target: product.target,
-              isFree: Boolean(product.isFree),
-              location: "bottom_fixed",
-            })
-          }
-          className={
-            savedInfo
-              ? "block w-full text-center text-xs font-bold text-[#B9A9BF] underline underline-offset-4 py-1 hover:text-[#FF5C77] transition-colors"
-              : "block w-full"
-          }
-        >
-          {savedInfo ? (
-            "다른 생년월일로 새로 입력하기"
-          ) : (
-            <Button size="lg" fullWidth>
-              {product.isFree
-                ? "무료로 보기"
-                : product.target === "couple" && product.id !== "compat_basic"
-                ? `${product.name} 무료 미리보기`
-                : `무료로 ${product.target === "couple" ? "궁합" : "운세"} 먼저 보기`}
-            </Button>
+        <div className={savedInfo ? "w-full" : "flex items-center gap-2 w-full"}>
+          {!savedInfo && !product.isFree && (
+            <GiftPurchaseButton
+              product={product}
+              locale={locale}
+              source="product_detail"
+              className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#FFC24B]/40 bg-[#22142A] hover:bg-[#2B1936] px-3.5 py-3.5 text-xs font-extrabold text-[#FFC24B] transition-all active:scale-[0.96]"
+            />
           )}
-        </Link>
+          <Link
+            prefetch
+            href={nextPath}
+            onClick={() =>
+              trackEvent("product_cta_click", {
+                productId: product.id,
+                tier: product.tier,
+                target: product.target,
+                isFree: Boolean(product.isFree),
+                location: "bottom_fixed",
+              })
+            }
+            className={
+              savedInfo
+                ? "block w-full text-center text-xs font-bold text-[#B9A9BF] underline underline-offset-4 py-1 hover:text-[#FF5C77] transition-colors"
+                : "block flex-1 min-w-0"
+            }
+          >
+            {savedInfo ? (
+              "다른 생년월일로 새로 입력하기"
+            ) : (
+              <Button size="lg" fullWidth>
+                {product.isFree
+                  ? "무료로 보기"
+                  : product.target === "couple" && product.id !== "compat_basic"
+                  ? `${product.name} 무료 미리보기`
+                  : `무료로 ${product.target === "couple" ? "궁합" : "운세"} 먼저 보기`}
+              </Button>
+            )}
+          </Link>
+        </div>
         {!product.isFree && (
           <p className="text-[11px] text-[#B9A9BF] text-center mt-1.5 font-medium">
             점수와 미리보기는 무료 · 전체 리포트는 결제 후 바로 열람

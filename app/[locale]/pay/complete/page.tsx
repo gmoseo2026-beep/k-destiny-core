@@ -11,6 +11,7 @@ import {
   trackPurchase,
   recallPayReturn,
   clearPendingPayment,
+  type IssuedGiftSummary,
 } from "@/lib/payments/client";
 import { rememberOptIn } from "@/lib/marketingConsent";
 import { clearDeviceCoupon } from "@/lib/couponsClient";
@@ -20,6 +21,8 @@ import { isInAppBrowser, isIOS, getInAppProvider, isTikTokBlockedWebview, openIn
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
+import GiftShareCard from "@/components/gift/GiftShareCard";
+import GiftPurchaseButton from "@/components/gift/GiftPurchaseButton";
 
 function PayCompleteContent() {
   const params = useParams();
@@ -35,6 +38,7 @@ function PayCompleteContent() {
   const [paidProductType, setPaidProductType] = useState<string | null>(null);
   const [paidCatalogId, setPaidCatalogId] = useState<string | null>(null);
   const [paidOrderId, setPaidOrderId] = useState<string | null>(null);
+  const [issuedGift, setIssuedGift] = useState<IssuedGiftSummary | null>(null);
   // 결제 실패·취소 시 돌아갈 화면(결제를 시작한 곳)
   const [retryHref, setRetryHref] = useState<string | null>(null);
   // 앱 안 브라우저(틱톡·인스타 등)에서 결제가 실패·취소된 경우: 같은 곳에서 다시 해도 또 막히는 일이 잦아
@@ -111,12 +115,19 @@ function PayCompleteContent() {
           // [SECURITY / H-2] 게스트는 세션이 없으므로 서버가 확정해 돌려준 orderId 를
           // 이 기기에 보관해야 리포트 열람 시 소유권을 증명할 수 있다.
           const result = await r.json().catch(() => null);
-          if (result?.catalogId && result?.orderId) {
-            rememberOrderToken(result.catalogId, result.orderId, result.compatId || undefined);
-          }
-          if (result?.type === "SINGLE" && result?.compatId && result?.orderId) {
-            rememberUnlockToken(result.compatId, result.orderId);
-            setPaidCompatId(result.compatId);
+          const isGiftOrder = Boolean(result?.isGift && result?.gift);
+          if (isGiftOrder) {
+            setIssuedGift(result.gift as IssuedGiftSummary);
+          } else {
+            if (result?.catalogId && result?.orderId) {
+              rememberOrderToken(result.catalogId, result.orderId, result.compatId || undefined);
+            }
+            if (result?.type === "SINGLE" && result?.compatId && result?.orderId) {
+              rememberUnlockToken(result.compatId, result.orderId);
+              setPaidCompatId(result.compatId);
+            }
+            // 차액 업그레이드 결제에는 쿠폰을 쓰지 않으므로 이 기기의 쿠폰을 지우지 않는다
+            if (!result?.upgrade) clearDeviceCoupon();
           }
           if (result?.orderId) {
             setPaidOrderId(result.orderId);
@@ -127,15 +138,16 @@ function PayCompleteContent() {
           if (result?.needsEmail && result?.orderId) {
             setEmailOrderId(result.orderId);
           }
-          if (result?.productType === "ANNUAL") {
+          if (!isGiftOrder && result?.productType === "ANNUAL") {
             setPaidProductType("ANNUAL");
           }
           const isUpgrade = Boolean(result?.upgrade);
           setStatus("success");
-          setMsg("결제가 정상적으로 완료되었습니다!");
-          if (!isUpgrade) {
-            clearDeviceCoupon();
-          }
+          setMsg(
+            isGiftOrder
+              ? "선물 결제가 완료되었어요! 아래 링크를 선물 받을 분께 전달해 주세요."
+              : "결제가 정상적으로 완료되었습니다!"
+          );
 
           // 같은 결제를 다시 열었으면(서버가 오래된 주문이라 하거나 이 기기에서 이미 보냈으면) 매출 신호를 또 보내지 않는다
           const sentKey = "kd_purchase_sent";
@@ -149,19 +161,27 @@ function PayCompleteContent() {
           }
           if (result?.catalogId && result?.fresh !== false && !alreadySent) {
             const catItem = getProduct(result.catalogId);
+            const paidAmt = typeof result.amount === "number" ? result.amount : (catItem?.price || 0);
             trackEvent("purchase_confirmed", {
               productId: result.catalogId,
               tier: catItem?.tier || "standard",
-              amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
+              amount: paidAmt,
               ...(isUpgrade ? { upgrade: true } : {}),
             });
             // 모바일 결제도 GA4 매출(purchase)에 잡히게 한다
             trackPurchase({
               receiptId: result.receiptId,
-              amount: typeof result.amount === "number" ? result.amount : (catItem?.price || 0),
+              amount: paidAmt,
               catalogId: result.catalogId,
               upgrade: isUpgrade,
             });
+            if (isGiftOrder) {
+              trackEvent("gift_purchase", {
+                productId: result.catalogId,
+                value: paidAmt,
+                currency: "KRW",
+              });
+            }
           }
         } else {
           const e = await r.json().catch(() => ({}));
@@ -349,7 +369,7 @@ function PayCompleteContent() {
           {msg}
         </p>
 
-        {status === "success" && paidCatalogId && (
+        {status === "success" && paidCatalogId && !issuedGift && (
           <SetUpgradeBanner
             locale={locale}
             orderId={paidOrderId}
@@ -360,7 +380,13 @@ function PayCompleteContent() {
           />
         )}
 
-        {status === "success" && !isMember && paidCompatId && (
+        {status === "success" && issuedGift && (
+          <div className="w-full mb-6">
+            <GiftShareCard gift={issuedGift} locale={locale} />
+          </div>
+        )}
+
+        {status === "success" && !issuedGift && !isMember && paidCompatId && (
           <Card variant="soft" className="w-full p-4 text-left mb-6">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
@@ -390,7 +416,7 @@ function PayCompleteContent() {
           </Card>
         )}
 
-        {status === "success" && !isMember && !paidCompatId && (
+        {status === "success" && !issuedGift && !isMember && !paidCompatId && (
           <Card variant="soft" className="w-full p-4 text-left mb-6">
             <div className="flex items-center gap-2 mb-1.5 text-xs font-bold text-coral">
               <span>💡</span>
@@ -424,7 +450,7 @@ function PayCompleteContent() {
               </form>
             )}
             {emailState === "error" && <p className="mt-1.5 text-[11px] text-red-500">이메일 주소를 확인해 주세요.</p>}
-            <p className="mt-1.5 text-[11px] text-text-3">남기지 않아도 리포트는 바로 볼 수 있어요.</p>
+            <p className="mt-1.5 text-[11px] text-text-3">남기지 않아도 {issuedGift ? "선물 링크는" : "리포트는"} 바로 쓸 수 있어요.</p>
           </Card>
         )}
 
@@ -451,7 +477,7 @@ function PayCompleteContent() {
         )}
 
         <div className="w-full flex flex-col gap-3">
-          {status === "success" && (
+          {status === "success" && !issuedGift && (
             <Button
               size="lg"
               fullWidth
@@ -461,8 +487,18 @@ function PayCompleteContent() {
             </Button>
           )}
 
+          {status === "success" && !issuedGift && paidCatalogId && getProduct(paidCatalogId) && !getProduct(paidCatalogId)!.isFree && (
+            <GiftPurchaseButton
+              product={getProduct(paidCatalogId)!}
+              locale={locale}
+              source="pay_complete"
+              label="같은 운세 선물하기"
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#FFC24B]/40 bg-[#22142A] hover:bg-[#2B1936] py-3 px-4 text-xs font-extrabold text-[#FFC24B] transition-all active:scale-[0.96]"
+            />
+          )}
+
           {/* 회원은 이미 계정에 보관된다 → 가입 안내 대신 보관함으로(2026-10-04: 회원 구매자가 가입 버튼을 눌러 로그인 화면으로 갔다) */}
-          {status === "success" && isMember && (
+          {status === "success" && !issuedGift && isMember && (
             <Link
               href={`/${locale}/me`}
               className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"
@@ -470,7 +506,7 @@ function PayCompleteContent() {
               내 보관함에서 다시 보기
             </Link>
           )}
-          {status === "success" && !isMember && (
+          {status === "success" && !issuedGift && !isMember && (
             <Link
               href={`/${locale}/login?callbackUrl=${encodeURIComponent(callbackTarget)}`}
               className="w-full bg-surface-soft text-ink border border-line py-3 rounded-2xl font-bold text-xs hover:bg-surface transition-all active:scale-[0.96] block text-center"

@@ -66,6 +66,14 @@ export async function POST(req: NextRequest) {
     if (!sourceOrder) {
       return NextResponse.json({ eligible: false, offers: [] }, { headers: NO_STORE });
     }
+    // 선물로 산 주문은 보낸 사람에게 열람권이 없으므로 업그레이드 대상이 아니다
+    const sourceIsGift = await prisma.giftCode.findUnique({
+      where: { purchaseOrderId: sourceOrder.orderId },
+      select: { id: true },
+    });
+    if (sourceIsGift) {
+      return NextResponse.json({ eligible: false, offers: [] }, { headers: NO_STORE });
+    }
 
     const existingPaidUpgrade = await prisma.order.findFirst({
       where: { upgradeFromOrderId: sourceOrder.orderId, status: "PAID" },

@@ -10,6 +10,12 @@ import { canPreview } from "@/lib/preview";
 import { campaignFromCookieHeader } from "@/lib/campaignLinks";
 import { calculateDiscountedAmount, findUsableCoupon } from "@/lib/reviews";
 import { validateSetUpgrade } from "@/lib/payments/setUpgrade";
+import {
+  computeGiftExpiresAt,
+  generateGiftCode,
+  validateGiftCreateInput,
+  type ValidatedGiftInput,
+} from "@/lib/payments/gift";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -55,7 +61,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "로그인이 필요합니다.", code: "LOGIN_REQUIRED" }, { status: 401 });
       }
 
-      const requiresCompatId = catalogItem.target === "couple";
+      const isGift = body.isGift === true;
+      let giftData: ValidatedGiftInput | null = null;
+      if (isGift) {
+        const validated = validateGiftCreateInput({
+          recipientNickname: body.recipientNickname,
+          senderNickname: body.senderNickname,
+          message: body.giftMessage,
+        });
+        if (!validated.ok) {
+          return NextResponse.json({ error: validated.error }, { status: 400 });
+        }
+        giftData = validated.data;
+      }
+
+      // 선물 주문은 수령자가 나중에 생년월일(커플이면 두 사람 정보)을 직접 입력하므로 주문 시점엔 compatId를 받지 않는다.
+      const requiresCompatId = !isGift && catalogItem.target === "couple";
       if (requiresCompatId) {
         if (!compatId) {
           return NextResponse.json({ error: "compatId is required for this product" }, { status: 400 });
@@ -100,6 +121,9 @@ export async function POST(req: NextRequest) {
 
       // [argon/12-set-upgrade] 단품 결제 후 24시간 내 차액 세트 업그레이드
       if (body.upgradeFromOrderId !== undefined && body.upgradeFromOrderId !== null && body.upgradeFromOrderId !== "") {
+        if (isGift) {
+          return NextResponse.json({ error: "선물하기는 세트 업그레이드와 함께 쓸 수 없어요." }, { status: 400 });
+        }
         if (typeof body.upgradeFromOrderId !== "string" || !body.upgradeFromOrderId.trim()) {
           return NextResponse.json({ error: "유효하지 않은 업그레이드 주문입니다." }, { status: 400 });
         }
@@ -107,6 +131,14 @@ export async function POST(req: NextRequest) {
         const sourceOrder = await prisma.order.findUnique({ where: { orderId: rawUpgradeFrom } });
         if (!sourceOrder) {
           return NextResponse.json({ error: "원본 주문을 찾을 수 없습니다." }, { status: 404 });
+        }
+        // 선물로 산 주문은 보낸 사람에게 열람권이 없으므로 업그레이드 원본이 될 수 없다
+        const sourceIsGift = await prisma.giftCode.findUnique({
+          where: { purchaseOrderId: sourceOrder.orderId },
+          select: { id: true },
+        });
+        if (sourceIsGift) {
+          return NextResponse.json({ error: "선물로 결제한 주문은 세트로 바꿀 수 없어요.", code: "GIFT_ORDER" }, { status: 400 });
         }
         const existingPaidUpgrade = await prisma.order.findFirst({
           where: { upgradeFromOrderId: sourceOrder.orderId, status: "PAID" },
@@ -127,7 +159,8 @@ export async function POST(req: NextRequest) {
         // 서버가 직접 계산한 차액(최소 100원)만 사용하며 클라이언트 금액은 무시한다.
         amount = check.amount;
         upgradeFromOrderId = check.sourceOrderId;
-      } else {
+      } else if (!isGift) {
+        // [Argon-13] 선물하기는 정가 그대로 결제한다(쿠폰 차감 없음).
         // [P-016-4 §3] 쿠폰 금액 계산·검증은 서버에서만 수행 (클라 금액 신뢰 금지).
         // 유효한 미사용 쿠폰이 있으면 서버가 차감한 금액을 Order.amount 로 저장하고 PortOne 결제창도 같은 금액을 쓴다.
         const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim() : null;
@@ -181,12 +214,27 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      if (isGift && giftData) {
+        await prisma.giftCode.create({
+          data: {
+            code: generateGiftCode(),
+            catalogId: catalogItem.id,
+            purchaseOrderId: order.orderId,
+            senderNickname: giftData.senderNickname,
+            recipientNickname: giftData.recipientNickname,
+            message: giftData.message,
+            expiresAt: computeGiftExpiresAt(),
+          },
+        });
+      }
+
       return NextResponse.json(
         {
           orderId: order.orderId,
           amount: order.amount,
           type: order.type,
-          orderName: catalogItem.name,
+          orderName: isGift ? `${catalogItem.name} (선물하기)` : catalogItem.name,
+          ...(isGift ? { isGift: true } : {}),
           ...(appliedCouponCode ? { couponCode: appliedCouponCode, discountAmount } : {}),
           ...(upgradeFromOrderId ? { upgrade: true, upgradeFromOrderId } : {}),
         },

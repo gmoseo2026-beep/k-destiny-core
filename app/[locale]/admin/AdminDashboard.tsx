@@ -24,6 +24,8 @@ export interface OrderItem {
   originalPrice: number;
   isFirstDiscount: boolean;
   isManual: boolean;
+  giftStatus?: 'UNUSED' | 'USED' | 'EXPIRED' | null;
+  giftExpiresAt?: string | null;
   amount: number;
   status: string;
   provider: string;
@@ -838,7 +840,7 @@ export default function AdminDashboard({
                                 </div>
                               </td>
                               <td className="py-3.5 px-4">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-extrabold text-ink">{formatCurrency(o.amount)}</span>
                                   {o.isFirstDiscount && (
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-coral-soft text-coral-deep">
@@ -847,7 +849,17 @@ export default function AdminDashboard({
                                   )}
                                   {o.isManual && (
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
-                                      수동 발급
+                                      {o.provider === 'gift_redeem' ? '선물 수령' : '수동 발급'}
+                                    </span>
+                                  )}
+                                  {(o.giftStatus === 'UNUSED' || o.giftStatus === 'EXPIRED') && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      선물 미사용
+                                    </span>
+                                  )}
+                                  {o.giftStatus === 'USED' && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                                      선물 사용됨
                                     </span>
                                   )}
                                 </div>
@@ -959,7 +971,17 @@ export default function AdminDashboard({
                   <div className="p-3 rounded-xl border border-line bg-surface/30 space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-extrabold text-ink">환불 판단 보조</span>
-                      {selectedOrder.firstViewedAt ? (
+                      {selectedOrder.giftStatus ? (
+                        selectedOrder.giftStatus === 'USED' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            선물 사용됨 — 청약철회 제한
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            선물 미사용 — 환불 대상
+                          </span>
+                        )
+                      ) : selectedOrder.firstViewedAt ? (
                         <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
                           열람함 — 청약철회 제한
                         </span>
@@ -970,7 +992,18 @@ export default function AdminDashboard({
                       )}
                     </div>
                     <p className="text-[11px] text-caption leading-relaxed">
-                      최초 열람: {selectedOrder.firstViewedAt ? formatDate(selectedOrder.firstViewedAt, true) : '기록 없음'}
+                      {selectedOrder.giftStatus ? (
+                        <>
+                          선물 상태:{' '}
+                          {selectedOrder.giftStatus === 'USED'
+                            ? '수령자가 선물 코드를 이미 사용함'
+                            : selectedOrder.giftStatus === 'EXPIRED'
+                            ? '90일 만료 미사용 (환불 대상)'
+                            : `미사용 (기한: ${formatDate(selectedOrder.giftExpiresAt, false)}) · 환불 대상`}
+                        </>
+                      ) : (
+                        <>최초 열람: {selectedOrder.firstViewedAt ? formatDate(selectedOrder.firstViewedAt, true) : '기록 없음'}</>
+                      )}
                       <br />
                       <span className="text-[10px] text-caption/80">* 전자상거래법 상 콘텐츠 열람 후 단순 변심 환불은 제한될 수 있습니다 (사람이 최종 판단).</span>
                     </p>

@@ -111,6 +111,11 @@ export async function POST(req: NextRequest) {
     //
     // [SECURITY / M-9] claimToken 은 본문에 싣지 않는다. 읽는 클라이언트가 없을뿐더러,
     // 본문으로 내보내면 JS 컨텍스트에 노출되어 httpOnly 쿠키로 얻은 이점이 사라진다.
+    const giftRepo = (prisma as unknown as { giftCode?: typeof prisma.giftCode }).giftCode;
+    const giftRow = giftRepo?.findUnique
+      ? await giftRepo.findUnique({ where: { purchaseOrderId: order.orderId } })
+      : null;
+
     const response = NextResponse.json(
       {
         success: true,
@@ -129,6 +134,19 @@ export async function POST(req: NextRequest) {
         // 결제는 주문을 만든 뒤 몇 분 안에 끝나므로, 주문이 2시간보다 오래됐으면 "다시 연 것"으로 본다(2026-10-24: 다음 날 아침 재방문 3건).
         fresh: !order.createdAt || Date.now() - new Date(order.createdAt).getTime() < 2 * 60 * 60 * 1000,
         ...(order.upgradeFromOrderId ? { upgrade: true } : {}),
+        ...(giftRow
+          ? {
+              isGift: true,
+              gift: {
+                code: giftRow.code,
+                catalogId: giftRow.catalogId,
+                recipientNickname: giftRow.recipientNickname,
+                senderNickname: giftRow.senderNickname,
+                message: giftRow.message,
+                expiresAt: giftRow.expiresAt.toISOString(),
+              },
+            }
+          : {}),
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );

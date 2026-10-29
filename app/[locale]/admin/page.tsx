@@ -222,6 +222,22 @@ async function loadAdminDashboardData() {
     : [];
   const compatMap = new Map(compats.map((c) => [c.id, c]));
 
+  // 선물하기 주문 상태 조회 (미사용 선물 환불 대상 표시용, 수령자 PII 미조회)
+  const orderIdsForGift = orders.map((o) => o.orderId);
+  const giftCodes =
+    orderIdsForGift.length > 0
+      ? await prisma.giftCode.findMany({
+          where: { purchaseOrderId: { in: orderIdsForGift } },
+          select: {
+            purchaseOrderId: true,
+            used: true,
+            redeemedAt: true,
+            expiresAt: true,
+          },
+        })
+      : [];
+  const giftByOrderId = new Map(giftCodes.map((g) => [g.purchaseOrderId, g]));
+
   // 리포트 orderId 매핑 (FULL:{orderId}:{productId})
   const reportsByOrderId = new Map<string, typeof reportsRaw>();
   for (const r of reportsRaw) {
@@ -422,6 +438,14 @@ async function loadAdminDashboardData() {
     // 리포트 cacheKey 는 FULL:<Order.id>:<상품> (주문번호 kd_ord… 가 아니라 DB id)
     const orderReports = reportsByOrderId.get(o.id) || [];
     const firstViewedAt = orderReports.find((r) => r.firstViewedAt)?.firstViewedAt;
+    const giftInfo = giftByOrderId.get(o.orderId);
+    const giftStatus: "UNUSED" | "USED" | "EXPIRED" | null = giftInfo
+      ? giftInfo.used
+        ? "USED"
+        : giftInfo.expiresAt.getTime() <= now.getTime()
+        ? "EXPIRED"
+        : "UNUSED"
+      : null;
 
     return {
       id: o.id,
@@ -432,6 +456,8 @@ async function loadAdminDashboardData() {
       originalPrice,
       isFirstDiscount,
       isManual,
+      giftStatus,
+      giftExpiresAt: giftInfo ? giftInfo.expiresAt.toISOString() : null,
       amount: o.amount,
       status: o.status,
       provider: o.provider,
