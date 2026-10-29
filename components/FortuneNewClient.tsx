@@ -25,6 +25,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
 import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
+import StoryCardSaveButton from "@/components/share/StoryCardSaveButton";
+import { buildPersonalityStoryUrl } from "@/lib/storyCard";
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -444,6 +446,17 @@ export default function FortuneNewClient({
             }
           />
         ) : null}
+
+        {product?.isFree && !resultData.previewLimit && resultData.reportId && (
+          <StoryCardSaveButton
+            storyUrl={buildPersonalityStoryUrl(
+              resultData.reportId,
+              resultData.sajuDisplay?.[0]?.card,
+            )}
+            source="free_personality"
+            fileName={`kongdak_personality_${resultData.score}pts.png`}
+          />
+        )}
 
         {/* Free Product Recommendations */}
         {product?.isFree && recommendations.length > 0 && (
