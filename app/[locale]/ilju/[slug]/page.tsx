@@ -4,8 +4,16 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
 import { ILJU_LIST, resolveIljuParam } from "@/lib/seo/ilju";
+import { paragraphs } from "@/lib/seo/data";
 import SeoCta from "@/components/seo/SeoCta";
-import { Breadcrumbs, ChipLinks, FaqList, SeoJsonLd } from "@/components/seo/SeoBlocks";
+import {
+  Breadcrumbs,
+  ChipLinks,
+  FaqList,
+  IljuDisclaimer,
+  Paragraphs,
+  SeoJsonLd,
+} from "@/components/seo/SeoBlocks";
 import IljuChecker from "@/components/seo/IljuChecker";
 import IljuViewTracker from "@/components/seo/IljuViewTracker";
 
@@ -164,13 +172,15 @@ export default async function IljuDetailPage({ params }: PageProps) {
           className="scroll-mt-20 w-full rounded-2xl border border-line bg-white p-5 shadow-xs"
         >
           <h2 className="text-lg font-black text-ink">{loveStyle.heading}</h2>
-          <div className="mt-3.5 space-y-4">
+          <div className="mt-3.5 space-y-5">
             {loveStyle.subheadings.map((sub) => (
-              <div key={sub.title} className="space-y-1.5">
+              <div key={sub.title} className="space-y-2">
                 <h3 className="text-sm font-extrabold text-coral">
                   {sub.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-ink">{sub.body}</p>
+                <div className="space-y-2.5 text-sm leading-relaxed text-ink">
+                  <Paragraphs items={paragraphs(sub.body)} />
+                </div>
               </div>
             ))}
           </div>
@@ -182,13 +192,15 @@ export default async function IljuDetailPage({ params }: PageProps) {
           className="scroll-mt-20 w-full rounded-2xl border border-line bg-white p-5 shadow-xs"
         >
           <h2 className="text-lg font-black text-ink">{innerMind.heading}</h2>
-          <div className="mt-3.5 space-y-4">
+          <div className="mt-3.5 space-y-5">
             {innerMind.subheadings.map((sub) => (
-              <div key={sub.title} className="space-y-1.5">
+              <div key={sub.title} className="space-y-2">
                 <h3 className="text-sm font-extrabold text-coral">
                   {sub.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-ink">{sub.body}</p>
+                <div className="space-y-2.5 text-sm leading-relaxed text-ink">
+                  <Paragraphs items={paragraphs(sub.body)} />
+                </div>
               </div>
             ))}
           </div>
@@ -215,13 +227,15 @@ export default async function IljuDetailPage({ params }: PageProps) {
           <h2 className="text-lg font-black text-ink">
             {breakupReunion.heading}
           </h2>
-          <div className="mt-3.5 space-y-4">
+          <div className="mt-3.5 space-y-5">
             {breakupReunion.subheadings.map((sub) => (
-              <div key={sub.title} className="space-y-1.5">
+              <div key={sub.title} className="space-y-2">
                 <h3 className="text-sm font-extrabold text-coral">
                   {sub.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-ink">{sub.body}</p>
+                <div className="space-y-2.5 text-sm leading-relaxed text-ink">
+                  <Paragraphs items={paragraphs(sub.body)} />
+                </div>
               </div>
             ))}
           </div>
@@ -294,9 +308,7 @@ export default async function IljuDetailPage({ params }: PageProps) {
 
         <ChipLinks title="다른 일주 연애 성향 둘러보기" links={neighborLinks} />
 
-        <p className="w-full px-2 text-center text-[11px] leading-relaxed text-caption">
-          ※ 일주(태어난 날) 중심으로 살펴본 연애 성향이에요. 같은 일주라도 태어난 해·달·시간에 따라 실제 궁합과 흐름은 달라져요. 콩닥의 모든 풀이는 오락과 자기이해를 위한 참고 정보이며, 미래를 보장하지 않습니다.
-        </p>
+        <IljuDisclaimer />
       </article>
     </main>
   );

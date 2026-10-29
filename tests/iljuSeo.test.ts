@@ -20,7 +20,7 @@ describe("11 일주 페이지 60장 정적 데이터 · 말투 · 내 일주 확
     expect(new Set(allIljuSlugs()).size).toBe(60);
   });
 
-  it("2) 60장 모두 한글 전용 제목, 4개 섹션 id 앵커, 검색어 소제목, 잘 맞는 일주 3개 내부 링크를 갖춘다", () => {
+  it("2) 60장 모두 4개 섹션 id 앵커, 필수 신규 소제목(상황 3가지·좋은 말/피할 말), 소제목당 2문단·250자 이상, FAQ 3개, 잘 맞는 일주 3개 두 이름 포함을 갖춘다", () => {
     const slugSet = new Set(allIljuSlugs());
 
     for (const item of ILJU_LIST) {
@@ -30,16 +30,37 @@ describe("11 일주 페이지 60장 정적 데이터 · 말투 · 내 일주 확
       expect(item.sections.breakupReunion.id).toBe("breakup-reunion");
       expect(item.sections.bestMatches.id).toBe("best-matches");
 
+      for (const sec of [
+        item.sections.loveStyle,
+        item.sections.innerMind,
+        item.sections.breakupReunion,
+      ]) {
+        expect(sec.subheadings.length, `${item.name} ${sec.id}`).toBeGreaterThanOrEqual(2);
+        for (const sub of sec.subheadings) {
+          expect(sub.body.length, `${item.name} ${sub.title}`).toBeGreaterThanOrEqual(250);
+          const paras = sub.body.split(/\n\n+/).filter((p) => p.trim().length > 0);
+          expect(paras.length, `${item.name} ${sub.title} paragraphs`).toBeGreaterThanOrEqual(2);
+        }
+      }
+
+      const loveSubTitles = item.sections.loveStyle.subheadings.map((s) => s.title);
+      expect(loveSubTitles).toContain(`${item.name} 연애에서 자주 생기는 상황 3가지`);
+
       const innerSubTitles = item.sections.innerMind.subheadings.map((s) => s.title);
       expect(innerSubTitles.some((t) => t.includes(`${item.name} 여자 속마음`))).toBe(true);
       expect(innerSubTitles.some((t) => t.includes(`${item.name} 남자 속마음`))).toBe(true);
+      expect(innerSubTitles).toContain(`${item.name}에게 하면 좋은 말 / 피할 말`);
 
       expect(item.sections.bestMatches.matches).toHaveLength(3);
       for (const m of item.sections.bestMatches.matches) {
         expect(slugSet.has(m.slug)).toBe(true);
         expect(m.slug).not.toBe(item.slug);
         expect(getIljuBySlug(m.slug)?.name).toBe(m.name);
+        expect(m.reason.includes(item.name), `${item.name} in match reason`).toBe(true);
+        expect(m.reason.includes(m.name), `${m.name} in match reason`).toBe(true);
       }
+
+      expect(item.faq).toHaveLength(3);
     }
   });
 
@@ -65,7 +86,7 @@ describe("11 일주 페이지 60장 정적 데이터 · 말투 · 내 일주 확
 
       for (const raw of texts) {
         const stripped = raw.replace(/[가-힣]{2}일주/g, "이 기질").replace(/일주/g, "기질");
-        expect(isCleanText(stripped)).toBe(true);
+        expect(isCleanText(stripped), `${item.name}: ${raw.slice(0, 60)}`).toBe(true);
       }
     }
   });

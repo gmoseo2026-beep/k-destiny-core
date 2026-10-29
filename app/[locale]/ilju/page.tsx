@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BASE_URL, canonicalUrlFor } from "@/lib/seo";
 import { ILJU_LIST } from "@/lib/seo/ilju";
 import SeoCta from "@/components/seo/SeoCta";
-import { Breadcrumbs, SeoJsonLd } from "@/components/seo/SeoBlocks";
+import { Breadcrumbs, IljuDisclaimer, SeoJsonLd } from "@/components/seo/SeoBlocks";
 import IljuChecker from "@/components/seo/IljuChecker";
 
 const TITLE = "60갑자 일주 연애 성향 모아보기 — 내 일주와 잘 맞는 사람 | 콩닥";
@@ -125,9 +125,7 @@ export default async function IljuHubPage({
           </SeoCta>
         </section>
 
-        <p className="w-full px-2 text-center text-[11px] leading-relaxed text-caption">
-          ※ 일주(태어난 날) 중심으로 살펴본 연애 성향이에요. 같은 일주라도 태어난 해·달·시간에 따라 결과가 달라져요. 콩닥의 모든 풀이는 오락과 자기이해를 위한 참고 정보이며, 미래를 보장하지 않습니다.
-        </p>
+        <IljuDisclaimer />
       </div>
     </main>
   );
