@@ -8,12 +8,12 @@ import type {
   CharmBadgeId,
   SajuCellDisplay,
   SajuCellElement,
-  SajuDisplayPerson,
+  SajuViewPerson,
   SajuElementKey,
 } from "@/lib/sajuDisplay";
 
 interface SajuEightCharCardProps {
-  people: SajuDisplayPerson[];
+  people: SajuViewPerson[];
   source: string;
   className?: string;
 }
@@ -127,6 +127,7 @@ export default function SajuEightCharCard({
   if (validPeople.length === 0) return null;
 
   const isCouple = validPeople.length >= 2;
+  const hasCells = validPeople.some((p) => Boolean(p.card.pillars));
 
   return (
     <section
@@ -138,7 +139,13 @@ export default function SajuEightCharCard({
         <div className="flex items-center gap-1.5 min-w-0">
           <Sparkles className="h-4 w-4 text-[#FFC24B] shrink-0" />
           <h3 className="text-sm font-black text-[#F6EEF3] truncate">
-            {isCouple ? "두 사람의 타고난 여덟 글자" : "타고난 여덟 글자와 기운"}
+            {!hasCells
+              ? isCouple
+                ? "두 사람의 타고난 기운"
+                : "타고난 기운"
+              : isCouple
+                ? "두 사람의 타고난 여덟 글자"
+                : "타고난 여덟 글자와 기운"}
           </h3>
         </div>
         <span className="text-[11px] font-semibold text-[#B9A9BF] shrink-0">
@@ -186,7 +193,8 @@ export default function SajuEightCharCard({
                 </div>
               )}
 
-              {/* 8칸 (연·월·일·시 × 위·아래) */}
+              {/* 8칸 (연·월·일·시 × 위·아래) — 공유 화면에서는 빠진다 */}
+              {card.pillars && (
               <div className="grid grid-cols-4 gap-1.5">
                 {card.pillars.map((pillar) => (
                   <div key={pillar.slot} className="flex flex-col gap-1.5">
@@ -202,9 +210,10 @@ export default function SajuEightCharCard({
                   </div>
                 ))}
               </div>
+              )}
 
               {/* 다섯 기운 막대 (나무·불·흙·쇠·물 개수) */}
-              <div className="mt-3 pt-2.5 border-t border-white/[0.07]">
+              <div className={card.pillars ? "mt-3 pt-2.5 border-t border-white/[0.07]" : ""}>
                 <div className="grid grid-cols-5 gap-1.5">
                   {card.elements.map((el) => {
                     const fillRatio = Math.min(

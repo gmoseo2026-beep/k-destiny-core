@@ -34,7 +34,7 @@ import NextReadingRecommendations from "@/components/report/NextReadingRecommend
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
 import { loadCompatLunarNotices, buildCoupleLunarLines } from "@/lib/lunarNoticeStorage";
 import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
-import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
+import type { SajuViewPerson } from "@/lib/sajuDisplay";
 import StoryCardSaveButton from "@/components/share/StoryCardSaveButton";
 
 interface CompatData {
@@ -45,7 +45,7 @@ interface CompatData {
   keywords: string[];
   summaryKo: string | null;
   publicBreakdown?: CompatPublicBreakdown | null;
-  sajuPeople?: SajuDisplayPerson[];
+  sajuPeople?: SajuViewPerson[];
   personA: { name: string; gender: string };
   personB: { name: string; gender: string };
 }

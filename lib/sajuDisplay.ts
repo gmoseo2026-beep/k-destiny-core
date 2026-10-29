@@ -66,6 +66,26 @@ export interface SajuDisplayPerson {
   card: SajuDisplayCard;
 }
 
+/** 화면 표시용 카드. 여덟 칸(pillars)이 없으면 다섯 기운 막대와 배지만 보여 준다. */
+export type SajuCardView = Omit<SajuDisplayCard, "pillars"> & {
+  pillars?: SajuDisplayCard["pillars"];
+};
+
+export interface SajuViewPerson {
+  name: string;
+  card: SajuCardView;
+}
+
+/**
+ * 공유 링크로 누구나 여는 화면용: 여덟 칸을 뺀다.
+ * 연·월·일·시 여덟 글자를 거꾸로 풀면 생년월일과 태어난 시간이 나오므로(PII) 입력한 사람 화면에만 보낸다.
+ */
+export function toSharedSajuPerson(person: SajuDisplayPerson): SajuViewPerson {
+  const { pillars: _omit, ...rest } = person.card;
+  void _omit;
+  return { name: person.name, card: rest };
+}
+
 const ELEMENT_LABEL_MAP: Record<SajuElementKey, SajuElementLabel> = {
   wood: "나무",
   fire: "불",

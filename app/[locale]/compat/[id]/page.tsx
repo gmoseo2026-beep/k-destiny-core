@@ -13,6 +13,7 @@ import { resolveCompatPageEntitlement } from "@/lib/entitlement";
 import { pickPublicBreakdown } from "@/lib/compatGauge";
 import {
   buildSajuDisplayFromPillars,
+  toSharedSajuPerson,
   type SajuDisplayPerson,
 } from "@/lib/sajuDisplay";
 
@@ -130,10 +131,11 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
 
   const cardA = buildSajuDisplayFromPillars(pA?.fourPillars);
   const cardB = buildSajuDisplayFromPillars(pB?.fourPillars);
-  const sajuPeople: SajuDisplayPerson[] = [
+  // 이 화면은 공유 링크로 누구나 연다 → 여덟 칸(생년월일·시간을 거꾸로 알 수 있음)은 빼고 기운 막대·배지만 보낸다.
+  const sajuPeople = ([
     ...(cardA ? [{ name: pA?.name || "나", card: cardA }] : []),
     ...(cardB ? [{ name: pB?.name || "상대방", card: cardB }] : []),
-  ];
+  ] satisfies SajuDisplayPerson[]).map(toSharedSajuPerson);
 
   // 프라이버시 보호: 클라이언트에는 표시용 필드만 전달 (세부 지표도 공개 3축만 전달하고 잠긴 2축은 내려보내지 않는다)
   const initialData = {

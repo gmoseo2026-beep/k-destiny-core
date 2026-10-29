@@ -73,7 +73,8 @@ export async function GET(req: NextRequest) {
 
     let badgeHeader = "콩닥 사주 궁합";
     let title = "나 × 그 사람";
-    let score = 91;
+    // 실제 계산값이 있을 때만 점수를 그린다(지어낸 점수 금지).
+    let score: number | null = null;
     let keywords: string[] = ["천생연분", "기운 찰떡궁합", "설레는 케미"];
     let charmBadges: CharmBadgeLabel[] = [];
     let summaryLine = "서로의 결이 자연스럽게 스며드는 다정한 흐름이에요.";
@@ -115,6 +116,8 @@ export async function GET(req: NextRequest) {
           pA?.name,
           pB?.name,
         ]);
+      } else {
+        return new Response("Not found", { status: 404 });
       }
     } else if (reportId) {
       badgeHeader = "콩닥 타고난 성격 · 매력";
@@ -158,7 +161,6 @@ export async function GET(req: NextRequest) {
           summaryLine = sanitizeStoryOneLineSummary(rawLine);
         }
       } else {
-        score = 88;
         summaryLine = "겉은 부드럽고 속은 단단하게 중심을 지키는 매력이에요.";
       }
     } else if (productId) {
@@ -169,7 +171,11 @@ export async function GET(req: NextRequest) {
         title = viewable.name;
         keywords = ["타고난 기운", "쉬운 사주 풀이", "두근이 리포트"];
         summaryLine = sanitizeStoryOneLineSummary(viewable.hook);
+      } else {
+        return new Response("Not found", { status: 404 });
       }
+    } else {
+      return new Response("Not found", { status: 404 });
     }
 
     const [pretendardFont, mascotDataUri] = await Promise.all([
@@ -275,7 +281,8 @@ export async function GET(req: NextRequest) {
               {title}
             </div>
 
-            {/* Score */}
+            {/* Score — 실제 점수가 있을 때만 */}
+            {score !== null && (
             <div
               style={{
                 display: "flex",
@@ -308,6 +315,7 @@ export async function GET(req: NextRequest) {
                 점
               </div>
             </div>
+            )}
 
             {/* 3 Engine Keywords */}
             <div
@@ -466,7 +474,7 @@ export async function GET(req: NextRequest) {
     if (download) {
       response.headers.set(
         "Content-Disposition",
-        `attachment; filename="kongdak_story_${score}pts.png"`,
+        `attachment; filename="kongdak_story${score !== null ? `_${score}pts` : ""}.png"`,
       );
       response.headers.set(
         "Cache-Control",
