@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
-import { isViewableFor, type CatalogItem } from "@/lib/catalog";
+import { getProduct, isViewableFor, type CatalogItem } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { canPreview } from "@/lib/preview";
 import {
@@ -58,6 +58,9 @@ import {
   buildSajuDisplayFromPillars,
   type SajuDisplayPerson,
 } from "@/lib/sajuDisplay";
+import { validateAskThreeQuestions } from "@/lib/askThreeSafety";
+import { buildAskThreePrompt, type ExistingCoupleReportSummary } from "@/lib/prompts/askThree";
+import { autoRefundFailedOrder, type RefundableOrderInfo } from "@/lib/payments/autoRefund";
 
 const SURNAMES_MAP: Record<string, string[]> = Object.fromEntries(
   Object.entries(surnamesRaw as Record<string, Array<{ hanja: string }>>).map(([hangul, arr]) => [
@@ -172,6 +175,10 @@ export async function POST(req: NextRequest) {
   else if (body.kind === "TEASER" || body.kind === "FULL") kind = body.kind;
   else return err(400, "kind 가 필요합니다.");
 
+  if (catalogId === "ask_three" && kind !== "FULL") {
+    return err(400, "두근이에게 묻기는 질문 3개를 입력해 결제 후 생성됩니다.");
+  }
+
   // A11-4: 공개 판정(isViewableFor)은 TEASER/FREE에만 적용하고, FULL은 Unlock 권한(orderGrants)으로만 판정한다.
   if (kind !== "FULL" && !isViewableFor(product, preview)) {
     return err(404, "상품을 찾을 수 없어요.");
@@ -179,6 +186,7 @@ export async function POST(req: NextRequest) {
 
   // 1) 권한 판정을 입력 처리보다 먼저 한다 — 미결제자가 계산·AI 비용을 유발하지 못하게
   let orderDbId: string | null = null;
+  let paidOrderForRefund: (RefundableOrderInfo & { askQuestions?: unknown }) | null = null;
   if (kind === "FULL") {
     if (!orderId) return err(400, "주문 정보가 필요합니다.");
     const order = await prisma.order.findUnique({ where: { orderId }, include: { unlocks: true } });
@@ -186,6 +194,13 @@ export async function POST(req: NextRequest) {
     const grant = orderGrants(order, { catalogId, compatId, now: new Date(), sessionUserId, presentedOrderId: orderId });
     if (!grant.ok) return grant.reason === "NOT_PAID" ? err(402, "결제가 완료되지 않았어요.") : err(403, "열람 권한이 없어요.");
     orderDbId = order.id;
+    paidOrderForRefund = {
+      orderId: order.orderId,
+      amount: order.amount,
+      status: order.status,
+      provider: order.provider,
+      askQuestions: (order as unknown as { askQuestions?: unknown }).askQuestions,
+    };
 
     // 이미 만들어 둔 리포트는 입력 없이 바로 준다. 결제한 비회원이 새 탭·다음 날 다시 들어오면
     // 생년월일 입력값(sessionStorage)이 없는데, 그때마다 다시 입력하게 하지 않는다(한 주문 = 한 리포트).
@@ -405,6 +420,20 @@ export async function POST(req: NextRequest) {
     return err(400, "지원하지 않는 입력입니다.");
   }
 
+  let askThreeQuestions: [string, string, string] | null = null;
+  if (catalogId === "ask_three") {
+    const fallbackQuestions =
+      body.input && typeof body.input === "object"
+        ? (body.input as { questions?: unknown }).questions
+        : undefined;
+    const rawQuestions = paidOrderForRefund?.askQuestions ?? fallbackQuestions;
+    const qCheck = validateAskThreeQuestions(rawQuestions);
+    if (!qCheck.ok) {
+      return err(400, qCheck.message);
+    }
+    askThreeQuestions = qCheck.questions;
+  }
+
   const cacheKey =
     kind === "FULL" ? `FULL:${orderDbId}:${catalogId}`
     : kind === "FREE" ? `FREE:${catalogId}:${subject.subjectHash}`
@@ -474,6 +503,139 @@ export async function POST(req: NextRequest) {
   try {
     const toneGuide = LOCALE_CONFIG[locale].toneGuide;
     const mode = kind === "TEASER" ? "TEASER" : "FULL";
+
+    if (catalogId === "ask_three" && askThreeQuestions && compatId) {
+      let compatSummaryKo: string | null = null;
+      const priorReports: ExistingCoupleReportSummary[] = [];
+      try {
+        const compatRow = await prisma.compatibility.findUnique({ where: { id: compatId } });
+        compatSummaryKo = compatRow?.summaryKo ?? null;
+      } catch {
+        // 기본 궁합 요약 조회 실패 시 결정론 컨텍스트만으로 진행
+      }
+      try {
+        const reportRepo = prisma.generatedReport as unknown as {
+          findMany?: typeof prisma.generatedReport.findMany;
+        };
+        if (reportRepo?.findMany) {
+          const rows = await reportRepo.findMany({
+            where: {
+              compatId,
+              status: "READY",
+              catalogId: { not: "ask_three" },
+            },
+            orderBy: { updatedAt: "desc" },
+            take: 4,
+            select: { catalogId: true, content: true },
+          });
+          for (const row of rows) {
+            const env = row.content ? readEnvelope(row.content) : null;
+            if (!env || !env.data || typeof env.data !== "object") continue;
+            const d = env.data as { headline?: unknown; summary?: unknown };
+            const headline = typeof d.headline === "string" ? d.headline : "";
+            const summary = typeof d.summary === "string" ? d.summary : "";
+            if (!headline && !summary) continue;
+            priorReports.push({
+              productName: getProduct(row.catalogId)?.name ?? row.catalogId,
+              headline,
+              summary,
+            });
+          }
+        }
+      } catch {
+        // 기존 리포트 요약 조회 실패 시 결정론 컨텍스트만으로 진행
+      }
+
+      const askPrompt = buildAskThreePrompt({
+        contextBlock: subject.contextBlock,
+        score: subject.score,
+        toneGuide,
+        questions: askThreeQuestions,
+        compatSummaryKo,
+        priorReports,
+      });
+
+      const validator = makeStandardReportValidator(spec);
+      let askResult: { data: unknown; model: string } | null = null;
+      let lastGenError: unknown = null;
+
+      try {
+        askResult = await generateJson({
+          label: "full:ask_three",
+          prompt: askPrompt,
+          models: STANDARD_MODELS,
+          maxOutputTokens: 6144,
+          thinkingBudget: 0,
+          validate: validator,
+        });
+      } catch (firstErr) {
+        lastGenError = firstErr;
+        console.warn("[reports/generate] ask_three 1st attempt failed, retrying once...", firstErr);
+        try {
+          askResult = await generateJson({
+            label: "full:ask_three:retry",
+            prompt: askPrompt,
+            models: STANDARD_MODELS,
+            maxOutputTokens: 6144,
+            thinkingBudget: 0,
+            validate: validator,
+          });
+        } catch (retryErr) {
+          lastGenError = retryErr;
+        }
+      }
+
+      if (!askResult) {
+        await failGeneration(claim.reportId);
+        void logGeneration({
+          catalogId,
+          kind,
+          ok: false,
+          ms: Date.now() - t0,
+          error: errorCode(lastGenError),
+        });
+        console.error("[reports/generate] ask_three retry failed, triggering auto-refund", lastGenError);
+
+        const refundRes = paidOrderForRefund
+          ? await autoRefundFailedOrder(paidOrderForRefund)
+          : { refunded: false, pgStatus: "SKIPPED" as const };
+
+        if (refundRes.refunded) {
+          return NextResponse.json(
+            {
+              error:
+                "답장 리포트를 만드는 데 거듭 실패해 결제를 자동으로 취소(환불)해 드렸어요. 잠시 후 다시 시도해 주세요.",
+              autoRefunded: true,
+            },
+            { status: 503, headers: NO_STORE },
+          );
+        }
+
+        return NextResponse.json(
+          {
+            error:
+              "리포트를 만드는 중 문제가 생겼어요. 잠시 후 다시 시도하거나 고객센터로 문의해 주세요.",
+            autoRefunded: false,
+          },
+          { status: 500, headers: NO_STORE },
+        );
+      }
+
+      const envelope: ReportEnvelope = {
+        version: 1,
+        score: subject.score,
+        data: askResult.data,
+      };
+      await completeGeneration(
+        claim.reportId,
+        JSON.parse(JSON.stringify(envelope)) as Prisma.InputJsonValue,
+        askResult.model,
+      );
+      await markViewed(claim.reportId);
+      void logGeneration({ catalogId, kind, ok: true, ms: Date.now() - t0 });
+      return ok({ kind, reportId: claim.reportId, score: subject.score, data: askResult.data });
+    }
+
     // 전체 리포트는 이 사람이 본 미리보기(잠긴 칸 문구·열린 질문)에 답한다
     let promised: { hooks?: string[]; unsaid?: string } | undefined;
     if (mode === "FULL") {

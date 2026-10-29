@@ -59,7 +59,7 @@ export default async function CompatNewPage({ params, searchParams }: PageProps)
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
   const product = productId ? await getEffectiveProduct(productId) : null;
-  if (product && !isViewableFor(product, preview)) {
+  if (product && (!isViewableFor(product, preview) || (product.placementOnly && !preview))) {
     notFound();
   }
 

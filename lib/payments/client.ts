@@ -38,6 +38,7 @@ export interface PayOptions {
   locale?: string;
   upgradeFromOrderId?: string;
   gift?: GiftPurchasePayload;
+  askQuestions?: [string, string, string];
 }
 
 export type PayResult =
@@ -125,6 +126,10 @@ export function rememberOrderToken(catalogId: string, orderId: string, compatId?
   if (typeof window === "undefined" || !catalogId || !orderId) return;
   try {
     window.localStorage.setItem(orderTokenKey(catalogId, compatId), orderId);
+    if (catalogId === "ask_three") {
+      // 같은 궁합에서 다시 구매해도 이전 답장 리포트 열람 토큰이 덮어써져 사라지지 않도록 보관
+      window.localStorage.setItem(`${ORDER_TOKEN_PREFIX}hist_${orderId}`, orderId);
+    }
   } catch {}
   if (opensCompatBasic(catalogId) && compatId) {
     rememberUnlockToken(compatId, orderId);
@@ -204,7 +209,8 @@ function forgetPayAttempt(orderId: string): void {
 /** 같은 두 사람·같은 리포트(또는 그 리포트가 든 세트)로 이 기기가 열었던 결제 중 실제로 끝난 게 있으면 그 결과 */
 async function recoverPaidAttempt(productId: string, compatId: string | null): Promise<PayResult | null> {
   // 한 사람 상품(신년운 등)은 compatId 가 없어 "누구 것인지" 구분이 안 된다 — 친구 것을 또 사는 경우를 막지 않도록 두 사람 상품만 본다
-  if (!compatId) return null;
+  // ask_three("그 사람에 대해 묻고 싶은 3가지")는 더 물으려면 다시 구매할 수 있는 단건 상품이므로 이전 결제로 막지 않는다.
+  if (!compatId || productId === "ask_three") return null;
   const granting = new Set(grantingCatalogIds(productId));
   const candidates = readPayAttempts()
     .filter((a) => granting.has(a.productId) && (a.compatId ?? null) === compatId)
@@ -266,6 +272,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       ...(savedCoupon ? { couponCode: savedCoupon.code } : {}),
       ...(opts.upgradeFromOrderId ? { upgradeFromOrderId: opts.upgradeFromOrderId } : {}),
       ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
+      ...(opts.askQuestions ? { askQuestions: opts.askQuestions } : {}),
       env: clientEnvLabel(),
       payMethod: opts.buyer.payMethod ?? "CARD",
     }),

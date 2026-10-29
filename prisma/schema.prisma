@@ -265,6 +265,8 @@ model Order {
   payMethod      String?
   // 단품 결제 후 24시간 내 차액 세트 업그레이드 원본 주문번호(Order.orderId) — additive
   upgradeFromOrderId String?
+  // 두근이에게 묻기(ask_three) 주문 시 결제 전 안전 필터를 통과한 질문 3개 배열(PII·연락처 제외).
+  askQuestions   Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

@@ -16,6 +16,7 @@ import {
   validateGiftCreateInput,
   type ValidatedGiftInput,
 } from "@/lib/payments/gift";
+import { validateAskThreeQuestions } from "@/lib/askThreeSafety";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -85,6 +86,24 @@ export async function POST(req: NextRequest) {
         if (!existingCompat) {
           return NextResponse.json({ error: "궁합 정보를 찾을 수 없습니다." }, { status: 404 });
         }
+      }
+
+      // [Argon 14] 두근이에게 묻기(ask_three): 전달된 질문 배열을 결제 주문 생성 전에 안전 필터로 검증한다.
+      let validatedAskQuestions: [string, string, string] | null = null;
+      if (catalogItem.id === "ask_three" && body.askQuestions !== undefined) {
+        const qCheck = validateAskThreeQuestions(body.askQuestions);
+        if (!qCheck.ok) {
+          return NextResponse.json(
+            {
+              error: qCheck.message,
+              code: "UNSAFE_QUESTION",
+              category: qCheck.category,
+              index: qCheck.index,
+            },
+            { status: 400 }
+          );
+        }
+        validatedAskQuestions = qCheck.questions;
       }
 
       let parsedEmail = session?.user?.email || null;
@@ -209,6 +228,7 @@ export async function POST(req: NextRequest) {
           campaign,
           payMethod,
           ...(upgradeFromOrderId ? { upgradeFromOrderId } : {}),
+          ...(validatedAskQuestions ? { askQuestions: validatedAskQuestions } : {}),
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },

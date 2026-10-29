@@ -41,6 +41,7 @@ export interface CatalogItem {
   featuredOrder?: number;   // 추천 및 홈 격자 정렬 순서
   subtitle?: string;        // 질문형 부제 (상세 페이지 제목용)
   pointDesc?: Record<string, string>; // "이런 내용" 섹션별 요약
+  placementOnly?: "couple_report_bottom"; // 특정 화면(커플 리포트 하단 등) 전용 노출 상품 — 일반 상품 목록에서는 제외
 }
 
 // 오픈 기념가(2026-10-02 사장님 결정): 표준 단품은 회원·비회원 모두 4,900원. 정가(originalPrice) 6,900원은 취소선으로 보여 준다.
@@ -589,6 +590,38 @@ export const CATALOG: CatalogItem[] = [
       keep_flutter: "권태가 오는 지점과 다시 달아오르게 하는 행동"
     }
   },
+  {
+    id: "ask_three",
+    type: "COMPAT",
+    name: "그 사람에 대해 묻고 싶은 3가지",
+    description: "질문 3개를 적으면 같은 두 사람의 궁합을 바탕으로 답장 3개를 한 리포트로 정리해 드려요",
+    category: "cat-compat",
+    target: "couple",
+    price: LAUNCH_PRICE,
+    originalPrice: 6900,
+    icon: "MessageCircleQuestion",
+    promptKey: "ask_three",
+    tier: "standard",
+    inputKind: "couple",
+    accessDays: 90,
+    placementOnly: "couple_report_bottom",
+    icon3d: "/icons3d/inner_mind.webp",
+    gridLabel: "질문 3가지",
+    hook: "지금 가장 궁금한 질문 3가지에 두근이가 답장해요",
+    subtitle: "연락, 만남, 속도까지 지금 묻고 싶은 3가지의 답은?",
+    recommendFor: [
+      "리포트를 읽고 나서도 지금 당장 궁금한 질문이 남은 분",
+      "먼저 연락해도 될지, 언제 만나자고 할지 고민되는 분",
+      "그 사람이 편하게 느끼는 연락 속도와 태도가 궁금한 분"
+    ],
+    featuredOrder: 90,
+    pointDesc: {
+      answer_1: "내가 적은 첫 번째 질문에 대한 맞춤 답장",
+      answer_2: "내가 적은 두 번째 질문에 대한 맞춤 답장",
+      answer_3: "내가 적은 세 번째 질문에 대한 맞춤 답장",
+      closing_advice: "세 가지 답을 잇는 지금의 마음가짐과 행동 팁"
+    }
+  },
 
   // --- SETS (세트 상품) ---
   {
@@ -999,15 +1032,15 @@ export function teaserCatalogIdFor(p: CatalogItem): string {
 }
 
 export function getProductsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type !== "SET" && !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type !== "SET" && !p.isHidden && !p.placementOnly);
 }
 
 export function getSetsByTarget(target: ProductTarget): CatalogItem[] {
-  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type === "SET" && !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && p.target === target && p.type === "SET" && !p.isHidden && !p.placementOnly);
 }
 
 export function getAllProducts(): CatalogItem[] {
-  return CATALOG.filter((p) => p.tier === "standard" && !p.isHidden);
+  return CATALOG.filter((p) => p.tier === "standard" && !p.isHidden && !p.placementOnly);
 }
 
 const SINGLE_COVER_PATHS: Readonly<Record<string, string>> = {
@@ -1027,6 +1060,7 @@ const SINGLE_COVER_PATHS: Readonly<Record<string, string>> = {
   marriage: "/covers/cover_marriage.webp",
   conflict: "/covers/cover_conflict.webp",
   secret_love: "/covers/cover_secret_love.webp",
+  ask_three: "/covers/cover_inner_mind.webp",
   premium_2027_daeun: "/covers/cover_premium_2027_daeun.webp",
   premium_naming: "/covers/cover_premium_naming.webp",
   premium_date_pick: "/covers/cover_premium_date_pick.webp",

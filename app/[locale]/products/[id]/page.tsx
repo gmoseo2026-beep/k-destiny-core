@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const session = await getServerSession(authOptions).catch(() => null);
   const preview = canPreview(session?.user?.email);
   const product = await getEffectiveProduct(id);
-  if (!product || !isViewableFor(product, preview)) return { title: "상품을 찾을 수 없습니다" };
+  if (!product || !isViewableFor(product, preview) || (product.placementOnly && !preview)) return { title: "상품을 찾을 수 없습니다" };
 
   // 공유 카드: 홈 카드가 아니라 이 상품의 질문(hook)이 크게 보이게 한다. og:url 도 이 상품 주소로.
   const url = canonicalUrlFor(`/products/${product.id}`);
@@ -39,7 +39,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   const preview = canPreview(session?.user?.email);
   const product = await getEffectiveProduct(id);
 
-  if (!product || !isViewableFor(product, preview)) {
+  if (!product || !isViewableFor(product, preview) || (product.placementOnly && !preview)) {
     notFound();
   }
 
@@ -54,7 +54,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
   }
 
   const effectiveCatalog = await getEffectiveCatalog();
-  const allProducts = effectiveCatalog.filter((p) => !p.isHidden);
+  const allProducts = effectiveCatalog.filter((p) => !p.isHidden && !p.placementOnly);
   const samplePreview = loadStandardSamplePreview(product.id);
   const reviews = await getPublicReviewsForCatalog(product.id, 6);
 

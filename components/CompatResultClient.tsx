@@ -32,6 +32,7 @@ import {
 import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
+import AskThreeWidget from "@/components/report/AskThreeWidget";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
 import { loadCompatLunarNotices, buildCoupleLunarLines } from "@/lib/lunarNoticeStorage";
 import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
@@ -1353,6 +1354,17 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
           <span>생일 모르는 친구에게 내 반쪽 초대장 보내기 →</span>
         </Link>
       </div>
+
+      {/* 두근이에게 묻기 (질문 3개 답장 리포트 — 커플 리포트 맨 아래 전용) */}
+      {data.id && (
+        <div className="w-full mt-6">
+          <AskThreeWidget
+            compatId={data.id}
+            locale={locale}
+            fromProductId="compat_basic"
+          />
+        </div>
+      )}
 
       {/* Guest Checkout Modal */}
       <GuestCheckoutModal

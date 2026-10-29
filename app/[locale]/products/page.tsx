@@ -23,7 +23,7 @@ export async function generateMetadata({
 
 export default async function ProductsPage() {
   const effectiveCatalog = await getEffectiveCatalog();
-  const visibleProducts = filterProductsByCategory(effectiveCatalog, "all");
+  const visibleProducts = filterProductsByCategory(effectiveCatalog, "all").filter((p) => !p.placementOnly);
   const now = getSeasonNow();
 
   return (
