@@ -41,20 +41,20 @@ describe("P-016-5 · P-018 홈·리포트 디자인 단위 테스트", () => {
     });
   });
 
-  it("2026-12-01 00:00 KST 경계에서 홈 상단 슬라이드 첫 장이 속마음(①)에서 2027 신년운(②)으로 자동 전환된다", () => {
-    const beforeDec = Date.parse("2026-11-30T23:59:59+09:00");
-    const atDec = Date.parse("2026-12-01T00:00:00+09:00");
+  it("2026-11-01 00:00 KST 경계에서 홈 상단 슬라이드가 속마음(①) 우선에서 2027 신년운·2027 대운(②③) 우선으로 자동 전환된다", () => {
+    const beforeNov = Date.parse("2026-10-31T23:59:59+09:00");
+    const atNov = Date.parse("2026-11-01T00:00:00+09:00");
 
-    expect(getHeroPosterSlides(beforeDec).map((s) => s.id)).toEqual([
+    expect(getHeroPosterSlides(beforeNov).map((s) => s.id)).toEqual([
       "inner_mind",
       "annual_2027",
       "premium_2027_daeun",
       "compat_basic",
     ]);
-    expect(getHeroPosterSlides(atDec).map((s) => s.id)).toEqual([
+    expect(getHeroPosterSlides(atNov).map((s) => s.id)).toEqual([
       "annual_2027",
-      "inner_mind",
       "premium_2027_daeun",
+      "inner_mind",
       "compat_basic",
     ]);
   });

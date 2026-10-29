@@ -15,6 +15,7 @@ import { fetchVisitorCount } from "@/lib/home/visitors";
 import VisitorPill from "@/components/home/VisitorPill";
 import { canonicalUrlFor } from "@/lib/seo";
 import { countAvailableCouponsForUser, getRecentPublicReviews } from "@/lib/reviews";
+import { getSeasonNow, isSeason2027Active } from "@/lib/season";
 import type { CatalogItem } from "@/lib/catalog";
 
 export const revalidate = 60;
@@ -40,8 +41,11 @@ export default async function Home({ params }: PageProps) {
   const isMember = Boolean(userId);
   const memberName = session?.user?.name?.trim() || "회원";
 
+  const now = getSeasonNow();
+  const rankingCacheKey = isSeason2027Active(now) ? "home:ranking:2027" : "home:ranking:2026";
+
   const [ranking, recentReviews, couponCount, visitorData] = await Promise.all([
-    swrCached("home:ranking", 60_000, () => fetchHomeRanking(prisma, visibleProducts)),
+    swrCached(rankingCacheKey, 60_000, () => fetchHomeRanking(prisma, visibleProducts, now)),
     swrCached("home:reviews", 60_000, () => getRecentPublicReviews(6)),
     isMember ? countAvailableCouponsForUser(userId) : Promise.resolve(0),
     swrCached("home:visitors", 60_000, () => fetchVisitorCount(prisma)),
@@ -82,11 +86,12 @@ export default async function Home({ params }: PageProps) {
         </>
       )}
 
-      {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + 인기 TOP 5 + 2열 포스터 격자 */}
+      {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + (11/1부터 2027 신년 추천) + 인기 TOP 5 + 2열 포스터 격자 */}
       <HomeExplore
         locale={locale}
         products={visibleProducts}
         ranking={ranking}
+        now={now}
       />
 
       {/* 영역 4: 실제 구매자 후기 (0개면 자동 숨김, 후기 아래에 해당 상품 목록 행 카드) */}

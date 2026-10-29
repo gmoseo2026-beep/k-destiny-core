@@ -12,7 +12,8 @@ import {
 import type { HomeRankingResult } from "@/lib/home/ranking";
 import HomeHeroCompact from "@/components/home/HomeHeroCompact";
 import HomeRankingView from "@/components/home/HomeRankingView";
-import { PosterCard, SetStackCard } from "@/components/cards/KongdakCards";
+import { ListRowCard, PosterCard, SetStackCard } from "@/components/cards/KongdakCards";
+import { getSeasonFirstRecommendations, sortSeasonSets } from "@/lib/season";
 import { trackEvent } from "@/lib/gtag";
 
 /** 하위 호환 테스트용 표지 맵 유지 */
@@ -29,6 +30,7 @@ interface HomeExploreProps {
   ranking?: HomeRankingResult;
   tabs?: ExploreTab[];
   picks?: CatalogItem[];
+  now?: number;
 }
 
 export default function HomeExplore({
@@ -36,6 +38,7 @@ export default function HomeExplore({
   products = [],
   ranking,
   tabs = [],
+  now,
 }: HomeExploreProps) {
   const [selectedChip, setSelectedChip] = useState<HomeCategoryChipId>("all");
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -62,11 +65,13 @@ export default function HomeExplore({
   );
 
   const sets = useMemo(
-    () =>
-      filtered
-        .filter((p) => p.type === "SET")
-        .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99)),
-    [filtered],
+    () => sortSeasonSets(filtered.filter((p) => p.type === "SET"), now),
+    [filtered, now],
+  );
+
+  const seasonFirstRecommendations = useMemo(
+    () => getSeasonFirstRecommendations(sourceProducts, now),
+    [sourceProducts, now],
   );
 
   const handleChipClick = (chipId: HomeCategoryChipId) => {
@@ -109,7 +114,41 @@ export default function HomeExplore({
       </div>
 
       {/* 2. 3:4 포스터 슬라이드 (폭 86%, 양옆 다음 카드 노출, 우상단 1/4) */}
-      <HomeHeroCompact locale={locale} />
+      <HomeHeroCompact locale={locale} now={now} />
+
+      {/* 2-1. 2027 신년 시즌 첫 추천 (KST 2026-11-01 00:00 자동 전환: annual_2027 · premium_2027_daeun · set_2027) */}
+      {selectedChip === "all" && seasonFirstRecommendations.length > 0 && (
+        <section
+          className="w-full max-w-[480px] mx-auto px-4 mt-6"
+          aria-label="2027 신년 추천"
+        >
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
+              🌅 미리 보는 2027 신년 추천
+            </h2>
+            <span className="text-[11px] font-medium text-[#B9A9BF]">
+              무료 미리보기 지원
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {seasonFirstRecommendations.map((item) =>
+              item.type === "SET" ? (
+                <SetStackCard
+                  key={item.id}
+                  product={item}
+                  listName="home_season_2027_first"
+                />
+              ) : (
+                <ListRowCard
+                  key={item.id}
+                  product={item}
+                  listName="home_season_2027_first"
+                />
+              ),
+            )}
+          </div>
+        </section>
+      )}
 
       {/* 3. 🔥 지금 많이 보는 운세 TOP 5 (실제 30일 집계 1곳만) */}
       {ranking && <HomeRankingView locale={locale} ranking={ranking} />}

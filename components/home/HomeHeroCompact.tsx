@@ -15,12 +15,16 @@ import {
   seasonPriceAt,
 } from "@/lib/catalog";
 import { resolveProductHref } from "@/components/cards/KongdakCards";
+import {
+  SEASON_2027_STARTS_AT,
+  SEASON_2027_YEAR,
+  getSeasonHeroSlideOrder,
+  isSeason2027Active,
+  type SeasonHeroSlideId,
+} from "@/lib/season";
+import { useSeenOnce } from "@/lib/useSeenOnce";
 
-export type HeroSlideId =
-  | "inner_mind"
-  | "annual_2027"
-  | "premium_2027_daeun"
-  | "compat_basic";
+export type HeroSlideId = SeasonHeroSlideId;
 
 export interface HeroPosterSlide {
   id: HeroSlideId;
@@ -34,8 +38,8 @@ export interface HeroPosterSlide {
   getHref: (locale: string) => string;
 }
 
-/** 2026-12-01 00:00 KST부터는 2027 신년운(②)이 첫 장(②①③④)으로 자동 전환된다. */
-export const HERO_2027_FIRST_FROM = Date.parse("2026-12-01T00:00:00+09:00");
+/** 2026-11-01 00:00 KST(lib/season.ts 단일 설정)부터 2027 신년운·2027 대운이 앞장(②③①④)으로 자동 전환된다. */
+export const HERO_2027_FIRST_FROM = SEASON_2027_STARTS_AT;
 
 export const HERO_POSTER_SLIDES: readonly HeroPosterSlide[] = [
   {
@@ -82,16 +86,15 @@ export const HERO_POSTER_SLIDES: readonly HeroPosterSlide[] = [
 ];
 
 /**
- * 시각(now)에 따른 홈 상단 큰 카드 4장 순서:
- * - 2026-11-30 23:59:59 KST까지: ① 속마음 → ② 2027 신년운 → ③ 2027 대운 → ④ 정통 궁합
- * - 2026-12-01 00:00:00 KST부터: ② 2027 신년운 → ① 속마음 → ③ 2027 대운 → ④ 정통 궁합
+ * 시각(now)에 따른 홈 상단 큰 카드 4장 순서 (lib/season.ts 단일 기준):
+ * - 2026-10-31 23:59:59 KST까지: ① 속마음 → ② 2027 신년운 → ③ 2027 대운 → ④ 정통 궁합
+ * - 2026-11-01 00:00:00 KST부터: ② 2027 신년운 → ③ 2027 대운 → ① 속마음 → ④ 정통 궁합
  */
 export function getHeroPosterSlides(now: number = Date.now()): HeroPosterSlide[] {
-  const [first, second, third, fourth] = HERO_POSTER_SLIDES;
-  if (now >= HERO_2027_FIRST_FROM) {
-    return [second, first, third, fourth];
-  }
-  return [first, second, third, fourth];
+  const byId = new Map(HERO_POSTER_SLIDES.map((s) => [s.id, s]));
+  return getSeasonHeroSlideOrder(now)
+    .map((id) => byId.get(id))
+    .filter((s): s is HeroPosterSlide => Boolean(s));
 }
 
 /**
@@ -130,11 +133,19 @@ export default function HomeHeroCompact({
   locale?: string;
   now?: number;
 }) {
+  const heroRef = useRef<HTMLElement | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [failedCovers, setFailedCovers] = useState<Record<string, boolean>>({});
 
+  const seasonActive = isSeason2027Active(now);
   const slides = useMemo(() => getHeroPosterSlides(now), [now]);
+
+  useSeenOnce(
+    heroRef,
+    () => trackEvent("season_hero_view", { value: SEASON_2027_YEAR, season: SEASON_2027_YEAR }),
+    seasonActive,
+  );
 
   const getCardStepWidth = () => {
     const container = scrollerRef.current;
@@ -175,7 +186,7 @@ export default function HomeHeroCompact({
   const atLast = activeIdx >= slides.length - 1;
 
   return (
-    <section className="w-full overflow-hidden bg-[#140B18] text-[#F6EEF3]">
+    <section ref={heroRef} className="w-full overflow-hidden bg-[#140B18] text-[#F6EEF3]">
       <div className="relative max-w-[480px] mx-auto pt-2 pb-4">
         {/* 마우스 화면(PC) 전용 좌우 원형 ‹ › 버튼 */}
         <button

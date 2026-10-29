@@ -41,21 +41,21 @@ describe("P-018 홈 진열 + 결제 버튼 정리 단위 테스트", () => {
     expect(compatSlide.getHref("ko")).toBe("/ko/compat/new");
   });
 
-  it("2026-11-30 23:59 KST와 2026-12-01 00:00 KST 경계에서 첫 장이 ①→②(②①③④)로 전환된다", () => {
-    const nov30_2359 = Date.parse("2026-11-30T23:59:00+09:00");
-    const dec01_0000 = Date.parse("2026-12-01T00:00:00+09:00");
+  it("2026-10-31 23:59 KST와 2026-11-01 00:00 KST 경계에서 2027 신년운·2027 대운(②③①④)으로 자동 전환된다", () => {
+    const oct31_2359 = Date.parse("2026-10-31T23:59:00+09:00");
+    const nov01_0000 = Date.parse("2026-11-01T00:00:00+09:00");
 
-    expect(dec01_0000).toBe(HERO_2027_FIRST_FROM);
-    expect(getHeroPosterSlides(nov30_2359).map((s) => s.id)).toEqual([
+    expect(nov01_0000).toBe(HERO_2027_FIRST_FROM);
+    expect(getHeroPosterSlides(oct31_2359).map((s) => s.id)).toEqual([
       "inner_mind",
       "annual_2027",
       "premium_2027_daeun",
       "compat_basic",
     ]);
-    expect(getHeroPosterSlides(dec01_0000).map((s) => s.id)).toEqual([
+    expect(getHeroPosterSlides(nov01_0000).map((s) => s.id)).toEqual([
       "annual_2027",
-      "inner_mind",
       "premium_2027_daeun",
+      "inner_mind",
       "compat_basic",
     ]);
   });

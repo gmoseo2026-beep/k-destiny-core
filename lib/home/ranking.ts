@@ -1,6 +1,7 @@
 import { CatalogItem } from "@/lib/catalog";
 import { getEffectiveVisibleCatalog } from "@/lib/catalogVisibility";
 import { toCatalogId } from "@/lib/productIdentity";
+import { sortFallbackRecommendations } from "@/lib/season";
 
 export interface OrderRowForRanking {
   productType: string | null;
@@ -28,7 +29,8 @@ export interface HomeRankingResult {
 export function computeHomeRanking(
   orders: OrderRowForRanking[],
   visibleProducts: CatalogItem[] = [],
-  minThreshold: number = 20
+  minThreshold: number = 20,
+  now: number = Date.now(),
 ): HomeRankingResult {
   const validOrders = orders.filter(
     (o) => o.status === "PAID" && o.amount > 0 && o.provider !== "admin_manual"
@@ -63,10 +65,8 @@ export function computeHomeRanking(
     }
   }
 
-  // 20건 미만 또는 집계 가능 상품 부족 시 fallback
-  const fallback = [...visibleProducts]
-    .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99))
-    .slice(0, 4);
+  // 20건 미만 또는 집계 가능 상품 부족 시 fallback (2026-11-01 00:00 KST부터는 2027 대표 상품 우선)
+  const fallback = sortFallbackRecommendations(visibleProducts, now).slice(0, 4);
 
   return {
     title: "콩닥 추천 콘텐츠",
@@ -91,9 +91,10 @@ export interface PrismaClientForRanking {
  */
 export async function fetchHomeRanking(
   prismaClient: unknown,
-  visibleProducts?: CatalogItem[]
+  visibleProducts?: CatalogItem[],
+  now: number = Date.now(),
 ): Promise<HomeRankingResult> {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
   const targetVisibleProducts = visibleProducts ?? (await getEffectiveVisibleCatalog());
   try {
     const client = prismaClient as {
@@ -121,9 +122,9 @@ export async function fetchHomeRanking(
       },
     });
 
-    return computeHomeRanking(orders, targetVisibleProducts);
+    return computeHomeRanking(orders, targetVisibleProducts, 20, now);
   } catch (e) {
     console.error("[fetchHomeRanking] Error fetching orders, using fallback:", e);
-    return computeHomeRanking([], targetVisibleProducts);
+    return computeHomeRanking([], targetVisibleProducts, 20, now);
   }
 }

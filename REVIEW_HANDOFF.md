@@ -1,4 +1,5 @@
 # REVIEW_HANDOFF — Argon 01 (`argon/01-account-delete`: 셀프 회원 탈퇴)
+# REVIEW_HANDOFF — Argon 02. 신년 시즌 전환 (`argon/02-season-2027`)
 
 > **작성 일시**: 2026-10-29
 > **기반 브랜치**: `origin/main` (`c963b6e`)
@@ -26,6 +27,24 @@
 
 ### 5. 클로드에게 필요한 것
 - 약관(`messages/ko.json`의 `Legal.*`)은 지시서 §0.9에 따라 수정하지 않았습니다. 약관 내 탈퇴 신청 경로 안내에 이메일 외에 **"내 보관함(`/ko/me`) 하단 회원 탈퇴"** 경로 병기가 필요한지 검토 부탁드립니다.
+- **바뀐 파일**:
+  - `lib/season.ts` (신규): KST `2026-11-01 00:00:00`(`SEASON_2027_STARTS_AT`) 단일 전환 시각, 2027 핵심 3종(`annual_2027`, `premium_2027_daeun`, `set_2027`), 히어로 슬라이드 순서(`getSeasonHeroSlideOrder`), 히어로 직하단 첫 추천(`getSeasonFirstRecommendations`), 세트 진열(`sortSeasonSets`), 폴백 큐레이션 정렬(`sortFallbackRecommendations`) 정의
+  - `components/home/HomeHeroCompact.tsx`: `HERO_2027_FIRST_FROM`을 `SEASON_2027_STARTS_AT`(11/1 0시 KST)으로 단일화해 11/1 0시부터 `annual_2027` → `premium_2027_daeun` → `inner_mind` → `compat_basic` 순으로 전환, 2027 시즌 활성 시 `season_hero_view` (`value: 2027`) GA4 이벤트 1회 발사
+  - `components/home/HomeExplore.tsx`: 11/1 0시부터 `"전체"` 탭 히어로 바로 아래에 `"🌅 미리 보는 2027 신년 추천"`(`annual_2027`, `premium_2027_daeun`, `set_2027`) 섹션 노출 및 세트 목록에서 `set_2027` 최상단 정렬(새 "한정" 문구 없이 카탈로그 기존 `12/31까지` 값만 사용)
+  - `components/product/ProductsExplorerClient.tsx`, `app/[locale]/page.tsx`, `app/[locale]/products/page.tsx`: 서버 렌더 시각(`now`)을 전달해 자정 경계 하이드레이션 불일치를 방지하고 전체 탐색 세트 정렬에도 동일 기준 적용
+  - `lib/home/ranking.ts`: 실결제 20건 이상 TOP 5 순위는 그대로 보존하고, 20건 미만 폴백 큐레이션에서만 11/1 0시부터 2027 핵심 3종 우선 배치(SWR 캐시 키 `home:ranking:2026` / `home:ranking:2027` 분리)
+  - `tests/season2027.test.ts` (신규), `tests/p016Design.test.ts`, `tests/p018HomeAndPay.test.ts`: `2026-10-31 23:59 KST` vs `2026-11-01 00:00 KST` 주입 단위 테스트 및 기존 12/1 전환 단언 갱신
+- **테스트 결과(통과 수)**:
+  - `npx tsc --noEmit`: 0 errors
+  - `npx eslint <바뀐 파일>`: 0 errors
+  - `npx vitest run`: 78 files passed, 585 tests passed (42 skipped)
+  - `npm run build`: exit 0
+- **직접 화면에서 확인한 것**:
+  - `2026-10-31 23:59 KST` 이전에는 기존 홈 구성(`inner_mind` 1번 슬라이드, 신년 첫 추천 미노출, `set_heart` 세트 1번)이 유지되고, `2026-11-01 00:00 KST` 도달 시 히어로 1·2번(`annual_2027`, `premium_2027_daeun`)과 직하단 첫 추천 3종(`annual_2027`, `premium_2027_daeun`, `set_2027`) 및 `season_hero_view(value: 2027)` 발사가 카탈로그 `12/31까지` 가격과 일치하게 전환되는 것을 검증함.
+- **스스로 의심하는 점**:
+  - `app/[locale]/page.tsx`가 `revalidate = 60` ISR 캐시를 쓰므로 KST 11월 1일 00:00 정각 직후 최대 60초 동안 직전 캐시가 보일 수 있으나, 첫 재검증 요청 이후 즉시 `home:ranking:2027` 키와 새 `now`로 일관되게 전환됩니다.
+- **클로드에게 필요한 것**:
+  - **11/1 0시 전 머지·배포 필수** (`argon/02-season-2027`). 법률 문구·환경변수 추가 사항 없음.
 
 ---
 
