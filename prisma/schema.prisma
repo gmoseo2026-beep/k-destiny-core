@@ -263,6 +263,8 @@ model Order {
   campaign       String?
   // 결제를 시작한 결제 수단("KAKAOPAY" | "CARD"). 어디서 결제가 끊기는지 보려고(2026-10-14). PII 아님.
   payMethod      String?
+  // [Argon 15] 서버 전환 API(메타 CAPI·틱톡 Events API)용 광고 신호(IP·User-Agent·_fbp·_fbc·_ttp·ttclid 쿠키). 이름·전화·이메일·생년월일 미포함.
+  adSignals      Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

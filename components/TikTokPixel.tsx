@@ -62,6 +62,15 @@ export default function TikTokPixel() {
   }, []);
 
   useEffect(() => {
+    try {
+      const ttclid = new URLSearchParams(window.location.search).get("ttclid");
+      if (ttclid && /^[A-Za-z0-9._-]{4,256}$/.test(ttclid)) {
+        const secure = window.location.protocol === "https:" ? "; Secure" : "";
+        document.cookie = `ttclid=${encodeURIComponent(ttclid)}; Path=/; Max-Age=${30 * 24 * 60 * 60}; SameSite=Lax${secure}`;
+      }
+    } catch {
+      // 측정용 쿠키 보조 처리 실패는 무시
+    }
     trackTikTokPageView();
   }, [pathname]);
 

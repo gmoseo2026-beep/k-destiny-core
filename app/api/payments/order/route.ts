@@ -9,6 +9,7 @@ import { toStorageKey } from "@/lib/productIdentity";
 import { canPreview } from "@/lib/preview";
 import { campaignFromCookieHeader } from "@/lib/campaignLinks";
 import { calculateDiscountedAmount, findUsableCoupon } from "@/lib/reviews";
+import { extractOrderAdSignals } from "@/lib/adConversions";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -28,6 +29,8 @@ export async function POST(req: NextRequest) {
 
     // 제휴 배너 전용 주소(/go/<코드>)로 들어온 사람이면 그 유입 표시를 주문에 남긴다(집계용, 판정에는 쓰지 않는다)
     const campaign = campaignFromCookieHeader(req.headers.get("cookie"));
+    // [Argon 15] 메타 CAPI·틱톡 Events API용 서버 광고 신호(IP·UA·_fbp·_fbc·_ttp·ttclid 쿠키). 이름·전화·이메일·생년월일 미포함.
+    const adSignals = extractOrderAdSignals(req);
 
     // 결제 수단("KAKAOPAY" | "NAVERPAY" | "CARD"). 없거나 다른 값이면 null로 저장하며 이 값 때문에 주문을 거절하지 않는다.
     const payMethod =
@@ -142,6 +145,7 @@ export async function POST(req: NextRequest) {
           clientEnv,
           campaign,
           payMethod,
+          ...(adSignals ? { adSignals } : {}),
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },
