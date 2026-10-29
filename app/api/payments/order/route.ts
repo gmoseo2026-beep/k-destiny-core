@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { isSellableFor } from "@/lib/catalog";
@@ -17,6 +18,28 @@ import {
   type ValidatedGiftInput,
 } from "@/lib/payments/gift";
 import { validateAskThreeQuestions } from "@/lib/askThreeSafety";
+import { extractOrderAdSignals } from "@/lib/adConversions";
+
+// 결제하지 않고 끝난 주문의 광고 신호(IP·기기)는 7일 뒤 지운다. 주문이 들어올 때 한 시간에 한 번만 정리한다.
+const AD_SIGNAL_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+let lastAdSignalSweepAt = 0;
+function sweepStaleAdSignals() {
+  const now = Date.now();
+  if (now - lastAdSignalSweepAt < 60 * 60 * 1000) return;
+  lastAdSignalSweepAt = now;
+  void Promise.resolve()
+    .then(() =>
+      prisma.order.updateMany({
+        where: {
+          status: { not: "PAID" },
+          createdAt: { lt: new Date(now - AD_SIGNAL_TTL_MS) },
+          NOT: { adSignals: { equals: Prisma.AnyNull } },
+        },
+        data: { adSignals: Prisma.DbNull },
+      }),
+    )
+    .catch(() => {});
+}
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -36,6 +59,9 @@ export async function POST(req: NextRequest) {
 
     // 제휴 배너 전용 주소(/go/<코드>)로 들어온 사람이면 그 유입 표시를 주문에 남긴다(집계용, 판정에는 쓰지 않는다)
     const campaign = campaignFromCookieHeader(req.headers.get("cookie"));
+    // [Argon 15] 메타 CAPI·틱톡 Events API용 서버 광고 신호(IP·UA·_fbp·_fbc·_ttp·ttclid 쿠키). 이름·전화·이메일·생년월일 미포함.
+    const adSignals = extractOrderAdSignals(req);
+    sweepStaleAdSignals();
 
     // 결제 수단("KAKAOPAY" | "NAVERPAY" | "CARD"). 없거나 다른 값이면 null로 저장하며 이 값 때문에 주문을 거절하지 않는다.
     const payMethod =
@@ -152,10 +178,10 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: "원본 주문을 찾을 수 없습니다." }, { status: 404 });
         }
         // 선물로 산 주문은 보낸 사람에게 열람권이 없으므로 업그레이드 원본이 될 수 없다
-        const sourceIsGift = await prisma.giftCode.findUnique({
-          where: { purchaseOrderId: sourceOrder.orderId },
-          select: { id: true },
-        });
+        const giftRepo = (prisma as unknown as { giftCode?: typeof prisma.giftCode }).giftCode;
+        const sourceIsGift = giftRepo?.findUnique
+          ? await giftRepo.findUnique({ where: { purchaseOrderId: sourceOrder.orderId }, select: { id: true } })
+          : null;
         if (sourceIsGift) {
           return NextResponse.json({ error: "선물로 결제한 주문은 세트로 바꿀 수 없어요.", code: "GIFT_ORDER" }, { status: 400 });
         }
@@ -229,6 +255,7 @@ export async function POST(req: NextRequest) {
           payMethod,
           ...(upgradeFromOrderId ? { upgradeFromOrderId } : {}),
           ...(validatedAskQuestions ? { askQuestions: validatedAskQuestions } : {}),
+          ...(adSignals ? { adSignals } : {}),
           status: "PENDING",
           provider: process.env.PG_PROVIDER || "portone",
         },

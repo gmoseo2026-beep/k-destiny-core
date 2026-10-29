@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { payments } from "@/lib/payments";
 import { applyPaidOrder, revokePaidOrder } from "@/lib/payments/grant";
 import { verifyUpgradeSettlement } from "@/lib/payments/setUpgrade";
+import { cancelRejectedUpgradePayment } from "@/lib/payments/autoRefund";
 
 interface PortOneWebhookEvent {
   type?: string;
@@ -58,10 +59,15 @@ export async function POST(req: NextRequest) {
               paymentId,
               reason: upgCheck.reason,
             });
-            return NextResponse.json({ ok: false, reason: upgCheck.reason }, { status: 400 });
+            // 권한을 주지 않을 거면 돈도 받지 않는다. 200 으로 답해 PortOne 이 같은 웹훅을 계속 재시도하지 않게 한다.
+            await cancelRejectedUpgradePayment(order.orderId, upgCheck.reason);
+            return NextResponse.json({ ok: true, rejected: upgCheck.reason }, { status: 200 });
           }
         }
-        await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
+        const applied = await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
+        if (!applied.ok && applied.reason === "already_upgraded") {
+          await cancelRejectedUpgradePayment(order.orderId, "already_upgraded");
+        }
       }
     } else if (
       type.startsWith("Transaction.Cancelled") ||

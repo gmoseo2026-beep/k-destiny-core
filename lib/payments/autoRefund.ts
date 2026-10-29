@@ -1,4 +1,5 @@
 import { payments } from "@/lib/payments";
+import prisma from "@/lib/prisma";
 import { revokePaidOrder } from "@/lib/payments/grant";
 
 export interface RefundableOrderInfo {
@@ -71,4 +72,27 @@ export async function autoRefundFailedOrder(
     refunded: true,
     pgStatus,
   };
+}
+
+/**
+ * 차액 세트 업그레이드 결제가 PG 에서는 끝났는데 마지막 검증(원본 환불·이중 업그레이드 등)에 걸린 경우.
+ * 권한을 주지 않을 거라면 돈도 받지 않는다 — PG 결제를 전액 취소하고 주문을 CANCELED 로 남긴다.
+ */
+export async function cancelRejectedUpgradePayment(orderId: string, reason: string): Promise<boolean> {
+  try {
+    await payments.cancelPayment(orderId, `세트 업그레이드 조건 불충족 자동 취소(${reason})`);
+  } catch (pgError: unknown) {
+    const errMsg = pgError instanceof Error ? pgError.message : String(pgError ?? "");
+    const alreadyCancelled =
+      errMsg.includes("이미 취소") || errMsg.includes("ALREADY_CANCELLED") || errMsg.includes("already cancelled");
+    if (!alreadyCancelled) {
+      console.error("[cancelRejectedUpgradePayment] PG cancel failed", { orderId, reason });
+      return false;
+    }
+  }
+  await prisma.order.updateMany({
+    where: { orderId, status: { not: "PAID" } },
+    data: { status: "CANCELED" },
+  });
+  return true;
 }

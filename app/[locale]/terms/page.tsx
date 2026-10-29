@@ -124,11 +124,26 @@ export default function TermsPage() {
             </div>
           )}
 
+          {/* 제14조 (선물하기)·제15조 (두근이에게 묻기) — 2026-10-30 신설 */}
+          {isKo && (
+            <div className={sectionClass}>
+              <h2 className="font-serif text-xl text-plum mb-4">{t("terms_s14_title")}</h2>
+              <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s14_body")}</p>
+            </div>
+          )}
+          {isKo && (
+            <div className={sectionClass}>
+              <h2 className="font-serif text-xl text-plum mb-4">{t("terms_s15_title")}</h2>
+              <p className="font-sans text-ink leading-relaxed text-sm whitespace-pre-line">{t("terms_s15_body")}</p>
+            </div>
+          )}
+
           {/* 부칙 및 문의 */}
           <div className="bg-white border border-ink/8 rounded-2xl p-6 text-center space-y-2 shadow-sm">
             <p className="font-sans text-xs text-gray-500">{t("terms_addendum")}</p>
             {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_2")}</p>}
             {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_3")}</p>}
+            {isKo && <p className="font-sans text-xs text-gray-500">{t("terms_addendum_4")}</p>}
             <p className="font-sans text-xs text-gray-500">
               문의: <a href="mailto:help@kongdak.kr" className="text-coral hover:underline">help@kongdak.kr</a>
             </p>

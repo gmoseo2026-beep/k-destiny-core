@@ -267,6 +267,8 @@ model Order {
   upgradeFromOrderId String?
   // 두근이에게 묻기(ask_three) 주문 시 결제 전 안전 필터를 통과한 질문 3개 배열(PII·연락처 제외).
   askQuestions   Json?
+  // [Argon 15] 서버 전환 API(메타 CAPI·틱톡 Events API)용 광고 신호(IP·User-Agent·_fbp·_fbc·_ttp·ttclid 쿠키). 이름·전화·이메일·생년월일 미포함.
+  adSignals      Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

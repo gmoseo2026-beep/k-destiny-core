@@ -34,6 +34,7 @@ const session = vi.hoisted(() => ({
 const pg = vi.hoisted(() => ({
   getPayment: vi.fn(),
   verifyWebhook: vi.fn(),
+  cancelPayment: vi.fn(async () => ({})),
 }));
 
 vi.mock("@/lib/prisma", () => ({ default: db, prisma: db }));
@@ -324,7 +325,8 @@ describe("12 차액 세트 업그레이드 (argon/12-set-upgrade)", () => {
     expect(db.order.updateMany).not.toHaveBeenCalled();
     expect(db.unlock.create).not.toHaveBeenCalled();
 
-    // 5-b) DB의 주문 금액이 변조(1,000원)되어 PG(1,000원)와 같더라도 서버 차액 산식(3,000원)과 다르면 웹훅에서 400 거부
+    // 5-b) DB의 주문 금액이 변조(1,000원)되어 PG(1,000원)와 같더라도 서버 차액 산식(3,000원)과 다르면 권한을 주지 않고 PG 결제를 자동 취소한다
+    //      (200 으로 답해 PortOne 이 같은 웹훅을 재시도하지 않게 한다)
     const tamperedUpgradeOrder = { ...upgradeOrder, amount: 1000 };
     pg.verifyWebhook.mockResolvedValueOnce({
       type: "Transaction.Paid",
@@ -341,9 +343,16 @@ describe("12 차액 세트 업그레이드 (argon/12-set-upgrade)", () => {
     });
 
     const badWebhookRes = await WEBHOOK(postJson("/api/webhooks/portone", {}));
-    expect(badWebhookRes.status).toBe(400);
-    expect(db.order.updateMany).not.toHaveBeenCalled();
+    expect(badWebhookRes.status).toBe(200);
+    expect(pg.cancelPayment).toHaveBeenCalledWith("kd_ord_upg_ok", expect.stringContaining("AMOUNT_MISMATCH"));
+    expect(db.order.updateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "PAID" }) }),
+    );
+    expect(db.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: "CANCELED" } }),
+    );
     expect(db.unlock.create).not.toHaveBeenCalled();
+    db.order.updateMany.mockClear();
 
     // 5-c) 정상 웹훅(3,000원 일치) -> PAID 전환 + 같은 compatId("cmp_1")로 SET Unlock 생성, 기존 단품 Unlock 삭제 없음
     pg.verifyWebhook.mockResolvedValueOnce({

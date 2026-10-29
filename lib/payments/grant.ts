@@ -1,12 +1,15 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { getProduct } from "@/lib/catalog";
 import { toCatalogId } from "@/lib/productIdentity";
 import { sendTelegramMessage } from "@/lib/telegram";
 import { computeGiftExpiresAt } from "@/lib/payments/gift";
+import { sendServerPurchaseConversions, type ServerPurchaseConversionInput } from "@/lib/adConversions";
 
 export async function applyPaidOrder(orderId: string, providerTxId?: string) {
   // 결제 알림은 트랜잭션 커밋 후에만 보낸다(롤백된 결제를 "매출"로 알리지 않도록). PII 없음.
   let notice: string | null = null;
+  let capiPayload: ServerPurchaseConversionInput | null = null;
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { orderId } });
     if (!order) return { ok: false, reason: "no_order" };
@@ -46,6 +49,14 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
       }
 
       const catalogId = toCatalogId(pType, pKey, cId) ?? "";
+      if (order.amount > 0 && order.provider !== "admin_manual") {
+        capiPayload = {
+          eventId: order.id,
+          value: order.amount,
+          catalogId,
+          adSignals: (order as { adSignals?: unknown }).adSignals,
+        };
+      }
       const giftRepo = (tx as unknown as { giftCode?: typeof prisma.giftCode }).giftCode;
       const giftRow = giftRepo?.findUnique
         ? await giftRepo.findUnique({ where: { purchaseOrderId: order.orderId } })
@@ -96,6 +107,14 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
     } else if (order.type === "PERIOD_PASS" && order.userId) {
       const months = order.planId === "1_MONTH" ? 1 : order.planId === "3_MONTHS" ? 3 : 0;
       notice = `💰 <b>새 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: 기간권 ${order.planId ?? ""}\n• 주문번호: <code>${orderId}</code>`;
+      if (order.amount > 0 && order.provider !== "admin_manual") {
+        capiPayload = {
+          eventId: order.id,
+          value: order.amount,
+          catalogId: order.planId ?? "PERIOD_PASS",
+          adSignals: (order as { adSignals?: unknown }).adSignals,
+        };
+      }
       if (months > 0) {
         const user = await tx.user.findUnique({ where: { id: order.userId }, select: { premiumEndDate: true } });
         const now = new Date();
@@ -111,6 +130,15 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
     return { ok: true };
   });
 
+  if (capiPayload) {
+    // [Argon 15] 비동기 서버 전환 전송(3초 타임아웃 + try/catch). 실패해도 결제 처리는 절대 막지 않는다.
+    // 보낸 뒤에는(성공·실패·토큰 없음 모두) 주문의 IP·기기 신호를 지운다 — 전송 말고는 쓸 데가 없어 5년 보관 주문에 남기지 않는다.
+    const sentFor = capiPayload as ServerPurchaseConversionInput;
+    void sendServerPurchaseConversions(sentFor)
+      .catch(() => {})
+      .then(() => prisma.order.updateMany({ where: { id: sentFor.eventId }, data: { adSignals: Prisma.DbNull } }))
+      .catch(() => {});
+  }
   if (notice) {
     sendTelegramMessage(notice).catch((e) => console.error("[applyPaidOrder] Telegram notify failed:", e));
   }

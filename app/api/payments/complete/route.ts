@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { payments } from "@/lib/payments";
 import { applyPaidOrder } from "@/lib/payments/grant";
 import { verifyUpgradeSettlement } from "@/lib/payments/setUpgrade";
+import { cancelRejectedUpgradePayment } from "@/lib/payments/autoRefund";
 import { toCatalogId } from "@/lib/productIdentity";
 
 export async function POST(req: NextRequest) {
@@ -67,11 +68,35 @@ export async function POST(req: NextRequest) {
           alreadyUpgradedByAnotherOrder: Boolean(existingUpgrade),
         });
         if (!upgCheck.ok) {
-          return NextResponse.json({ error: "Upgrade validation failed", code: upgCheck.reason }, { status: 400 });
+          // 돈은 이미 빠져나갔으므로 권한을 주지 않을 거면 결제를 취소한다(받고 안 주는 일이 없게)
+          const cancelled = await cancelRejectedUpgradePayment(order.orderId, upgCheck.reason);
+          return NextResponse.json(
+            {
+              error: cancelled
+                ? "세트로 바꿀 수 없는 주문이라 결제를 자동으로 취소했어요."
+                : "세트로 바꿀 수 없는 주문이에요. 고객센터(help@kongdak.kr)로 알려 주시면 바로 환불해 드릴게요.",
+              code: upgCheck.reason,
+              autoRefunded: cancelled,
+            },
+            { status: 400 },
+          );
         }
       }
 
       const applied = await applyPaidOrder(paymentId, payment.id ?? payment.transactionId);
+      if (!applied.ok && applied.reason === "already_upgraded") {
+        const cancelled = await cancelRejectedUpgradePayment(order.orderId, "already_upgraded");
+        return NextResponse.json(
+          {
+            error: cancelled
+              ? "이미 세트로 바꾼 주문이라 이번 결제는 자동으로 취소했어요."
+              : "이미 세트로 바꾼 주문이에요. 고객센터(help@kongdak.kr)로 알려 주시면 바로 환불해 드릴게요.",
+            code: "ALREADY_UPGRADED",
+            autoRefunded: cancelled,
+          },
+          { status: 409 },
+        );
+      }
       if (!applied.ok) {
         return NextResponse.json({ error: "이미 처리할 수 없는 주문입니다." }, { status: 409 });
       }
