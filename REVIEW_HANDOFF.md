@@ -1,3 +1,32 @@
+# REVIEW_HANDOFF — argon/12-set-upgrade (차액만 내고 세트로 바꾸기)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `prisma/schema.prisma` & `prisma/sql/argon_12_set_upgrade.sql` (신규): `Order` 모델에 `upgradeFromOrderId String?` 컬럼 및 `@@index([upgradeFromOrderId])` additive 추가
+   - `lib/payments/setUpgrade.ts` (신규): 24시간 업그레이드 윈도우·최소 100원 차액 계산(`Math.max(100, setPrice - paidAmount)`)·안내 문구 생성(`"이미 낸 4,900원은 빼고 3,000원만 내면 세트로 바뀌어요"`)·6가지 필수 검증(`validateSetUpgrade`: 같은 소유자[회원 `userId` 또는 비회원 `orderId` 토큰], `PAID`, 24시간 이내, 같은 `compatId`, 세트 내 단품 포함 여부, 이중 업그레이드 방지) 및 결제 완료/웹훅 재검증(`verifyUpgradeSettlement`)
+   - `app/api/payments/order/route.ts`: `upgradeFromOrderId` 수신 시 서버 검증 수행, 클라이언트 전달 금액 무시 및 쿠폰 중복 차감 차단, `upgradeFromOrderId` 저장
+   - `app/api/payments/complete/route.ts` & `app/api/webhooks/portone/route.ts`: 업그레이드 주문에 대해 `verifyUpgradeSettlement`로 차액 및 원본 주문 조건 재검증 후 `applyPaidOrder` 반영(`complete` 응답에 `upgrade: true` 포함)
+   - `lib/payments/grant.ts`: `applyPaidOrder` 트랜잭션 안에서 동일 `upgradeFromOrderId` 이중 `PAID` 경쟁 조건을 원자적으로 차단하고, 세트 `Unlock`을 같은 `compatId`로 부여(기존 단품 `Unlock` 유지)
+   - `app/api/payments/upgrade-offer/route.ts` (신규): 단품 결제 후 24시간 내 업그레이드 가능한 세트 목록을 차액 오름차순으로 조회
+   - `components/payments/SetUpgradeBanner.tsx` (신규), `components/GuestCheckoutModal.tsx`, `lib/payments/client.ts`: 결제 완료 화면 및 단품 리포트 하단 업그레이드 배너(`upgrade_offer_view`, `upgrade_offer_click`), 업그레이드 결제 시 `disableCoupon` 적용 및 `purchase` 이벤트에 `upgrade: true` 전송
+   - `app/[locale]/pay/complete/page.tsx`, `components/report/ReportViewClient.tsx`, `components/CompatResultClient.tsx`, `app/[locale]/fortune/annual/AnnualFortuneClient.tsx`: 결제 완료 화면과 단품 리포트 열람 하단에 `SetUpgradeBanner` 연결
+   - `tests/setUpgrade.test.ts` (신규): 남의 주문 거부, 24시간 초과 거부, 서버 금액 계산(클라이언트 금액 무시·최소 100원), 이중 업그레이드/다른 `compatId`/미포함 세트 거부, 웹훅 및 완료 라우트 금액 검증·세트 `Unlock` 발급 단위 테스트 5종
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: 78 files passed, 586 tests passed (42 skipped)
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 프로덕션 빌드에서 `/api/payments/upgrade-offer`, `/api/payments/order`, `/api/payments/complete`, `/api/webhooks/portone`, `/[locale]/pay/complete`, `/[locale]/report/[reportId]` 라우트 정상 생성 및 `tests/visibilityUsage.test.ts`·`tests/clientPromptLeak.test.ts` 가드 통과 확인
+4. **스스로 의심하는 점**
+   - 비회원이 구매 직후 카카오 로그인으로 세션을 얻은 뒤 아직 `claim-device-orders`가 완료되지 않은 상태에서 업그레이드를 시도할 수 있어, 원본 주문이 비회원(`userId === null`)일 때는 기기가 보유한 `orderTokens`에 해당 `orderId`가 포함되어 있는지 함께 확인하도록 구현했습니다.
+5. **클로드에게 필요한 것**
+   - 프로덕션 DB 반영 필요(additive SQL): `prisma/sql/argon_12_set_upgrade.sql` (`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "upgradeFromOrderId" TEXT;` 및 인덱스 생성).
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
