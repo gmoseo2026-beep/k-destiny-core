@@ -10,12 +10,15 @@ import {
   sortByHomeGridOrder,
 } from "@/lib/home/explore";
 import { PosterCard, SetStackCard } from "@/components/cards/KongdakCards";
+import { sortSeasonSets } from "@/lib/season";
 import { trackEvent } from "@/lib/gtag";
 
 export default function ProductsExplorerClient({
   products,
+  now,
 }: {
   products: CatalogItem[];
+  now?: number;
 }) {
   const [selectedChip, setSelectedChip] = useState<HomeCategoryChipId>("all");
   const [query, setQuery] = useState("");
@@ -39,11 +42,8 @@ export default function ProductsExplorerClient({
   );
 
   const sets = useMemo(
-    () =>
-      filtered
-        .filter((p) => p.type === "SET")
-        .sort((a, b) => (a.featuredOrder ?? 99) - (b.featuredOrder ?? 99)),
-    [filtered],
+    () => sortSeasonSets(filtered.filter((p) => p.type === "SET"), now),
+    [filtered, now],
   );
 
   return (

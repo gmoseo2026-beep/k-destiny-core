@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getEffectiveCatalog } from "@/lib/catalogVisibility";
 import { filterProductsByCategory } from "@/lib/home/explore";
 import { buildPageMetadata } from "@/lib/seo";
+import { getSeasonNow } from "@/lib/season";
 import ProductsExplorerClient from "@/components/product/ProductsExplorerClient";
 
 export const revalidate = 60;
@@ -23,10 +24,11 @@ export async function generateMetadata({
 export default async function ProductsPage() {
   const effectiveCatalog = await getEffectiveCatalog();
   const visibleProducts = filterProductsByCategory(effectiveCatalog, "all");
+  const now = getSeasonNow();
 
   return (
     <div className="min-h-screen w-full bg-[#140B18] text-[#F6EEF3]">
-      <ProductsExplorerClient products={visibleProducts} />
+      <ProductsExplorerClient products={visibleProducts} now={now} />
     </div>
   );
 }
