@@ -1,3 +1,32 @@
+# REVIEW_HANDOFF — Argon 04. 후기 요청 강화 (`argon/04-review-prompt`)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main` (`c963b6e`)
+
+- **바뀐 파일**:
+  - `lib/reviewPromptStorage.ts` (신규): 주문 단위 후기 시트 닫기 상태(`localStorage`, `try/catch` 보호) 및 80% 스크롤 도달 판정(`hasReached80PercentScroll`) 헬퍼
+  - `components/report/ReviewPromptSheet.tsx` (신규): 유료 리포트 열람 중 80% 스크롤 도달 또는 마지막 섹션 노출(`reachedEnd`) 시 화면 하단에 기존 `ReviewCouponCard`를 한 번 띄우고(`review_prompt_view`), 닫거나 작성 완료 시 해당 주문(`orderKey`)에서 다시 뜨지 않도록 저장하며 상호작용 시 `review_prompt_click` 발사
+  - `components/report/ReviewCouponCard.tsx`: `reportId` 외에 주문 토큰(`orderToken`) 기반 후기 제출 및 `onCouponIssued`·`onInteract` 콜백 지원(쿠폰 금액 1,000원 그대로 유지)
+  - `app/api/reports/view/route.ts`: 리포트 조회 응답에 주문 식별키 `orderKey`(`report.orderId`) 포함
+  - `components/report/ReportViewClient.tsx`: 일반 유료 리포트와 프리미엄 유료 리포트 모두에 하단 `ReviewPromptSheet` 연결
+  - `app/api/reviews/route.ts`: 기존 `reportId` 경로를 유지하면서 `orderId`/`orderToken` 기반 후기 자격 조회(`GET`)·작성(`POST`) 지원 추가(본인 PAID 주문 + 열람 확인 필수, `COUPON_AMOUNT = 1000` 유지)
+  - `app/api/reports/mine/route.ts`: 보관함 주문 행마다 후기 작성 여부(`hasReviewed`), 즉시 작성 가능 여부(`canReviewNow`), 연결 리포트·상품 ID(`reviewReportId`, `reviewCatalogId`) 반환
+  - `components/MeClient.tsx`: `/ko/me` 보관함에서 후기를 아직 안 쓴 주문 행에 `"후기 쓰고 1,000원 쿠폰"` 작은 버튼 추가(`review_prompt_click` 발사, 이미 열람한 주문은 인라인 작성창을 열고 미열람 주문은 리포트 열람/생성 경로로 안내)
+  - `tests/reviewPrompt.test.ts` (신규): `localStorage` 주문별 닫기 유지·예외 방어, 80% 스크롤 판정, `orderToken` 기반 후기 작성 및 미열람 주문 거부 단위 테스트 5건 추가
+- **테스트 결과(통과 수)**:
+  - `npx tsc --noEmit`: 0 errors
+  - `npx eslint <바뀐 파일>`: 0 errors
+  - `npx vitest run`: 78 files passed, 586 tests passed (42 skipped)
+  - `npm run build`: exit 0
+- **직접 화면에서 확인한 것**:
+  - 유료 리포트를 80% 이상 스크롤하거나 마지막 섹션이 화면에 들어올 때 하단 시트로 `ReviewCouponCard`가 1회 올라오고, `닫기` 클릭 후 새로고침해도 같은 주문에서는 다시 뜨지 않음을 확인함. `/ko/me` 보관함의 미작성 주문 행에 `"후기 쓰고 1,000원 쿠폰"` 버튼이 노출되고 작성 완료 즉시 버튼이 사라지며 상단 보유 쿠폰 안내에 1,000원 쿠폰이 반영됨을 확인함.
+- **스스로 의심하는 점**:
+  - 구형 `compat_deep`(`DeepReport`) 주문은 `GeneratedReport` 행이 없을 수 있어 `app/api/reviews/route.ts`와 `app/api/reports/mine/route.ts` 모두 `DeepReport` 존재 여부까지 함께 확인해 후기 작성이 막히지 않도록 처리했습니다.
+- **클로드에게 필요한 것**:
+  - 없음 (쿠폰 금액 1,000원 및 기존 후기 보상 고지 문구 변경 없음).
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
