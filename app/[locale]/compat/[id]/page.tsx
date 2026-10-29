@@ -14,7 +14,7 @@ import { pickPublicBreakdown } from "@/lib/compatGauge";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; via?: string }>;
 }
 
 /**
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CompatResultPage({ params, searchParams }: PageProps) {
   const { locale, id } = await params;
-  const { ref } = await searchParams;
+  const { ref, via } = await searchParams;
 
   const session = await getServerSession(authOptions);
 
@@ -156,6 +156,7 @@ export default async function CompatResultPage({ params, searchParams }: PagePro
         initialData={initialData}
         locale={locale}
         refToken={ref}
+        via={via}
         isPremium={isPremium}
         visibleIds={visibleIds}
       />

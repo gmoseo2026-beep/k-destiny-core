@@ -8,7 +8,11 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/gtag";
 import { saveLastPerson } from "@/lib/reportHandoff";
-import { loadSentInvites, relationLabel } from "@/lib/compatInviteClient";
+import {
+  loadSentInvites,
+  markReceivedInviteCompleted,
+  relationLabel,
+} from "@/lib/compatInviteClient";
 
 interface CompatInviteClientProps {
   locale: string;
@@ -57,7 +61,13 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
         if (!alive) return;
 
         if (json?.status === "completed" && typeof json?.shareToken === "string") {
-          router.replace(`/${locale}/compat/${json.shareToken}`);
+          const isSender = loadSentInvites().some((item) => item.token === token);
+          if (!isSender) {
+            markReceivedInviteCompleted(json.shareToken);
+            router.replace(`/${locale}/compat/${json.shareToken}?via=invite_receiver`);
+          } else {
+            router.replace(`/${locale}/compat/${json.shareToken}`);
+          }
           return;
         }
 
@@ -129,7 +139,8 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
       const json = await res.json().catch(() => ({}));
 
       if (res.status === 409 && typeof json?.shareToken === "string") {
-        router.replace(`/${locale}/compat/${json.shareToken}`);
+        markReceivedInviteCompleted(json.shareToken);
+        router.replace(`/${locale}/compat/${json.shareToken}?via=invite_receiver`);
         return;
       }
 
@@ -150,10 +161,15 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
         gender: genderB,
       });
 
+      markReceivedInviteCompleted(json.shareToken);
+
       trackEvent("compat_invite_completed", { relation: viewState.relation });
       trackEvent("compat_created", { relation: viewState.relation, via: "half_invite" });
+      if (json?.pushSent === true) {
+        trackEvent("invite_complete_push_sent", { relation: viewState.relation });
+      }
 
-      router.push(`/${locale}/compat/${json.shareToken}`);
+      router.push(`/${locale}/compat/${json.shareToken}?via=invite_receiver`);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "궁합 계산 중 오류가 발생했습니다.");
       setIsSubmitting(false);

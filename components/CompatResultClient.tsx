@@ -32,6 +32,7 @@ import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/li
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
+import { isReceivedInviteResult } from "@/lib/compatInviteClient";
 
 interface CompatData {
   id: string;
@@ -107,6 +108,7 @@ interface CompatResultClientProps {
   initialData: CompatData;
   locale: string;
   refToken?: string;
+  via?: string;
   isPremium?: boolean;
   /** 공개 판정된 상품 id — 세트 추천에서 숨긴 세트를 빼는 데 쓴다 */
   visibleIds?: string[];
@@ -138,7 +140,7 @@ const LOCKED_SCORE_CARDS: ReadonlyArray<{
   },
 ];
 
-export default function CompatResultClient({ initialData, locale, refToken, isPremium, visibleIds }: CompatResultClientProps) {
+export default function CompatResultClient({ initialData, locale, refToken, via, isPremium, visibleIds }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
   const [isGenerating, setIsGenerating] = useState<boolean>(!initialData.summaryKo);
@@ -163,6 +165,14 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
     useCallback(() => recallUnlockToken(data.id), [data.id]),
     useCallback(() => null, [])
   );
+
+  const subscribeNoop = useCallback(() => () => {}, []);
+  const sessionInviteReceiver = useSyncExternalStore(
+    subscribeNoop,
+    useCallback(() => isReceivedInviteResult(data.shareToken), [data.shareToken]),
+    useCallback(() => false, [])
+  );
+  const isInviteReceiver = via === "invite_receiver" || sessionInviteReceiver;
 
   // Session & PortOne Checkout Modal State
   const { data: session } = useSession();
@@ -1241,6 +1251,35 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
               )}
             </div>
           )}
+        </Card>
+      )}
+
+      {/* 반쪽 초대장 받는 사람 전용 속마음 이동 CTA */}
+      {isInviteReceiver && (!visibleIds || visibleIds.includes("inner_mind")) && (
+        <Card className="w-full mt-6 p-4 border border-coral/35 bg-[#22142A]">
+          <Link
+            href={nextReadingHref("inner_mind", data.id, locale, "free_result")}
+            onClick={() =>
+              trackEvent("invite_receiver_cta_click", {
+                compatId: data.id,
+                productId: "inner_mind",
+              })
+            }
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-left transition-all active:scale-[0.98] group"
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-semibold text-text-2">
+                이 사람이 나를 어떻게 생각하는지 궁금하다면
+              </span>
+              <span className="text-sm font-black text-coral group-hover:text-coral-deep flex items-center gap-1">
+                <span>→ 그 사람 속마음 보기</span>
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1 self-start sm:self-center rounded-xl bg-coral px-3.5 py-2 text-xs font-extrabold text-white shadow-2xs shrink-0">
+              <span>속마음 미리보기</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </Link>
         </Card>
       )}
 
