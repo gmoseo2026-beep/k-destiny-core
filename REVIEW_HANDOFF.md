@@ -1,3 +1,31 @@
+# REVIEW_HANDOFF — argon/11-ilju-seo (일주 페이지 60장)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `lib/seo/ilju.ts` (신규): 갑자일주(`gapja`) ~ 계해일주(`gyehae`) 60갑자 정적 데이터(런타임 AI 호출 0회, 한자 0자, 금지 사주 용어·단정 예언 0건), 4개 섹션(`#love-style`, `#inner-mind`, `#breakup-reunion`, `#best-matches`) + 검색어 소제목(`○○일주 여자 속마음...` / `○○일주 남자 속마음...`), 잘 맞는 일주 3개 내부 링크, `resolveIljuParam`, `findIljuByBirthDate`(`lib/saju.ts` 읽기 전용)
+   - `app/api/ilju/check/route.ts` (신규): `POST /api/ilju/check` — 생년월일(`dob`)을 받아 일주 `{ slug, name }`만 반환(로그·DB·URL에 생년월일 저장/노출 없음)
+   - `components/seo/IljuChecker.tsx` (신규): `"내 일주 확인하기"` 생년월일 입력 폼 및 `ilju_check` GA4 이벤트 발사 후 `/ko/ilju/[slug]` 이동
+   - `components/seo/IljuViewTracker.tsx` (신규): 상세 페이지 진입 시 `ilju_view` GA4 이벤트 발사
+   - `app/[locale]/ilju/page.tsx` & `app/[locale]/ilju/[slug]/page.tsx` (신규): `/ko/zodiac/*`와 동일한 메타데이터·JSON-LD(`Article` + `FAQPage` + `BreadcrumbList`)·내부 링크·궁합 CTA 구조의 허브 1장 + 상세 60장
+   - `app/api/og/card/route.tsx`: `?ilju=<slug>` OG 카드 분기 추가
+   - `app/sitemap.ts`: `/ko/ilju` 허브 및 `/ko/ilju/[slug]` 60장(총 61개 URL) 등록
+   - `tests/iljuSeo.test.ts` (신규): 60갑자 데이터 무결성·한자/전문용어/단정어 금지·섹션 앵커/소제목·`findIljuByBirthDate` 결정론·sitemap 등록 단위 테스트 6종
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: 78 files passed, 587 tests passed (42 skipped)
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 프로덕션 빌드에서 `/[locale]/ilju`, `/[locale]/ilju/[slug]`, `/api/ilju/check`, `/api/og/card`, `/sitemap.xml` 라우트 정상 생성 및 `tests/partnerReport.test.ts` 클라이언트 서버전용 모듈 누출 가드 통과 확인
+4. **스스로 의심하는 점**
+   - `findIljuByBirthDate`는 시간 미입력 기준 정오(`12:00`, 서울 경도)로 `calculateSaju`를 호출하므로 자시(23:30~01:30) 경계 출생자는 실제 시주 기준과 하루 차이가 날 수 있어 `IljuChecker` 안내 문구에 날짜 기준임을 명시했습니다.
+5. **클로드에게 필요한 것**
+   - 배포 후 IndexNow 제출 대상 경로: `/ko/ilju` 허브 1개 및 `/ko/ilju/gapja` ~ `/ko/ilju/gyehae` 상세 60장(총 61개 URL, `app/sitemap.ts`에 반영됨).
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
