@@ -107,6 +107,15 @@ export function SeoDisclaimer() {
   );
 }
 
+export function IljuDisclaimer() {
+  return (
+    <p className="w-full px-2 text-center text-[11px] leading-relaxed text-caption">
+      ※ 일주(태어난 날) 중심으로 살펴본 연애 성향이에요. 실제 궁합과 인연의 흐름은 태어난 해·달·날·시간의 여덟 글자 전체가
+      어우러져 달라질 수 있어요. 콩닥의 모든 풀이는 오락과 자기이해를 위한 참고 정보이며, 미래를 보장하지 않습니다.
+    </p>
+  );
+}
+
 /** 구조화 데이터(FAQ·경로). 검색 결과에 질문이 함께 보이도록. */
 export function SeoJsonLd({ faq, crumbs }: { faq: SeoFaq[]; crumbs: Array<{ name: string; url: string }> }) {
   const data = {

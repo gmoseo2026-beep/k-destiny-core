@@ -5,6 +5,7 @@ import path from "path";
 import { isViewableFor } from "@/lib/catalog";
 import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { FORTUNE_TARGET_YEAR, birthYearFacts, isBirthYearInRange, parsePairSlug } from "@/lib/seo/zodiac";
+import { getIljuBySlug } from "@/lib/seo/ilju";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,12 @@ const HOME_CARD = {
 };
 
 /** 검색용 페이지 카드 문구. 값이 올바르지 않으면 null(홈 카드로 대신한다). */
-function seoCard(pair: string | null, year: string | null): { question: string; label: string } | null {
+function seoCard(pair: string | null, year: string | null, iljuSlug: string | null): { question: string; label: string } | null {
+  if (iljuSlug) {
+    const entry = getIljuBySlug(iljuSlug);
+    if (!entry) return null;
+    return { question: entry.title, label: "60갑자 일주 연애 성향" };
+  }
   if (pair) {
     const parsed = parsePairSlug(pair);
     if (!parsed) return null;
@@ -54,7 +60,7 @@ function seoCard(pair: string | null, year: string | null): { question: string; 
 export async function GET(req: NextRequest) {
   const sp = new URL(req.url).searchParams;
   const productId = sp.get("p");
-  const seo = seoCard(sp.get("z"), sp.get("y"));
+  const seo = seoCard(sp.get("z"), sp.get("y"), sp.get("ilju"));
   // 숨긴 상품은 홈 카드로 대신한다(공개 판정은 관리자 설정을 반영한 isViewableFor 로만)
   const found = productId ? await getEffectiveProduct(productId).catch(() => undefined) : undefined;
   const product = isViewableFor(found ?? undefined, false) ? found : undefined;
