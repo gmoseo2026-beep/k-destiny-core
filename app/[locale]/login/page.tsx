@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp, Loader2, Mail, Lock, User } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { signIn, useSession } from "next-auth/react";
-import { isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
+import { getInAppProvider, isInAppBrowser, openInExternalBrowser } from "@/lib/inAppBrowser";
 import InAppBrowserModal from "@/components/InAppBrowserModal";
 import KongdakMascot from "@/components/KongdakMascot";
 import { rememberOptIn } from "@/lib/marketingConsent";
@@ -48,6 +48,8 @@ export default function LoginPage() {
   // 혜택·새 소식 수신 동의(선택). 기본은 받지 않음 — 체크한 경우에만 로그인 뒤 계정에 저장된다.
   const [optIn, setOptIn] = useState(false);
   const inApp = typeof window !== "undefined" ? isInAppBrowser() : false;
+  // 틱톡 앱 안에서는 카카오 로그인이 돌아오다 끊긴다(10-29: 가입은 됐는데 로그인 상태가 안 남아 결제가 계정에 안 옮겨짐)
+  const [tiktok] = useState(() => typeof window !== "undefined" && getInAppProvider() === "tiktok");
 
   // 이미 로그인된 상태로 이 화면에 오면 바로 돌려보낸다.
   // 인앱에서 카카오 로그인이 두 번 돌아오면(두 번째는 OAuthCallback 오류) 방금 가입한 사람이
@@ -226,6 +228,17 @@ export default function LoginPage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {tiktok && locale === "ko" && (
+            <div className="mb-4 rounded-2xl border border-[#FFC24B]/40 bg-[#140B18] p-3.5 text-left text-[11px] leading-relaxed text-[#B9A9BF]">
+              <p className="mb-1 text-xs font-extrabold text-[#FFC24B]">틱톡 안에서는 로그인이 안 될 수 있어요</p>
+              <p>
+                결제한 리포트는 로그인 없이도 이 화면의{" "}
+                <a href={`/${locale}/me`} className="font-bold text-[#F6EEF3] underline underline-offset-2">내 보관함</a>에서 바로 볼 수 있어요.
+                로그인이 끝나지 않아도 결제 내역은 이 화면에 그대로 남아 있어요.
+              </p>
+            </div>
+          )}
 
           {/* Primary CTA: Kakao 3-second Start */}
           <motion.button

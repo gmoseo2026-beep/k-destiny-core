@@ -210,7 +210,7 @@ export default function MeClient({ locale }: MeClientProps) {
             <span>비회원으로 결제하셨나요?</span>
           </div>
           <p className="text-xs text-[#B9A9BF] leading-relaxed">
-            결제한 브라우저에서 가입·로그인한 뒤 리포트 화면이나 홈에 뜨는 [이 계정에 저장하기]를 누르면, 그 리포트가 내 계정에 저장돼 다른 기기에서도 볼 수 있어요.
+            결제한 이 화면(브라우저)에서 가입·로그인하면 결제한 리포트가 자동으로 내 계정에 옮겨져, 다른 기기에서도 볼 수 있어요.
           </p>
         </Card>
       </div>
@@ -320,6 +320,11 @@ export default function MeClient({ locale }: MeClientProps) {
             >
               전체 운세·궁합 둘러보기
             </Link>
+            {/* 10-29: 틱톡 안에서 비회원 결제 → 다른 곳에서 가입한 손님이 "결제한 게 안 보인다"고 항의 */}
+            <p className="mt-5 text-[11px] leading-relaxed text-[#B9A9BF]">
+              비회원으로 결제하셨다면, 결제했던 앱(틱톡·인스타 등) 화면에서 로그인하면 자동으로 옮겨져요.
+              그래도 안 보이면 help@kongdak.kr 로 결제 시각을 알려 주세요. 바로 옮겨 드릴게요.
+            </p>
           </Card>
         )}
 
