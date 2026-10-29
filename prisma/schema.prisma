@@ -499,3 +499,23 @@ model Coupon {
 
 }
 
+// 25. [콩닥 Argon-13] 운세 선물하기 코드 (지정 상품 1건, 결제일부터 90일 유효)
+model GiftCode {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  catalogId         String
+  purchaseOrderId   String    @unique
+  senderNickname    String?
+  recipientNickname String
+  message           String?
+  used              Boolean   @default(false)
+  redeemedOrderId   String?
+  redeemedAt        DateTime?
+  expiresAt         DateTime
+  createdAt         DateTime  @default(now())
+
+  @@index([catalogId])
+  @@index([purchaseOrderId])
+}
+
+

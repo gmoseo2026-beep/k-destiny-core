@@ -12,7 +12,7 @@ import { PremiumBadge } from "./PremiumBadge";
 import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
 import { blockPaymentIfInApp } from "@/lib/inAppBrowser";
 import InAppPaymentChoice from "@/components/InAppPaymentChoice";
-import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
+import { requestPortOnePayment, BuyerInfo, recallOrderToken } from "@/lib/payments/client";
 import { savePendingInput, loadPendingInput, loadLastCouple, loadLastPerson } from "@/lib/reportHandoff";
 import { trackEvent } from "@/lib/gtag";
 import surnamesData from "@/data/naming/surnames.json";
@@ -361,12 +361,11 @@ export function PremiumNewClient({
   // ─────────────────────────────────────────────────────────────
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [ownedOrderToken] = useState<string | null>(() => recallOrderToken(product.id));
 
   const consentMissing = isNaming && !guardianConsent;
 
   const handleOpenCheckout = () => {
-    if (blockPaymentIfInApp(() => setInAppOpen(true), () => handleOpenCheckout())) return;
-
     const payload = getFormattedPayload();
     if (!payload) {
       alert("입력 정보를 완성한 후 다시 시도해 주세요.");
@@ -378,6 +377,14 @@ export function PremiumNewClient({
       alert("조건에 맞는 길일이 부족합니다. 기간을 넓히거나 요일 선택을 조정한 후 다시 시도해 주세요.");
       return;
     }
+
+    if (ownedOrderToken) {
+      savePendingInput(product.id, payload);
+      router.push(`/${locale}/report/new?c=${product.id}`);
+      return;
+    }
+
+    if (blockPaymentIfInApp(() => setInAppOpen(true), () => handleOpenCheckout())) return;
 
     // 비회원도 바로 결제한다(2026-10-03). 열람 증명은 주문번호 토큰, 계정 보관은 결제 완료 화면에서 권한다.
     savePendingInput(product.id, payload);
@@ -1021,8 +1028,17 @@ export function PremiumNewClient({
               : "bg-gradient-to-r from-[#F3E3BF] via-[#D9B26A] to-[#A8823C] text-[#14101A] hover:opacity-95"
           }`}
         >
-          <Lock className="w-4 h-4 text-[#14101A]" />
-          <span>프리미엄 리포트 열람하기 · {priceLabel(product)}</span>
+          {ownedOrderToken ? (
+            <>
+              <Sparkles className="w-4 h-4 text-[#14101A]" />
+              <span>선물받은 프리미엄 리포트 생성하기</span>
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4 text-[#14101A]" />
+              <span>프리미엄 리포트 열람하기 · {priceLabel(product)}</span>
+            </>
+          )}
         </button>
         <p className="text-[11px] text-[#B9AEC4] text-center">
           단건 구매 · 구매 후 1년간 언제든 열람 및 PDF 저장이 가능합니다.

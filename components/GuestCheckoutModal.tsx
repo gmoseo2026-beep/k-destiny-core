@@ -37,6 +37,7 @@ interface GuestCheckoutModalProps {
   options?: { id: string; name: string; price: number; desc?: string; separate?: number }[];
   selectedId?: string;
   onSelect?: (id: string) => void;
+  disableCoupon?: boolean;
   onSubmit: (buyer: { fullName: string; email: string; phoneNumber: string; payMethod?: "KAKAOPAY" | "NAVERPAY" }) => Promise<void>;
   isLoading?: boolean;
 }
@@ -86,6 +87,7 @@ export default function GuestCheckoutModal({
   options = [],
   selectedId,
   onSelect,
+  disableCoupon = false,
 }: GuestCheckoutModalProps) {
   const [fullName, setFullName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
@@ -139,26 +141,32 @@ export default function GuestCheckoutModal({
   useEffect(() => {
     if (!modalOpen) return;
     let alive = true;
-    const saved = recallDeviceCoupon();
-    const guestOrderTokens = collectDeviceOrderTokens();
-    fetch("/api/coupons/available", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...(saved ? { couponCode: saved.code } : {}),
-        ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
-      }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { coupon?: { code: string; amount: number } | null } | null) => {
-        if (!alive) return;
-        const cpn = d?.coupon ?? null;
-        setActiveCoupon(cpn);
-        if (cpn) {
-          trackEvent("coupon_auto_applied", { productId: pid, amount: cpn.amount });
-        }
+    if (disableCoupon) {
+      queueMicrotask(() => {
+        if (alive) setActiveCoupon(null);
+      });
+    } else {
+      const saved = recallDeviceCoupon();
+      const guestOrderTokens = collectDeviceOrderTokens();
+      fetch("/api/coupons/available", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(saved ? { couponCode: saved.code } : {}),
+          ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
+        }),
       })
-      .catch(() => {});
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { coupon?: { code: string; amount: number } | null } | null) => {
+          if (!alive) return;
+          const cpn = d?.coupon ?? null;
+          setActiveCoupon(cpn);
+          if (cpn) {
+            trackEvent("coupon_auto_applied", { productId: pid, amount: cpn.amount });
+          }
+        })
+        .catch(() => {});
+    }
 
     const targetCatalogId = selectedId || productId || options[0]?.id || "";
     if (targetCatalogId) {
@@ -173,7 +181,7 @@ export default function GuestCheckoutModal({
     return () => {
       alive = false;
     };
-  }, [modalOpen, selectedId, productId, options, pid]);
+  }, [modalOpen, selectedId, productId, options, pid, disableCoupon]);
 
   useEffect(() => {
     if (modalOpen) {

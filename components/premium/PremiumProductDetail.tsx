@@ -7,6 +7,7 @@ import type { CatalogItem } from "@/lib/catalog";
 import { priceLabel, listPrice, formatWon, discountBadge, getProductCover } from "@/lib/catalog";
 import { PremiumBadge } from "./PremiumBadge";
 import ProductViewTracker, { ProductCtaLink } from "@/components/ProductViewTracker";
+import GiftPurchaseButton from "@/components/gift/GiftPurchaseButton";
 import { ELEMENT_WORD, type Element } from "@/lib/premium/ganzhi";
 
 import sample2027 from "@/data/samples/premium_2027_daeun.json";
@@ -337,22 +338,30 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
           <div className="text-3xl sm:text-4xl font-bold font-serif-kr text-[#FFC24B] mb-6">
             {priceLabel(product)}
           </div>
-          <ProductCtaLink
-            href={nextPath}
-            productId={product.id}
-            tier="premium"
-            target={product.target}
-            isFree={false}
-            location="bottom_cta"
-            className="inline-flex items-center justify-center w-full max-w-sm py-4 rounded-2xl text-base font-bold text-[#140B18] bg-[#FFC24B] hover:opacity-95 shadow-xl transition-all active:scale-95"
-          >
-            프리미엄 리포트 신청하기
-          </ProductCtaLink>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm mx-auto">
+            <GiftPurchaseButton
+              product={product}
+              locale={locale}
+              source="product_detail"
+              className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#FFC24B]/45 bg-[#22142A] hover:bg-[#2B1936] px-5 py-4 text-sm font-extrabold text-[#FFC24B] transition-all active:scale-[0.96]"
+            />
+            <ProductCtaLink
+              href={nextPath}
+              productId={product.id}
+              tier="premium"
+              target={product.target}
+              isFree={false}
+              location="bottom_cta"
+              className="inline-flex items-center justify-center w-full flex-1 py-4 rounded-2xl text-base font-bold text-[#140B18] bg-[#FFC24B] hover:opacity-95 shadow-xl transition-all active:scale-95"
+            >
+              프리미엄 리포트 신청하기
+            </ProductCtaLink>
+          </div>
         </section>
       </div>
 
       {/* Floating Bottom Bar on Mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] z-40 sm:hidden flex items-center justify-between pb-safe-bar">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#140B18]/95 backdrop-blur-md border-t border-white/[0.08] z-40 sm:hidden flex items-center justify-between gap-2 pb-safe-bar">
         <div>
           <span className="text-xs text-[#B9A9BF] block">
             {listPrice(product) ? (
@@ -367,17 +376,25 @@ export function PremiumProductDetail({ product, locale }: PremiumProductDetailPr
             {priceLabel(product)}
           </span>
         </div>
-        <ProductCtaLink
-          href={nextPath}
-          productId={product.id}
-          tier="premium"
-          target={product.target}
-          isFree={false}
-          location="mobile_sticky"
-          className="px-6 py-2.5 rounded-xl text-sm font-bold text-[#140B18] bg-[#FFC24B] shadow-lg active:scale-95 transition-transform"
-        >
-          신청하기
-        </ProductCtaLink>
+        <div className="flex items-center gap-2">
+          <GiftPurchaseButton
+            product={product}
+            locale={locale}
+            source="product_detail"
+            className="px-3.5 py-2.5 rounded-xl border border-[#FFC24B]/45 bg-[#22142A] text-xs font-extrabold text-[#FFC24B] inline-flex items-center gap-1 active:scale-[0.96]"
+          />
+          <ProductCtaLink
+            href={nextPath}
+            productId={product.id}
+            tier="premium"
+            target={product.target}
+            isFree={false}
+            location="mobile_sticky"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-[#140B18] bg-[#FFC24B] shadow-lg active:scale-95 transition-transform"
+          >
+            신청하기
+          </ProductCtaLink>
+        </div>
       </div>
     </main>
   );

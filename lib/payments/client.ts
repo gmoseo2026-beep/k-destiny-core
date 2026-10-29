@@ -16,15 +16,39 @@ export interface BuyerInfo {
   payMethod?: "KAKAOPAY" | "NAVERPAY";
 }
 
+export interface GiftPurchasePayload {
+  recipientNickname: string;
+  senderNickname?: string;
+  message?: string;
+}
+
+export interface IssuedGiftSummary {
+  code: string;
+  catalogId: string;
+  recipientNickname: string;
+  senderNickname: string | null;
+  message: string | null;
+  expiresAt: string;
+}
+
 export interface PayOptions {
   productId: string;
   compatId?: string;
   buyer: BuyerInfo;
   locale?: string;
+  gift?: GiftPurchasePayload;
 }
 
 export type PayResult =
-  | { ok: true; orderId: string; catalogId: string; compatId: string | null; amount: number }
+  | {
+      ok: true;
+      orderId: string;
+      catalogId: string;
+      compatId: string | null;
+      amount: number;
+      isGift?: boolean;
+      gift?: IssuedGiftSummary;
+    }
   | { ok: false; reason: "LOGIN_REQUIRED" | "CANCELLED" | "FAILED" };
 
 /**
@@ -212,19 +236,30 @@ async function recoverPaidAttempt(productId: string, compatId: string | null): P
 }
 
 export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult> {
-  // 0) 이 기기에서 같은 리포트를 이미 결제했는데 완료 화면으로 못 돌아온 경우 → 새로 결제받지 않고 연다
-  const recovered = await recoverPaidAttempt(opts.productId, opts.compatId ?? null);
-  if (recovered) return recovered;
+  const isGift = Boolean(opts.gift);
+  // 0) 이 기기에서 같은 리포트를 이미 결제했는데 완료 화면으로 못 돌아온 경우 → 새로 결제받지 않고 연다 (선물하기는 제외)
+  if (!isGift) {
+    const recovered = await recoverPaidAttempt(opts.productId, opts.compatId ?? null);
+    if (recovered) return recovered;
+  }
 
-  // 1) 서버가 주문 생성 (금액 및 쿠폰 할인은 서버에서 검증·결정)
-  const savedCoupon = recallDeviceCoupon();
+  // 1) 서버가 주문 생성 (금액 및 쿠폰 할인은 서버에서 검증·결정, 선물하기는 정가 그대로)
+  const savedCoupon = isGift ? null : recallDeviceCoupon();
   const guestOrderTokens = collectDeviceOrderTokens();
   const orderRes = await fetch("/api/payments/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       productId: opts.productId,
-      compatId: opts.compatId,
+      compatId: isGift ? undefined : opts.compatId,
+      ...(isGift && opts.gift
+        ? {
+            isGift: true,
+            recipientNickname: opts.gift.recipientNickname,
+            senderNickname: opts.gift.senderNickname,
+            giftMessage: opts.gift.message,
+          }
+        : {}),
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
       ...(savedCoupon ? { couponCode: savedCoupon.code } : {}),
@@ -266,7 +301,9 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   const redirectUrl = `${window.location.origin}/${locale}/pay/complete?paymentId=${order.orderId}`;
   rememberPayReturn(opts);
   rememberPendingPayment({ orderId: order.orderId, productId: opts.productId, at: Date.now() });
-  recordPayAttempt({ orderId: order.orderId, productId: opts.productId, compatId: opts.compatId ?? null });
+  if (!isGift) {
+    recordPayAttempt({ orderId: order.orderId, productId: opts.productId, compatId: opts.compatId ?? null });
+  }
 
   // orderName은 서버 응답의 orderName을 쓴다
   const orderName = order.orderName || "콩닥 사주 리포트";
@@ -454,6 +491,24 @@ export async function verifyAndCompletePayment(
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
 
       clearPendingPayment();
+      if (result?.isGift && result?.gift) {
+        trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
+        trackEvent("gift_purchase", {
+          productId: catalogId,
+          value: amount,
+          currency: "KRW",
+        });
+        return {
+          ok: true,
+          orderId,
+          catalogId,
+          compatId: null,
+          amount,
+          isGift: true,
+          gift: result.gift as IssuedGiftSummary,
+        };
+      }
+
       clearDeviceCoupon();
       rememberOrderToken(catalogId, orderId, compatId);
       trackPurchase({ receiptId: result?.receiptId, amount, catalogId });

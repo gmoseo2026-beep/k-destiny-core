@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { getProduct } from "@/lib/catalog";
 import { toCatalogId } from "@/lib/productIdentity";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { computeGiftExpiresAt } from "@/lib/payments/gift";
 
 export async function applyPaidOrder(orderId: string, providerTxId?: string) {
   // 결제 알림은 트랜잭션 커밋 후에만 보낸다(롤백된 결제를 "매출"로 알리지 않도록). PII 없음.
@@ -30,33 +31,51 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
       }
 
       const catalogId = toCatalogId(pType, pKey, cId) ?? "";
-      const accessDays = getProduct(catalogId)?.accessDays ?? 90;
-      notice = `💰 <b>새 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: ${getProduct(catalogId)?.name ?? catalogId}\n• 주문번호: <code>${orderId}</code>`;
-      const expiresAt = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000);
+      const giftRepo = (tx as unknown as { giftCode?: typeof prisma.giftCode }).giftCode;
+      const giftRow = giftRepo?.findUnique
+        ? await giftRepo.findUnique({ where: { purchaseOrderId: order.orderId } })
+        : null;
 
-      if (pType && pKey) {
-        // [SECURITY / H-2] status 가드(위 updateMany)가 이미 1회 실행을 보장하므로 조회는 이중 안전장치다.
-        // SET의 경우, 단일 Unlock만 만들고 entitlement에서 참조하도록 합니다.
-        const exist = await tx.unlock.findFirst({
-          where: {
-            orderId: order.id,
-            productType: pType,
-            productKey: pKey,
-            compatId: cId
-          },
-        });
-        if (!exist) {
-          await tx.unlock.create({
-            data: {
+      if (giftRow) {
+        // 선물 주문: 결제 완료 시점부터 정확히 90일로 만료일을 갱신하고,
+        // 보낸 사람에게는 Unlock을 주지 않는다(수령자가 코드를 사용할 때 별도 주문·Unlock 발급).
+        const giftExpiresAt = computeGiftExpiresAt(new Date());
+        if (giftRepo?.updateMany) {
+          await giftRepo.updateMany({
+            where: { id: giftRow.id },
+            data: { expiresAt: giftExpiresAt },
+          });
+        }
+        notice = `🎁 <b>새 선물 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: ${getProduct(catalogId)?.name ?? catalogId}\n• 주문번호: <code>${orderId}</code>`;
+      } else {
+        const accessDays = getProduct(catalogId)?.accessDays ?? 90;
+        notice = `💰 <b>새 매출 발생!</b>\n• 금액: ${order.amount.toLocaleString()}원\n• 상품: ${getProduct(catalogId)?.name ?? catalogId}\n• 주문번호: <code>${orderId}</code>`;
+        const expiresAt = new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000);
+
+        if (pType && pKey) {
+          // [SECURITY / H-2] status 가드(위 updateMany)가 이미 1회 실행을 보장하므로 조회는 이중 안전장치다.
+          // SET의 경우, 단일 Unlock만 만들고 entitlement에서 참조하도록 합니다.
+          const exist = await tx.unlock.findFirst({
+            where: {
               orderId: order.id,
-              userId: order.userId,
-              email: order.email,
               productType: pType,
               productKey: pKey,
-              compatId: cId,
-              expiresAt,
+              compatId: cId
             },
           });
+          if (!exist) {
+            await tx.unlock.create({
+              data: {
+                orderId: order.id,
+                userId: order.userId,
+                email: order.email,
+                productType: pType,
+                productKey: pKey,
+                compatId: cId,
+                expiresAt,
+              },
+            });
+          }
         }
       }
     } else if (order.type === "PERIOD_PASS" && order.userId) {
