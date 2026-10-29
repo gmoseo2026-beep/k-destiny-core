@@ -298,6 +298,25 @@ export const CAMPAIGN_LINKS: readonly CampaignLink[] = [
       { code: `${p}-brand`, partner: src, label: `${name} · 콩닥(브랜드)`, path: "", utm: { source: src, medium: "cpc", campaign: "search_brand", content: "brand" } },
     ];
   }),
+  // ── 연말 시즌 기획전(2026-10-30, lib/seasonEvents.ts): 기획전 화면 3개 × 틱톡·메타·네이버.
+  // 기획전이 끝나면(12/25·12/31) 같은 주소가 일반 상품 목록으로 바뀌므로 광고도 그날 끈다.
+  ...([
+    ["xmas", "christmas", "크리스마스 전에, 그 사람 마음"],
+    ["nye", "before-new-year", "올해 가기 전에 정리하고 싶은 사람"],
+    ["solo27", "single-2027", "내년엔 연애할까"],
+  ] as const).flatMap(([id, slug, title]) =>
+    ([
+      ["tt", "tiktok", "틱톡", "paid_social"],
+      ["ig", "instagram", "메타", "paid_social"],
+      ["nv", "naver", "네이버 검색", "cpc"],
+    ] as const).map(([pre, source, name, medium]): CampaignLink => ({
+      code: `${pre}-${id}`,
+      partner: source,
+      label: `${name} · 연말 기획전 「${title}」`,
+      path: `/season/${slug}`,
+      utm: { source, medium, campaign: "season_2026", content: id },
+    }))
+  ),
 ] as const;
 
 export const findCampaignLink = (code: string): CampaignLink | undefined =>
