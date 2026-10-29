@@ -1,3 +1,30 @@
+# REVIEW_HANDOFF — argon/06-saju-card (사주 여덟 글자 카드 + 매력 기운 배지)
+
+> **기반 브랜치**: `origin/main` (`c963b6e`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `lib/sajuDisplay.ts` (신규 — `lib/saju.ts`의 `calculateFourPillars` 결과만 읽기 전용으로 받아 한자·전문용어 없이 8칸 쉬운 한글 기운 이름·색, 나무·불·흙·쇠·물 개수, 결정론 매력 기운 배지 `도화(사람을 끄는 매력)`·`홍염(한 번 빠지면 깊은 매력)`·`역마(움직임이 많은)` 계산)
+   - `components/saju/SajuEightCharCard.tsx` (신규 — 1인/2인 여덟 글자 8칸 카드·다섯 기운 개수 막대·매력 기운 배지 UI, `saju_card_view` 및 `charm_badge_view` GA4 이벤트 발사, `"use client"` 타입 전용 import 준수)
+   - `app/[locale]/compat/[id]/page.tsx` (서버에서 `compat.personA/personB.fourPillars`를 한글 전용 `sajuPeople`로 변환해 클라이언트에 전달, 원본 `fourPillars`/`birthHash` 미노출)
+   - `app/api/reports/generate/route.ts`, `app/api/fortune/annual/route.ts` (유료 상품 `TEASER` 및 무료 성격 `FREE` 응답에 결정론 `sajuDisplay` 배열 포함)
+   - `components/CompatResultClient.tsx`, `components/CompatNewClient.tsx`, `components/FortuneNewClient.tsx`, `app/[locale]/fortune/annual/AnnualFortuneClient.tsx`, `components/premium/PremiumNewClient.tsx` (무료 궁합 결과·무료 성격 결과·유료 커플/개인/신년/프리미엄 미리보기 맨 위에 `SajuEightCharCard` 배치)
+   - `tests/sajuDisplay.test.ts` (신규 — 결정론 동일 입력=동일 카드, 시간 미상 `"모름"` 2칸+기운 합 6, 한자·전문용어·퍼센트·순위 0건 검증, 배지 없음 케이스 및 도화·홍염·역마 판정 경계값 단위 테스트 5건)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 11개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 78 passed / 1 skipped (총 586 tests 통과, 신규 `tests/sajuDisplay.test.ts` 5건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 무료 궁합 결과(`/ko/compat/[id]`)와 무료 성격 결과, 유료 상품 미리보기(`/ko/compat/new`, `/ko/fortune/new`, `/ko/fortune/annual`, `/ko/premium/*/new`) 맨 위에 한자 없이 연·월·일·시 8칸 쉬운 기운 카드(`큰 나무`, `촛불`, `바다` 등, 시간 미상이면 시주 2칸 `"모름"`)와 나무·불·흙·쇠·물 개수 막대가 렌더링됨을 확인.
+   - 결정론 판정에서 해당하는 기운이 있을 때만 `도화(사람을 끄는 매력)`, `홍염(한 번 빠지면 깊은 매력)`, `역마(움직임이 많은)` 배지가 퍼센트·순위 없이 표시되고 `saju_card_view`와 `charm_badge_view`(배지 이름) 이벤트가 1회 발사됨을 확인.
+4. **스스로 의심하는 점**
+   - 도화·역마는 전통 삼합 기준에서 연지·일지 두 기준을 모두 확인해 알려진 지지(시간 미상일 때는 시지 제외 3지지) 중 해당 글자가 있을 때만 배지를 부여했고, 기준 글자 자체가 자기 자신을 가리키지 않으므로 과도하게 모든 사람에게 배지가 붙지 않음을 테스트로 검증했습니다.
+5. **클로드에게 필요한 것**
+   - 없음 (DB 스키마·약관·환경변수 변경 없음)
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
