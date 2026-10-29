@@ -85,3 +85,27 @@ export function removeSentInvite(token: string): void {
     // localStorage 접근 불가 환경 무시
   }
 }
+
+
+const RECEIVED_INVITE_KEY_PREFIX = "kongdak_invite_receiver_";
+
+/**
+ * 반쪽 초대장을 받아 완성한 사람임을 현재 세션에 표시한다(토큰만 키로 쓰며 개인정보 미저장).
+ */
+export function markReceivedInviteCompleted(shareToken: string): void {
+  if (typeof window === "undefined" || !shareToken) return;
+  try {
+    window.sessionStorage.setItem(`${RECEIVED_INVITE_KEY_PREFIX}${shareToken}`, "1");
+  } catch {
+    // sessionStorage 접근 불가 환경 무시
+  }
+}
+
+export function isReceivedInviteResult(shareToken: string): boolean {
+  if (typeof window === "undefined" || !shareToken) return false;
+  try {
+    return window.sessionStorage.getItem(`${RECEIVED_INVITE_KEY_PREFIX}${shareToken}`) === "1";
+  } catch {
+    return false;
+  }
+}

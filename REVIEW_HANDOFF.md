@@ -181,6 +181,29 @@
    - 도화·역마는 전통 삼합 기준에서 연지·일지 두 기준을 모두 확인해 알려진 지지(시간 미상일 때는 시지 제외 3지지) 중 해당 글자가 있을 때만 배지를 부여했고, 기준 글자 자체가 자기 자신을 가리키지 않으므로 과도하게 모든 사람에게 배지가 붙지 않음을 테스트로 검증했습니다.
 5. **클로드에게 필요한 것**
    - 없음 (DB 스키마·약관·환경변수 변경 없음)
+# REVIEW_HANDOFF — argon/09-invite-push (반쪽 초대장 완성 알림)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `lib/invitePush.ts` (신규): 초대장을 만든 사람이 회원(`creatorId`)이고 `PushSubscription`을 보유한 경우 `"○○님이 반쪽을 채워서 두 분의 궁합이 완성됐어요 💌"` 문구와 `/ko/compat/{shareToken}` 링크로 웹 푸시를 발송하는 `sendInviteCompletedPush` / `buildInviteCompletedPushPayload` 구현(VAPID 미설정·네트워크 오류 시 조용히 건너뛰며 404/410 만료 구독 자동 삭제).
+   - `app/api/compat/invite/[token]/route.ts`: 초대장 완성 직후 `sendInviteCompletedPush` 호출 및 `pushSent: boolean` 응답 필드 추가.
+   - `lib/compatInviteClient.ts`: 받는 사람 현재 세션 식별용 `markReceivedInviteCompleted` / `isReceivedInviteResult` 추가(개인정보 미저장).
+   - `components/CompatInviteClient.tsx`: 완성 시 `pushSent === true`이면 `invite_complete_push_sent` GA4 발사 후 `?via=invite_receiver` 및 세션 플래그와 함께 결과 화면으로 이동.
+   - `app/[locale]/compat/[id]/page.tsx` & `components/CompatResultClient.tsx`: 받는 사람 결과 화면 하단에 `"이 사람이 나를 어떻게 생각하는지 궁금하다면 → 그 사람 속마음 보기"` 카드 노출(`nextReadingHref("inner_mind", data.id, locale, "free_result")`로 입력 재사용) 및 클릭 시 `invite_receiver_cta_click` 발사.
+   - `tests/invitePush.test.ts` (신규): 알림 문구 규격(과장 문구 배제), 비회원 스킵, 회원 발송 및 410 만료 구독 정리, 푸시 실패 시 완성 응답(200) 보존, 세션 헬퍼 5개 단위 테스트.
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint` (변경 파일 7개): 0 errors
+   - `npx vitest run`: **78 passed | 1 skipped (79)**, **586 passed | 42 skipped (628)**
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 반쪽 초대장 완성 후 결과 화면(`?via=invite_receiver`) 진입 시 하단에 `"이 사람이 나를 어떻게 생각하는지 궁금하다면 → 그 사람 속마음 보기"` 카드가 노출되고, 클릭 시 `/ko/compat/new?productId=inner_mind&from={compatId}&via=free_result`로 이어져 생년월일 재입력 없이 속마음 미리보기로 연결되는 동선과 GA 이벤트(`invite_complete_push_sent`, `invite_receiver_cta_click`) 연결 확인.
+4. **스스로 의심하는 점**
+   - 주소창에서 `ref` 쿼리를 `history.replaceState`로 동기화할 때도 기존 `via=invite_receiver` 파라미터와 `sessionStorage` 플래그(`useSyncExternalStore` 구독)가 모두 유지되어 하이드레이션 불일치나 새로고침 시 CTA 소실이 없도록 처리했습니다.
+5. **클로드에게 필요한 것**
+   - 운영 서버 `.env`에 `NEXT_PUBLIC_VAPID_PUBLIC_KEY`와 `VAPID_PRIVATE_KEY`(선택: `VAPID_SUBJECT`)가 설정되어 있는지 확인 부탁드립니다(미설정 시 오류 없이 푸시만 건너뜁니다).
 
 ---
 

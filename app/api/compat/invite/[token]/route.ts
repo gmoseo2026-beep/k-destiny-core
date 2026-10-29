@@ -8,6 +8,7 @@ import { calculateCompatibility } from "@/lib/compatibility";
 import type { SajuResult } from "@/lib/saju";
 import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 import { logGeneration } from "@/lib/reports/genLog";
+import { sendInviteCompletedPush } from "@/lib/invitePush";
 import {
   InviteInputError,
   buildSafeInvitePerson,
@@ -258,12 +259,19 @@ export async function POST(req: Request, context: RouteContext) {
 
     void logGeneration({ catalogId: "compat_basic", kind: "COMPAT", ok: true });
 
+    const pushResult = await sendInviteCompletedPush({
+      creatorId: invite.creatorId,
+      receiverName: safePersonB.name,
+      shareToken: compat.shareToken,
+    });
+
     return NextResponse.json({
       id: compat.id,
       shareToken: compat.shareToken,
       score: compat.score,
       keywords: compat.keywords,
       relation: compat.relation,
+      pushSent: pushResult.sentCount > 0,
     });
   } catch {
     console.error("[api/compat/invite/token] complete failed");
