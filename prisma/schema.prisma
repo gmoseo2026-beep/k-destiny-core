@@ -263,6 +263,8 @@ model Order {
   campaign       String?
   // 결제를 시작한 결제 수단("KAKAOPAY" | "CARD"). 어디서 결제가 끊기는지 보려고(2026-10-14). PII 아님.
   payMethod      String?
+  // 단품 결제 후 24시간 내 차액 세트 업그레이드 원본 주문번호(Order.orderId) — additive
+  upgradeFromOrderId String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -271,6 +273,7 @@ model Order {
 
   @@index([userId])
   @@index([compatId])
+  @@index([upgradeFromOrderId])
 }
 
 // 10. 단건 궁합 언락 권한

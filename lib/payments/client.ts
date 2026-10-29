@@ -21,6 +21,7 @@ export interface PayOptions {
   compatId?: string;
   buyer: BuyerInfo;
   locale?: string;
+  upgradeFromOrderId?: string;
 }
 
 export type PayResult =
@@ -217,7 +218,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
   if (recovered) return recovered;
 
   // 1) 서버가 주문 생성 (금액 및 쿠폰 할인은 서버에서 검증·결정)
-  const savedCoupon = recallDeviceCoupon();
+  const savedCoupon = opts.upgradeFromOrderId ? null : recallDeviceCoupon();
   const guestOrderTokens = collectDeviceOrderTokens();
   const orderRes = await fetch("/api/payments/order", {
     method: "POST",
@@ -228,6 +229,7 @@ export async function requestPortOnePayment(opts: PayOptions): Promise<PayResult
       // 모바일 비회원은 이메일을 받지 않는다(선택) → 빈 값은 보내지 않는다
       ...(opts.buyer.email ? { email: opts.buyer.email } : {}),
       ...(savedCoupon ? { couponCode: savedCoupon.code } : {}),
+      ...(opts.upgradeFromOrderId ? { upgradeFromOrderId: opts.upgradeFromOrderId } : {}),
       ...(guestOrderTokens.length > 0 ? { guestOrderTokens } : {}),
       env: clientEnvLabel(),
       payMethod: opts.buyer.payMethod ?? "CARD",
@@ -422,7 +424,12 @@ export function clearPendingPayment(): void {
  * transaction_id 에는 주문번호(orderId)를 쓰지 않는다 — 비회원의 열람 증명이라 GA4 로 내보내면 안 된다(M-10).
  * 서버가 주는 영수증 id(주문의 DB id, 열람에는 쓸 수 없다)를 쓴다.
  */
-export function trackPurchase(p: { receiptId?: string | null; amount: number; catalogId: string }): void {
+export function trackPurchase(p: {
+  receiptId?: string | null;
+  amount: number;
+  catalogId: string;
+  upgrade?: boolean;
+}): void {
   if (!p.receiptId) return;
   trackEvent("purchase", {
     transaction_id: p.receiptId,
@@ -430,6 +437,7 @@ export function trackPurchase(p: { receiptId?: string | null; amount: number; ca
     currency: "KRW",
     productId: p.catalogId,
     app: clientEnvLabel(),
+    ...(p.upgrade ? { upgrade: true } : {}),
   });
 }
 
@@ -452,11 +460,14 @@ export async function verifyAndCompletePayment(
       const compatId = result?.compatId ?? fallbackCompatId ?? null;
       const orderId = result?.orderId || paymentId;
       const amount = typeof result?.amount === "number" ? result.amount : (fallbackAmount ?? 0);
+      const isUpgrade = Boolean(result?.upgrade);
 
       clearPendingPayment();
-      clearDeviceCoupon();
+      if (!isUpgrade) {
+        clearDeviceCoupon();
+      }
       rememberOrderToken(catalogId, orderId, compatId);
-      trackPurchase({ receiptId: result?.receiptId, amount, catalogId });
+      trackPurchase({ receiptId: result?.receiptId, amount, catalogId, upgrade: isUpgrade });
       // Note: window.location.reload() 제거. 이동은 호출자가 결정.
       return {
         ok: true,

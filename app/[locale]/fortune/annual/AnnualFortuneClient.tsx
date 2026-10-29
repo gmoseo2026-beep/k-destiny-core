@@ -12,6 +12,7 @@ import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import { CalendarTypeToggle, resolveRawDateToSolar } from "@/components/forms/BirthFields";
 import { savePersonLunarNotice, loadPersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
+import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
   getProduct,
@@ -1194,6 +1195,14 @@ export default function AnnualFortuneClient({
       )}
 
       {/* 결제한 총운: 다시 찾아올 길과 계정 저장(비회원 결제는 이 브라우저에만 남는다) */}
+      {!isLocked && (
+        <SetUpgradeBanner
+          locale={locale}
+          catalogId={`annual_${year}`}
+          source="annual_bottom"
+          className="mt-6"
+        />
+      )}
       {!isLocked && <GuestKeepBanner locale={locale} source="annual" className="mt-6" />}
 
       {/* Re-calculate with another birth date — 맛보기에서만(결제한 총운은 한 사람 기준으로 보관된다) */}
