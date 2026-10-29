@@ -1,3 +1,30 @@
+# REVIEW_HANDOFF — argon/10-season-events (연말 시즌 기획전)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `lib/seasonEvents.ts` (신규): 연말 기획전 3종(`christmas`, `before-new-year`, `single-2027`)의 기존 상품 묶음·KST 종료 시각(`2026-12-26T00:00:00+09:00` 및 `2027-01-01T00:00:00+09:00`)·실제 남은 일수(`"○일 남음"`)·활성 판정을 단일 파일에서 관리.
+   - `components/season/SeasonEventView.tsx` (신규): 활성 기간에는 기획전 헤더·표지 3장·추천 풀이(`ListRowCard` / `SetStackCard`, 새 상품·새 할인 없음)를 보여 주고, 종료 시 자동으로 일반 상품 목록(`ProductsExplorerClient`)으로 전환하며 `season_view` GA4 이벤트를 발사.
+   - `app/[locale]/season/[slug]/page.tsx` (신규): `force-dynamic`으로 요청 시각 기준 종료 여부를 판정하고 각 기획전 고유 메타데이터를 생성(`app/sitemap.ts`에는 미포함).
+   - `tests/seasonEvents.test.ts` (신규): 3개 기획전 구성·가격 불변 검증, `12/25 23:59 KST` 및 `12/31 23:59 KST` 종료 경계·남은 일수 계산 검증, `sitemap()`에 `/season/` 경로 미포함 검증(4개 단위 테스트).
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint` (변경 파일 4개): 0 errors
+   - `npx vitest run`: **78 passed | 1 skipped (79)**, **585 passed | 42 skipped (627)**
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - `/ko/season/christmas`, `/ko/season/before-new-year`, `/ko/season/single-2027` 3개 경로에서 각각 지정된 기존 상품 3종이 정확한 순서로 노출되고 실제 종료일 기준 `"○일 남음"` 배지와 `season_view` 이벤트가 동작하며, 종료 시각 이후에는 일반 상품 목록 화면으로 자동 전환되는지 확인.
+4. **스스로 의심하는 점**
+   - React Compiler의 `react-hooks/purity` 규칙을 지키기 위해 컴포넌트 렌더 본문에서 직접 `Date.now()`를 호출하지 않고 `evaluateSeasonEventState(event)` 헬퍼를 통해 평가하도록 구성했습니다(`export const dynamic = "force-dynamic"`이므로 매 요청 시점에 서버 시각이 평가됩니다).
+5. **클로드에게 필요한 것**
+   - 광고 단축 주소(`/ko/go/tt-xmas*` 등) 연결용 기획전 화면 경로:
+     - 크리스마스 기획전(12/25 23:59 KST 종료): `/ko/season/christmas`
+     - 연말 정리·재회 기획전(12/31 23:59 KST 종료): `/ko/season/before-new-year`
+     - 2027 솔로·연애 기획전(12/31 23:59 KST 종료): `/ko/season/single-2027`
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
