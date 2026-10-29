@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Gift, Star, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,15 +8,19 @@ import { trackEvent } from "@/lib/gtag";
 import { rememberDeviceCoupon, type StoredCoupon } from "@/lib/couponsClient";
 
 interface ReviewCouponCardProps {
-  reportId: string;
+  reportId?: string | null;
   catalogId: string;
   orderToken?: string | null;
+  onCouponIssued?: (coupon: StoredCoupon) => void;
+  onInteract?: () => void;
 }
 
 export default function ReviewCouponCard({
   reportId,
   catalogId,
   orderToken,
+  onCouponIssued,
+  onInteract,
 }: ReviewCouponCardProps) {
   const [canReview, setCanReview] = useState(false);
   const [rating, setRating] = useState(5);
@@ -24,10 +28,24 @@ export default function ReviewCouponCard({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [issuedCoupon, setIssuedCoupon] = useState<StoredCoupon | null>(null);
+  const interactedRef = useRef(false);
+
+  const notifyInteract = () => {
+    if (interactedRef.current) return;
+    interactedRef.current = true;
+    onInteract?.();
+  };
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/reviews?reportId=${encodeURIComponent(reportId)}`, { cache: "no-store" })
+    const query = reportId
+      ? `reportId=${encodeURIComponent(reportId)}`
+      : orderToken
+      ? `orderToken=${encodeURIComponent(orderToken)}`
+      : "";
+    if (!query) return;
+
+    fetch(`/api/reviews?${query}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { canReview?: boolean } | null) => {
         if (!alive || !d) return;
@@ -37,7 +55,7 @@ export default function ReviewCouponCard({
     return () => {
       alive = false;
     };
-  }, [reportId]);
+  }, [reportId, orderToken]);
 
   if (!canReview && !issuedCoupon) return null;
 
@@ -57,6 +75,7 @@ export default function ReviewCouponCard({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    notifyInteract();
     if (submitting) return;
     const trimmed = text.trim();
     if (trimmed.length < 2) {
@@ -70,7 +89,7 @@ export default function ReviewCouponCard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reportId,
+          ...(reportId ? { reportId } : {}),
           orderId: orderToken || undefined,
           rating,
           text: trimmed,
@@ -82,8 +101,10 @@ export default function ReviewCouponCard({
         return;
       }
       if (json.coupon) {
-        rememberDeviceCoupon(json.coupon as StoredCoupon);
-        setIssuedCoupon(json.coupon as StoredCoupon);
+        const cpn = json.coupon as StoredCoupon;
+        rememberDeviceCoupon(cpn);
+        setIssuedCoupon(cpn);
+        onCouponIssued?.(cpn);
       }
       setCanReview(false);
       trackEvent("review_submitted", { productId: catalogId, rating });
@@ -97,7 +118,7 @@ export default function ReviewCouponCard({
 
   return (
     <Card className="w-full p-5 text-left border border-white/[0.08] bg-[#22142A]">
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2 pr-6">
         <div className="flex items-center gap-1.5">
           <Gift className="w-4 h-4 text-[#FFC24B] shrink-0" />
           <h3 className="text-sm font-black text-[#F6EEF3]">후기 남기고 다음 구매 1,000원 할인받기</h3>
@@ -116,7 +137,10 @@ export default function ReviewCouponCard({
             <button
               key={n}
               type="button"
-              onClick={() => setRating(n)}
+              onClick={() => {
+                notifyInteract();
+                setRating(n);
+              }}
               aria-label={`${n}점`}
               className="p-1 transition-transform active:scale-90"
             >
@@ -135,6 +159,7 @@ export default function ReviewCouponCard({
             rows={2}
             maxLength={200}
             value={text}
+            onFocus={notifyInteract}
             onChange={(e) => setText(e.target.value)}
             placeholder="가장 공감됐던 문장이나 솔직한 소감을 적어 주세요 (200자 이내)"
             disabled={submitting}

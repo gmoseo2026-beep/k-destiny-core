@@ -29,36 +29,79 @@ export async function GET() {
 
     const orderExpandedMap = new Map<string, ReturnType<typeof expandOrderReports>>();
     const allCacheKeys: string[] = [];
+    const compatIdsForDeep = new Set<string>();
 
     for (const order of orders) {
       const expanded = expandOrderReports(order);
       orderExpandedMap.set(order.id, expanded);
       for (const row of expanded) {
-        if (!row.catalogId.startsWith("annual_") && row.catalogId !== "compat_basic") {
+        if (row.catalogId === "compat_basic") {
+          if (row.compatId) compatIdsForDeep.add(row.compatId);
+        } else {
           allCacheKeys.push(row.cacheKey);
         }
       }
     }
 
-    const dbReports =
+    const orderDbIds = orders.map((o) => o.id);
+
+    const [dbReports, existingReviews, deepReports] = await Promise.all([
       allCacheKeys.length > 0
-        ? await prisma.generatedReport.findMany({
+        ? prisma.generatedReport.findMany({
             where: { cacheKey: { in: allCacheKeys } },
             select: {
               id: true,
               cacheKey: true,
               catalogId: true,
               status: true,
+              firstViewedAt: true,
               createdAt: true,
             },
           })
-        : [];
+        : Promise.resolve([]),
+      orderDbIds.length > 0 && prisma.review?.findMany
+        ? prisma.review.findMany({
+            where: { orderId: { in: orderDbIds } },
+            select: { orderId: true },
+          })
+        : Promise.resolve([]),
+      compatIdsForDeep.size > 0 && prisma.deepReport?.findMany
+        ? prisma.deepReport.findMany({
+            where: { compatId: { in: [...compatIdsForDeep] } },
+            select: { compatId: true },
+          })
+        : Promise.resolve([]),
+    ]);
 
     const reportByKey = new Map(dbReports.map((r) => [r.cacheKey, r]));
+    const reviewedOrderIds = new Set(existingReviews.map((r) => r.orderId));
+    const viewedCompatIds = new Set(deepReports.map((d) => d.compatId));
 
     const result = orders.map((order) => {
       const expanded = orderExpandedMap.get(order.id) ?? [];
       const orderCatalogId = toCatalogId(order.productType, order.productKey, order.compatId);
+
+      let reviewReportId: string | null = null;
+      let reviewCatalogId: string | null = null;
+      let hasViewedAnyReport = false;
+
+      for (const row of expanded) {
+        if (row.catalogId === "compat_basic") {
+          if (row.compatId && viewedCompatIds.has(row.compatId)) {
+            hasViewedAnyReport = true;
+            if (!reviewCatalogId) reviewCatalogId = "compat_basic";
+          }
+          continue;
+        }
+        const rep = reportByKey.get(row.cacheKey);
+        if (rep?.firstViewedAt) {
+          hasViewedAnyReport = true;
+          if (!reviewReportId) {
+            reviewReportId = rep.id;
+            reviewCatalogId = row.catalogId;
+          }
+        }
+      }
 
       const reports = expanded.map((row) => {
         if (row.catalogId.startsWith("annual_")) {
@@ -89,11 +132,17 @@ export async function GET() {
         };
       });
 
+      const hasReviewed = reviewedOrderIds.has(order.id);
+
       return {
         orderId: order.orderId,
         catalogId: orderCatalogId,
         compatId: order.compatId,
         expiresAt: order.unlocks[0]?.expiresAt ?? null,
+        hasReviewed,
+        canReviewNow: !hasReviewed && hasViewedAnyReport,
+        reviewReportId,
+        reviewCatalogId: reviewCatalogId || orderCatalogId || order.productKey || "compat_basic",
         reports,
       };
     });

@@ -4,15 +4,21 @@ import OwnedReportNotice from "@/components/OwnedReportNotice";
 import ResumeCard from "@/components/member/ResumeCard";
 import MarketingConsentToggle from "@/components/member/MarketingConsentToggle";
 import DailyFortuneCard from "@/components/member/DailyFortuneCard";
+import ReviewCouponCard from "@/components/report/ReviewCouponCard";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Ticket, ArrowRight } from "lucide-react";
+import { Ticket, ArrowRight, Gift } from "lucide-react";
 import { getProduct, getProductCover } from "@/lib/catalog";
+import { trackEvent } from "@/lib/gtag";
 import { rememberOrderToken } from "@/lib/payments/client";
-import { collectDeviceOrderTokens, recallDeviceCoupon } from "@/lib/couponsClient";
+import {
+  collectDeviceOrderTokens,
+  recallDeviceCoupon,
+  type StoredCoupon,
+} from "@/lib/couponsClient";
 import KongdakMascot from "@/components/KongdakMascot";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +38,10 @@ interface OrderVaultItem {
   catalogId: string;
   compatId: string | null;
   expiresAt: string | null;
+  hasReviewed?: boolean;
+  canReviewNow?: boolean;
+  reviewReportId?: string | null;
+  reviewCatalogId?: string;
   reports: ReportItem[];
 }
 
@@ -60,6 +70,8 @@ export default function MeClient({ locale }: MeClientProps) {
     amount: number;
     expiresAt?: string;
   } | null>(null);
+  const [openReviewOrderId, setOpenReviewOrderId] = useState<string | null>(null);
+  const [reviewedInSession, setReviewedInSession] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -139,6 +151,45 @@ export default function MeClient({ locale }: MeClientProps) {
   const handleViewReport = (reportId: string, itemCatalogId: string, orderId: string, compatId: string | null) => {
     rememberOrderToken(itemCatalogId, orderId, compatId || undefined);
     router.push(`/${locale}/report/${reportId}`);
+  };
+
+  const handleVaultReviewClick = (order: OrderVaultItem) => {
+    trackEvent("review_prompt_click", {
+      source: "me_vault",
+      productId: order.catalogId,
+    });
+
+    if (order.canReviewNow) {
+      setOpenReviewOrderId((prev) => (prev === order.orderId ? null : order.orderId));
+      return;
+    }
+
+    const firstReport = order.reports[0];
+    if (!firstReport) return;
+
+    if (firstReport.status === "READY" && firstReport.reportId) {
+      rememberOrderToken(firstReport.catalogId, order.orderId, order.compatId || undefined);
+      router.push(`/${locale}/report/${firstReport.reportId}#review-section`);
+      return;
+    }
+    if (firstReport.status === "ANNUAL_ROUTE") {
+      router.push(`/${locale}/fortune/annual?year=${firstReport.catalogId.replace("annual_", "")}`);
+      return;
+    }
+    if (firstReport.status === "COMPAT_ROUTE") {
+      router.push(`/${locale}/compat/${firstReport.compatId || order.compatId || ""}`);
+      return;
+    }
+    handleCreateReport(firstReport.catalogId, order.orderId, order.compatId);
+  };
+
+  const handleVaultCouponIssued = (orderId: string, coupon: StoredCoupon) => {
+    setActiveCoupon({
+      code: coupon.code,
+      amount: coupon.amount,
+      expiresAt: coupon.expiresAt,
+    });
+    setReviewedInSession((prev) => ({ ...prev, [orderId]: true }));
   };
 
   if (authStatus === "loading" || loading) {
@@ -331,12 +382,14 @@ export default function MeClient({ locale }: MeClientProps) {
         {orders.map((order) => {
           const parentProduct = getProduct(order.catalogId);
           const dDay = calculateDDay(order.expiresAt);
+          const isUnreviewed = !order.hasReviewed && !reviewedInSession[order.orderId];
+          const isReviewOpen = openReviewOrderId === order.orderId;
 
           return (
             <Card key={order.orderId} className="w-full flex flex-col gap-3">
-              <div className="flex items-start justify-between border-b border-white/[0.08] pb-3">
-                <div>
-                  <div className="flex items-center gap-1.5">
+              <div className="flex items-start justify-between gap-2 border-b border-white/[0.08] pb-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-bold text-[#FFC24B]">
                       {parentProduct?.name || order.catalogId}
                     </span>
@@ -348,11 +401,23 @@ export default function MeClient({ locale }: MeClientProps) {
                     주문번호: {order.orderId.slice(0, 14)}...
                   </span>
                 </div>
-                {dDay && (
-                  <Badge variant={dDay === "만료됨" ? "default" : "popular"}>
-                    {dDay}
-                  </Badge>
-                )}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {isUnreviewed && (
+                    <button
+                      type="button"
+                      onClick={() => handleVaultReviewClick(order)}
+                      className="inline-flex items-center gap-1 rounded-full border border-[#FFC24B]/40 bg-[#FFC24B]/10 px-2.5 py-1 text-[11px] font-extrabold text-[#FFC24B] hover:bg-[#FFC24B]/20 transition-colors active:scale-[0.96]"
+                    >
+                      <Gift className="h-3 w-3 shrink-0" />
+                      <span>후기 쓰고 1,000원 쿠폰</span>
+                    </button>
+                  )}
+                  {dDay && (
+                    <Badge variant={dDay === "만료됨" ? "default" : "popular"}>
+                      {dDay}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col gap-2.5">
@@ -435,6 +500,17 @@ export default function MeClient({ locale }: MeClientProps) {
                   );
                 })}
               </div>
+
+              {isReviewOpen && (
+                <div className="pt-1">
+                  <ReviewCouponCard
+                    reportId={order.reviewReportId}
+                    catalogId={order.reviewCatalogId || order.catalogId}
+                    orderToken={order.orderId}
+                    onCouponIssued={(cpn) => handleVaultCouponIssued(order.orderId, cpn)}
+                  />
+                </div>
+              )}
             </Card>
           );
         })}
