@@ -1,3 +1,32 @@
+# REVIEW_HANDOFF — argon/14-ask-three (두근이에게 묻기 — 질문 3개 답장 리포트)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main`
+
+1. **바뀐 파일**
+   - `prisma/schema.prisma` & `prisma/sql/argon_14_ask_three.sql` (신규): `Order.askQuestions Json?` 컬럼 additive 추가
+   - `lib/catalog.ts`, `lib/home/explore.ts`, `app/[locale]/page.tsx`, `app/[locale]/products/page.tsx`, `app/[locale]/products/[id]/page.tsx`, `app/[locale]/compat/new/page.tsx`, `app/sitemap.ts`: 단건 콘텐츠 상품 `ask_three`(`"그 사람에 대해 묻고 싶은 3가지"`, `4,900원`, `placementOnly: "couple_report_bottom"`) 추가 및 홈·전체 상품 목록·독립 상세 페이지·사이트맵에서 비노출 처리(커플 리포트 맨 아래에만 노출)
+   - `lib/askThreeSafety.ts` (신규) & `app/api/ask-three/validate/route.ts` (신규): 추천 질문 칩 3종(`"내가 먼저 연락하면 어떨까?"`, `"이번 달 안에 만나자고 해도 될까?"`, `"그 사람이 원하는 연락 속도는?"`), 오락 목적 안내 문구, 결제 전 안전 필터 8종(건강·법률·돈·임신·자해·폭력·제3자 실명·연락처 차단 및 정중한 안내 반환) 구현
+   - `lib/prompts/askThree.ts` (신규) & `lib/prompts/productSpecs.ts`: 클라이언트 비노출 서버 전용 프롬프트 빌더(`buildAskThreePrompt` — 동일 `compatId`의 결정론 사주·궁합 데이터 + 기존 커플 리포트 요약 + 질문 3개 기반, 단정적 예언 금지 및 오락·자기이해 목적 준수) 및 `ask_three` 스펙(`answer_1`, `answer_2`, `answer_3`, `closing_advice`) 추가
+   - `lib/payments/autoRefund.ts` (신규), `app/api/payments/order/route.ts`, `lib/payments/client.ts`, `app/api/reports/generate/route.ts`, `components/report/ReportNewClient.tsx`: 주문 생성 시 질문 3개 재검증 및 `Order.askQuestions` 저장, `ask_three` 반복 구매 허용(`recoverPaidAttempt` 중복 방지 예외 및 `order.id`별 독립 `subjectKey`), 리포트 생성 실패 시 1회 자동 재생성 후에도 실패하면 PG 결제 자동 취소(`payments.cancelPayment`) + `revokePaidOrder` 자동 환불 실행 및 기기 주문 토큰 정리
+   - `components/report/AskThreeWidget.tsx` (신규), `components/report/ReportViewClient.tsx`, `components/CompatResultClient.tsx`: 커플 리포트 맨 아래 전용 질문 3개 입력 카드(`ask_open`, `ask_question_chip`, 결제 전 클라이언트+서버 안전 필터 검증 후 `GuestCheckoutModal` → `purchase`) 장착
+   - `tests/askThree.test.ts` (신규): 안전 필터 8개 금지 범주 전체 차단·정상 연애 질문 통과, `/api/payments/order` 결제 전 차단 및 질문 저장, 생성 1회 실패 시 자동 재생성 성공, 재시도까지 실패 시 자동 환불(`cancelPayment` + `revokePaidOrder`) 실행 검증 단위 테스트 6종
+2. **테스트 결과(통과 수)**
+   - `npx next typegen` + `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: 78 files passed, 591 tests passed (44 skipped)
+   - `npm run build`: exit 0
+3. **직접 화면에서 확인한 것**
+   - 프로덕션 빌드에서 `/api/ask-three/validate` 및 커플 리포트 열람 경로(`/[locale]/report/[reportId]`, `/[locale]/compat/[id]`) 정상 컴파일, 홈·전체 목록·사이트맵에서 `ask_three` 제외, `tests/clientPromptLeak.test.ts` 통과(`lib/prompts/askThree.ts` 클라이언트 번들 유출 없음) 확인
+4. **스스로 의심하는 점**
+   - 같은 커플(`compatId`)에 대해 "더 물으려면 다시 산다" 요구사항이 동작하도록 `ask_three`는 ① `lib/payments/client.ts`의 기기 중복 결제 재사용(`recoverPaidAttempt`)을 건너뛰어 새 주문 결제를 허용하고, ② `app/api/reports/generate/route.ts`에서 `subjectKey`를 `ask_three:${compatId}:${order.id}`로 분리해 이전 구매 리포트를 덮어쓰지 않고 주문마다 독립 리포트가 생성·보관되도록 설계했습니다.
+   - `tests/routes/launchPaymentMatrix.test.ts`가 모든 판매 가능 커플 상품에 대해 `{ productId, compatId }`만으로 `/api/payments/order` 기본 계약 테스트를 수행하므로, 주문 라우트는 `askQuestions`가 전달된 경우 즉시 안전 필터를 강제하고(`AskThreeWidget`은 항상 `askQuestions` 3개를 보냄), 생성 라우트(`/api/reports/generate`)에서도 유효한 질문 3개가 없으면 `400`으로 차단하는 이중 검증 구조를 두었습니다.
+5. **클로드에게 필요한 것**
+   - 법률 문구(`messages/ko.json` `Legal.*`): 이용약관 유료 상품 가격 목록에 **`ask_three`("그 사람에 대해 묻고 싶은 3가지", 단건 4,900원)** 추가 필요.
+   - 프로덕션 DB 반영 필요(additive SQL): `prisma/sql/argon_14_ask_three.sql` (`ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "askQuestions" JSONB;`).
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
