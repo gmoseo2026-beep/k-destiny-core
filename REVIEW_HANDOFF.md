@@ -1,3 +1,34 @@
+# REVIEW_HANDOFF — Argon 01 (`argon/01-account-delete`: 셀프 회원 탈퇴)
+
+> **작성 일시**: 2026-10-29
+> **기반 브랜치**: `origin/main` (`c963b6e`)
+
+### 1. 바뀐 파일
+- `lib/accountDeletion.ts` (신규): 관리자 삭제 API(`app/api/admin/users/delete/route.ts`)의 트랜잭션 기반 영구 삭제·개인정보 파기 로직(`executeUserDeletion`, `maskEmail`)을 공용 모듈로 추출. 감사로그(`SELF_DELETE` / `USER_DELETE`) 기록, `Order.claimToken` 소각(`Order` 행 자체는 `onDelete: SetNull`로 전자상거래법 5년 보관), `Unlock` 귀속 해제·이메일 파기·즉시 만료 처리, `Compatibility`·`TelegramAccount`·`GeneratedReport`·`ReportCache`·`CompatInvite` 귀속 해제, 미사용 `Coupon`·`PushSubscription`·`AnnualFortune` 삭제 후 `User` 삭제.
+- `app/api/admin/users/delete/route.ts` (수정): 공용 `executeUserDeletion`을 호출하도록 정리.
+- `app/api/user/account/route.ts` (신규): `DELETE /api/user/account` — 세션 필수(비로그인 401), 타인 `userId` 지정 시 403 거부, 관리자 계정(`ADMIN`) 오삭제 방지 400, 본인 계정만 삭제.
+- `components/member/AccountDeleteSection.tsx` (신규): `/ko/me` 회원 하단 `"회원 탈퇴"` 버튼 + 확인 모달(`"열람 기간이 남은 리포트도 더 이상 볼 수 없어요"`, 동의 체크박스 필수, `account_delete_open` / `account_delete_done` GA4 이벤트, 기기 내 `localStorage` 주문·쿠폰 토큰 정리 후 `signOut`으로 홈 이동).
+- `components/MeClient.tsx` (수정): 로그인 회원 보관함 최하단에 `AccountDeleteSection` 배치(비회원 화면에는 미노출).
+- `tests/routes/accountDelete.test.ts` (신규): 비로그인 401, 타인 계정 삭제 시도 403 및 본인 계정만 삭제, `Order` 행 보존(`tx.order.delete` 미호출 + `prisma/schema.prisma` `onDelete: SetNull` 정적 검증), 관리자 계정 400 테스트 4건.
+
+### 2. 테스트 결과(통과 수)
+- `npx tsc --noEmit`: 0 errors
+- `npx eslint` (변경 파일 6개): 0 errors, 0 warnings
+- `npx vitest run`: **78개 파일 585개 테스트 통과** (1 skipped: live E2E)
+- `npm run build`: Next.js 16.3.8 프로덕션 빌드 성공 (`/api/user/account` 라우트 정상 생성)
+
+### 3. 직접 화면에서 확인한 것
+- `MeClient` 로그인 회원 분기 최하단에만 작은 `"회원 탈퇴"` 버튼이 렌더링되고 비회원 분기에는 노출되지 않음 확인.
+- 모달 오픈 시 `"열람 기간이 남은 리포트도 더 이상 볼 수 없어요"` 경고 문구와 동의 체크박스 미체크 상태에서 탈퇴 버튼 `disabled` 동작 및 탈퇴 성공 후 `signOut({ callbackUrl: "/ko" })` 경로 확인.
+
+### 4. 스스로 의심하는 점
+- 회원 탈퇴 후 `Order.userId`가 `null`이 되었을 때 같은 브라우저 `localStorage`에 예전 `kongdak_order_*` 토큰이 남아 있으면 재가입 시 `claim-device-orders`(7일 이내 `userId: null` 주문 자동 귀속)가 다시 붙거나 베어러 토큰으로 열람될 여지가 있어, ① 서버에서 `Unlock.expiresAt`을 탈퇴 시각으로 즉시 만료 처리하고 ② 클라이언트에서도 탈퇴 성공 직후 `kongdak_order_*`, `kongdak_unlock_*`, `kd_last_order_*`, `kongdak_pay_attempts`, `kongdak_coupon_v1`을 함께 비우도록 이중 방어했습니다.
+
+### 5. 클로드에게 필요한 것
+- 약관(`messages/ko.json`의 `Legal.*`)은 지시서 §0.9에 따라 수정하지 않았습니다. 약관 내 탈퇴 신청 경로 안내에 이메일 외에 **"내 보관함(`/ko/me`) 하단 회원 탈퇴"** 경로 병기가 필요한지 검토 부탁드립니다.
+
+---
+
 # REVIEW_HANDOFF — P-018 (홈 진열 + 결제 버튼 정리)
 
 > **작성 일시**: 2026-10-25
