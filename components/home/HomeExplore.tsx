@@ -124,7 +124,7 @@ export default function HomeExplore({
         >
           <div className="flex items-center justify-between gap-2 mb-3">
             <h2 className="text-base sm:text-lg font-extrabold text-[#F6EEF3] tracking-tight">
-              🌅 미리 보는 2027 신년 추천
+              🌅 2027 신년 추천
             </h2>
             <span className="text-[11px] font-medium text-[#B9A9BF]">
               무료 미리보기 지원
