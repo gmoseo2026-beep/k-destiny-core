@@ -6,6 +6,8 @@ import prisma from "@/lib/prisma";
 import type { SajuResult } from "@/lib/saju";
 import { buildSajuDisplayFromPillars, type CharmBadgeLabel } from "@/lib/sajuDisplay";
 import { parseCompatFreeText } from "@/lib/compatFreeText";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveProduct } from "@/lib/catalogVisibility";
 import { readEnvelope } from "@/lib/reports/standard";
 import {
   decodePersonalityStoryCodes,
@@ -64,7 +66,9 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const shareToken = searchParams.get("shareToken")?.trim() || null;
+    const compatId = searchParams.get("compatId")?.trim() || null;
     const reportId = searchParams.get("reportId")?.trim() || null;
+    const productId = searchParams.get("productId")?.trim() || null;
     const download = searchParams.get("download") === "true";
 
     let badgeHeader = "콩닥 사주 궁합";
@@ -74,10 +78,10 @@ export async function GET(req: NextRequest) {
     let charmBadges: CharmBadgeLabel[] = [];
     let summaryLine = "서로의 결이 자연스럽게 스며드는 다정한 흐름이에요.";
 
-    if (shareToken) {
+    if (shareToken || compatId) {
       const compat = await prisma.compatibility
         .findUnique({
-          where: { shareToken },
+          where: shareToken ? { shareToken } : { id: compatId! },
           select: {
             score: true,
             keywords: true,
@@ -156,6 +160,15 @@ export async function GET(req: NextRequest) {
       } else {
         score = 88;
         summaryLine = "겉은 부드럽고 속은 단단하게 중심을 지키는 매력이에요.";
+      }
+    } else if (productId) {
+      const found = await getEffectiveProduct(productId).catch(() => undefined);
+      const viewable = isViewableFor(found ?? undefined, false) ? found : undefined;
+      if (viewable) {
+        badgeHeader = "콩닥 사주 리포트";
+        title = viewable.name;
+        keywords = ["타고난 기운", "쉬운 사주 풀이", "두근이 리포트"];
+        summaryLine = sanitizeStoryOneLineSummary(viewable.hook);
       }
     }
 

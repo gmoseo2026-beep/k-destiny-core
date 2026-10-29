@@ -47,7 +47,12 @@ import { generateNamingReport } from "@/lib/premium/generateNaming";
 import { generateDatesReport } from "@/lib/premium/generateDates";
 import surnamesRaw from "@/data/naming/surnames.json";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
-import { checkPreviewQuota, previewLimitFor, MEMBER_PREVIEW_DAILY_LIMIT } from "@/lib/previewLimit";
+import {
+  checkPreviewQuota,
+  previewLimitFor,
+  MEMBER_PREVIEW_DAILY_LIMIT,
+  PREVIEW_SHARE_BONUS,
+} from "@/lib/previewLimit";
 import {
   buildSajuDisplayForPerson,
   buildSajuDisplayFromPillars,
@@ -412,13 +417,16 @@ export async function POST(req: NextRequest) {
     const limit = previewLimitFor(!!sessionUserId);
     const quota = checkPreviewQuota(req, cacheKey, limit);
     if (!quota.allowed) {
+      const memberEffectiveLimit =
+        MEMBER_PREVIEW_DAILY_LIMIT + (quota.shareBonusUsed ? PREVIEW_SHARE_BONUS : 0);
       return NextResponse.json(
         {
-          error: `무료 미리보기는 하루 ${limit}개까지 볼 수 있어요.`,
+          error: `무료 미리보기는 하루 ${quota.effectiveLimit}개까지 볼 수 있어요.`,
           code: "PREVIEW_LIMIT",
-          limit,
+          limit: quota.effectiveLimit,
+          shareBonusAvailable: !quota.shareBonusUsed,
           // 비회원이면 가입으로 더 볼 수 있는 개수(회원 한도 − 지금까지 본 개수). 회원은 0.
-          signupBonus: sessionUserId ? 0 : Math.max(0, MEMBER_PREVIEW_DAILY_LIMIT - quota.used),
+          signupBonus: sessionUserId ? 0 : Math.max(0, memberEffectiveLimit - quota.used),
         },
         { status: 429, headers: NO_STORE },
       );

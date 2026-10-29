@@ -137,6 +137,8 @@ export default function FortuneNewClient({
     previewLimit?: number;
     /** 비회원이 가입하면 오늘 더 볼 수 있는 미리보기 수 */
     signupBonus?: number;
+    /** 오늘 이 기기(kd_vid)에 공유 보너스(+3)가 남아 있는지 */
+    shareBonusAvailable?: boolean;
   } | null>(null);
 
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -247,7 +249,13 @@ export default function FortuneNewClient({
 
         const json = await res.json();
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
-          setResultData({ isAnnual: false, score: 0, previewLimit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+          setResultData({
+            isAnnual: false,
+            score: 0,
+            previewLimit: json.limit ?? 3,
+            signupBonus: json.signupBonus ?? 0,
+            shareBonusAvailable: Boolean(json.shareBonusAvailable),
+          });
           return;
         }
         if (!res.ok) throw new Error(json.error || "결과 생성 중 오류가 발생했습니다.");
@@ -361,6 +369,11 @@ export default function FortuneNewClient({
             signupBonus={session?.user ? 0 : resultData.signupBonus}
             // 가입 후 이 상품으로 돌아와, 방금 넣은 정보로 미리보기를 바로 만든다(auto=1)
             signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(`/${locale}/fortune/new?productId=${currentProductId}&auto=1`)}`}
+            shareBonusAvailable={Boolean(resultData.shareBonusAvailable)}
+            storyCardUrl={`/api/og/story?productId=${encodeURIComponent(product.id)}`}
+            onShareBonusGranted={async () => {
+              await handleSubmitRef.current?.({ preventDefault() {} } as React.FormEvent);
+            }}
           />
         ) : resultData.isAnnual && resultData.annualData ? (
           <div className="bg-[#22142A] p-6 rounded-3xl border border-white/[0.08] text-left">

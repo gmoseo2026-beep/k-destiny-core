@@ -172,7 +172,12 @@ export default function CompatNewClient({
   } | null>(null);
 
   // 오늘의 무료 미리보기 한도를 넘김 → 미리보기 대신 결제 안내(궁합은 이미 만들어져 있어 바로 결제 가능)
-  const [limitHit, setLimitHit] = useState<{ compatId: string; limit: number; signupBonus?: number } | null>(null);
+  const [limitHit, setLimitHit] = useState<{
+    compatId: string;
+    limit: number;
+    signupBonus?: number;
+    shareBonusAvailable?: boolean;
+  } | null>(null);
 
   const { data: session } = useSession();
   const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
@@ -236,7 +241,12 @@ export default function CompatNewClient({
         if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
           if (alive) {
             handledFromRef.current = fromCompatId;
-            setLimitHit({ compatId: fromCompatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+            setLimitHit({
+              compatId: fromCompatId,
+              limit: json.limit ?? 3,
+              signupBonus: json.signupBonus ?? 0,
+              shareBonusAvailable: Boolean(json.shareBonusAvailable),
+            });
           }
           return;
         }
@@ -338,7 +348,12 @@ export default function CompatNewClient({
       const json = await res.json();
       if (res.status === 429 && json.code === "PREVIEW_LIMIT") {
         handledFromRef.current = lastCouple.compatId;
-        setLimitHit({ compatId: lastCouple.compatId, limit: json.limit ?? 3, signupBonus: json.signupBonus ?? 0 });
+        setLimitHit({
+          compatId: lastCouple.compatId,
+          limit: json.limit ?? 3,
+          signupBonus: json.signupBonus ?? 0,
+          shareBonusAvailable: Boolean(json.shareBonusAvailable),
+        });
         syncCompatUrl(lastCouple.compatId);
         return;
       }
@@ -696,7 +711,12 @@ export default function CompatNewClient({
         const genJson = await genRes.json();
         if (genRes.status === 429 && genJson.code === "PREVIEW_LIMIT") {
           handledFromRef.current = json.id;
-          setLimitHit({ compatId: json.id, limit: genJson.limit ?? 3, signupBonus: genJson.signupBonus ?? 0 });
+          setLimitHit({
+            compatId: json.id,
+            limit: genJson.limit ?? 3,
+            signupBonus: genJson.signupBonus ?? 0,
+            shareBonusAvailable: Boolean(genJson.shareBonusAvailable),
+          });
           syncCompatUrl(json.id);
           setIsLoading(false);
           return;
@@ -777,6 +797,43 @@ export default function CompatNewClient({
             signupHref={`/${locale}/login?callbackUrl=${encodeURIComponent(
               `/${locale}/compat/new?productId=${product.id}${limitHit?.compatId ? `&from=${limitHit.compatId}` : ""}`
             )}`}
+            shareBonusAvailable={Boolean(limitHit?.shareBonusAvailable)}
+            storyCardUrl={
+              limitHit?.compatId
+                ? `/api/og/story?compatId=${encodeURIComponent(limitHit.compatId)}`
+                : `/api/og/story?productId=${encodeURIComponent(product.id)}`
+            }
+            onShareBonusGranted={async () => {
+              if (!limitHit?.compatId) return;
+              const targetCompatId = limitHit.compatId;
+              const retryRes = await fetch("/api/reports/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  catalogId: teaserCatalogIdFor(product),
+                  kind: "TEASER",
+                  compatId: targetCompatId,
+                  locale,
+                }),
+              });
+              const retryJson = await retryRes.json();
+              if (!retryRes.ok) return;
+              trackEvent("teaser_created", {
+                productId: product.id,
+                tier: product.tier,
+                via: "share_bonus",
+              });
+              setLimitHit(null);
+              setTeaserResult({
+                compatId: targetCompatId,
+                score: retryJson.score || 0,
+                data: retryJson.data,
+                reportId: retryJson.reportId,
+                sajuDisplay: Array.isArray(retryJson.sajuDisplay)
+                  ? retryJson.sajuDisplay
+                  : undefined,
+              });
+            }}
           />
         )}
 
