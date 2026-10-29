@@ -1,3 +1,29 @@
+# REVIEW_HANDOFF — argon/07-story-card (인스타 스토리용 결과 카드 9:16)
+
+> **기반 브랜치**: `argon/06-saju-card` (`28e2048`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `lib/storyCard.ts` (신규 — 애칭 정제 및 한국 실명·생년월일·이메일·한자 자동 마스킹 `sanitizeStoryNickname`, 기본값 `"나 × 그 사람"` 제목 생성, 한 줄 요약 실명/호칭 스크러빙, 무료 성격용 비식별 결정론 키워드·배지 인코딩/디코딩)
+   - `app/api/og/story/route.tsx` (신규 — `1080×1920` 9:16 PNG 동적 생성: 두근이 마스코트 PNG 데이터 URI, 점수, 엔진 키워드 3개, 작업 06의 매력 기운 배지, 한 줄 요약, 하단 워터마크 `kongdak.kr`, 외부 Twemoji CDN 호출 없이 로컬 Pretendard 폰트로만 렌더링)
+   - `components/share/StoryCardSaveButton.tsx` (신규 — `"스토리용 카드 저장"` 버튼: 모바일 `navigator.share({ files })` 지원 시 공유 시트 즉시 호출 + `story_card_share`, 미지원·PC 환경에서는 PNG 다운로드 + `story_card_save`)
+   - `components/CompatResultClient.tsx`, `components/FortuneNewClient.tsx` (무료 궁합 결과 및 무료 성격 결과 `free_personality`에 `"스토리용 카드 저장"` 버튼 연결, 다운로드 파일명에서도 이름 제거)
+   - `tests/storyCard.test.ts` (신규 — 실명·생년월일 마스킹 및 애칭 유지, 한 줄 요약 PII 제거, 닫힌 enum 파라미터 위변조 방어, 실제 1080×1920 PNG 매직 바이트·IHDR 크기 검증 4건)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 6개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 79 passed / 1 skipped (총 590 tests 통과, 신규 `tests/storyCard.test.ts` 4건 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - 무료 궁합 결과(`/ko/compat/[id]`)와 무료 성격 결과(`/ko/fortune/new?productId=free_personality`)에 `"스토리용 카드 저장"` 버튼이 노출되고, URL·파일명·이미지 어디에도 생년월일과 실명이 포함되지 않음을 확인.
+   - `/api/og/story`가 정확히 `1080×1920` PNG를 생성하며 두근이·점수·엔진 키워드 3개·매력 기운 배지(있을 때만)·한 줄 요약·`kongdak.kr` 워터마크가 포함됨을 확인.
+4. **스스로 의심하는 점**
+   - 입력창 라벨이 `"이름 또는 애칭"`이라 카카오 로그인 사용자의 실명(예: `"김민수"`)이 DB에 저장되어 있을 수 있어, 한국 성씨로 시작하는 2~4자 순한글 이름(일상 애칭 허용 목록 제외)은 `"나 × 그 사람"`으로 자동 마스킹하고 한 줄 요약 본문 안의 실명·`"○○님"` 호칭도 함께 치환했습니다. 혹시 성씨 글자로 시작하는 독특한 2~4자 순한글 별명(예: `"김밥"`)을 쓴 경우에도 안전하게 기본값으로 마스킹됩니다.
+5. **클로드에게 필요한 것**
+   - 없음 (`argon/06-saju-card` 위에 분기한 브랜치이므로 `06` 머지 후 순서대로 머지 필요)
+
+---
+
 # REVIEW_HANDOFF — argon/06-saju-card (사주 여덟 글자 카드 + 매력 기운 배지)
 
 > **기반 브랜치**: `origin/main` (`c963b6e`)
