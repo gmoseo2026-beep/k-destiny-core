@@ -85,6 +85,32 @@
   - 구형 `compat_deep`(`DeepReport`) 주문은 `GeneratedReport` 행이 없을 수 있어 `app/api/reviews/route.ts`와 `app/api/reports/mine/route.ts` 모두 `DeepReport` 존재 여부까지 함께 확인해 후기 작성이 막히지 않도록 처리했습니다.
 - **클로드에게 필요한 것**:
   - 없음 (쿠폰 금액 1,000원 및 기존 후기 보상 고지 문구 변경 없음).
+# REVIEW_HANDOFF — argon/05-lunar-input (음력 생일 입력)
+
+> **기반 브랜치**: `origin/main` (`c963b6e`)
+> **작성 일시**: 2026-10-29
+
+1. **바뀐 파일**
+   - `types/lunar-javascript.d.ts` (`Lunar.fromYmd`, `LunarYear.fromYear`, `Solar` 타입 선언 보강)
+   - `lib/lunarInput.ts` (신규 — `Lunar.fromYmd(y, isLeapMonth ? -m : m, d).getSolar()` 기반 음력→양력 결정론 변환 및 없는 윤달·없는 음력 일자 거부, 안내 문구 생성)
+   - `lib/lunarNoticeStorage.ts` (신규 — URL·서버 응답·공유 링크에 생년월일 PII를 싣지 않기 위한 `sessionStorage` 전용 `"음력 ○월 ○일(양력 ○월 ○일)로 봤어요"` 보관 헬퍼)
+   - `components/forms/BirthFields.tsx` (`[양력 | 음력]` 토글 + 음력 시 `윤달` 체크박스 `CalendarTypeToggle`, `lunar_toggle` GA4 이벤트, 음력 선택 시 동적 `import("@/lib/lunarInput")`로 435KB 만세력 초기 번들 유입 차단)
+   - `components/CompatNewClient.tsx`, `components/CompatInviteClient.tsx`, `components/CompatResultClient.tsx` (궁합·반쪽 초대장 음력 입력 변환 및 결과 카드 안내 1줄 표시)
+   - `components/FortuneNewClient.tsx`, `app/[locale]/fortune/annual/AnnualFortuneClient.tsx`, `components/report/ReportNewClient.tsx`, `components/premium/PremiumNewClient.tsx`, `components/report/ReportViewClient.tsx` (개인 운세·총운·프리미엄·재입력 화면 음력 변환 및 결과 화면 1줄 표시)
+   - `tests/lunarInput.test.ts` (신규 — 음력 `1990-01-01` → 양력 `1990-01-27`, `2023 윤2월 1일` → `2023-03-22`, 없는 윤달 `"그해에는 윤○월이 없어요"` 거부 등 7개 단위 테스트)
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 통과 (0 errors)
+   - `npx eslint` (변경 파일 13개): 통과 (0 errors, 0 warnings)
+   - `npx vitest run`: 78 passed / 1 skipped (총 588 tests 통과, 신규 `tests/lunarInput.test.ts` 7개 포함)
+   - `npm run build`: 통과 (exit code 0)
+3. **직접 화면에서 확인한 것**
+   - `/ko/compat/new`, `/ko/compat/invite/[token]`, `/ko/fortune/new`, `/ko/fortune/annual`, `/ko/premium/premium_2027_daeun/new`, `/ko/report/new` 생년월일 라벨 옆에 `[양력 | 음력]` 토글이 배치되고, `음력` 전환 시 `윤달` 체크박스가 함께 노출되며 `lunar_toggle`(`on`/`off`) 이벤트가 발사됨을 확인.
+   - 음력 모드에서는 2월에도 30일까지 선택할 수 있고, 해당 연도에 없는 윤달을 고르면 `"그해에는 윤○월이 없어요"` 안내와 함께 제출이 차단됨을 확인.
+   - 제출 직전 양력 `YYYY-MM-DD`로 변환해 기존 API 계약과 `lib/saju.ts`를 수정 없이 그대로 재사용하며, 결과 화면 상단에 `"음력 ○월 ○일(양력 ○월 ○일)로 봤어요"` 한 줄이 표시됨을 확인.
+4. **스스로 의심하는 점**
+   - 결과 안내 문구(`"음력 ○월 ○일(양력 ○월 ○일)로 봤어요"`)에 생일(월·일)이 들어가므로 공유 링크를 열어 보는 제3자에게 노출되지 않도록 서버 DB·응답·URL에는 일절 저장하지 않고 입력한 본인의 탭(`sessionStorage`)에서만 읽어 표시하도록 설계했습니다. 따라서 다른 브라우저나 새 탭에서 공유 링크로 열었을 때는 해당 문구가 보이지 않는데, 개인정보 보호 원칙(§0.6)에 부합하는 의도된 동작입니다.
+5. **클로드에게 필요한 것**
+   - 없음 (DB 스키마·약관·환경변수 변경 없음)
 
 ---
 

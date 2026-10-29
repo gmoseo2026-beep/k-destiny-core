@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/gtag";
 import { saveLastPerson } from "@/lib/reportHandoff";
 import { loadSentInvites, relationLabel } from "@/lib/compatInviteClient";
+import { CalendarTypeToggle, resolveRawDateToSolar } from "@/components/forms/BirthFields";
+import { saveCompatLunarNotices, savePersonLunarNotice } from "@/lib/lunarNoticeStorage";
 
 interface CompatInviteClientProps {
   locale: string;
@@ -32,6 +34,8 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
   const [ampmB, setAmpmB] = useState("");
   const [hourB, setHourB] = useState("1");
   const [minB, setMinB] = useState("0");
+  const [isLunarB, setIsLunarB] = useState(false);
+  const [isLeapMonthB, setIsLeapMonthB] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -39,7 +43,8 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const getDaysInMonth = (y: string, m: string) => {
+  const getDaysInMonth = (y: string, m: string, isLunar = false) => {
+    if (isLunar) return 30;
     if (!y || !m) return 31;
     return new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
   };
@@ -101,7 +106,19 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
 
     setIsSubmitting(true);
     try {
-      const dobB = `${yearB}-${String(monthB).padStart(2, "0")}-${String(dayB).padStart(2, "0")}`;
+      const resolvedB = await resolveRawDateToSolar({
+        year: yearB,
+        month: monthB,
+        day: dayB,
+        isLunar: isLunarB,
+        isLeapMonth: isLeapMonthB,
+      });
+      if (!resolvedB.ok) {
+        setErrorMsg(resolvedB.error);
+        setIsSubmitting(false);
+        return;
+      }
+      const dobB = resolvedB.solarDob;
       let finalTimeB: string | null = null;
       if (ampmB) {
         let h = parseInt(hourB, 10);
@@ -149,6 +166,8 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
         time: finalTimeB,
         gender: genderB,
       });
+      savePersonLunarNotice(resolvedB.notice);
+      saveCompatLunarNotices([json.shareToken, json.id], { bNotice: resolvedB.notice });
 
       trackEvent("compat_invite_completed", { relation: viewState.relation });
       trackEvent("compat_created", { relation: viewState.relation, via: "half_invite" });
@@ -273,9 +292,21 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
 
         <div className="flex flex-col gap-3">
           <div>
-            <label className="block text-xs font-semibold text-text-2 mb-1">
-              생년월일 <span className="text-coral">*</span>
-            </label>
+            <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+              <label className="block text-xs font-semibold text-text-2">
+                생년월일 <span className="text-coral">*</span>
+              </label>
+              <CalendarTypeToggle
+                isLunar={isLunarB}
+                isLeapMonth={isLeapMonthB}
+                currentDay={dayB}
+                onChange={(patch) => {
+                  setIsLunarB(patch.isLunar);
+                  setIsLeapMonthB(patch.isLeapMonth);
+                  if (patch.day !== undefined) setDayB(patch.day);
+                }}
+              />
+            </div>
             <div className="grid grid-cols-3 gap-2">
               <select
                 value={yearB}
@@ -307,7 +338,7 @@ export default function CompatInviteClient({ locale, token }: CompatInviteClient
                 className="w-full border border-line rounded-xl p-3 text-sm focus:outline-none focus:border-coral bg-white focus-visible:ring-2 ring-coral"
               >
                 <option value="">일</option>
-                {Array.from({ length: getDaysInMonth(yearB, monthB) }, (_, i) => i + 1).map(
+                {Array.from({ length: getDaysInMonth(yearB, monthB, isLunarB) }, (_, i) => i + 1).map(
                   (d) => (
                     <option key={d} value={d}>
                       {d}일

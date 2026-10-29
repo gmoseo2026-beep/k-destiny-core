@@ -11,6 +11,11 @@ import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
+import {
+  loadCompatLunarNotices,
+  loadReportLunarNotice,
+  buildCoupleLunarLines,
+} from "@/lib/lunarNoticeStorage";
 import { AlertCircle, Lock, Home, Link2, Check } from "lucide-react";
 import { Daeun2027Report, NamingReport, DateSelectionReport } from "@/components/premium";
 import { Card } from "@/components/ui/Card";
@@ -72,6 +77,7 @@ export default function ReportViewClient({
   const [copied, setCopied] = useState(false);
   const [reachedLastSection, setReachedLastSection] = useState(false);
   const [matchedOrderToken, setMatchedOrderToken] = useState<string | null>(null);
+  const [lunarLines, setLunarLines] = useState<string[]>([]);
 
   const fetchReportRef = useRef<() => Promise<void>>(async () => {});
 
@@ -101,6 +107,15 @@ export default function ReportViewClient({
           const json: ReportResponse = await res.json();
           setReportData(json);
           setMatchedOrderToken(token);
+          if (json.compatId) {
+            const cLines = buildCoupleLunarLines({
+              notices: loadCompatLunarNotices(json.compatId),
+            });
+            setLunarLines(cLines);
+          } else {
+            const pLine = loadReportLunarNotice(json.reportId, json.catalogId);
+            setLunarLines(pLine ? [pLine] : []);
+          }
           setLoading(false);
           const p = getProduct(json.catalogId);
           trackEvent("report_generated", {
@@ -198,6 +213,13 @@ export default function ReportViewClient({
   if (product?.tier === "premium") {
     return (
       <div className="w-full pb-16">
+        {lunarLines.length > 0 && (
+          <div className="max-w-md mx-auto mb-3 px-4 flex flex-col items-center gap-0.5 text-xs font-medium text-[#B9AEC4]">
+            {lunarLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        )}
         {reportData.catalogId === "premium_2027_daeun" && (
           <Daeun2027Report
             reportId={reportData.reportId}
@@ -257,10 +279,17 @@ export default function ReportViewClient({
     <div className="w-full max-w-md mx-auto flex flex-col gap-6 pb-12">
       {/* Product Name Header */}
       {product && (
-        <div className="text-center -mb-2">
+        <div className="text-center -mb-2 flex flex-col items-center gap-1.5">
           <span className="text-xs font-bold text-coral-deep bg-coral-soft px-3 py-1 rounded-full">
             {product.name}
           </span>
+          {lunarLines.length > 0 && (
+            <div className="flex flex-col items-center gap-0.5 text-xs font-medium text-[#B9A9BF]">
+              {lunarLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

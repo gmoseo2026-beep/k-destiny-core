@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import KongdakMascot from "@/components/KongdakMascot";
 import FortuneLoading from "@/components/FortuneLoading";
-import BirthFields, { BirthValues, formatBirthInput } from "@/components/forms/BirthFields";
+import BirthFields, { BirthValues, resolveBirthValuesToSolar } from "@/components/forms/BirthFields";
 import { getProduct } from "@/lib/catalog";
 import { recallOrderToken } from "@/lib/payments/client";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
 import { loadPendingInput, clearPendingInput, savePendingInput } from "@/lib/reportHandoff";
+import { loadPersonLunarNotice, savePersonLunarNotice, saveReportLunarNotice } from "@/lib/lunarNoticeStorage";
 import { ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/gtag";
 import { PremiumGenerating } from "@/components/premium/PremiumGenerating";
@@ -141,8 +142,13 @@ export default function ReportNewClient({
 
         if (res.status === 200) {
           const data = await res.json();
+          const repId = data.reportId as string;
+          const pendingNotice = loadPersonLunarNotice(catalogId) ?? loadPersonLunarNotice(targetCatalogId);
+          if (pendingNotice) {
+            saveReportLunarNotice(repId, pendingNotice);
+          }
           trackEvent("report_generated", { productId: targetCatalogId, tier: product?.tier || "standard" });
-          return data.reportId as string;
+          return repId;
         }
 
         if (res.status === 202) {
@@ -157,7 +163,7 @@ export default function ReportNewClient({
 
       throw new Error("리포트 생성이 지연되고 있습니다. 잠시 후 다시 확인해주세요.");
     },
-    [compatId, locale, product?.tier]
+    [catalogId, compatId, locale, product?.tier]
   );
 
   // Start generation when orderId is ready
@@ -268,11 +274,17 @@ export default function ReportNewClient({
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderId || !product) return;
-    const formatted = formatBirthInput(formValues);
+    setErrorMsg(null);
+    const resolved = await resolveBirthValuesToSolar(formValues);
+    if (!resolved.ok) {
+      setErrorMsg(resolved.error);
+      return;
+    }
+    const formatted = resolved.formatted;
     savePendingInput(catalogId, formatted);
+    savePersonLunarNotice(resolved.notice, catalogId);
     setNeedInput(false);
     setGenerating(true);
-    setErrorMsg(null);
 
     try {
       if (product.type === "SET") {

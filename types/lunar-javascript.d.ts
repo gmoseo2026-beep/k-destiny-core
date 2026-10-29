@@ -3,9 +3,20 @@ declare module 'lunar-javascript' {
     static fromYmd(year: number, month: number, day: number): Solar;
     static fromYmdHms(year: number, month: number, day: number, hour: number, minute: number, second: number): Solar;
     getLunar(): Lunar;
+    getYear(): number;
+    getMonth(): number;
+    getDay(): number;
+    toYmd(): string;
+  }
+
+  export class LunarYear {
+    static fromYear(lunarYear: number): LunarYear;
+    getLeapMonth(): number;
   }
 
   export class Lunar {
+    static fromYmd(lunarYear: number, lunarMonth: number, lunarDay: number): Lunar;
+    getSolar(): Solar;
     getEightChar(): EightChar;
     getMonthInGanZhiExact(): string;
     getDayJi(): string[];
@@ -15,6 +26,7 @@ declare module 'lunar-javascript' {
     getZhiXing(): string;
     getTimes(): LunarTime[];
     getDayInGanZhi(): string;
+    getYear(): number;
     getMonth(): number;
     getDay(): number;
   }

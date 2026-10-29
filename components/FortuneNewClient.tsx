@@ -13,7 +13,8 @@ import { requestPortOnePayment, BuyerInfo } from "@/lib/payments/client";
 import { getProduct, getProductCover, priceLabel, CATALOG, isViewableFor, teaserCatalogIdFor, setsContaining, checkoutOptionsFor } from "@/lib/catalog";
 import SetUpsell from "@/components/product/SetUpsell";
 import { savePendingInput, loadPendingInput, saveLastPerson, loadLastPerson } from "@/lib/reportHandoff";
-import BirthFields, { BirthValues, formatBirthInput, parseBirthInput } from "@/components/forms/BirthFields";
+import BirthFields, { BirthValues, formatBirthInput, parseBirthInput, resolveBirthValuesToSolar } from "@/components/forms/BirthFields";
+import { savePersonLunarNotice, saveReportLunarNotice, loadPersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import StandardReportView from "@/components/report/StandardReportView";
 import TeaserUnlockPanel, { revealUnlockPanel, trackTeaserUnlock } from "@/components/report/TeaserUnlockPanel";
 import OwnedReportNotice from "@/components/OwnedReportNotice";
@@ -120,6 +121,13 @@ export default function FortuneNewClient({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   // 방금 입력한 정보를 불러와 채웠는지(안내 문구용)
   const [prefilled, setPrefilled] = useState(false);
+  const [lunarNotice, setLunarNotice] = useState<string | null>(null);
+  const [resolvedSolarInput, setResolvedSolarInput] = useState<{
+    name: string;
+    dob: string;
+    time: string | null;
+    gender: "F" | "M";
+  } | null>(null);
 
   // Result state
   const [resultData, setResultData] = useState<{
@@ -175,7 +183,8 @@ export default function FortuneNewClient({
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => openCheckoutFor(id))) return;
 
     // 비회원도 바로 결제한다(2026-10-03). 결제 후 화면이 이 입력값으로 리포트를 만든다.
-    savePendingInput(id, formatBirthInput(formValues));
+    savePendingInput(id, resolvedSolarInput ?? formatBirthInput(formValues));
+    savePersonLunarNotice(lunarNotice, id);
     setCheckoutId(id);
     setCheckoutModalOpen(true);
   };
@@ -196,8 +205,20 @@ export default function FortuneNewClient({
     setIsLoading(true);
 
     try {
-      const formatted = formatBirthInput(formValues);
+      const resolved = await resolveBirthValuesToSolar(formValues);
+      if (!resolved.ok) {
+        setErrorMsg(resolved.error);
+        setIsLoading(false);
+        return;
+      }
+
+      const formatted = resolved.formatted;
+      const activeNotice = resolved.notice ?? (formValues.isLunar ? null : loadPersonLunarNotice(currentProductId));
+      setResolvedSolarInput(formatted);
+      setLunarNotice(resolved.notice);
       saveLastPerson(formatted);
+      savePersonLunarNotice(resolved.notice, currentProductId);
+      void activeNotice;
 
       if (currentProductId.startsWith("annual_")) {
         // Annual route
@@ -207,9 +228,9 @@ export default function FortuneNewClient({
           body: JSON.stringify({
             productId: currentProductId,
             dob: formatted.dob,
-            birthYear: parseInt(formValues.year, 10),
-            birthMonth: parseInt(formValues.month, 10),
-            birthDay: parseInt(formValues.day, 10),
+            birthYear: resolved.solarYear,
+            birthMonth: resolved.solarMonth,
+            birthDay: resolved.solarDay,
             time: formatted.time,
             gender: formatted.gender,
             name: formatted.name,
@@ -250,6 +271,10 @@ export default function FortuneNewClient({
           productId: currentProductId,
           tier: product?.tier || "standard",
         });
+
+        if (json.reportId) {
+          saveReportLunarNotice(String(json.reportId), resolved.notice);
+        }
 
         setResultData({
           isAnnual: false,
@@ -298,7 +323,17 @@ export default function FortuneNewClient({
       onSubmit={async (buyer: BuyerInfo) => {
         try {
           setIsProcessingPayment(true);
-          const formatted = formatBirthInput(formValues);
+          let formatted = resolvedSolarInput;
+          if (!formatted) {
+            const resolved = await resolveBirthValuesToSolar(formValues);
+            if (!resolved.ok) {
+              throw new Error(resolved.error);
+            }
+            formatted = resolved.formatted;
+            savePersonLunarNotice(resolved.notice, checkoutId);
+          } else {
+            savePersonLunarNotice(lunarNotice, checkoutId);
+          }
           savePendingInput(checkoutId, formatted);
 
           const res = await requestPortOnePayment({
@@ -337,7 +372,14 @@ export default function FortuneNewClient({
     return (
       <div className="w-full max-w-md mx-auto text-center flex flex-col gap-6 pb-28">
         <OwnedReportNotice locale={locale} catalogId={currentProductId} source="fortune_new" />
-        {!resultData.previewLimit && <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>}
+        {!resultData.previewLimit && (
+          <div className="flex flex-col items-center gap-1">
+            <h2 className="text-2xl font-bold tracking-tight">내 사주 분석 결과</h2>
+            {lunarNotice && (
+              <p className="text-xs font-medium text-[#B9A9BF]">{lunarNotice}</p>
+            )}
+          </div>
+        )}
 
         {resultData.previewLimit && product ? (
           <PreviewLimitPanel

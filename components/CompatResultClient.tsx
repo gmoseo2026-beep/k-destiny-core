@@ -32,6 +32,7 @@ import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/li
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
+import { loadCompatLunarNotices, buildCoupleLunarLines } from "@/lib/lunarNoticeStorage";
 
 interface CompatData {
   id: string;
@@ -145,6 +146,19 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [claimAvailable, setClaimAvailable] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [lunarLines, setLunarLines] = useState<string[]>([]);
+
+  useEffect(() => {
+    const notices = loadCompatLunarNotices(data.shareToken, data.id);
+    const lines = buildCoupleLunarLines({
+      notices,
+      nameA: data.personA.name,
+      nameB: data.personB.name,
+    });
+    if (lines.length > 0) {
+      queueMicrotask(() => setLunarLines(lines));
+    }
+  }, [data.shareToken, data.id, data.personA.name, data.personB.name]);
   
   const [deepReport, setDeepReport] = useState<DeepReportContent | null>(null);
   const [isLoadingDeepReport, setIsLoadingDeepReport] = useState(false);
@@ -606,6 +620,13 @@ export default function CompatResultClient({ initialData, locale, refToken, isPr
         <h2 className="text-sm sm:text-base font-extrabold text-white/90 uppercase tracking-wider mb-4">
           우리 두 사람의 사주 궁합
         </h2>
+        {lunarLines.length > 0 && (
+          <div className="-mt-2 mb-3 flex flex-col items-center gap-0.5 text-[11px] font-semibold text-white/80">
+            {lunarLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+          </div>
+        )}
 
         {/* Triangular Couple & Destiny Red Thread Layout */}
         <div className="relative flex items-center justify-between w-full max-w-xs sm:max-w-sm mx-auto mb-4 px-2">
