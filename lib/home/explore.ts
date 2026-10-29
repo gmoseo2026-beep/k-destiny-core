@@ -15,7 +15,7 @@ export const PICK_IDS = ["secret_love", "inner_mind", "cheating", "spicy_annual"
 const TAB_IDS: Record<Exclude<ExploreTabId, "premium">, readonly string[]> = {
   // 추천 카드(PICK_IDS)에 이미 나온 상품은 여기서 뺀다
   popular: ["compat_basic", "reunion", "love_single", "marriage", "annual_2026", "wealth", "charm", "free_personality"],
-  love: ["compat_basic", "inner_mind", "secret_love", "marriage", "reunion", "cheating", "conflict", "love_single", "charm"],
+  love: ["compat_basic", "inner_mind", "secret_love", "marriage", "reunion", "cheating", "conflict", "love_single", "charm", "ask_three"],
   me: ["free_personality", "annual_2026", "annual_2027", "spicy_annual", "health"],
   money: ["wealth", "career"],
 };
@@ -100,6 +100,7 @@ export const HOME_GRID_ORDER: readonly string[] = [
   "premium_naming",
   "premium_date_pick",
   "annual_2026",
+  "ask_three",
   "free_personality",
 ] as const;
 

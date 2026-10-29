@@ -55,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const catalog = await getEffectiveCatalog();
     products = catalog
-      .filter((p) => isViewableFor(p, false))
+      .filter((p) => isViewableFor(p, false) && !p.placementOnly)
       .map((p) => ({
         url: canonicalUrlFor(`/products/${p.id}`),
         lastModified,

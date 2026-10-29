@@ -35,7 +35,7 @@ export default async function Home({ params }: PageProps) {
   const session = await getServerSession(authOptions);
 
   const effectiveCatalog = await getEffectiveCatalog();
-  const visibleProducts = effectiveCatalog.filter((p) => !p.isHidden);
+  const visibleProducts = effectiveCatalog.filter((p) => !p.isHidden && !p.placementOnly);
   const userId = session?.user?.id ?? "";
   const isMember = Boolean(userId);
   const memberName = session?.user?.name?.trim() || "회원";

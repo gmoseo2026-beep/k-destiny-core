@@ -22,7 +22,7 @@ export async function generateMetadata({
 
 export default async function ProductsPage() {
   const effectiveCatalog = await getEffectiveCatalog();
-  const visibleProducts = filterProductsByCategory(effectiveCatalog, "all");
+  const visibleProducts = filterProductsByCategory(effectiveCatalog, "all").filter((p) => !p.placementOnly);
 
   return (
     <div className="min-h-screen w-full bg-[#140B18] text-[#F6EEF3]">

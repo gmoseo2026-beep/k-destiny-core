@@ -152,6 +152,9 @@ export default function ReportNewClient({
         }
 
         const errJson = await res.json().catch(() => ({}));
+        if (errJson.autoRefunded) {
+          forgetDeviceOrder(currentOrderId);
+        }
         throw new ReportGenError(errJson.error || "리포트 생성에 실패했습니다.", res.status);
       }
 

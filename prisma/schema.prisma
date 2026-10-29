@@ -263,6 +263,8 @@ model Order {
   campaign       String?
   // 결제를 시작한 결제 수단("KAKAOPAY" | "CARD"). 어디서 결제가 끊기는지 보려고(2026-10-14). PII 아님.
   payMethod      String?
+  // 두근이에게 묻기(ask_three) 주문 시 결제 전 안전 필터를 통과한 질문 3개 배열(PII·연락처 제외).
+  askQuestions   Json?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

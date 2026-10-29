@@ -5,9 +5,11 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import FortuneLoading from "@/components/FortuneLoading";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
+import AskThreeWidget from "@/components/report/AskThreeWidget";
 import ReviewCouponCard from "@/components/report/ReviewCouponCard";
 import StandardReportView from "@/components/report/StandardReportView";
 import type { StandardReport } from "@/lib/reports/standard";
+import { ASK_THREE_ENTERTAINMENT_NOTICE } from "@/lib/askThreeSafety";
 import { getProduct } from "@/lib/catalog";
 import { trackEvent } from "@/lib/gtag";
 import { AlertCircle, Lock, Home, Link2, Check } from "lucide-react";
@@ -256,6 +258,12 @@ export default function ReportViewClient({
         onLastSectionSeen={() => setReachedLastSection(true)}
       />
 
+      {reportData.catalogId === "ask_three" && (
+        <p className="rounded-xl border border-white/[0.08] bg-[#22142A] px-3.5 py-2.5 text-[11px] text-[#B9A9BF] leading-relaxed">
+          {ASK_THREE_ENTERTAINMENT_NOTICE}
+        </p>
+      )}
+
       {product?.target === "couple" && reportData.compatId && reachedLastSection && (
         <NextReadingRecommendations
           currentCatalogId={reportData.catalogId}
@@ -263,6 +271,14 @@ export default function ReportViewClient({
           locale={locale}
           visibleIds={visibleIds}
           sourceScreen="report_view"
+        />
+      )}
+
+      {product?.target === "couple" && reportData.compatId && (
+        <AskThreeWidget
+          compatId={reportData.compatId}
+          locale={locale}
+          fromProductId={reportData.catalogId}
         />
       )}
 
