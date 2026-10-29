@@ -1273,7 +1273,9 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
       {isInviteReceiver && (!visibleIds || visibleIds.includes("inner_mind")) && (
         <Card className="w-full mt-6 p-4 border border-coral/35 bg-[#22142A]">
           <Link
-            href={nextReadingHref("inner_mind", data.id, locale, "free_result")}
+            // 이 궁합은 초대한 사람이 '나'(A)로 저장돼 있어, 같은 궁합으로 열면 받은 사람 자신의 속마음이 나온다.
+            // 받은 사람을 '나'로 다시 입력하는 화면으로 보낸다(방금 넣은 내 생일은 자동으로 채워짐).
+            href={`/${locale}/compat/new?productId=inner_mind`}
             onClick={() =>
               trackEvent("invite_receiver_cta_click", {
                 compatId: data.id,
