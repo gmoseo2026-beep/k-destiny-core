@@ -1,3 +1,46 @@
+# REVIEW_HANDOFF — argon/11-ilju-seo (11 재작업 — 일주 페이지 60장 고유 본문 전면 재작성)
+
+> **작성 일시**: 2026-10-30
+> **기반 브랜치**: `argon/11-ilju-seo` (`7042d45`, `docs/growth/아르곤_11번_재작업_지시서.md` 기준 재작업)
+
+0. **고유성·분량 실측 지표 (`tests/iljuUniqueness.test.ts` 동일 산식 측정값)**
+   - **대상 페이지 수**: 60장 (`갑자일주` ~ `계해일주`)
+   - **페이지당 최소 글자 수**: **3,787자** (지시서 기준 ≥ 3,500자 통과)
+   - **페이지당 평균 글자 수**: **4,908자** (최대 6,042자)
+   - **다른 페이지와 겹치는 문장 비율**: **`0.00%` (`0 / 4,484문장`, ratio `0`)** (지시서 기준 ≤ 15% 통과)
+   - **같은 페이지 내 중복 문장(20자 이상)**: **0건** (60장 전원 통과)
+   - **잘 맞는 일주 이유 문장(`bestMatches.matches[k].reason`)**: **180건 전원 서로 다름** (모든 문장에 해당 일주 이름 + 상대 일주 이름 + 구체 장면 포함)
+
+1. **바뀐 파일·목적**
+   - `tests/iljuUniqueness.test.ts` (신규): 지시서 원문 그대로 추가한 고유성·분량 강제 테스트 5종(페이지당 ≥ 3,500자, 페이지 간 문장 중복률 ≤ 15%, 페이지 내 중복 문장 0건, 소제목 본문 2문단·250자 이상 및 2소제목 이상, 잘 맞는 일주 이유 180건 전원 고유)
+   - `lib/seo/iljuMeta.ts` (신규): 60갑자 각각의 위 글자(10천간 이미지)·아래 글자(12지지 동물·계절·시간대)·위아래 기운 상호작용(상생/통근/조절 역학)·60개 개별 자연 비유/일상 연애 장면 씨앗·전통 합(천간합+지지육합 단짝 1개, 지지삼합 기반 보완 일주 2개) 결정론 메타데이터 정의
+   - `scripts/seo/generateIlju.ts` (신규): 템플릿 빈칸 채우기 방식을 폐기하고, 60갑자 각 일주마다 개별 근거(`iljuMeta.ts`)를 넣어 1건씩 별도 생성·검증(한자 0자, 사주 전문용어 0건, 단정 예언 0건, 필수 소제목·분량·문단 검증)해 `data/seo/ilju-60.json`에 정적 저장하는 사전 생성 스크립트
+   - `data/seo/ilju-60.json` (신규): 60갑자 고유 본문 정적 데이터(4개 섹션 유지 + `"○○일주 연애에서 자주 생기는 상황 3가지"` + `"○○일주에게 하면 좋은 말 / 피할 말"` 실제 대사 예시 각 2개씩 + 일주별 고유 FAQ 3개, 공통 면책 문구 데이터에서 분리)
+   - `lib/seo/ilju.ts`: 틀 조합 생성기를 제거하고 `lib/seo/iljuMeta.ts` + `data/seo/ilju-60.json`을 결합해 정적 `ILJU_LIST`를 구성(런타임 AI 호출 0회, 기존 export `ILJU_LIST`/`allIljuSlugs`/`getIljuBySlug`/`resolveIljuParam`/`findIljuByBirthDate` 100% 유지)
+   - `components/seo/SeoBlocks.tsx` & `app/[locale]/ilju/[slug]/page.tsx` & `app/[locale]/ilju/page.tsx`: 소제목 `body` 다문단(`\n\n`)을 `Paragraphs`로 렌더링하고, 공통 안내 문구(`"일주는 태어난 날 기둥 하나만 본 거라..."`)는 데이터에서 빼고 페이지 하단 `IljuDisclaimer` 공통 컴포넌트로 1회만 노출
+   - `tests/iljuSeo.test.ts`: 신규 필수 소제목(`연애에서 자주 생기는 상황 3가지`, `하면 좋은 말 / 피할 말`), FAQ 3개, 소제목 2문단·250자 이상, 잘 맞는 일주 이유 내 양쪽 일주 이름 포함 검증 추가
+
+2. **결정론 로직 요약**
+   - `lib/saju.ts`, `lib/trueSolarTime.ts`, `lib/compatibility.ts` 수정 없음(읽기 전용).
+   - `findIljuByBirthDate` 결정론 매핑 및 `lib/seo/iljuMeta.ts`의 60갑자 잘 맞는 일주 3종(① 위 글자 합 + 아래 글자 육합 단짝, ② 내가 마음을 자연스럽게 건네는 삼합 파트너, ③ 나를 든든히 북돋아 주는 삼합 파트너)은 순수 결정론 테이블로 고정되며, 본문은 빌드/요청 시점에 `data/seo/ilju-60.json` 정적 JSON만 읽습니다(런타임 AI 호출 0회).
+
+3. **테스트 결과(통과 수)**
+   - `npx next typegen` & `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: **79 files passed, 592 tests passed** (42 skipped) — `tests/iljuUniqueness.test.ts` (5/5), `tests/iljuSeo.test.ts` (6/6), `tests/hanjaGuard.test.ts`, `tests/clientPromptLeak.test.ts`, `tests/partnerReport.test.ts` 모두 통과
+   - `npm run build`: exit 0 (`/[locale]/ilju`, `/[locale]/ilju/[slug]`, `/api/ilju/check`, `/sitemap.xml` 정상 빌드)
+
+4. **보안 · PII · 결제 변경점**
+   - 결제·인증·DB 스키마 변경 없음.
+   - 생년월일은 기존과 동일하게 `POST /api/ilju/check` 요청 본문으로만 전달되어 `{ slug, name }`만 반환하며 URL·로그·DB 어디에도 남지 않음.
+   - `"use client"` 파일에서 `lib/seo/ilju.ts`나 `data/seo/ilju-60.json`을 import하지 않아 클라이언트 번들 비대화 및 서버 모듈 누출 없음(`tests/partnerReport.test.ts` 및 `tests/clientPromptLeak.test.ts` 검증 통과).
+
+5. **스스로 의심 지점 및 클로드에게 필요한 것**
+   - **의심 지점**: `goodAndAvoidWords` 소제목 본문에 실제 말투 대사 예시(하면 좋은 말 2개 + 피할 말 2개)를 자연스럽게 녹이기 위해 JSON 문자열 내부에서는 겹따옴표(`"`) 대신 낫표(`「...」`)와 작은따옴표(`'...'`)를 사용했습니다. 화면 가독성과 JSON 무결성 모두 양호하나 필요 시 문장부호 톤만 확인 부탁드립니다.
+   - **클로드에게 필요한 것**: 본문이 60장 전면 고유 텍스트(평균 4,908자, 중복률 0.00%)로 교체되었으므로 `main` 병합·배포 후 `/ko/ilju` 허브 1개 + `/ko/ilju/gapja` ~ `/ko/ilju/gyehae` 상세 60장(총 61개 URL) IndexNow 제출을 부탁드립니다.
+
+---
+
 # REVIEW_HANDOFF — argon/11-ilju-seo (일주 페이지 60장)
 
 > **작성 일시**: 2026-10-29
