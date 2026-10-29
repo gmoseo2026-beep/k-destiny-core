@@ -4,6 +4,7 @@ import { isViewableFor } from '@/lib/catalog';
 import { getEffectiveCatalog } from '@/lib/catalogVisibility';
 import { FORTUNE_TARGET_YEAR, ZODIAC } from '@/lib/seo/zodiac';
 import { pairSlugsWithContent, birthYearsWithContent } from '@/lib/seo/data';
+import { allIljuSlugs } from '@/lib/seo/ilju';
 
 /**
  * Public routes that should be indexed by search engines.
@@ -88,6 +89,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: SEO_PAGES_UPDATED,
       changeFrequency: 'monthly' as const,
       priority: 0.6,
+    })),
+    { url: canonicalUrlFor('/ilju'), lastModified: SITE_UPDATED, changeFrequency: 'monthly', priority: 0.7 },
+    ...allIljuSlugs().map((slug) => ({
+      url: canonicalUrlFor(`/ilju/${slug}`),
+      lastModified: SITE_UPDATED,
+      changeFrequency: 'monthly' as const,
+      priority: 0.65,
     })),
   ];
 
