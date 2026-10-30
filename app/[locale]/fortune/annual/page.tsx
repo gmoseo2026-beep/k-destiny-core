@@ -1,4 +1,4 @@
-import { createPageMetadata } from "@/lib/seo";
+import { buildAnnualFortuneMetadata } from "@/lib/seo";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
@@ -10,7 +10,17 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 // 제목·설명·canonical 은 lib/seo.ts 에서(이전에는 canonical 을 선언하지 않아 홈의 중복으로 처리됐다)
-export const generateMetadata = createPageMetadata("/fortune/annual");
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { locale } = await params;
+  const sp = searchParams ? await searchParams : {};
+  return buildAnnualFortuneMetadata(locale, sp.year === "2027" ? 2027 : 2026);
+}
 
 export default async function AnnualFortunePage({
   params,

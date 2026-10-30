@@ -313,6 +313,24 @@ export function buildPageMetadata(path: string, locale: string, opts: { inherite
  * Convenience factory for the thin server-side `layout.tsx` files that sit
  * next to each `"use client"` page (client components cannot export metadata).
  */
+/** 총운 화면은 ?year 로 연도가 갈린다. 2027 은 내용이 다른 페이지라 제목·설명·canonical 을 따로 둔다. */
+export function buildAnnualFortuneMetadata(locale: string, year: number): Metadata {
+  const base = buildPageMetadata('/fortune/annual', locale);
+  if (year !== 2027 || locale !== 'ko') return base;
+  const title = '2027년 신년 총운 무료 맛보기 — 붉은 양의 해 내 운세 | 콩닥';
+  const description =
+    '2027년 붉은 양의 해, 나의 한 해 흐름과 월별 운세, 연애·돈·일의 흐름을 생년월일로 다정하게 풀어 드려요. 무료로 먼저 볼 수 있어요.';
+  const url = `${canonicalUrlFor('/fortune/annual')}?year=2027`;
+  return {
+    ...base,
+    title: { absolute: title },
+    description,
+    alternates: { canonical: url },
+    openGraph: { ...base.openGraph, title, description, url },
+    twitter: { ...base.twitter, title, description },
+  };
+}
+
 export function createPageMetadata(path: string) {
   return async function generateMetadata({
     params,
