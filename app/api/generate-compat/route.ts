@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { GenerationConfig } from "@google/generative-ai";
 import {
   genAI,
   FREE_MODELS,
@@ -13,17 +14,30 @@ import { getClientIp, checkChatRateLimit } from "@/lib/rateLimiter";
 import prisma from "@/lib/prisma";
 import { logGeneration, errorCode } from "@/lib/reports/genLog";
 
-async function runGeminiOnce(prompt: string, models: string[]): Promise<string> {
+type GenConfig = GenerationConfig & { thinkingConfig?: { thinkingBudget: number } };
+
+// 무료 해석은 세 문장뿐인데 기본 설정이면 생각에만 3,200토큰·16초를 쓴다.
+// 2026-10-31 실측: 512 는 약 3초에 형식 25/25, 0 은 약 1초지만 형식이 어긋나고 자연물 비유가 늘었다.
+const FREE_THINKING_BUDGET = 512;
+
+async function runGeminiOnce(prompt: string, models: string[], thinkingBudget?: number): Promise<string> {
+  const request =
+    thinkingBudget === undefined
+      ? prompt
+      : {
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { thinkingConfig: { thinkingBudget } } as GenConfig as GenerationConfig,
+        };
   let modelName = models[0];
   try {
     const model = genAI.getGenerativeModel({ model: modelName });
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(request);
     return result.response.text();
   } catch (e) {
     console.error(`Failed with ${modelName}, trying fallback`, e);
     modelName = models[1];
     const fallbackModel = genAI.getGenerativeModel({ model: modelName });
-    const fallbackResult = await fallbackModel.generateContent(prompt);
+    const fallbackResult = await fallbackModel.generateContent(request);
     return fallbackResult.response.text();
   }
 }
@@ -97,7 +111,8 @@ export async function POST(req: NextRequest) {
 
     // 6. Generate via Gemini (with 1 regeneration retry if foreign language validation fails)
     const models = isPremium ? PREMIUM_MODELS : FREE_MODELS;
-    let resultText = await runGeminiOnce(prompt, models);
+    const thinkingBudget = isPremium ? undefined : FREE_THINKING_BUDGET;
+    let resultText = await runGeminiOnce(prompt, models, thinkingBudget);
 
     if (targetLang) {
       let check = validateCompatOutputLanguage(resultText, targetLang);
@@ -105,7 +120,7 @@ export async function POST(req: NextRequest) {
         console.warn(
           `[generate-compat] Foreign output validation failed (${targetLang}: ${check.reason}), retrying once...`
         );
-        resultText = await runGeminiOnce(prompt, models);
+        resultText = await runGeminiOnce(prompt, models, thinkingBudget);
         check = validateCompatOutputLanguage(resultText, targetLang);
         if (!check.ok) {
           void logGeneration({
