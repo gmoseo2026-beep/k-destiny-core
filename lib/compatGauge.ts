@@ -231,7 +231,8 @@ export function buildCompatTopBannerCopy(publicBreakdown: unknown): {
   banner: "axis" | "default";
 } {
   const lowest = lowestPublicAxis(publicBreakdown);
-  if (!lowest) {
+  // 세 항목이 모두 만점이면 "30/30점, 어디서 부딪힐까?"가 말이 안 되므로 기본 문구를 쓴다.
+  if (!lowest || lowest.score >= lowest.max) {
     return { title: DEFAULT_COMPAT_TOP_BANNER_TITLE, banner: "default" };
   }
   return {

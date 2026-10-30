@@ -140,6 +140,13 @@ describe("20 궁합 잠금 배너 최저 비율 공개 지표 (argon/20-compat-b
     }
   });
 
+  it("4-1) 세 항목이 모두 만점이면 점수 문구 대신 기본 제목을 쓴다", () => {
+    expect(buildCompatTopBannerCopy({ stem: 30, balance: 10, yinYang: 10 })).toEqual({
+      title: DEFAULT_COMPAT_TOP_BANNER_TITLE,
+      banner: "default",
+    });
+  });
+
   it("5) 공개 3축의 모든 유효 조합(36가지) 및 기본 문구에 한자·사주 전문용어·위험/%·단정적 예언이 없다", () => {
     const stems = [30, 25, 20, 10] as const;
     const balances = [10, 7, 4] as const;
@@ -154,6 +161,11 @@ describe("20 궁합 잠금 배너 최저 비율 공개 지표 (argon/20-compat-b
           const axis = lowestPublicAxis({ stem, balance, yinYang });
           expect(axis).not.toBeNull();
           const copy = buildCompatTopBannerCopy({ stem, balance, yinYang });
+          if (stem === 30 && balance === 10 && yinYang === 10) {
+            expect(copy.banner).toBe("default");
+            copiesToCheck.push(copy.title);
+            continue;
+          }
           expect(copy.banner).toBe("axis");
           expect(copy.title).toBe(
             `우리 '${axis!.label}' ${axis!.score}/${axis!.max}점, 어디서 부딪힐까?`,
