@@ -1,3 +1,5 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
@@ -31,6 +33,20 @@ const {
 
 vi.mock("next-auth", () => ({
   getServerSession: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock("@/i18n/routing", () => ({
+  Link: () => null,
+  usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("@/app/api/auth/[...nextauth]/route", () => ({
@@ -97,12 +113,20 @@ import {
 import {
   ASK_THREE_CHIPS,
   validateAskThreeQuestions,
+  validateSingleAskQuestion,
 } from "@/lib/askThreeSafety";
+import AskThreeWidget from "@/components/report/AskThreeWidget";
 import { buildAskThreePrompt } from "@/lib/prompts/askThree";
 import { POST as createOrderPost } from "@/app/api/payments/order/route";
 import { POST as generateReportPost } from "@/app/api/reports/generate/route";
 
-describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
+const FIRST_THREE_CHIPS: [string, string, string] = [
+  ASK_THREE_CHIPS[0],
+  ASK_THREE_CHIPS[1],
+  ASK_THREE_CHIPS[2],
+];
+
+describe("Argon 14 & 18 — 두근이에게 묻기 (ask_three & 추천 질문 칩 7종)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("SUBJECT_HASH_SECRET", "test-subject-hash-secret-32chars-minimum!!");
@@ -130,17 +154,43 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
     expect(getAllProducts().some((p) => p.id === "ask_three")).toBe(false);
   });
 
-  it("추천 질문 칩 3종과 일상 연애 질문은 안전 필터를 통과한다", () => {
+  it("추천 질문 칩 7종 모두가 개별 검증 및 모든 3개 조합(35가지)에서 validateAskThreeQuestions 안전 필터를 통과하고 가로 스크롤로 렌더링된다", () => {
     expect(ASK_THREE_CHIPS).toEqual([
       "내가 먼저 연락하면 어떨까?",
       "이번 달 안에 만나자고 해도 될까?",
       "그 사람이 원하는 연락 속도는?",
+      "읽씹 3일째인데 먼저 연락해도 될까?",
+      "이번 주말 약속 잡으려면 어떻게 말하면 좋을까?",
+      "다툰 뒤에 먼저 사과하는 게 나을까?",
+      "고백하기 좋은 분위기는 어떤 때일까?",
     ]);
-    const chipRes = validateAskThreeQuestions([...ASK_THREE_CHIPS]);
-    expect(chipRes).toEqual({
-      ok: true,
-      questions: [...ASK_THREE_CHIPS],
-    });
+    expect(ASK_THREE_CHIPS).toHaveLength(7);
+
+    // 7개 각 칩 단독 검증
+    for (const chip of ASK_THREE_CHIPS) {
+      expect(validateSingleAskQuestion(chip, 0)).toBeNull();
+    }
+
+    // 7개 중 임의의 3개 조합 35가지 전수 validateAskThreeQuestions 통과 검증
+    let comboCount = 0;
+    for (let i = 0; i < ASK_THREE_CHIPS.length; i++) {
+      for (let j = i + 1; j < ASK_THREE_CHIPS.length; j++) {
+        for (let k = j + 1; k < ASK_THREE_CHIPS.length; k++) {
+          const triple: [string, string, string] = [
+            ASK_THREE_CHIPS[i],
+            ASK_THREE_CHIPS[j],
+            ASK_THREE_CHIPS[k],
+          ];
+          const res = validateAskThreeQuestions(triple);
+          expect(res).toEqual({
+            ok: true,
+            questions: triple,
+          });
+          comboCount++;
+        }
+      }
+    }
+    expect(comboCount).toBe(35);
 
     const normalRes = validateAskThreeQuestions([
       "장거리 연애를 시작해도 서로 지치지 않을까?",
@@ -148,6 +198,21 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       "정성을 보이면 상대방도 조금씩 마음을 열어 줄까?",
     ]);
     expect(normalRes.ok).toBe(true);
+
+    // 위젯 펼침 상태 렌더링: 7개 칩 모두 포함 + 가로 스크롤(overflow-x-auto) 및 줄바꿈 방지(whitespace-nowrap shrink-0)
+    const html = renderToStaticMarkup(
+      React.createElement(AskThreeWidget, {
+        compatId: "compat_ask_1",
+        locale: "ko",
+        fromProductId: "inner_mind",
+        defaultOpen: true,
+      }),
+    );
+    for (const chip of ASK_THREE_CHIPS) {
+      expect(html).toContain(chip);
+    }
+    expect(html).toContain("overflow-x-auto");
+    expect(html).toContain("whitespace-nowrap");
   });
 
   it("결제 전 안전장치: 건강·법률·돈·임신·자해·폭력·제3자 실명·연락처 질문을 모두 차단한다", () => {
@@ -178,8 +243,9 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       }
     }
 
-    // 중복 질문 및 개수 부족 거부
+    // 중복 질문 및 개수 부족/초과 거부
     expect(validateAskThreeQuestions([ASK_THREE_CHIPS[0], ASK_THREE_CHIPS[1]]).ok).toBe(false);
+    expect(validateAskThreeQuestions([...ASK_THREE_CHIPS]).ok).toBe(false);
     expect(
       validateAskThreeQuestions([ASK_THREE_CHIPS[0], ASK_THREE_CHIPS[0], ASK_THREE_CHIPS[2]]).ok,
     ).toBe(false);
@@ -217,7 +283,7 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       body: JSON.stringify({
         productId: "ask_three",
         compatId: "compat_ask_1",
-        askQuestions: [...ASK_THREE_CHIPS],
+        askQuestions: FIRST_THREE_CHIPS,
       }),
     });
     const validRes = await createOrderPost(validReq);
@@ -226,7 +292,7 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
     expect(validJson.amount).toBe(4900);
     expect(validJson.orderName).toBe("그 사람에 대해 묻고 싶은 3가지");
     expect(mockOrderCreate).toHaveBeenCalledTimes(1);
-    expect(mockOrderCreate.mock.calls[0][0].data.askQuestions).toEqual([...ASK_THREE_CHIPS]);
+    expect(mockOrderCreate.mock.calls[0][0].data.askQuestions).toEqual(FIRST_THREE_CHIPS);
   });
 
   it("프롬프트 근거: 같은 compatId의 결정론 컨텍스트·기본 궁합 요약·기존 커플 리포트 요약·질문 3개·단정 금지/오락 고지를 포함한다", () => {
@@ -234,7 +300,7 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       contextBlock: "DETERMINISTIC COMPATIBILITY RESULT: Overall Score: 84 / 100",
       score: 84,
       toneGuide: "다정한 한국어 존댓말",
-      questions: [...ASK_THREE_CHIPS],
+      questions: FIRST_THREE_CHIPS,
       compatSummaryKo: "서로 조심스럽게 다가가는 따뜻한 흐름이에요.",
       priorReports: [
         {
@@ -248,9 +314,9 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
     expect(prompt).toContain("DETERMINISTIC COMPATIBILITY RESULT");
     expect(prompt).toContain("서로 조심스럽게 다가가는 따뜻한 흐름이에요.");
     expect(prompt).toContain("[그 사람의 속마음] 먼저 다가오고 싶지만 망설이는 마음");
-    expect(prompt).toContain(ASK_THREE_CHIPS[0]);
-    expect(prompt).toContain(ASK_THREE_CHIPS[1]);
-    expect(prompt).toContain(ASK_THREE_CHIPS[2]);
+    expect(prompt).toContain(FIRST_THREE_CHIPS[0]);
+    expect(prompt).toContain(FIRST_THREE_CHIPS[1]);
+    expect(prompt).toContain(FIRST_THREE_CHIPS[2]);
     expect(prompt).toContain("단정적으로 예언하지 않는다");
     expect(prompt).toContain("오락");
   });
@@ -267,7 +333,7 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       amount: 4900,
       status: "PAID",
       provider: "portone",
-      askQuestions: [...ASK_THREE_CHIPS],
+      askQuestions: FIRST_THREE_CHIPS,
       unlocks: [
         {
           id: "u_ask_1",
@@ -284,9 +350,9 @@ describe("Argon 14 — 두근이에게 묻기 (ask_three)", () => {
       headline: "조급함만 내려놓으면 대화가 자연스럽게 이어져요",
       summary: "두 사람의 기운은 천천히 온도를 맞출 때 가장 편안해요. 가벼운 안부부터 시작해 보세요.",
       sections: [
-        { key: "answer_1", title: `Q1. ${ASK_THREE_CHIPS[0]}`, body: "가벼운 근황 한 줄로 먼저 말을 건네면 반갑게 받아 줄 흐름이에요." },
-        { key: "answer_2", title: `Q2. ${ASK_THREE_CHIPS[1]}`, body: "부담 없는 짧은 식사나 커피 약속으로 제안하면 좋겠어요." },
-        { key: "answer_3", title: `Q3. ${ASK_THREE_CHIPS[2]}`, body: "즉답을 재촉하기보다 하루 두세 번 여유 있는 템포를 편안해해요." },
+        { key: "answer_1", title: `Q1. ${FIRST_THREE_CHIPS[0]}`, body: "가벼운 근황 한 줄로 먼저 말을 건네면 반갑게 받아 줄 흐름이에요." },
+        { key: "answer_2", title: `Q2. ${FIRST_THREE_CHIPS[1]}`, body: "부담 없는 짧은 식사나 커피 약속으로 제안하면 좋겠어요." },
+        { key: "answer_3", title: `Q3. ${FIRST_THREE_CHIPS[2]}`, body: "즉답을 재촉하기보다 하루 두세 번 여유 있는 템포를 편안해해요." },
         { key: "closing_advice", title: "세 가지 답을 잇는 지금의 방향", body: "상대의 속도를 존중하면서도 내 호감을 숨기지 않는 균형이 도움이 돼요." },
       ],
       advice: {

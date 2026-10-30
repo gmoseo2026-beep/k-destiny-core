@@ -21,18 +21,20 @@ export interface AskThreeWidgetProps {
   compatId: string;
   locale: string;
   fromProductId: string;
+  defaultOpen?: boolean;
 }
 
 export default function AskThreeWidget({
   compatId,
   locale,
   fromProductId,
+  defaultOpen = false,
 }: AskThreeWidgetProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const product = getProduct("ask_three");
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [questions, setQuestions] = useState<[string, string, string]>(["", "", ""]);
   const [activeSlot, setActiveSlot] = useState<0 | 1 | 2>(0);
   const [blockedIndex, setBlockedIndex] = useState<0 | 1 | 2 | null>(null);
@@ -159,7 +161,7 @@ export default function AskThreeWidget({
   return (
     <section
       aria-label="두근이에게 묻기"
-      className="w-full rounded-2xl border border-[#FF5C77]/30 bg-gradient-to-b from-[#2A1635] to-[#1C1024] p-5 text-left shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
+      className="w-full min-w-0 overflow-hidden rounded-2xl border border-[#FF5C77]/30 bg-gradient-to-b from-[#2A1635] to-[#1C1024] p-5 text-left shadow-[0_8px_28px_rgba(0,0,0,0.35)]"
     >
       <div className="flex items-start gap-3">
         <div className="shrink-0">
@@ -207,7 +209,7 @@ export default function AskThreeWidget({
               <Sparkles className="w-3 h-3" />
               <span>눌러서 바로 넣는 추천 질문</span>
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label="추천 질문 목록" className="-mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ASK_THREE_CHIPS.map((chip) => {
                 const isSelected = questions.some((q) => q.trim() === chip);
                 return (
@@ -215,7 +217,7 @@ export default function AskThreeWidget({
                     key={chip}
                     type="button"
                     onClick={() => handleChipClick(chip)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold border transition-all active:scale-[0.96] text-left ${
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold border transition-all active:scale-[0.96] ${
                       isSelected
                         ? "bg-[#FF5C77]/20 border-[#FF5C77] text-[#F6EEF3]"
                         : "bg-[#140B18] border-white/10 text-[#B9A9BF] hover:text-[#F6EEF3] hover:border-white/25"

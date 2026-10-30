@@ -11,6 +11,10 @@ export const ASK_THREE_CHIPS = [
   "내가 먼저 연락하면 어떨까?",
   "이번 달 안에 만나자고 해도 될까?",
   "그 사람이 원하는 연락 속도는?",
+  "읽씹 3일째인데 먼저 연락해도 될까?",
+  "이번 주말 약속 잡으려면 어떻게 말하면 좋을까?",
+  "다툰 뒤에 먼저 사과하는 게 나을까?",
+  "고백하기 좋은 분위기는 어떤 때일까?",
 ] as const;
 
 export const ASK_THREE_ENTERTAINMENT_NOTICE =
