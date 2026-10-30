@@ -116,7 +116,7 @@ export default function HomeExplore({
       {/* 2. 3:4 포스터 슬라이드 (폭 86%, 양옆 다음 카드 노출, 우상단 1/4) */}
       <HomeHeroCompact locale={locale} now={now} />
 
-      {/* 2-1. 2027 신년 시즌 첫 추천 (KST 2026-11-01 00:00 자동 전환: annual_2027 · premium_2027_daeun · set_2027) */}
+      {/* 2-1. 2027 신년 시즌 첫 추천 (KST 2026-12-01 00:00 자동 전환: annual_2027 · premium_2027_daeun · set_2027) */}
       {selectedChip === "all" && seasonFirstRecommendations.length > 0 && (
         <section
           className="w-full max-w-[480px] mx-auto px-4 mt-6"

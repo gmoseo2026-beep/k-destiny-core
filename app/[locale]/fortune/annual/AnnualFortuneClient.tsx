@@ -2,19 +2,21 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import KongdakMascot from "@/components/KongdakMascot";
 import FortuneLoading from "@/components/FortuneLoading";
 import dynamic from "next/dynamic";
 import { requestPortOnePayment, BuyerInfo, recallOrderToken } from "@/lib/payments/client";
 import { grantingCatalogIds } from "@/lib/productIdentity";
-import { loadLastPerson, saveLastPerson } from "@/lib/reportHandoff";
+import { loadLastPerson, saveLastPerson, savePendingInput } from "@/lib/reportHandoff";
 import { forgetDeviceOrder } from "@/lib/payments/deviceOrders";
-import { CalendarTypeToggle, resolveRawDateToSolar } from "@/components/forms/BirthFields";
+import { CalendarTypeToggle, parseBirthInput, resolveRawDateToSolar } from "@/components/forms/BirthFields";
 import { savePersonLunarNotice, loadPersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import GuestKeepBanner from "@/components/GuestKeepBanner";
 import SetUpgradeBanner from "@/components/payments/SetUpgradeBanner";
 import { splitLeadSentence, clampGaugePercent } from "@/lib/reportSectionLead";
 import {
+  checkoutOptionsFor,
   getProduct,
   getProductCover,
   priceLabel,
@@ -57,6 +59,7 @@ interface AnnualFortuneClientProps {
   year?: number;
   initialHasProfile?: boolean;
   isLoggedIn?: boolean;
+  visibleIds?: string[];
 }
 
 interface SectionItem {
@@ -125,6 +128,30 @@ function loadGuestAnnualInput(): GuestAnnualInput | null {
   return last ? { dob: last.dob, time: last.time, gender: last.gender, name: last.name || "나" } : null;
 }
 
+/** 입력 칸의 오전/오후·시·분을 "HH:MM" 으로. 시간을 안 넣었으면 null. */
+export function annualBirthTime(ampm: string, hour: string, min: string): string | null {
+  if (!ampm) return null;
+  let h = parseInt(hour, 10);
+  if (ampm === "PM" && h < 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  return `${h.toString().padStart(2, "0")}:${min.padStart(2, "0")}`;
+}
+
+/** 다른 화면에서 넣어 둔 내 정보(같은 탭)로 입력 칸을 채운다. 분 칸은 5분 단위 숫자 값이라 "00" → "0". */
+export function annualFormPrefill(last: { name?: string | null; dob: string; time: string | null; gender: string }) {
+  const v = parseBirthInput(last);
+  return {
+    name: v.name,
+    birthYear: v.year,
+    birthMonth: v.month,
+    birthDay: v.day,
+    gender: v.gender,
+    ampm: v.ampm,
+    hour: v.hour,
+    min: String(parseInt(v.min, 10) || 0),
+  };
+}
+
 const SECTION_CONFIG = [
   { key: "love", title: "연애 & 애정운", icon: Heart, color: "text-coral", bg: "bg-coral/10" },
   { key: "money", title: "재물 & 금전운", icon: Coins, color: "text-[#FFC24B]", bg: "bg-[#FFC24B]/10" },
@@ -172,8 +199,10 @@ export default function AnnualFortuneClient({
   locale,
   year = 2026,
   initialHasProfile = false,
+  visibleIds,
 }: AnnualFortuneClientProps) {
   const { data: session } = useSession();
+  const router = useRouter();
 
   const [data, setData] = useState<AnnualFortuneData | null>(null);
   const [sajuDisplay, setSajuDisplay] = useState<SajuDisplayPerson[]>([]);
@@ -182,6 +211,10 @@ export default function AnnualFortuneClient({
 
   const annualProduct = getProduct(`annual_${year}`);
   const annualPrice = annualProduct ? priceLabel(annualProduct) : "4,900원";
+  // 결제 창에서 고른 상품(총운 단품 또는 총운이 든 세트)
+  const [checkoutId, setCheckoutId] = useState(`annual_${year}`);
+  const checkoutProduct = getProduct(checkoutId) ?? annualProduct;
+  const isSetCheckout = checkoutProduct?.type === "SET";
   const seasonPromo = getAnnualSeasonPromo(year);
 
   // Input form state (for guests or users without profile)
@@ -231,8 +264,10 @@ export default function AnnualFortuneClient({
         queueMicrotask(() => setLunarNotice(existingNotice));
       }
       const stored = sessionStorage.getItem("kongdak_guest_fortune_input");
-      if (stored) {
-        const parsed = JSON.parse(stored);
+      const storedInput = stored ? JSON.parse(stored) : null;
+      const last = storedInput?.birthYear ? null : loadLastPerson();
+      const parsed = storedInput?.birthYear ? storedInput : last ? annualFormPrefill(last) : null;
+      if (parsed) {
         queueMicrotask(() => {
           if (parsed.name) {
             setName(parsed.name);
@@ -284,6 +319,7 @@ export default function AnnualFortuneClient({
           birthMonth: resolvedSolar?.month || month,
           birthDay: resolvedSolar?.day || day,
           dob: resolvedSolar?.dob || undefined,
+          time: annualBirthTime(ampm, hour, min),
           gender,
           ampm,
           hour,
@@ -1268,11 +1304,15 @@ export default function AnnualFortuneClient({
 
       {/* Guest Checkout Modal */}
       <GuestCheckoutModal
+        productId={checkoutId}
+        options={checkoutOptionsFor(annualProduct, visibleIds ?? [])}
+        selectedId={checkoutId}
+        onSelect={(id) => setCheckoutId(id)}
         isOpen={checkoutModalOpen}
         onClose={() => setCheckoutModalOpen(false)}
-        title={`${year} 총운 리포트 열람`}
-        orderName={annualProduct?.name || `콩닥 ${year} 신년 총운 리포트`}
-        priceLabel={annualPrice}
+        title={isSetCheckout ? `${checkoutProduct?.name} 열람` : `${year} 총운 리포트 열람`}
+        orderName={checkoutProduct?.name || `콩닥 ${year} 신년 총운 리포트`}
+        priceLabel={checkoutProduct ? priceLabel(checkoutProduct) : annualPrice}
         initialName={session?.user?.name || ""}
         initialEmail={session?.user?.email || ""}
         initialPhone=""
@@ -1280,18 +1320,26 @@ export default function AnnualFortuneClient({
         onSubmit={async (buyer: BuyerInfo) => {
           try {
             setIsProcessingPayment(true);
+            // 세트의 재물·취업 리포트는 /report/new 가 이 입력값으로 만든다(모바일 결제 복귀 후에도 같은 탭에 남는다).
+            // 프로필로 보는 회원은 넣지 않는다 — 같은 탭에 남은 다른 사람 정보로 만들면 안 된다.
+            if (isSetCheckout && (resolvedSolar?.dob || !session?.user?.id)) {
+              const input = loadGuestAnnualInput();
+              if (input) savePendingInput(checkoutId, input);
+            }
             const res = await requestPortOnePayment({
-              productId: `annual_${year}`,
+              productId: checkoutId,
               buyer,
               locale,
             });
             if (res.ok) {
               trackEvent("purchase_confirmed", {
-                productId: `annual_${year}`,
-                tier: annualProduct?.tier || "standard",
+                productId: checkoutId,
+                tier: checkoutProduct?.tier || "standard",
                 amount: res.amount,
               });
-              if (session?.user?.id) {
+              if (isSetCheckout) {
+                router.push(`/${locale}/report/new?c=${checkoutId}`);
+              } else if (session?.user?.id) {
                 fetchFortune();
               } else {
                 const input = loadGuestAnnualInput();

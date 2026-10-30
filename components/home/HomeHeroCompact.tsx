@@ -38,7 +38,7 @@ export interface HeroPosterSlide {
   getHref: (locale: string) => string;
 }
 
-/** 2026-11-01 00:00 KST(lib/season.ts 단일 설정)부터 2027 신년운·2027 대운이 앞장(②③①④)으로 자동 전환된다. */
+/** 2026-12-01 00:00 KST(lib/season.ts 단일 설정)부터 2027 신년운·2027 대운이 앞장(②③①④)으로 자동 전환된다. */
 export const HERO_2027_FIRST_FROM = SEASON_2027_STARTS_AT;
 
 export const HERO_POSTER_SLIDES: readonly HeroPosterSlide[] = [
@@ -88,7 +88,7 @@ export const HERO_POSTER_SLIDES: readonly HeroPosterSlide[] = [
 /**
  * 시각(now)에 따른 홈 상단 큰 카드 4장 순서 (lib/season.ts 단일 기준):
  * - 2026-10-31 23:59:59 KST까지: ① 속마음 → ② 2027 신년운 → ③ 2027 대운 → ④ 정통 궁합
- * - 2026-11-01 00:00:00 KST부터: ② 2027 신년운 → ③ 2027 대운 → ① 속마음 → ④ 정통 궁합
+ * - 2026-12-01 00:00:00 KST부터: ② 2027 신년운 → ③ 2027 대운 → ① 속마음 → ④ 정통 궁합
  */
 export function getHeroPosterSlides(now: number = Date.now()): HeroPosterSlide[] {
   const byId = new Map(HERO_POSTER_SLIDES.map((s) => [s.id, s]));

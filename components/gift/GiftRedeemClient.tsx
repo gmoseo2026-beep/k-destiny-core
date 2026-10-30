@@ -7,9 +7,10 @@ import Image from "next/image";
 import { Gift, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import KongdakMascot from "@/components/KongdakMascot";
 import BirthFields, {
-  formatBirthInput,
+  resolveBirthValuesToSolar,
   type BirthValues,
 } from "@/components/forms/BirthFields";
+import { saveCompatLunarNotices, savePersonLunarNotice } from "@/lib/lunarNoticeStorage";
 import { getProductCover, type InputKind, type ProductTarget } from "@/lib/catalog";
 import { formatGiftHeadline } from "@/lib/giftCopy";
 import { rememberOrderToken } from "@/lib/payments/client";
@@ -38,6 +39,17 @@ export interface GiftViewData {
 interface GiftRedeemClientProps {
   locale: string;
   gift: GiftViewData;
+}
+
+type GiftBirthInput = { name: string; dob: string; time: string | null; gender: "F" | "M" };
+
+/** 음력으로 넣었으면 양력으로 바꾼 값을 돌려준다(사주는 양력 날짜로 계산한다). */
+export async function resolveGiftBirth(
+  v: BirthValues
+): Promise<{ ok: true; input: GiftBirthInput; notice: string | null } | { ok: false; error: string }> {
+  const resolved = await resolveBirthValuesToSolar(v);
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  return { ok: true, input: resolved.formatted, notice: resolved.notice };
 }
 
 const EMPTY_BIRTH: BirthValues = {
@@ -107,16 +119,25 @@ export default function GiftRedeemClient({ locale, gift }: GiftRedeemClientProps
     setErrorMsg(null);
 
     let createdCompatId: string | null = null;
-    let formattedPerson: ReturnType<typeof formatBirthInput> | null = null;
-    let formattedA: ReturnType<typeof formatBirthInput> | null = null;
-    let formattedB: ReturnType<typeof formatBirthInput> | null = null;
+    let formattedPerson: GiftBirthInput | null = null;
+    let formattedA: GiftBirthInput | null = null;
+    let formattedB: GiftBirthInput | null = null;
+    let personNotice: string | null = null;
+    let noticeA: string | null = null;
+    let noticeB: string | null = null;
 
     if (!isSpecialPremium && !isCouple) {
       if (!personValues.year || !personValues.month || !personValues.day) {
         setErrorMsg("생년월일을 모두 선택해 주세요.");
         return;
       }
-      formattedPerson = formatBirthInput(personValues);
+      const resolved = await resolveGiftBirth(personValues);
+      if (!resolved.ok) {
+        setErrorMsg(resolved.error);
+        return;
+      }
+      formattedPerson = resolved.input;
+      personNotice = resolved.notice;
     } else if (isCouple) {
       if (
         !personAValues.year ||
@@ -129,11 +150,23 @@ export default function GiftRedeemClient({ locale, gift }: GiftRedeemClientProps
         setErrorMsg("두 분의 생년월일을 모두 선택해 주세요.");
         return;
       }
-      formattedA = formatBirthInput(personAValues);
-      formattedB = formatBirthInput({
+      const resolvedA = await resolveGiftBirth(personAValues);
+      if (!resolvedA.ok) {
+        setErrorMsg(resolvedA.error);
+        return;
+      }
+      const resolvedB = await resolveGiftBirth({
         ...personBValues,
         name: personBValues.name.trim() || "그 사람",
       });
+      if (!resolvedB.ok) {
+        setErrorMsg(resolvedB.error);
+        return;
+      }
+      formattedA = resolvedA.input;
+      formattedB = resolvedB.input;
+      noticeA = resolvedA.notice;
+      noticeB = resolvedB.notice;
     }
 
     setSubmitting(true);
@@ -156,6 +189,7 @@ export default function GiftRedeemClient({ locale, gift }: GiftRedeemClientProps
           );
         }
         createdCompatId = String(compatJson.id);
+        saveCompatLunarNotices([compatJson.shareToken, createdCompatId], { aNotice: noticeA, bNotice: noticeB });
       }
 
       const redeemRes = await fetch(`/api/gift/${encodeURIComponent(gift.code)}/redeem`, {
@@ -203,6 +237,7 @@ export default function GiftRedeemClient({ locale, gift }: GiftRedeemClientProps
       }
 
       if (formattedPerson) {
+        savePersonLunarNotice(personNotice, gift.catalogId);
         savePendingInput(gift.catalogId, formattedPerson);
         saveLastPerson(formattedPerson);
         try {

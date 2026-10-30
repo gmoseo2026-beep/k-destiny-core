@@ -86,7 +86,7 @@ export default async function Home({ params }: PageProps) {
         </>
       )}
 
-      {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + (11/1부터 2027 신년 추천) + 인기 TOP 5 + 2열 포스터 격자 */}
+      {/* 영역 1~3: 카테고리 칩 + 3:4 포스터 슬라이드 + (12/1부터 2027 신년 추천) + 인기 TOP 5 + 2열 포스터 격자 */}
       <HomeExplore
         locale={locale}
         products={visibleProducts}

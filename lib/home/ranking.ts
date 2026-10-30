@@ -65,7 +65,7 @@ export function computeHomeRanking(
     }
   }
 
-  // 20건 미만 또는 집계 가능 상품 부족 시 fallback (2026-11-01 00:00 KST부터는 2027 대표 상품 우선)
+  // 20건 미만 또는 집계 가능 상품 부족 시 fallback (2026-12-01 00:00 KST부터는 2027 대표 상품 우선)
   const fallback = sortFallbackRecommendations(visibleProducts, now).slice(0, 4);
 
   return {

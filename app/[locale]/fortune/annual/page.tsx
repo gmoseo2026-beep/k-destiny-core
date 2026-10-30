@@ -2,6 +2,9 @@ import { createPageMetadata } from "@/lib/seo";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prisma from "@/lib/prisma";
+import { isViewableFor } from "@/lib/catalog";
+import { getEffectiveCatalog } from "@/lib/catalogVisibility";
+import { canPreview } from "@/lib/preview";
 import AnnualFortuneClient from "./AnnualFortuneClient";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -31,6 +34,11 @@ export default async function AnnualFortunePage({
     hasProfile = Boolean(profile);
   }
 
+  const preview = canPreview(session?.user?.email);
+  const visibleIds = (await getEffectiveCatalog())
+    .filter((p) => isViewableFor(p, preview))
+    .map((p) => p.id);
+
   return (
     <main className="min-h-screen bg-[#140B18] text-[#F6EEF3] px-4 py-8 sm:py-12 flex flex-col items-center">
       <header className="w-full max-w-md md:max-w-2xl flex items-center justify-between mb-6">
@@ -57,6 +65,7 @@ export default async function AnnualFortunePage({
         year={year}
         initialHasProfile={hasProfile}
         isLoggedIn={Boolean(session?.user?.id)}
+        visibleIds={visibleIds}
       />
     </main>
   );
