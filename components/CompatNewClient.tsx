@@ -327,6 +327,8 @@ export default function CompatNewClient({
         const a = split(me);
         queueMicrotask(() => {
           if (me.name && me.name !== "나") setNameA(me.name);
+          setGenderB(me.gender === "M" ? "F" : "M");
+          if (!initialInviteMode) setStep(2);
           setYearA(a.y); setMonthA(a.m); setDayA(a.d); setGenderA(me.gender);
           setAmpmA(a.ampm); setHourA(a.hour); setMinA(a.min);
         });
