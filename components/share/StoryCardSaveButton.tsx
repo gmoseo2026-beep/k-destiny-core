@@ -9,7 +9,7 @@ export interface StoryCardSaveButtonProps {
   /** `/api/og/story?...` 경로 (개인정보 미포함) */
   storyUrl: string;
   /** GA4 이벤트 구분용 화면 출처 */
-  source: "compat_result" | "free_personality";
+  source: "compat_result" | "free_personality" | "compat_teaser";
   /** 저장 파일 이름 (기본 kongdak_story_card.png — 실명·생년월일 미포함) */
   fileName?: string;
   label?: string;
