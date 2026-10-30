@@ -1,3 +1,28 @@
+# REVIEW_HANDOFF — Argon 19 (`argon/19-share-new-compat`: 공유 방문자에게 "나도 궁합 보기"를 위로)
+
+> **작성 일시**: 2026-10-30
+> **기반 브랜치**: `origin/main` (`5f17f7d`)
+
+1. **바뀐 파일**
+   - `components/CompatResultClient.tsx`: `refToken`이 존재하고 결제 전(`!isPremium && !unlockToken && !deepReport`)이며 초대 수령자(`!isInviteReceiver`)가 아닐 때, 점수 카드 바로 아래에 `"나도 그 사람과 30초 무료 궁합 보기 →"` 카드(`ShareVisitorNewCompatCard`, `buildShareVisitorNewCompatHref`)를 노출하도록 추가. 링크는 맨 아래 기존 링크와 동일한 `/${locale}/compat/new?ref=${encodeURIComponent(refToken)}`을 사용하며 맨 아래 기존 링크는 그대로 유지. 클릭 시 `share_visitor_new_compat_click { compatId }` GA4 이벤트만 발사(생년월일·이름 등 다른 값 미포함).
+   - `tests/shareVisitorNewCompat.test.ts` (신규): `refToken` 유무별 렌더링 여부(하단 기존 링크 보존 및 점수 카드 직후 위치 포함), 초대 수령자(`via=invite_receiver` / `isInviteReceiver`)·결제 후(`isPremium` / `unlockToken` / `hasDeepReport`) 미노출, `href`에 `/{locale}/compat/new`와 `ref` 외의 값이 없는지 및 클릭 GA4 페이로드(`{ compatId }` 단독) 단위 테스트 3종.
+2. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint components/CompatResultClient.tsx tests/shareVisitorNewCompat.test.ts`: 0 errors
+   - `npx vitest run`: **96 files passed, 679 tests passed** (44 skipped) — `tests/shareVisitorNewCompat.test.ts` 3/3 통과
+   - `npm run build`: exit 0
+3. **모바일 390px 화면 확인 결과 (직접 화면에서 확인한 것)**
+   - 프로덕션 빌드 서버 + Puppeteer 모바일 뷰포트(`390×844`)로 실제 궁합 결과 화면을 3가지 상태로 확인:
+     1) `?ref` 없이 진입 시 상단 카드 미노출(`hasCard = false`), 맨 아래 기존 링크 유지(`hasBottomLink = true`), 가로 넘침 없음(`scrollW = 390`, `clientW = 390`).
+     2) `?ref=<shareToken>`으로 진입 시 점수 카드 바로 아래에 `"나도 그 사람과 30초 무료 궁합 보기 →"` 단일 행 카드(`316×40px`, `href = "/ko/compat/new?ref=<shareToken>"`) 정상 노출, 가로 넘침·줄바꿈 잘림 없음(`scrollW = 390`, `clientW = 390`).
+     3) `?ref=<shareToken>&via=invite_receiver`로 진입 시 상단 카드 미노출(`hasCard = false`) 확인.
+4. **스스로 의심하는 점**
+   - 없음 (`CompatResultClient` 마운트 후 `window.history.replaceState`로 주소창 쿼리에 `ref`를 붙이는 기존 동작은 서버가 내려준 `refToken` prop을 바꾸지 않으므로, 최초 작성자 진입에서는 안 뜨고 공유 링크 진입이나 새로고침으로 `refToken` prop이 들어올 때만 정확히 노출됨).
+5. **클로드에게 필요한 것**
+   - 없음 (법률 문구·DB·결제 변경 없음).
+
+---
+
 # REVIEW_HANDOFF — Argon 16 (`argon/16-ilju-bridge`: 일주 페이지 → 궁합 바로 연결)
 # REVIEW_HANDOFF — Argon 17 (`argon/17-teaser-story`: 커플 상품 미리보기 스토리 카드 버튼)
 # REVIEW_HANDOFF — Argon 18 (`argon/18-ask-chips`: 두근이에게 묻기 추천 질문 추가)

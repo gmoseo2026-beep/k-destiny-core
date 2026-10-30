@@ -147,6 +147,49 @@ const LOCKED_SCORE_CARDS: ReadonlyArray<{
   },
 ];
 
+export const SHARE_VISITOR_NEW_COMPAT_LABEL = "나도 그 사람과 30초 무료 궁합 보기 →";
+
+export function buildShareVisitorNewCompatHref(locale: string, refToken: string): string {
+  return `/${locale}/compat/new?ref=${encodeURIComponent(refToken.trim())}`;
+}
+
+export interface ShareVisitorNewCompatCardProps {
+  locale: string;
+  compatId: string;
+  refToken?: string;
+  isPremium?: boolean;
+  unlockToken?: string | null;
+  hasDeepReport?: boolean;
+  isInviteReceiver?: boolean;
+}
+
+export function ShareVisitorNewCompatCard({
+  locale,
+  compatId,
+  refToken,
+  isPremium,
+  unlockToken,
+  hasDeepReport,
+  isInviteReceiver,
+}: ShareVisitorNewCompatCardProps) {
+  const cleanRef = typeof refToken === "string" ? refToken.trim() : "";
+  if (!cleanRef || isPremium || unlockToken || hasDeepReport || isInviteReceiver) {
+    return null;
+  }
+
+  return (
+    <Card className="w-full mt-3 p-0 overflow-hidden border border-[#FF5C77]/30 bg-[#22142A]">
+      <Link
+        href={buildShareVisitorNewCompatHref(locale, cleanRef)}
+        onClick={() => trackEvent("share_visitor_new_compat_click", { compatId })}
+        className="flex w-full items-center justify-center gap-1.5 px-4 py-3 text-xs sm:text-sm font-extrabold text-[#F6EEF3] hover:text-coral transition-colors active:scale-[0.96]"
+      >
+        <span>{SHARE_VISITOR_NEW_COMPAT_LABEL}</span>
+      </Link>
+    </Card>
+  );
+}
+
 export default function CompatResultClient({ initialData, locale, refToken, via, isPremium, visibleIds }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
@@ -745,6 +788,17 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
           ))}
         </div>
       </div>
+
+      {/* [Argon-19] 공유 방문자에게 점수 카드 바로 아래 "나도 궁합 보기" 카드 노출 */}
+      <ShareVisitorNewCompatCard
+        locale={locale}
+        compatId={data.id}
+        refToken={refToken}
+        isPremium={isPremium}
+        unlockToken={unlockToken}
+        hasDeepReport={Boolean(deepReport)}
+        isInviteReceiver={isInviteReceiver}
+      />
 
       {/* [P-016-2 §1] 잠긴 점수 칸 3개: 속마음 ??? · 표현 방식 ??? · 다툼 회복 ??? */}
       {isLocked && (
