@@ -15,6 +15,7 @@ import {
   SeoJsonLd,
 } from "@/components/seo/SeoBlocks";
 import IljuChecker from "@/components/seo/IljuChecker";
+import IljuCompatBridgeCta from "@/components/seo/IljuCompatBridgeCta";
 import IljuViewTracker from "@/components/seo/IljuViewTracker";
 
 interface PageProps {
@@ -206,18 +207,13 @@ export default async function IljuDetailPage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* 중간 전환 안내 */}
-        <section className="rounded-2xl border border-coral/30 bg-white p-5 shadow-[0_4px_16px_rgba(255,92,119,0.12)]">
-          <h2 className="text-base font-black text-ink">
-            그 사람이 지금 나를 어떻게 생각하는지 궁금하다면
-          </h2>
-          <p className="mt-1.5 mb-3 text-sm leading-relaxed text-text-2">
-            같은 {entry.name}라도 상대가 누구인지에 따라 마음의 온도가 달라져요. 두 사람의 생년월일로 실제 궁합을 무료로 확인해 보세요.
-          </p>
-          <SeoCta href={`/${locale}/compat/new`} page={pageKey} target="compat_mid">
-            두 사람 생년월일로 무료 궁합 보기
-          </SeoCta>
-        </section>
+        {/* 본문 중간(속마음 섹션 뒤) 궁합 바로 연결 CTA */}
+        <IljuCompatBridgeCta
+          locale={locale}
+          slug={entry.slug}
+          iljuName={entry.name}
+          position="mid"
+        />
 
         {/* 섹션 3: 이별·재회 패턴 */}
         <section
@@ -288,14 +284,13 @@ export default async function IljuDetailPage({ params }: PageProps) {
 
         <FaqList faq={[...entry.faq]} />
 
-        <section className="flex flex-col gap-2.5">
-          <SeoCta
-            href={`/${locale}/compat/new`}
-            page={pageKey}
-            target="compat_bottom"
-          >
-            우리 둘 진짜 궁합 무료로 보기
-          </SeoCta>
+        <div className="flex flex-col gap-3">
+          <IljuCompatBridgeCta
+            locale={locale}
+            slug={entry.slug}
+            iljuName={entry.name}
+            position="bottom"
+          />
           <SeoCta
             href={`/${locale}/compat/new?productId=inner_mind`}
             page={pageKey}
@@ -304,7 +299,7 @@ export default async function IljuDetailPage({ params }: PageProps) {
           >
             그 사람 속마음 미리보기
           </SeoCta>
-        </section>
+        </div>
 
         <ChipLinks title="다른 일주 연애 성향 둘러보기" links={neighborLinks} />
 
