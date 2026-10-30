@@ -1,4 +1,5 @@
 # REVIEW_HANDOFF — Argon 16 (`argon/16-ilju-bridge`: 일주 페이지 → 궁합 바로 연결)
+# REVIEW_HANDOFF — Argon 17 (`argon/17-teaser-story`: 커플 상품 미리보기 스토리 카드 버튼)
 
 > **작성 일시**: 2026-10-30
 > **기반 브랜치**: `origin/main` (`d6f5e9d`)
@@ -21,6 +22,21 @@
    - `CompatNewClient`에서 `loadLastPerson()`이 복원될 때 곧바로 2단계(`2. 상대`)로 열도록 해 `"상대 생일만 넣고 무료로 보기"` 약속과 일치시켰으며, 상단 `1. 나` 단계 탭과 하단 `← 이전` 버튼이 활성화되어 있어 태어난 시간을 추가로 넣고 싶은 사람도 1탭으로 돌아갈 수 있습니다.
 5. **클로드에게 필요한 것**
    - 없음 (법률 문구·DB·결제 변경 없음).
+   - `components/share/StoryCardSaveButton.tsx`: `source` 유니온에 `"compat_teaser"` 추가(기존 `story_card_save` / `story_card_share` GA4 이벤트 그대로 사용, 공유 보너스(+3) 지급 호출 없음).
+   - `components/CompatNewClient.tsx`: 커플 상품 미리보기(`teaserResult` 존재 시에만) 화면의 `SajuEightCharCard` 바로 아래에 `StoryCardSaveButton`(`storyUrl="/api/og/story?compatId=<teaserResult.compatId>"`, `source="compat_teaser"`, `label="📸 우리 기운 카드 저장·공유"`)을 렌더링하는 `CompatTeaserStoryAction` 및 `buildCompatTeaserStoryUrl` 추가(입력 폼·한도 초과 화면·개인 상품 미리보기에는 미노출).
+   - `tests/teaserStoryCard.test.ts` (신규): 미리보기 결과가 있을 때만 버튼이 렌더링되는지, 이미지 주소에 `compatId` 쿼리 파라미터 하나만 들어가는지, 개인 상품 미리보기 미적용 및 공유 보너스 미연결 검증 단위 테스트 3종.
+2. **테스트 결과(통과 수)**
+   - `npx next typegen` & `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: **92 files passed, 663 tests passed** (44 skipped) — `tests/teaserStoryCard.test.ts` 3/3 통과
+   - `npm run build`: exit 0
+3. **모바일 390px 화면 확인 결과 (직접 화면에서 확인한 것)**
+   - 프로덕션 빌드 서버 + Puppeteer 모바일 뷰포트(`390×844`)로 `/ko/compat/new?productId=inner_mind` 초기 입력 화면 접속 시 버튼 미노출(`formHasBtn = false`) 확인.
+   - 미리보기 결과 화면(`/ko/compat/new?productId=inner_mind&from=compat_test_17`) 렌더링 시 가로 넘침 없음(`scrollWidth = 390`, `clientWidth = 390`), `SajuEightCharCard` 바로 아래에 `"📸 우리 기운 카드 저장·공유"` 버튼(`358×52px`, 줄바꿈 없음) 정상 배치 및 클릭 시 `/api/og/story?compatId=compat_test_17` 요청 발사 확인.
+4. **스스로 의심하는 점**
+   - 없음 (`/api/og/story` 라우트는 이미 `compatId` 단독 조회와 없는 ID 404 반환, PII 마스킹을 갖추고 있어 그대로 재사용됨).
+5. **클로드에게 필요한 것**
+   - 없음.
 
 ---
 

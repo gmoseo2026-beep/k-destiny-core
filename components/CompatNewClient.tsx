@@ -42,6 +42,29 @@ import {
 } from "@/lib/lunarNoticeStorage";
 import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
 import type { SajuDisplayPerson } from "@/lib/sajuDisplay";
+import StoryCardSaveButton from "@/components/share/StoryCardSaveButton";
+
+export const COMPAT_TEASER_STORY_LABEL = "📸 우리 기운 카드 저장·공유";
+
+export function buildCompatTeaserStoryUrl(compatId: string): string {
+  return `/api/og/story?compatId=${encodeURIComponent(compatId.trim())}`;
+}
+
+export function CompatTeaserStoryAction({
+  teaserCompatId,
+}: {
+  teaserCompatId: string | null | undefined;
+}) {
+  const trimmed = teaserCompatId?.trim();
+  if (!trimmed) return null;
+  return (
+    <StoryCardSaveButton
+      storyUrl={buildCompatTeaserStoryUrl(trimmed)}
+      source="compat_teaser"
+      label={COMPAT_TEASER_STORY_LABEL}
+    />
+  );
+}
 
 const GuestCheckoutModal = dynamic(() => import("@/components/GuestCheckoutModal"), { ssr: false });
 
@@ -878,6 +901,7 @@ export default function CompatNewClient({
                 source="compat_teaser"
               />
             )}
+            <CompatTeaserStoryAction teaserCompatId={teaserResult.compatId} />
             <StandardReportView
               mode="teaser"
               score={teaserResult.score}
