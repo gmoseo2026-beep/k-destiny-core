@@ -33,7 +33,7 @@ import { getProduct, priceLabel, setsContaining, checkoutOptionsFor } from "@/li
 import SetUpsell from "@/components/product/SetUpsell";
 import NextReadingRecommendations from "@/components/report/NextReadingRecommendations";
 import AskThreeWidget from "@/components/report/AskThreeWidget";
-import { buildCompatGaugeItems, type CompatPublicBreakdown } from "@/lib/compatGauge";
+import { buildCompatGaugeItems, buildCompatTopBannerCopy, type CompatPublicBreakdown } from "@/lib/compatGauge";
 import { loadCompatLunarNotices, buildCoupleLunarLines } from "@/lib/lunarNoticeStorage";
 import SajuEightCharCard from "@/components/saju/SajuEightCharCard";
 import type { SajuViewPerson } from "@/lib/sajuDisplay";
@@ -190,6 +190,15 @@ export function ShareVisitorNewCompatCard({
   );
 }
 
+export function trackCompatCheckoutClick(
+  clickEvent: string,
+  compatId: string,
+  productId: string,
+  extraParams?: Record<string, string | number | boolean>
+): void {
+  trackEvent(clickEvent, { compatId, productId, ...(extraParams ?? {}) });
+}
+
 export default function CompatResultClient({ initialData, locale, refToken, via, isPremium, visibleIds }: CompatResultClientProps) {
   const [data] = useState<CompatData>(initialData);
   const [summary, setSummary] = useState<string | null>(initialData.summaryKo);
@@ -290,8 +299,13 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
     setCheckoutId(id);
     setCheckoutModalOpen(true);
   };
-  const openCompatCheckout = (id: string, clickEvent: string) => {
-    trackEvent(clickEvent, { compatId: data.id, productId: id });
+  const topBanner = buildCompatTopBannerCopy(data.publicBreakdown);
+  const openCompatCheckout = (
+    id: string,
+    clickEvent: string,
+    extraParams?: Record<string, string | number | boolean>
+  ) => {
+    trackCompatCheckoutClick(clickEvent, data.id, id, extraParams);
     // 틱톡 앱(안드로이드): ⋯ → 브라우저에서 열기를 누르면 크롬에서 이 결제창이 바로 다시 열리도록 주소에 실어 둔다
     markPayHandoffUrl(id);
     if (blockPaymentIfInApp(() => setInAppOpen(true), () => proceedCompatCheckout(id))) return;
@@ -654,6 +668,17 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
         </Card>
       )}
 
+      {/* [Argon-19] 공유 방문자에게 "나도 궁합 보기" — 위에 여덟 글자·점수 카드가 있어 그 아래면 첫 화면에 안 보인다(10-30 실측 900px) */}
+      <ShareVisitorNewCompatCard
+        locale={locale}
+        compatId={data.id}
+        refToken={refToken}
+        isPremium={isPremium}
+        unlockToken={unlockToken}
+        hasDeepReport={Boolean(deepReport)}
+        isInviteReceiver={isInviteReceiver}
+      />
+
       {data.sajuPeople && data.sajuPeople.length > 0 && (
         <SajuEightCharCard
           people={data.sajuPeople}
@@ -789,17 +814,6 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
         </div>
       </div>
 
-      {/* [Argon-19] 공유 방문자에게 점수 카드 바로 아래 "나도 궁합 보기" 카드 노출 */}
-      <ShareVisitorNewCompatCard
-        locale={locale}
-        compatId={data.id}
-        refToken={refToken}
-        isPremium={isPremium}
-        unlockToken={unlockToken}
-        hasDeepReport={Boolean(deepReport)}
-        isInviteReceiver={isInviteReceiver}
-      />
-
       {/* [P-016-2 §1] 잠긴 점수 칸 3개: 속마음 ??? · 표현 방식 ??? · 다툼 회복 ??? */}
       {isLocked && (
         <Card className="w-full mt-4 p-4">
@@ -926,7 +940,7 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
           <button
             type="button"
             onClick={() => {
-              openCompatCheckout("compat_basic", "click_top_cta");
+              openCompatCheckout("compat_basic", "click_top_cta", { banner: topBanner.banner });
             }}
             className="w-full mt-4 bg-[#22142A] hover:bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 shadow-xs transition-all duration-150 active:scale-[0.98] flex items-center justify-between gap-2 group text-left"
           >
@@ -936,8 +950,8 @@ export default function CompatResultClient({ initialData, locale, refToken, via,
               </span>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors">
-                    우리가 부딪히는 지점 3가지 보기
+                  <span className="text-xs sm:text-sm font-black text-ink group-hover:text-coral transition-colors break-keep leading-snug">
+                    {topBanner.title}
                   </span>
                 </div>
                 <span className="text-[11px] text-text-3 truncate">

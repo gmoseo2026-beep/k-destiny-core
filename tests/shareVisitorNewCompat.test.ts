@@ -74,13 +74,12 @@ describe("19 공유 방문자 상단 '나도 궁합 보기' 카드 (argon/19-sha
     expect(withRefHtml).toContain(SHARE_VISITOR_NEW_COMPAT_LABEL);
     expect(withRefHtml).toContain("다른 사람과의 궁합도 새로 알아보기 →");
 
-    // 점수 카드 바로 아래(잠긴 점수 칸 3개보다 위)에 위치하는지 순서 확인
+    // 첫 화면에 보이도록 점수 카드보다 위에 있는지 확인
     const mainScoreIdx = withRefHtml.indexOf("우리 두 사람의 사주 궁합");
     const visitorCardIdx = withRefHtml.indexOf(SHARE_VISITOR_NEW_COMPAT_LABEL);
-    const lockedCardsIdx = withRefHtml.indexOf("속마음 ??? · 표현 방식 ??? · 다툼 회복 ???");
     expect(mainScoreIdx).toBeGreaterThan(-1);
-    expect(visitorCardIdx).toBeGreaterThan(mainScoreIdx);
-    expect(lockedCardsIdx).toBeGreaterThan(visitorCardIdx);
+    expect(visitorCardIdx).toBeGreaterThan(-1);
+    expect(visitorCardIdx).toBeLessThan(mainScoreIdx);
   });
 
   it("2) 초대 수령자(isInviteReceiver / via=invite_receiver) 및 결제 후(isPremium / unlockToken / deepReport)에는 렌더링되지 않는다", () => {

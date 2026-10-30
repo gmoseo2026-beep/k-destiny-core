@@ -197,3 +197,46 @@ export function buildCompatGaugeItems(
     };
   });
 }
+
+
+export interface LowestPublicAxisResult {
+  label: string;
+  score: number;
+  max: number;
+}
+
+/**
+ * 공개 3축(stem, balance, yinYang)을 (점수 ÷ max) 비율로 비교해 가장 낮은 항목을 돌려준다.
+ * 비율이 같으면 COMPAT_GAUGE_SPECS 순서상 앞선 항목을 돌려주고, 유효한 값이 없으면 null을 돌려준다.
+ */
+export function lowestPublicAxis(publicBreakdown: unknown): LowestPublicAxisResult | null {
+  const pub = pickPublicBreakdown(publicBreakdown);
+  if (!pub) return null;
+
+  let best: LowestPublicAxisResult | null = null;
+  for (const spec of COMPAT_GAUGE_SPECS) {
+    if (!spec.isPublic) continue;
+    const score = pub[spec.key as keyof CompatPublicBreakdown];
+    if (!best || score * best.max < best.score * spec.max) {
+      best = { label: spec.label, score, max: spec.max };
+    }
+  }
+  return best;
+}
+
+export const DEFAULT_COMPAT_TOP_BANNER_TITLE = "우리가 부딪히는 지점 3가지 보기";
+
+export function buildCompatTopBannerCopy(publicBreakdown: unknown): {
+  title: string;
+  banner: "axis" | "default";
+} {
+  const lowest = lowestPublicAxis(publicBreakdown);
+  // 세 항목이 모두 만점이면 "30/30점, 어디서 부딪힐까?"가 말이 안 되므로 기본 문구를 쓴다.
+  if (!lowest || lowest.score >= lowest.max) {
+    return { title: DEFAULT_COMPAT_TOP_BANNER_TITLE, banner: "default" };
+  }
+  return {
+    title: `우리 '${lowest.label}' ${lowest.score}/${lowest.max}점, 어디서 부딪힐까?`,
+    banner: "axis",
+  };
+}

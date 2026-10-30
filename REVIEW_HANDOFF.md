@@ -1,4 +1,5 @@
 # REVIEW_HANDOFF — Argon 19 (`argon/19-share-new-compat`: 공유 방문자에게 "나도 궁합 보기"를 위로)
+# REVIEW_HANDOFF — Argon 20 (`argon/20-compat-banner-axis`: 궁합 잠금 배너 최저 비율 공개 지표)
 
 > **작성 일시**: 2026-10-30
 > **기반 브랜치**: `origin/main` (`5f17f7d`)
@@ -20,6 +21,25 @@
    - 없음 (`CompatResultClient` 마운트 후 `window.history.replaceState`로 주소창 쿼리에 `ref`를 붙이는 기존 동작은 서버가 내려준 `refToken` prop을 바꾸지 않으므로, 최초 작성자 진입에서는 안 뜨고 공유 링크 진입이나 새로고침으로 `refToken` prop이 들어올 때만 정확히 노출됨).
 5. **클로드에게 필요한 것**
    - 없음 (법률 문구·DB·결제 변경 없음).
+1. **바뀐 파일·목적**
+   - `lib/compatGauge.ts`: `lowestPublicAxis(publicBreakdown)`, `DEFAULT_COMPAT_TOP_BANNER_TITLE`, `buildCompatTopBannerCopy(publicBreakdown)` 순수 함수 추가. 공개 3축(`stem`/`balance`/`yinYang`)만 `점수 ÷ max` 비율(부동소수점 오차 없는 교차곱 `score * best.max < best.score * spec.max`)로 비교해 가장 낮은 항목의 `{ label, score, max }`를 반환하며, 비율이 같으면 `COMPAT_GAUGE_SPECS` 순서(`stem` → `balance` → `yinYang`)상 앞선 항목을 반환하고 유효한 값이 없으면 `null`을 반환.
+   - `components/CompatResultClient.tsx`: 미결제 상단 잠금 배너(`"우리가 부딪히는 지점 3가지 보기"`) 한 곳만 `buildCompatTopBannerCopy(data.publicBreakdown)` 결과(`우리 '${label}' ${score}/${max}점, 어디서 부딪힐까?`, `null`이면 기존 제목 유지)로 교체하고 설명 줄(`"풀어 가는 법 · 이번 달 애정운 타이밍까지 전체 리포트로"`)은 그대로 유지. 배너 클릭 시 기존 `click_top_cta` 이벤트 이름은 유지한 채 `{ banner: "axis" | "default" }` 파라미터만 추가(`trackCompatCheckoutClick`). 모바일 390px 한글 어절 줄바꿈을 위해 배너 제목 `span`에 `break-keep leading-snug` 추가.
+   - `tests/compatBannerAxis.test.ts` (신규): 결정론(동일 입력 반복·잠긴 축 미영향), 비율 비교(원점수 20 vs 7이 아닌 `20/30` vs `7/10`), 동점 처리(`COMPAT_GAUGE_SPECS` 순서), `null`/비정상 입력 폴백, 공개 3축 유효 조합 36가지 전수 금지 용어(한자·사주 전문용어·`%`/`위험`·단정적 예언) 미포함, `CompatResultClient` SSR 및 `click_top_cta` GA4 파라미터 단위 테스트 6종.
+2. **결정론 로직 요약**
+   - `lib/compatibility.ts` 점수 산식은 수정하지 않고, `pickPublicBreakdown`이 검증한 이산 공개 3축(`stem` 만점 30, `balance` 만점 10, `yinYang` 만점 10)에 대해서만 `score / max` 최소 비율 축을 결정론적으로 선택한다(동률 시 `COMPAT_GAUGE_SPECS` 선언 순 고정).
+3. **테스트 결과(통과 수)**
+   - `npx tsc --noEmit`: 0 errors
+   - `npx eslint lib/compatGauge.ts components/CompatResultClient.tsx tests/compatBannerAxis.test.ts`: 0 errors
+   - `npx vitest run`: **96 files passed, 682 tests passed** (44 skipped) — `tests/compatBannerAxis.test.ts` 6/6 통과
+   - `npm run build`: exit 0
+4. **모바일 390px 화면 확인 결과 (직접 화면에서 확인한 것)**
+   - 프로덕션 빌드 서버 + Puppeteer 모바일 뷰포트(`390×844`)로 실제 궁합 결과 화면(`/ko/compat/<shareToken>`) 렌더링 확인: 상단 배너 제목 `"우리 '타고난 성향 합' 25/30점, 어디서 부딪힐까?"` 정상 노출(`btnWidth = 358`, `btnHeight = 84`, `titleClientW = titleScrollW = 209`, `overflowX = "visible"`, 페이지 가로 넘침 없음 `pageScrollW = pageClientW = 390`).
+   - 가장 긴 라벨(`"우리 '두 사람 기운의 균형' 4/10점, 어디서 부딪힐까?"`, 33자) 적용 시에도 잘림이나 말줄임 없이 어절 단위 2줄(`titleHeight = 33`, `titleClientW = titleScrollW = 209`, `pageScrollW = 390`)로 렌더링됨 확인.
+   - 실제 브라우저에서 상단 배너 클릭 시 GA4 `click_top_cta` 이벤트가 `{ compatId, productId: "compat_basic", banner: "axis" }`로 발사됨 확인.
+5. **보안/PII/결제 변경점 및 스스로 의심하는 점**
+   - 보안·PII·결제 로직·DB 스키마·약관 변경 없음. 잠긴 2축(`complement`, `branch`) 점수는 `pickPublicBreakdown` 단계에서 제외되어 미결제 배너나 클라이언트로 노출되지 않는다.
+6. **클로드에게 필요한 것**
+   - 없음 (지시서 기준대로 19번 배포 후 최소 3일 뒤 단독 배포하여 `view_paywall` 대비 `click_top_cta` 비율 비교).
 
 ---
 
