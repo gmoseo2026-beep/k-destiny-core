@@ -1,3 +1,26 @@
+# REVIEW_HANDOFF — Argon 18 (`argon/18-ask-chips`: 두근이에게 묻기 추천 질문 추가)
+
+> **작성 일시**: 2026-10-30
+> **기반 브랜치**: `origin/main` (`d6f5e9d`)
+
+1. **바뀐 파일**
+   - `lib/askThreeSafety.ts`: `ASK_THREE_CHIPS`에 지시서의 신규 질문 4개(`"읽씹 3일째인데 먼저 연락해도 될까?"`, `"이번 주말 약속 잡으려면 어떻게 말하면 좋을까?"`, `"다툰 뒤에 먼저 사과하는 게 나을까?"`, `"고백하기 좋은 분위기는 어떤 때일까?"`)를 추가해 총 7개로 확장.
+   - `components/report/AskThreeWidget.tsx`: 추천 질문 칩 영역을 가로 스크롤 레일(`flex flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`) + 칩 버튼 줄바꿈 방지(`shrink-0 whitespace-nowrap`) 및 카드 컨테이너 `min-w-0 overflow-hidden`으로 변경해 모바일 390px에서 줄바꿈 깨짐과 페이지 가로 넘침을 모두 방지.
+   - `tests/askThree.test.ts`: 7개 추천 질문 전수 개별 검증 및 3개 조합 35가지 모두 `validateAskThreeQuestions` 안전 필터 통과 검증, 가로 스크롤 마크업(`overflow-x-auto`·`whitespace-nowrap`) 검증, 기존 금지 질문 10종 및 주문/자동 환불 테스트 전원 유지.
+2. **테스트 결과(통과 수)**
+   - `npx next typegen` & `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: **91 files passed, 660 tests passed** (44 skipped) — `tests/askThree.test.ts` 6/6 통과
+   - `npm run build`: exit 0
+3. **모바일 390px 화면 확인 결과 (직접 화면에서 확인한 것)**
+   - 프로덕션 빌드 서버 + Puppeteer 모바일 뷰포트(`390×844`)로 `AskThreeWidget` 추천 질문 레일 렌더링 확인: 페이지 전체 가로 넘침 없음(`pageScrollW = 390`, `pageClientW = 390`), 칩 레일 가로 스크롤 활성화(`overflowX = "auto"`, `railClientW = 324`, `railScrollW = 1421`), 7개 칩 모두 줄바꿈 없이 단일 행 높이(`heights = [30, 30, 30, 30, 30, 30, 30]`, `whiteSpace = "nowrap"`) 유지 확인.
+4. **스스로 의심하는 점**
+   - 없음 (입력칸 3개의 `placeholder`는 기존과 동일하게 `ASK_THREE_CHIPS[0..2]` 첫 3개 질문을 사용하며, 기존 `ask_question_chip` GA4 이벤트도 그대로 동작).
+5. **클로드에게 필요한 것**
+   - 없음.
+
+---
+
 # REVIEW_HANDOFF — Argon 01 (`argon/01-account-delete`: 셀프 회원 탈퇴)
 # REVIEW_HANDOFF — Argon 02. 신년 시즌 전환 (`argon/02-season-2027`)
 # REVIEW_HANDOFF — Argon 03. 결제창 후기 보강 (`argon/03-checkout-review-fallback`)
