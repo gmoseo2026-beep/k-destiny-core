@@ -85,3 +85,4 @@ automation/out/
 /Claude outputs/
 
 .env.development.local
+logs.txt

@@ -66,6 +66,7 @@ vi.mock("@/lib/payments", () => ({
 vi.mock("@/lib/prisma", () => {
   const tx = {
     order: {
+      findFirst: vi.fn().mockResolvedValue(null),
       findUnique: mockOrderFindUnique,
       updateMany: mockOrderUpdateMany,
     },

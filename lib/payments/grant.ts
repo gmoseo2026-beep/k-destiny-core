@@ -161,7 +161,9 @@ export async function applyPaidOrder(orderId: string, providerTxId?: string) {
  * 다른 주문으로 정상 구매해 둔 잔여 기간까지 함께 날아간다.
  */
 export async function revokePaidOrder(orderId: string) {
-  return await prisma.$transaction(async (tx) => {
+  // 트랜잭션 커밋 후에만 보낸다. 돈이 걸린 판단(차액 주문 환불)은 자동으로 하지 않고 사장님께 알린다. PII 없음.
+  const notices: string[] = [];
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { orderId } });
     if (!order) return { ok: false, reason: "no_order" };
 
@@ -177,6 +179,31 @@ export async function revokePaidOrder(orderId: string) {
 
     if (order.type === "SINGLE") {
       await tx.unlock.deleteMany({ where: { orderId: order.id } });
+
+      // 이미 사용한 선물을 환불하면 받은 사람의 열람도 회수한다. 안 쓴 코드는 사용 시점에 결제 상태로 막힌다.
+      const giftRepo = (tx as unknown as { giftCode?: typeof prisma.giftCode }).giftCode;
+      const gift = giftRepo?.findUnique
+        ? await giftRepo.findUnique({ where: { purchaseOrderId: orderId } })
+        : null;
+      if (gift?.redeemedOrderId) {
+        const redeemed = await tx.order.findUnique({ where: { orderId: gift.redeemedOrderId } });
+        if (redeemed) {
+          await tx.order.updateMany({ where: { id: redeemed.id }, data: { status: "CANCELED" } });
+          await tx.unlock.deleteMany({ where: { orderId: redeemed.id } });
+          notices.push(`🎁 <b>사용된 선물 환불</b>\n• 받은 사람 열람도 회수했어요\n• 주문번호: <code>${orderId}</code>`);
+        }
+      }
+
+      // 단품을 환불해도 그 단품으로 낸 차액 세트는 남는다. 차액까지 환불해야 세트 열람이 회수된다.
+      const upgrade = await tx.order.findFirst({
+        where: { upgradeFromOrderId: orderId, status: "PAID" },
+        select: { orderId: true, amount: true },
+      });
+      if (upgrade) {
+        notices.push(
+          `⚠️ <b>차액 세트 환불 필요</b>\n• 환불한 단품: <code>${orderId}</code>\n• PG에서 함께 환불할 주문: <code>${upgrade.orderId}</code> (${upgrade.amount.toLocaleString()}원)`,
+        );
+      }
     } else if (order.type === "PERIOD_PASS" && order.userId) {
       const months = order.planId === "1_MONTH" ? 1 : order.planId === "3_MONTHS" ? 3 : 0;
       if (months > 0) {
@@ -205,4 +232,9 @@ export async function revokePaidOrder(orderId: string) {
 
     return { ok: true };
   });
+
+  for (const notice of notices) {
+    sendTelegramMessage(notice).catch((e) => console.error("[revokePaidOrder] Telegram notify failed:", e));
+  }
+  return result;
 }

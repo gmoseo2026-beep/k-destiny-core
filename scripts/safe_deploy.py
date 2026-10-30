@@ -123,6 +123,8 @@ def main():
     # 3. Prisma
     run_cmd(client, "cd /root/k-destiny-core && npx prisma db push 2>&1")
     run_cmd(client, "cd /root/k-destiny-core && npx prisma generate 2>&1")
+    # db push 로 새로 생긴 테이블은 RLS 가 꺼진 채 만들어진다(10-30: Coupon·GiftCode·Review). 정책 없는 RLS = Data API 차단, Prisma 는 소유자라 영향 없음.
+    run_cmd(client, "cd /root/k-destiny-core && node scripts/ops/enable-rls.mjs --apply 2>&1")
 
     # 4. Clean Build.
     # NODE_OPTIONS raises the heap so a small VPS does not silently OOM-kill the
