@@ -1,3 +1,29 @@
+# REVIEW_HANDOFF — Argon 16 (`argon/16-ilju-bridge`: 일주 페이지 → 궁합 바로 연결)
+
+> **작성 일시**: 2026-10-30
+> **기반 브랜치**: `origin/main` (`d6f5e9d`)
+
+1. **바뀐 파일**
+   - `components/seo/IljuChecker.tsx`: `CalendarTypeToggle`·`getDaysInMonth`·`resolveRawDateToSolar`를 붙여 양력/음력(윤달 포함) 입력을 양력으로 변환해 `/api/ilju/check`로 전송하고, 필수 성별 버튼 2개(`여자`/`남자`) 추가, 확인 성공 직전 `saveLastPerson({ name: "나", dob, time: null, gender })` 호출(같은 탭 `sessionStorage`), 안내 문구를 `"입력한 생년월일은 서버에 저장하지 않고, 이 창을 닫으면 지워져요"`로 변경, `ilju_check` GA4 이벤트에 `{ lunar: true|false }` 추가(생년월일 PII 미포함).
+   - `components/seo/IljuCompatBridgeCta.tsx` (신규): `"○○일주인 나 × 그 사람, 궁합은 몇 점일까?"` 제목과 `"상대 생일만 넣고 무료로 보기"` → `/${locale}/compat/new` 버튼을 렌더링하고 클릭 시 `ilju_compat_cta_click { slug, position: "mid" | "bottom" }` GA4 이벤트를 발사하는 소형 클라이언트 컴포넌트(URL·쿼리스트링에 생년월일 없음).
+   - `app/[locale]/ilju/[slug]/page.tsx`: 속마음 섹션 바로 뒤(`position="mid"`)와 하단(`position="bottom"`)에 `IljuCompatBridgeCta` 배치.
+   - `components/CompatNewClient.tsx`: `lastCouple`이 없을 때 `loadLastPerson()`으로 내 정보가 채워지면 상대 성별 기본값을 반대 성별(`genderB`)로 맞추고, 일반 모드(`!initialInviteMode`)에서는 곧바로 2단계(`2. 상대 — 함께 볼 그 사람의 생년월일은?`)로 열어 내 생년월일 재입력 없이 상대 생일만 넣게 연결(`1. 나` 탭/이전 버튼으로 언제든 확인·수정 가능).
+   - `tests/iljuBridge.test.ts` (신규): 음력·윤달 양력 변환 전송, 성별 미선택 차단, `saveLastPerson` 호출 및 PII 미노출, CTA `href` 생년월일 미포함 단위 테스트 4종.
+2. **테스트 결과(통과 수)**
+   - `npx next typegen` & `npx tsc --noEmit`: 0 errors
+   - `npx eslint`: 0 errors
+   - `npx vitest run`: **92 files passed, 664 tests passed** (44 skipped) — `tests/iljuBridge.test.ts` 4/4 통과
+   - `npm run build`: exit 0
+3. **모바일 390px 화면 확인 결과 (직접 화면에서 확인한 것)**
+   - 프로덕션 빌드 서버 + Puppeteer 모바일 뷰포트(`390×844`)로 `/ko/ilju/gapja` 접속 확인: 기본 상태 및 `IljuChecker` 음력·윤달 체크 토글 상태 모두 가로 넘침 없음(`scrollWidth = 390`, `clientWidth = 390`), 중간·하단 CTA 버튼(`width = 316px`, `href = "/ko/compat/new"`) 줄바꿈 깨짐 없음.
+   - `IljuChecker`에서 음력 `1990-01-01` + `여자` 선택 후 제출 → `/ko/ilju/imjin` 이동 및 `sessionStorage.kongdak_last_person`에 양력 `1990-01-27`·`F` 저장 확인 → `"상대 생일만 넣고 무료로 보기"` 클릭 시 `/ko/compat/new`(`scrollWidth = 390`, URL에 생년월일 없음)로 이동해 2단계(`"함께 볼 그 사람의 생년월일은?"`)가 바로 열리고 1단계 내 정보에 `1990`·`1`·`27`·`F`가 채워져 있음을 실제 브라우저에서 확인.
+4. **스스로 의심하는 점**
+   - `CompatNewClient`에서 `loadLastPerson()`이 복원될 때 곧바로 2단계(`2. 상대`)로 열도록 해 `"상대 생일만 넣고 무료로 보기"` 약속과 일치시켰으며, 상단 `1. 나` 단계 탭과 하단 `← 이전` 버튼이 활성화되어 있어 태어난 시간을 추가로 넣고 싶은 사람도 1탭으로 돌아갈 수 있습니다.
+5. **클로드에게 필요한 것**
+   - 없음 (법률 문구·DB·결제 변경 없음).
+
+---
+
 # REVIEW_HANDOFF — Argon 01 (`argon/01-account-delete`: 셀프 회원 탈퇴)
 # REVIEW_HANDOFF — Argon 02. 신년 시즌 전환 (`argon/02-season-2027`)
 # REVIEW_HANDOFF — Argon 03. 결제창 후기 보강 (`argon/03-checkout-review-fallback`)
